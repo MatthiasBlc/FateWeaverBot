@@ -10,7 +10,7 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✅ Connecté en tant que ${client.user.tag}`);
+  console.log(`✅ Connecté en tant que ${client.user?.tag}`);
 });
 
 client.on("messageCreate", (message) => {
@@ -35,4 +35,6 @@ server.listen(HEALTH_PORT, () => {
   console.log(`🩺 Health server listening on :${HEALTH_PORT}`);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client
+  .login(process.env.DISCORD_TOKEN)
+  .catch((err) => console.error("Discord login failed:", err));

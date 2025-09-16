@@ -1,4 +1,7 @@
 .env
 # docker-compose.yml
 
+# docker-compose.yml.local
+docker-compose.yml.local.truc
+
 postgresql/data/

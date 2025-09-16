@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Extension fields for DRY configuration
 x-logging: &default-logging
   driver: json-file
@@ -9,7 +7,7 @@ x-logging: &default-logging
 
 x-health-http: &health_http
   test:
-    ["CMD-SHELL", "wget -q --spider ${HEALTH_URL} >/dev/null 2>&1 || exit 1"]
+    ["CMD-SHELL", "wget -q --spider $${HEALTH_URL} >/dev/null 2>&1 || exit 1"]
   interval: 30s
   timeout: 10s
   retries: 3
@@ -34,6 +32,7 @@ services:
       - internal
     logging: *default-logging
     healthcheck: *health_http
+    restart: unless-stopped
 
   frontend:
     build:
@@ -50,6 +49,7 @@ services:
       - internal
     logging: *default-logging
     healthcheck: *health_http
+    restart: unless-stopped
 
   discord-bot:
     build:
@@ -67,4 +67,5 @@ services:
       - internal
     logging: *default-logging
     healthcheck: *health_http
+    restart: always
 # Root networks/volumes are defined in docker-compose.yml for the local environment.
