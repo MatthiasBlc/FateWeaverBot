@@ -1,5 +1,9 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Collection } from "discord.js";
 import http from "http";
+import { config } from "./config/config.js";
+import { logger } from "./utils/logger.js";
+import { loadCommands } from "./loaders/commands.js";
+import { loadEvents } from "./loaders/events.js";
 
 const client = new Client({
   intents: [
@@ -9,15 +13,19 @@ const client = new Client({
   ],
 });
 
-client.once("ready", () => {
-  console.log(`✅ Connecté en tant que ${client.user?.tag}`);
-});
+// Register a commands collection on the client
+client.commands = new Collection();
 
-client.on("messageCreate", (message) => {
-  if (message.content === "!ping") {
-    message.reply("Pong 🏓 !");
-  }
-});
+// Load commands and events
+await loadCommands(client);
+await loadEvents(client);
+
+// Global error/warn handlers
+client.on("error", (e) => logger.error("Client error:", e));
+client.on("warn", (w) => logger.warn("Client warning:", w));
+process.on("unhandledRejection", (e) =>
+  logger.error("Unhandled rejection:", e)
+);
 
 // Minimal HTTP server for healthcheck
 const server = http.createServer((req, res) => {
@@ -30,11 +38,11 @@ const server = http.createServer((req, res) => {
   res.end();
 });
 
-const HEALTH_PORT = process.env.HEALTH_PORT || 3001;
-server.listen(HEALTH_PORT, () => {
-  console.log(`🩺 Health server listening on :${HEALTH_PORT}`);
+server.listen(config.healthPort || 3001, () => {
+  logger.info(`🩺 Health server listening on :${config.healthPort || 3001}`);
 });
 
 client
   .login(process.env.DISCORD_TOKEN)
-  .catch((err) => console.error("Discord login failed:", err));
+  .then(() => logger.info("Discord login successful"))
+  .catch((err) => logger.error("Discord login failed:", err));
