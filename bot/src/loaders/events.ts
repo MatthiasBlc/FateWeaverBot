@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Client } from "discord.js";
 import { logger } from "../utils/logger.js";
 
@@ -9,63 +9,66 @@ const __dirname = path.dirname(__filename);
 
 export async function loadEvents(client: Client) {
   const eventsDir = path.join(__dirname, "..", "events");
-  console.log(`[DEBUG] Looking for events in: ${eventsDir}`);
+  logger.debug("Recherche des événements dans: %s", eventsDir);
 
   if (!fs.existsSync(eventsDir)) {
-    console.error(`[ERROR] Events directory not found: ${eventsDir}`);
+    logger.error("Dossier des événements introuvable: %s", eventsDir);
     return;
   }
 
   const files = fs
     .readdirSync(eventsDir)
     .filter((f) => f.endsWith(".js") || f.endsWith(".ts"));
-  console.log(`[DEBUG] Found event files:`, files);
+
+  logger.debug("Fichiers d'événements trouvés: %O", files);
 
   for (const file of files) {
     try {
       const filePath = path.join(eventsDir, file);
-      console.log(`[DEBUG] Loading event from: ${filePath}`);
+      logger.debug("Chargement de l'événement depuis: %s", filePath);
 
       const mod: unknown = await import(filePath);
-      console.log(`[DEBUG] Imported event module:`, Object.keys(mod));
-
       const candidate = mod as {
         default?: {
           name: string;
           once?: boolean;
-          execute: (...args: unknown[]) => unknown;
+          execute: (client: Client, ...args: unknown[]) => Promise<void> | void;
         };
         event?: {
           name: string;
           once?: boolean;
-          execute: (...args: unknown[]) => unknown;
+          execute: (client: Client, ...args: unknown[]) => Promise<void> | void;
         };
       };
 
       const event = candidate.default ?? candidate.event;
 
       if (!event?.name || typeof event.execute !== "function") {
-        console.warn(`[WARN] Skipping event ${file} (invalid shape)`, event);
+        logger.warn("Événement ignoré %s (format invalide): %O", file, event);
         continue;
       }
 
-      console.log(
-        `[DEBUG] Registering event: ${event.name} (once: ${
-          event.once || false
-        })`
-      );
-
       if (event.once) {
-        client.once(event.name, (...args) => event.execute(client, ...args));
+        client.once(event.name, (...args) => {
+          logger.debug(
+            "Événement déclenché (once): %s - Args: %O",
+            event.name,
+            args
+          );
+          return event.execute(client, ...args);
+        });
       } else {
-        client.on(event.name, (...args) => event.execute(client, ...args));
+        client.on(event.name, (...args) => {
+          logger.debug("Événement déclenché: %s - Args: %O", event.name, args);
+          return event.execute(client, ...args);
+        });
       }
 
-      logger.info(`Loaded event: ${event.name}`);
+      logger.info("Événement chargé: %s", event.name);
     } catch (err) {
-      console.error(`[ERROR] Failed to load event ${file}:`, err);
+      logger.error("Échec du chargement de l'événement %s: %O", file, err);
     }
   }
 
-  console.log(`[DEBUG] Registered event listeners:`, client.eventNames());
+  logger.debug("Écouteurs d'événements enregistrés: %O", client.eventNames());
 }

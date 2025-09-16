@@ -1,27 +1,38 @@
 # FateWeaver Discord Bot
 
+## Logs
+
+```bash
+CONTAINER_ID=$(docker ps -q --filter name=discord-botdev)
+
+# Afficher les logs
+
+docker exec $CONTAINER_ID cat /app/logs/bot.log
+docker exec $CONTAINER_ID tail -f /app/logs/bot.log
+```
+
 ## Overview
 
 Node.js Discord bot using `discord.js` with a clean, extensible structure. Commands and events are auto-loaded from folders.
 
 ## Structure
 
-```
 bot/
-  index.js               # Entrypoint: loads commands/events, health server
-  commands/              # Message-prefix commands (e.g., !ping)
-    ping.js
-    help.js
-    _template.js         # Command template (copy to create new commands)
-  events/                # Discord event handlers
-    ready.js
-  services/              # API/DB helpers
-    database.js
-  config/
-    config.js            # Centralized config (prefix, healthPort, apiUrl)
-  utils/
-    logger.js            # Simple logger
-```
+index.js # Entrypoint: loads commands/events, health server
+commands/ # Message-prefix commands (e.g., !ping)
+ping.js
+help.js
+\_template.js # Command template (copy to create new commands)
+events/ # Discord event handlers
+ready.js
+services/ # API/DB helpers
+database.js
+config/
+config.js # Centralized config (prefix, healthPort, apiUrl)
+utils/
+logger.js # Simple logger
+
+````
 
 ## Environment
 
@@ -60,7 +71,7 @@ export const command = {
   },
 };
 export default command;
-```
+````
 
 ## Adding an event
 

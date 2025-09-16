@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Collection,
+  Options,
+  Partials,
+} from "discord.js";
 import type { Command } from "./types/command.js";
 import * as http from "node:http";
 import { config } from "./config/config.js";
@@ -18,20 +24,40 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.DirectMessageReactions,
   ],
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction],
 });
 
 client.commands = new Collection();
 
-await loadCommands(client);
-await loadEvents(client);
+// Gestion des erreurs non attrapées
+process.on("unhandledRejection", (error) => {
+  logger.error("Unhandled promise rejection:", error);
+});
 
-client.on("error", (e) => logger.error("Client error:", e));
-client.on("warn", (w) => logger.warn("Client warning:", w));
-process.on("unhandledRejection", (e) =>
-  logger.error("Unhandled rejection:", e)
-);
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception:", error);
+  process.exit(1);
+});
 
+// Charger les commandes et les événements
+async function startBot() {
+  try {
+    await loadCommands(client);
+    await loadEvents(client);
+
+    await client.login(process.env.DISCORD_TOKEN);
+    logger.info("✅ Bot connecté avec succès");
+  } catch (error) {
+    logger.error("Erreur lors du démarrage du bot:", error);
+    process.exit(1);
+  }
+}
+
+// Démarrer le serveur de santé
 const server = http.createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -46,7 +72,5 @@ server.listen(config.healthPort || 3001, () => {
   logger.info(`🩺 Health server listening on :${config.healthPort || 3001}`);
 });
 
-client
-  .login(process.env.DISCORD_TOKEN)
-  .then(() => logger.info("Discord login successful"))
-  .catch((err) => logger.error("Discord login failed:", err));
+// Démarrer le bot
+startBot();

@@ -1,58 +1,58 @@
-import type { Client, Message, Collection } from "discord.js";
-import type { Command } from "../types/command.js";
+import { Events, Message, Client } from "discord.js";
 import { config } from "../config/config.js";
-import { parseCommand } from "../utils/helper.js";
 import { logger } from "../utils/logger.js";
+import { parseCommand } from "../utils/parseCommand.js";
 
-export default {
-  name: "messageCreate",
+export const event = {
+  name: Events.MessageCreate,
   once: false,
-  async execute(client: Client, message: Message) {
-    console.log(`[DEBUG] Message received: ${message.content}`);
-
-    if (message.author.bot) {
-      console.log("[DEBUG] Ignoring message from bot");
-      return;
-    }
-
-    if (!message.content.startsWith(config.prefix)) {
-      console.log(
-        `[DEBUG] Message does not start with prefix '${config.prefix}'`
-      );
-      return;
-    }
-
-    console.log(`[DEBUG] Processing command: ${message.content}`);
-
-    const command = parseCommand(message.content, config.prefix);
-    if (!command) {
-      console.log("[DEBUG] Failed to parse command");
-      return;
-    }
-
-    const { name, args } = command;
-    console.log(`[DEBUG] Command parsed - name: '${name}', args:`, args);
-
-    const cmd = (
-      client as Client & { commands: Collection<string, Command> }
-    ).commands?.get(name);
-    if (!cmd) {
-      console.log(`[DEBUG] Command '${name}' not found in collection`);
-      console.log(
-        `[DEBUG] Available commands:`,
-        Array.from(client.commands?.keys() || [])
-      );
-      return;
-    }
-
+  execute: async (client: Client, message: Message) => {
     try {
-      console.log(`[DEBUG] Executing command: ${name}`);
+      // Vérifier si le message est valide
+      if (!message || !message.content) {
+        logger.debug("Message invalide reçu");
+        return;
+      }
+
+      logger.debug(
+        "Message reçu de %s: %s",
+        message.author?.tag,
+        message.content
+      );
+
+      // Ignorer les messages des bots
+      if (message.author?.bot) return;
+
+      // Vérifier le préfixe
+      if (!message.content.startsWith(config.prefix)) return;
+
+      logger.debug("Traitement de la commande: %s", message.content);
+
+      // Parser la commande
+      const command = parseCommand(message.content, config.prefix);
+      if (!command) {
+        logger.debug("Échec de l'analyse de la commande");
+        return;
+      }
+
+      const { name, args } = command;
+      logger.debug("Commande analysée - nom: '%s', arguments: %O", name, args);
+
+      // Vérifier si la commande existe
+      const cmd = client.commands?.get(name);
+      if (!cmd) {
+        logger.debug("Commande '%s' non trouvée", name);
+        return;
+      }
+
+      // Exécuter la commande avec le client et les arguments
+      logger.debug("Exécution de la commande: %s", name);
       await cmd.execute(client, message, args);
-      console.log(`[DEBUG] Command '${name}' executed successfully`);
-    } catch (err) {
-      console.error(`[ERROR] Command '${name}' failed:`, err);
-      logger.error(`Command '${name}' failed:`, err);
-      await message.reply("❌ An error occurred while executing the command.");
+      logger.debug("Commande exécutée avec succès: %s", name);
+    } catch (error) {
+      logger.error("Erreur dans messageCreate: %O", error);
     }
   },
 };
+
+export default event;

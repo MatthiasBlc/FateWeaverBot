@@ -1,105 +1,99 @@
-import fs from "node:fs";
+import winston from "winston";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Utiliser un chemin absolu pour les logs
+const logsDir = "/app/logs";
+const logFile = path.join(logsDir, "bot.log");
+const maxLogSize = 5 * 1024 * 1024; // 5MB
+const maxLogFiles = 5;
 
-// Configuration des logs
-const LOG_DIR = path.join(__dirname, "../../logs");
-const MAX_LOG_FILES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-// Créer le dossier de logs s'il n'existe pas
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+// Créer le dossier logs s'il n'existe pas
+if (!fs.existsSync(logsDir)) {
+  try {
+    fs.mkdirSync(logsDir, { recursive: true, mode: 0o777 });
+  } catch (error) {
+    console.error(`Impossible de créer le dossier de logs: ${error}`);
+  }
 }
 
-// Fonction pour gérer la rotation des fichiers de log
+/**
+ * Rotation des fichiers de log
+ */
 function rotateLogs() {
   try {
-    const files = fs
-      .readdirSync(LOG_DIR)
-      .filter((file) => file.startsWith("bot-") && file.endsWith(".log"))
-      .sort()
-      .reverse();
-
-    // Supprimer les fichiers les plus anciens si nécessaire
-    while (files.length >= MAX_LOG_FILES) {
-      const fileToDelete = files.pop();
-      if (fileToDelete) {
-        fs.unlinkSync(path.join(LOG_DIR, fileToDelete));
-      }
-    }
-
-    // Renommer les fichiers existants (décalage +1)
-    for (let i = files.length; i > 0; i--) {
-      const oldFile = path.join(LOG_DIR, `bot-${i}.log`);
-      const newFile = path.join(LOG_DIR, `bot-${i + 1}.log`);
-      if (fs.existsSync(oldFile)) {
-        fs.renameSync(oldFile, newFile);
-      }
-    }
-  } catch (error) {
-    console.error("Erreur lors de la rotation des logs:", error);
-  }
-}
-
-// Créer un nouveau fichier de log avec la date actuelle
-function getLogFilePath() {
-  const date = new Date().toISOString().split("T")[0];
-  return path.join(LOG_DIR, "bot-1.log");
-}
-
-// Vérifier la taille du fichier de log actuel
-function checkLogFileSize() {
-  try {
-    const logFile = getLogFilePath();
     if (fs.existsSync(logFile)) {
       const stats = fs.statSync(logFile);
-      if (stats.size > MAX_FILE_SIZE) {
-        rotateLogs();
+      if (stats.size >= maxLogSize) {
+        // Supprimer le plus ancien fichier de log s'il existe
+        const oldestLog = path.join(logsDir, `bot-${maxLogFiles}.log`);
+        if (fs.existsSync(oldestLog)) {
+          fs.unlinkSync(oldestLog);
+        }
+
+        // Renommer les fichiers existants (bot.log -> bot-1.log, etc.)
+        for (let i = maxLogFiles - 1; i >= 1; i--) {
+          const oldPath =
+            i === 1 ? logFile : path.join(logsDir, `bot-${i - 1}.log`);
+          const newPath = path.join(logsDir, `bot-${i}.log`);
+
+          if (fs.existsSync(oldPath)) {
+            if (fs.existsSync(newPath)) {
+              fs.unlinkSync(newPath);
+            }
+            fs.renameSync(oldPath, newPath);
+          }
+        }
       }
     }
   } catch (error) {
-    console.error(
-      "Erreur lors de la vérification de la taille du fichier de log:",
-      error
-    );
+    console.error(`Erreur lors de la rotation des logs: ${error}`);
   }
 }
 
-// Fonction utilitaire pour formater la date
-function formatDate() {
-  return new Date().toISOString();
-}
+// Configuration des transports
+const transports: winston.transport[] = [
+  // Transport pour la console avec mise en forme colorée
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+      winston.format.printf(
+        ({ level, message, timestamp }) => `${timestamp} [${level}]: ${message}`
+      )
+    ),
+  }),
+  // Transport pour le fichier de log
+  new winston.transports.File({
+    filename: logFile,
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+    options: { flags: "a" }, // Pour s'assurer que les logs sont ajoutés au fichier
+  }),
+];
 
-// Fonction pour écrire dans le fichier de log
-function writeToFile(level: string, ...args: unknown[]) {
-  try {
-    checkLogFileSize();
-    const logFile = getLogFilePath();
-    const message = `[${formatDate()}] [${level}] ${args.join(" ")}`;
+// Créer le logger
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || "debug",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.json()
+  ),
+  transports,
+  exitOnError: false,
+});
 
-    fs.appendFileSync(logFile, message + "\n", "utf8");
-    console[level === "ERROR" ? "error" : level === "WARN" ? "warn" : "log"](
-      message
-    );
-  } catch (error) {
-    console.error("Erreur lors de l'écriture dans le fichier de log:", error);
-  }
-}
+// Rotation des logs au démarrage
+rotateLogs();
 
-export const logger = {
-  info: (...args: unknown[]) => writeToFile("INFO", ...args),
-  warn: (...args: unknown[]) => writeToFile("WARN", ...args),
-  error: (...args: unknown[]) => writeToFile("ERROR", ...args),
-  debug: (...args: unknown[]) => {
-    if (process.env.NODE_ENV === "development") {
-      writeToFile("DEBUG", ...args);
-    }
-  },
-};
+// Vérifier périodiquement la taille du fichier de log
+setInterval(rotateLogs, 3600000); // Toutes les heures
 
-// Initialisation du fichier de log au démarrage
-writeToFile("INFO", "Démarrage du service de logs");
+// Log le démarrage du logger
+logger.info("Logger initialisé avec succès dans /app/logs");
+
+export { logger };
