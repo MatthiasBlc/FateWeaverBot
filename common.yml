@@ -38,7 +38,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     environment:
       - NODE_ENV=development
       - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3000}
@@ -59,18 +59,12 @@ services:
       - NODE_ENV=development
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - HEALTH_URL=http://localhost:3001/health
     volumes:
       - /app/node_modules
       - ./bot:/app
     networks:
       - internal
     logging: *default-logging
-    # No HTTP server is exposed by the bot. For now, use a noop healthcheck to avoid false negatives.
-    # Consider adding a tiny HTTP /health endpoint in the bot if you want a real check.
-    healthcheck:
-      test: ["CMD-SHELL", "node -e 'process.exit(0)'"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    healthcheck: *health_http
 # Root networks/volumes are defined in docker-compose.yml for the local environment.
