@@ -50,16 +50,10 @@ export async function loadEvents(client: Client) {
 
       if (event.once) {
         client.once(event.name, (...args) => {
-          logger.debug(
-            "Événement déclenché (once): %s - Args: %O",
-            event.name,
-            args
-          );
           return event.execute(client, ...args);
         });
       } else {
         client.on(event.name, (...args) => {
-          logger.debug("Événement déclenché: %s - Args: %O", event.name, args);
           return event.execute(client, ...args);
         });
       }
