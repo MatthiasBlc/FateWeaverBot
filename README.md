@@ -1,5 +1,9 @@
 # Boiler Plate JS
 
+docker compose up -d --build
+
+docker compose down -v
+
 ## Table of contents
 
 - [General info](#general-info)
