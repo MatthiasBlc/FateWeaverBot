@@ -63,6 +63,7 @@ services:
     volumes:
       - /app/node_modules
       - ./bot:/app
+      - bot-logs:/app/logs
     networks:
       - internal
     logging: *default-logging

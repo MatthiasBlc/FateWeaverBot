@@ -91,9 +91,6 @@ services:
     extends:
       file: common.yml
       service: discord-bot
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - API_URL=http://backenddev:3000
     depends_on:
       backenddev:
         condition: service_healthy
@@ -108,3 +105,5 @@ networks:
 volumes:
   postgres_data:
     name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data
+  bot-logs:
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot_logs
