@@ -1,5 +1,16 @@
 # FateWeaver Discord Bot
 
+## Todo
+
+Ecrire le système d'api pour récupérer les données de l'utilisateur et les envoyer au backend.
+(voir front)
+
+Test unitaires
+
+gitignore unifié
+
+deploy sur server prod
+
 ## Logs
 
 ```bash
@@ -10,6 +21,12 @@ CONTAINER_ID=$(docker ps -q --filter name=discord-botdev)
 docker exec $CONTAINER_ID cat /app/logs/bot.log
 docker exec $CONTAINER_ID tail -f /app/logs/bot.log
 ```
+
+## Use docker commands
+
+docker compose up -d --build
+
+docker compose down -v
 
 ## Overview
 
