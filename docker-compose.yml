@@ -1,0 +1,110 @@
+# Local anchors for this file only
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    container_name: postgres
+    hostname: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-myuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypass}
+      - POSTGRES_DB=${POSTGRES_DB:-mydb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    expose:
+      - "5432"
+    # Uncomment the following to access Postgres from your host (psql/GUI)
+    # ports:
+    #   - "5432:5432"
+    logging: *default-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-myuser} -d ${POSTGRES_DB:-mydb}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prisma-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
+    command: >
+      sh -c "npx prisma migrate deploy || npx prisma db push"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
+    restart: "no"
+
+  backenddev:
+    extends:
+      file: common.yml
+      service: backend
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
+    command: npm run start
+    expose:
+      - "3000"
+    # Publish if you need to call the API from your host (Postman, browser, etc.)
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  # frontenddev:
+  #   extends:
+  #     file: common.yml
+  #     service: frontend
+  #   expose:
+  #     - "8080"
+  #   # Publish to access the frontend from your host browser
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     backenddev:
+  #       condition: service_healthy
+  #   networks:
+  #     - internal
+
+  discord-botdev:
+    extends:
+      file: common.yml
+      service: discord-bot
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - API_URL=http://backenddev:3000
+    depends_on:
+      backenddev:
+        condition: service_healthy
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_internal
+
+volumes:
+  postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data

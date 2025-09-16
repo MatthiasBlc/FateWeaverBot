@@ -14,4 +14,4 @@ COPY tailwind.config.js /app/tailwind.config.js
 ## install only the packages defined in the package-lock.json (faster than the normal npm install)
 RUN npm install
 # Run 'npm run dev' when the container starts.
-CMD ["npm", "run", "preview:build:prod"]
+CMD ["npm", "run", "dev"]
