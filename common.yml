@@ -1,13 +1,15 @@
-version: "3"
+version: "3.8"
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL:-postgres://myuser:mypass@postgres:5432/mydb}
       - SESSION_SECRET=${SESSION_SECRET}
-      - PORT=${PORT}
+      - PORT=${PORT:-3000}
       - CORS_ORIGIN=${CORS_ORIGIN}
     volumes:
       - /app/node_modules
@@ -16,17 +18,34 @@ services:
       - ./backend/test:/app/test
     networks:
       - proxy
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     environment:
-      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - NODE_ENV=development
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3000}
     volumes:
       - /app/node_modules
       - ./frontend:/app
     networks:
       - proxy
+
+  discord-bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+    volumes:
+      - /app/node_modules
+      - ./bot:/app
+    networks:
+      - proxy
+    restart: unless-stopped
 
 networks:
   proxy:

@@ -1,0 +1,114 @@
+version: "3.8"
+
+services:
+  frog-dev-postgres:
+    image: postgres:11
+    pull_policy: if_not_present
+    hostname: frog-dev-postgres
+    container_name: frog-dev-postgres
+    restart: always
+    volumes:
+      - frog_dev_database:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: ${api_user}
+      POSTGRES_PASSWORD: ${api_password}
+      POSTGRES_DB: ${api_db}
+    networks:
+      internal:
+        aliases:
+          - postgres_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -U ${api_user:-api} -d postgres"]
+
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  frog-dev-api:
+    image: ${API_IMAGE_NAME}
+    pull_policy: if_not_present
+    hostname: frog-dev-api
+    container_name: frog-dev-api
+    restart: always
+    depends_on:
+      frog-dev-postgres:
+        condition: service_healthy
+    volumes:
+      - frog_dev_sessions:/home/node/sessions
+      - ./migrations:/app/migrations
+    expose:
+      - 5000
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PG_CONNECTION_STRING: postgresql://${api_user}:${api_password}@${POSTGRES_NETWORK_ALIAS}:5432/${api_db}?sslmode=disable
+    command: >
+      sh -c "
+      echo '{\"pg\":{\"driver\":\"pg\",\"url\":{\"ENV\":\"PG_CONNECTION_STRING\"}}}' > /tmp/dbmigrate.json &&
+      yarn db-migrate --config /tmp/dbmigrate.json --env pg up &&
+      node dist/index.js"
+    networks:
+      internal:
+        aliases:
+          - api_dev
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:5000/status',res=>process.exit(res.statusCode==200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frog-dev-front:
+    image: ${FRONT_IMAGE_NAME}
+    pull_policy: if_not_present
+    hostname: frog-dev-front
+    container_name: frog-dev-front
+    restart: always
+    depends_on:
+      frog-dev-api:
+        condition: service_healthy
+    expose:
+      - 80
+    environment:
+      API_UPSTREAM_HOST: ${API_UPSTREAM_HOST}
+    command: >
+      sh -c "
+      if [ -n \"$API_UPSTREAM_HOST\" ]; then
+        sed -i 's#http://api:5000#http://'$API_UPSTREAM_HOST':5000#g' /etc/nginx/conf.d/api.conf;
+      fi;
+      nginx -g 'daemon off;'"
+    networks:
+      proxy:
+      internal:
+        aliases:
+          - frontend_dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.front-${STACK}.rule=Host(`${FRONT_HOST}`)"
+      - "traefik.http.routers.front-${STACK}.entrypoints=websecure"
+      - "traefik.http.routers.front-${STACK}.tls=true"
+      - "traefik.http.routers.front-${STACK}.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=proxy"
+
+volumes:
+  frog_dev_sessions:
+    external: true
+  frog_dev_database:
+    external: true
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  internal:
+    name: internal
+    internal: true
