@@ -9,4 +9,4 @@ COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json
 RUN npm install
 RUN npx prisma generate
-CMD [  "npm", "run", "start:migrate:prod" ]
+CMD [  "npm", "run", "start" ]
