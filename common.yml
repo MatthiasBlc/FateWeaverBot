@@ -1,5 +1,20 @@
 version: "3.8"
 
+# Extension fields for DRY configuration
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-health-http: &health_http
+  test:
+    ["CMD-SHELL", "wget -q --spider ${HEALTH_URL} >/dev/null 2>&1 || exit 1"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 10s
+
 services:
   backend:
     build:
@@ -7,17 +22,18 @@ services:
       dockerfile: Dockerfile
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=${DATABASE_URL:-postgres://myuser:mypass@postgres:5432/mydb}
-      - SESSION_SECRET=${SESSION_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET:-dev-secret-key}
       - PORT=${PORT:-3000}
-      - CORS_ORIGIN=${CORS_ORIGIN}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - HEALTH_URL=http://localhost:${PORT:-3000}/health
     volumes:
       - /app/node_modules
-      - ./backend/config:/app/config
-      - ./backend/src:/app/src
-      - ./backend/test:/app/test
+      - ./backend:/app
     networks:
-      - proxy
+      - internal
+    logging: *default-logging
+    healthcheck: *health_http
 
   frontend:
     build:
@@ -26,27 +42,35 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - HEALTH_URL=http://localhost:8080
     volumes:
       - /app/node_modules
       - ./frontend:/app
     networks:
-      - proxy
+      - internal
+    logging: *default-logging
+    healthcheck: *health_http
 
   discord-bot:
     build:
       context: ./bot
       dockerfile: Dockerfile
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
     volumes:
       - /app/node_modules
       - ./bot:/app
     networks:
-      - proxy
-    restart: unless-stopped
-
-networks:
-  proxy:
-    external: true
+      - internal
+    logging: *default-logging
+    # No HTTP server is exposed by the bot. For now, use a noop healthcheck to avoid false negatives.
+    # Consider adding a tiny HTTP /health endpoint in the bot if you want a real check.
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'process.exit(0)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+# Root networks/volumes are defined in docker-compose.yml for the local environment.
