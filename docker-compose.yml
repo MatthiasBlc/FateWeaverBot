@@ -72,20 +72,20 @@ services:
     networks:
       - internal
 
-  frontenddev:
-    extends:
-      file: common.yml
-      service: frontend
-    expose:
-      - "8080"
-    # Publish to access the frontend from your host browser
-    ports:
-      - "8080:8080"
-    depends_on:
-      backenddev:
-        condition: service_healthy
-    networks:
-      - internal
+  # frontenddev:
+  #   extends:
+  #     file: common.yml
+  #     service: frontend
+  #   expose:
+  #     - "8080"
+  #   # Publish to access the frontend from your host browser
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     backenddev:
+  #       condition: service_healthy
+  #   networks:
+  #     - internal
 
   discord-botdev:
     extends:
