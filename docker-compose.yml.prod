@@ -1,0 +1,154 @@
+version: '3.8'
+
+# Local anchors for this file only
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres
+    hostname: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres
+    pull_policy: if_not_present
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-fateweaver}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-fateweaver}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fateweaver} -d ${POSTGRES_DB:-fateweaver}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prisma-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    pull_policy: if_not_present
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fateweaver}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-fateweaver}?schema=public
+    command: >
+      sh -c "npx prisma migrate deploy || npx prisma db push"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_backend
+    hostname: ${COMPOSE_PROJECT_NAME:-fateweaver}_backend
+    restart: always
+    pull_policy: if_not_present
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-fateweaver}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-fateweaver}?schema=public
+      - SESSION_SECRET=${SESSION_SECRET:-prod-secret-key}
+      - PORT=${PORT:-3000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - HEALTH_URL=http://localhost:${PORT:-3000}/health
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    command: npm run start:prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    logging: *default-logging
+
+  discord-bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot
+    hostname: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot
+    restart: always
+    pull_policy: if_not_present
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - HEALTH_URL=http://localhost:3001/health
+    volumes:
+      - bot-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_frontend
+  #   restart: always
+  #   pull_policy: if_not_present
+  #   environment:
+  #     - NODE_ENV=production
+  #     - VITE_API_URL=${VITE_BACKEND_URL:-https://api.fate-weaver.matthias-bouloc.fr}
+  #     - HEALTH_URL=http://localhost:8080
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 10s
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.fateweaver.rule=Host(`fate-weaver.matthias-bouloc.fr`)"
+  #     - "traefik.http.routers.fateweaver.entrypoints=websecure"
+  #     - "traefik.http.routers.fateweaver.tls.certresolver=letsencrypt"
+  #     - "traefik.docker.network=proxy"
+  #     - "traefik.http.services.fateweaver.loadbalancer.server.port=8080"
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   networks:
+  #     - proxy
+  #   logging: *default-logging
+
+networks:
+  internal:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_internal
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data
+  bot-logs:
+    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot_logs
+
+
