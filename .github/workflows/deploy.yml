@@ -1,4 +1,4 @@
-name: Build and Push to Registry
+name: Build and Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,51 +20,71 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ secrets.REGISTRY_URL }}
+          registry: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push
+      - name: Build and push Backend
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./backend
           push: true
           tags: |
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:latest
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:latest
+            ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Build and push Discord Bot
+        uses: docker/build-push-action@v4
+        with:
+          context: ./bot
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:latest
+            ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
 
       - name: Update Portainer Stack
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
+          PORTAINER_PASSWORD: ${{ secrets.PORTAINER_PASSWORD }}
+          STACK_ID: ${{ secrets.STACK_ID }}
+          ENDPOINT_ID: ${{ secrets.ENDPOINT_ID }}
         run: |
           # Récupération du token d'authentification
           AUTH_RESPONSE=$(curl -s -X POST \
-            "${{ secrets.PORTAINER_URL }}/api/auth" \
+            "$PORTAINER_URL/api/auth" \
             -H "Content-Type: application/json" \
-            -d "{\"username\":\"${{ secrets.PORTAINER_USERNAME }}\",\"password\":\"${{ secrets.PORTAINER_PASSWORD }}\"}")
+            -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}")
 
           TOKEN=$(echo $AUTH_RESPONSE | jq -r '.jwt')
 
-          # Récupération de la configuration actuelle de la stack
-          STACK_INFO=$(curl -s -X GET \
-            "${{ secrets.PORTAINER_URL }}/api/stacks" \
-            -H "Authorization: Bearer $TOKEN" | \
-            jq -r '.[] | select(.Name=="'${{ secrets.STACK_NAME }}'"')
-          )
-
-          STACK_ID=$(echo $STACK_INFO | jq -r '.Id')
-          STACK_ENDPOINT_ID=$(echo $STACK_INFO | jq -r '.EndpointId')
-          STACK_CONFIG=$(echo $STACK_INFO | jq '.StackFileContent')
-
-          # Mise à jour de l'image dans la configuration
-          UPDATED_CONFIG=$(echo $STACK_CONFIG | jq \
-            --arg image "${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}" \
-            '.services[].image = $image')
-
           # Mise à jour de la stack
           curl -X PUT \
-            "${{ secrets.PORTAINER_URL }}/api/stacks/$STACK_ID?endpointId=$STACK_ENDPOINT_ID" \
+            "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"stackFileContent\": $UPDATED_CONFIG}"
+            -d "{
+              \"stackFileContent\": $(jq -n --arg content "$(cat docker-compose.prod.yml)" '$content | @json'),
+              \"prune\": true,
+              \"pullImage\": true,
+              \"env\": [
+                {\"name\": \"REGISTRY_URL\", \"value\": \"${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}\"},
+                {\"name\": \"IMAGE_NAME\", \"value\": \"${{ secrets.IMAGE_NAME || 'fateweaver' }}\"},
+                {\"name\": \"TAG\", \"value\": \"${{ github.sha }}\"},
+                {\"name\": \"POSTGRES_PASSWORD\", \"value\": \"${{ secrets.POSTGRES_PASSWORD }}\"},
+                {\"name\": \"SESSION_SECRET\", \"value\": \"${{ secrets.SESSION_SECRET }}\"},
+                {\"name\": \"DISCORD_TOKEN\", \"value\": \"${{ secrets.DISCORD_TOKEN }}\"}
+              ]
+            }"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          echo "Backend image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}"
+          echo "Bot image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}"

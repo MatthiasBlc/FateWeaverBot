@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 # Local anchors for this file only
 x-logging: &default-logging
@@ -24,15 +24,17 @@ services:
       - internal
     logging: *default-logging
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fateweaver} -d ${POSTGRES_DB:-fateweaver}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-fateweaver} -d ${POSTGRES_DB:-fateweaver}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   prisma-migrate:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
     pull_policy: if_not_present
     environment:
       - NODE_ENV=production
@@ -48,9 +50,7 @@ services:
     restart: "no"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_backend
     hostname: ${COMPOSE_PROJECT_NAME:-fateweaver}_backend
     restart: always
@@ -79,9 +79,7 @@ services:
     logging: *default-logging
 
   discord-bot:
-    build:
-      context: ./bot
-      dockerfile: Dockerfile
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot
     hostname: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot
     restart: always
@@ -150,5 +148,3 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data
   bot-logs:
     name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot_logs
-
-
