@@ -13,11 +13,8 @@ COPY prisma ./prisma/
 # Installer les dépendances
 RUN npm ci --only=production
 
-# Copier d'abord uniquement le script deploy.sh
-COPY deploy.sh ./
-
-# Rendre le script exécutable
-RUN chmod +x /app/deploy.sh
+# Copier le script avec les bonnes permissions
+COPY --chmod=755 deploy.sh ./
 
 # Copier le reste des fichiers
 COPY . .
@@ -28,8 +25,10 @@ RUN npx prisma generate
 # Exposer le port de l'application
 EXPOSE 3000
 
-# Vérifier que le fichier existe
-RUN ls -la /app/deploy.sh
+# Vérifier les permissions
+RUN ls -la /app/deploy.sh && \
+    id && \
+    whoami
 
 # Commande par défaut
-CMD ["/bin/sh", "-c", "/app/deploy.sh"]
+CMD ["/bin/sh", "/app/deploy.sh"]
