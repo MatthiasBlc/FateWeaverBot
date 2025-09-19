@@ -18,20 +18,23 @@ export CORS_ORIGIN=${CORS_ORIGIN:-'https://fateweaver.matthias-bouloc.fr'}
 
 echo "[deploy_prod] Configuration:"
 echo "[deploy_prod] - PORTAINER_URL: $PORTAINER_URL"
-echo "[deploy_prod] - REGISTRY_URL: $REGISTRY_URL"
 echo "[deploy_prod] - IMAGE_NAME: $IMAGE_NAME"
 echo "[deploy_prod] - TAG: ${TAG:0:7}..."
-echo "[deploy_prod] - CORS_ORIGIN: $CORS_ORIGIN"
 
-# Vérifier si le fichier docker-compose.prod.yml existe
-if [ ! -f docker-compose.prod.yml ]; then
-  echo "[deploy_prod] ERREUR: docker-compose.prod.yml introuvable"
+# Nettoyer l'URL et ajouter /api si nécessaire
+PORTAINER_URL=${PORTAINER_URL%/}
+[[ ! $PORTAINER_URL =~ /api$ ]] && PORTAINER_URL="${PORTAINER_URL}/api"
+
+# Récupérer le YAML actuel de la stack depuis Portainer
+echo "[deploy_prod] Récupération du docker-compose existant depuis Portainer..."
+STACK_YAML=$(curl -s -H "X-API-Key: $PORTAINER_API" \
+  "$PORTAINER_URL/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
+  | jq -r '.StackFileContent')
+
+if [ -z "$STACK_YAML" ]; then
+  echo "[deploy_prod] ERREUR: Impossible de récupérer le docker-compose de la stack"
   exit 1
 fi
-
-# Substituer les variables d'environnement dans le fichier docker-compose
-echo "[deploy_prod] Préparation de la configuration de la stack..."
-STACK_CONTENT=$(envsubst < docker-compose.prod.yml)
 
 # Construire le bloc env à partir des variables critiques
 ENV_VARS_JSON=$(jq -n \
@@ -51,21 +54,18 @@ ENV_VARS_JSON=$(jq -n \
   ]'
 )
 
-# Construire le JSON final pour l'API Portainer
+# Construire le JSON final pour le PUT
 STACK_JSON=$(jq -n \
-  --arg yml "$STACK_CONTENT" \
+  --arg yml "$STACK_YAML" \
   --argjson env "$ENV_VARS_JSON" \
   '{"prune":true,"pullImage":true,"stackFileContent":$yml,"env":$env}')
 
 TMP_FILE=$(mktemp)
 echo "$STACK_JSON" > "$TMP_FILE"
 
-# URL complète pour la mise à jour de la stack
 STACK_UPDATE_URL="${PORTAINER_URL}/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
 
 echo "[deploy_prod] Mise à jour de la stack ID: $STACK_ID..."
-echo "[deploy_prod] URL: $STACK_UPDATE_URL"
-
 HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -L \
   -X PUT \
   "$STACK_UPDATE_URL" \
@@ -78,7 +78,6 @@ echo "[deploy_prod] HTTP code: $HTTP_CODE"
 
 if [ "$HTTP_CODE" -ne 200 ]; then
   echo "[deploy_prod] ERREUR: Échec de la mise à jour de la stack (HTTP $HTTP_CODE)"
-  echo "[deploy_prod] Réponse du serveur:"
   cat response.json
   rm -f "$TMP_FILE" response.json
   exit 1
