@@ -27,5 +27,5 @@ npx prisma migrate deploy || {
 
 # Démarrage de l'application
 echo "=== DÉMARRAGE DE L'APPLICATION ==="
-# Utilisation de ts-node pour exécuter directement le fichier TypeScript
-exec ts-node src/server.ts
+# Utilisation de la commande de démarrage définie dans package.json
+exec npm start
