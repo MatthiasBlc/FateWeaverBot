@@ -6,15 +6,13 @@ RUN apk add --no-cache netcat-openbsd
 # Créer le répertoire de l'application
 WORKDIR /app
 
-# Copier les fichiers de dépendances
+# Copier les fichiers de configuration
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY tsconfig.json ./
 
-# Installer les dépendances (y compris les dépendances de développement pour TypeScript)
+# Installer les dépendances
 RUN npm ci
-
-# Copier le script avec les bonnes permissions
-COPY --chmod=755 deploy.sh ./
 
 # Copier le reste des fichiers
 COPY . .
@@ -22,14 +20,14 @@ COPY . .
 # Générer le client Prisma
 RUN npx prisma generate
 
-# Installer ts-node globalement pour exécuter les fichiers TypeScript directement
-RUN npm install -g ts-node
+# Compiler le code TypeScript
+RUN npm run build
 
-# Vérifier les dépendances installées
-RUN npm list typescript ts-node
+# Copier le script de déploiement avec les bonnes permissions
+RUN chmod +x ./deploy.sh
 
 # Exposer le port de l'application
 EXPOSE 3000
 
 # Commande par défaut
-CMD ["/bin/sh", "/app/deploy.sh"]
+CMD ["./deploy.sh"]

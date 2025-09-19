@@ -3,29 +3,39 @@ set -e
 
 echo "=== DÉBUT DU SCRIPT DE DÉPLOIEMENT ==="
 
-# Installation des dépendances
+# Installer les dépendances
 echo "=== INSTALLATION DES DÉPENDANCES ==="
-npm install
+if [ "$NODE_ENV" = "production" ]; then
+  npm ci --only=production
+else
+  npm install
+fi
 
-# Génération du client Prisma
+# Générer le client Prisma
 echo "=== GÉNÉRATION DU CLIENT PRISMA ==="
 npx prisma generate
 
-# Attente que la base de données soit prête
-echo "=== ATTENTE DE LA BASE DE DONNÉES ==="
-until nc -z $POSTGRES_HOST 5432; do
-  echo "En attente de la base de données..."
-  sleep 2
-done
+# En production, on utilise le code déjà compilé
+if [ "$NODE_ENV" != "production" ]; then
+  # Attendre que la base de données soit prête
+  echo "=== ATTENTE DE LA BASE DE DONNÉES ==="
+  until nc -z $POSTGRES_HOST 5432; do
+    echo "En attente de la base de données..."
+    sleep 2
+  done
 
-# Application des migrations
-echo "=== APPLICATION DES MIGRATIONS ==="
-npx prisma migrate deploy || {
-  echo "=== ÉCHEC DE LA MIGRATION - TENTATIVE DE DB PUSH ==="
-  npx prisma db push --accept-data-loss
-}
+  # Appliquer les migrations
+  echo "=== APPLICATION DES MIGRATIONS ==="
+  npx prisma migrate deploy || {
+    echo "=== ÉCHEC DE LA MIGRATION - TENTATIVE DE DB PUSH ==="
+    npx prisma db push --accept-data-loss
+  }
+fi
 
-# Démarrage de l'application
+# Démarrer l'application
 echo "=== DÉMARRAGE DE L'APPLICATION ==="
-# Utilisation de la commande de démarrage définie dans package.json
-exec npm start
+if [ "$NODE_ENV" = "production" ]; then
+  exec node dist/server.js
+else
+  exec npm start
+fi
