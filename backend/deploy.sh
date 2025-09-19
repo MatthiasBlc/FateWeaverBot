@@ -7,10 +7,6 @@ echo "=== DÉBUT DU SCRIPT DE DÉPLOIEMENT ==="
 echo "=== INSTALLATION DES DÉPENDANCES ==="
 npm install
 
-# Compilation TypeScript
-echo "=== COMPILATION TYPESCRIPT ==="
-npx tsc
-
 # Génération du client Prisma
 echo "=== GÉNÉRATION DU CLIENT PRISMA ==="
 npx prisma generate
@@ -31,4 +27,5 @@ npx prisma migrate deploy || {
 
 # Démarrage de l'application
 echo "=== DÉMARRAGE DE L'APPLICATION ==="
-node dist/main.js
+# Utilisation de ts-node pour exécuter directement le fichier TypeScript
+exec ts-node src/server.ts

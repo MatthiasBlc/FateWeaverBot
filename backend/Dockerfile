@@ -13,9 +13,6 @@ COPY prisma ./prisma/
 # Installer les dépendances (y compris les dépendances de développement pour TypeScript)
 RUN npm ci
 
-# Installer TypeScript globalement pour pouvoir utiliser tsc
-RUN npm install -g typescript
-
 # Copier le script avec les bonnes permissions
 COPY --chmod=755 deploy.sh ./
 
@@ -25,14 +22,14 @@ COPY . .
 # Générer le client Prisma
 RUN npx prisma generate
 
-# Compiler le code TypeScript
-RUN npm run build
+# Installer ts-node globalement pour exécuter les fichiers TypeScript directement
+RUN npm install -g ts-node
+
+# Vérifier les dépendances installées
+RUN npm list typescript ts-node
 
 # Exposer le port de l'application
 EXPOSE 3000
-
-# Vérifier les dépendances installées
-RUN npm list typescript
 
 # Commande par défaut
 CMD ["/bin/sh", "/app/deploy.sh"]
