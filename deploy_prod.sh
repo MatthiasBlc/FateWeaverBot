@@ -76,6 +76,37 @@ else
   echo "✅ Token JWT extrait avec succès"
 fi
 
+# Fonction pour décoder le JWT
+decode_jwt() {
+  local token=$1
+  local payload=$(echo "$token" | cut -d"." -f2 | base64 -d 2>/dev/null)
+  echo "Décodage du JWT:"
+  echo "$payload" | jq .
+  echo "--------------------------------"
+}
+
+# Afficher les infos du token JWT (pour débogage)
+decode_jwt "$TOKEN"
+
+# Vérifier les permissions de l'utilisateur
+echo "🔍 Vérification des permissions de l'utilisateur..."
+USER_INFO=$(curl -s -k "$PORTAINER_URL/api/users" \
+  -H "Authorization: Bearer $TOKEN")
+echo "Informations utilisateur:"
+echo "$USER_INFO" | jq .
+
+echo "🔍 Vérification de l'endpoint (ID: $ENDPOINT_ID)..."
+ENDPOINT_INFO=$(curl -s -k "$PORTAINER_URL/api/endpoints/$ENDPOINT_ID" \
+  -H "Authorization: Bearer $TOKEN")
+echo "Informations de l'endpoint:"
+echo "$ENDPOINT_INFO" | jq .
+
+echo "🔍 Vérification de la stack (ID: $STACK_ID)..."
+STACK_INFO=$(curl -s -k "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
+  -H "Authorization: Bearer $TOKEN")
+echo "Informations de la stack:"
+echo "$STACK_INFO" | jq .
+
 # Vérification du fichier docker-compose
 if [ ! -f "docker-compose.prod.yml" ]; then
   echo "❌ Fichier docker-compose.prod.yml introuvable"
@@ -118,15 +149,24 @@ cat "$TMP_PAYLOAD" | jq .
 
 # Mise à jour de la stack
 echo "🔄 Mise à jour de la stack Portainer (ID: $STACK_ID)..."
-RESPONSE_CODE=$(curl -L -k -s -o /tmp/response.json -w "%{http_code}" -X PUT \
+# Ajout de l'en-tête X-Requested-With pour éviter les problèmes CSRF
+RESPONSE_CODE=$(curl -L -k -v -s -o /tmp/response.json -w "%{http_code}" -X PUT \
   "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  --data-binary @"$TMP_PAYLOAD")
+  -H "X-Requested-With: XMLHttpRequest" \
+  --data-binary @"$TMP_PAYLOAD" 2>/dev/null)
 
 # Affichage de la réponse
 echo "📥 Réponse de l'API (HTTP $RESPONSE_CODE):"
-cat /tmp/response.json | jq .
+if [ -f "/tmp/response.json" ]; then
+  cat /tmp/response.json | jq .
+else
+  echo "Aucune réponse JSON reçue"
+  if [ -n "$RESPONSE_CODE" ]; then
+    echo "Code de statut HTTP: $RESPONSE_CODE"
+  fi
+fi
 
 # Nettoyage
 rm -f "$TMP_PAYLOAD" /tmp/response.json /tmp/docker-compose-substituted.yml 2>/dev/null || true
