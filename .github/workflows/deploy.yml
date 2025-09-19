@@ -14,6 +14,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          npm ci
+          npx prisma generate
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?schema=public
+        run: |
+          # Installer et démarrer PostgreSQL pour les tests
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+          sudo service postgresql start
+          
+          # Créer la base de données de test
+          sudo -u postgres psql -c "CREATE USER test_user WITH PASSWORD 'test_password';"
+          sudo -u postgres psql -c "CREATE DATABASE test_db OWNER test_user;"
+          
+          # Exécuter les migrations de test
+          npx prisma migrate dev --name init --schema=./prisma/schema.prisma
+          
+          # Exécuter les tests
+          # npm test
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 

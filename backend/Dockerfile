@@ -1,39 +1,49 @@
-FROM node:18.18-alpine3.17
+# Étape de construction
+FROM node:18.18-alpine3.17 AS builder
 
-# Installer les dépendances système nécessaires
-RUN apk add --no-cache netcat-openbsd wget file
-
-# Créer le répertoire de l'application
+# Création des dossiers nécessaires
+RUN mkdir -p /app/config /app/src
 WORKDIR /app
 
-# Copier les fichiers de configuration
-COPY package*.json ./
+# Copie des fichiers de configuration et de dépendances
 COPY prisma ./prisma/
+COPY @types ./@types/
 COPY tsconfig.json ./
+COPY .eslintrc.js ./
+COPY package*.json ./
 
-# Installer les dépendances
-RUN npm ci
-
-# Copier le script de déploiement avant le reste
-COPY deploy.sh ./
-RUN chmod +x /app/deploy.sh
-
-# Copier le reste des fichiers
-COPY . .
-
-# Générer le client Prisma
+# Installation des dépendances et génération du client Prisma
+RUN npm install
 RUN npx prisma generate
 
-# Compiler le code TypeScript
+# Copie du code source
+COPY . .
+
+# Construction de l'application
 RUN npm run build
 
-# Vérifier que le script est bien présent
-RUN ls -la /app/deploy.sh && \
-    file /app/deploy.sh && \
-    head -n 5 /app/deploy.sh
+# Suppression des dépendances de développement
+RUN npm prune --production
 
-# Exposer le port de l'application
+# Étape d'exécution
+FROM node:18.18-alpine3.17
+
+# Création des dossiers nécessaires
+RUN mkdir -p /app/config /app/src
+WORKDIR /app
+
+# Copie des fichiers nécessaires depuis le builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+
+# Installation de Prisma et des outils nécessaires
+RUN npm install -g prisma
+RUN apk --no-cache add openssl
+
+# Exposition du port
 EXPOSE 3000
 
-# Utiliser le shell pour exécuter le script
-CMD ["/bin/sh", "-c", "/app/deploy.sh"]
+# Commande de démarrage
+CMD ["npm", "run", "start:migrate:prod"]
