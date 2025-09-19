@@ -62,7 +62,7 @@ services:
     networks:
       - internal
     volumes:
-      - backend-logs:/app/logs
+      - fateweaver-backend-logs:/app/logs
     deploy:
       resources:
         limits:
@@ -149,3 +149,5 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data
   bot-logs:
     name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot_logs
+  fateweaver-backend-logs:
+    name: fateweaver-backend-logs
