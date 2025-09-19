@@ -11,16 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Set up Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: "18"
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         working-directory: ./backend
         run: |
           npm ci
@@ -29,14 +29,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to Docker Registry
+      - name: Login to container registry
         uses: docker/login-action@v2
         with:
           registry: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push Backend
+      - name: Build and push Backend image
         uses: docker/build-push-action@v4
         with:
           context: ./backend
@@ -45,7 +45,7 @@ jobs:
             ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:latest
             ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}
 
-      - name: Build and push Discord Bot
+      - name: Build and push Discord Bot image
         uses: docker/build-push-action@v4
         with:
           context: ./bot
@@ -54,31 +54,30 @@ jobs:
             ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:latest
             ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl
 
-      - name: Update Portainer Stack
-        env:
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      - name: Deploy to Portainer
         run: |
           chmod +x ./deploy_prod.sh
+          export PORTAINER_URL="${{ secrets.PORTAINER_URL }}"
+          export PORTAINER_USERNAME="${{ secrets.PORTAINER_USERNAME }}"
+          export PORTAINER_PASSWORD="${{ secrets.PORTAINER_PASSWORD }}"
+          export STACK_ID="${{ secrets.STACK_ID }}"
+          export ENDPOINT_ID="${{ secrets.ENDPOINT_ID }}"
+          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+          export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
+          export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
           ./deploy_prod.sh \
-            "${{ secrets.PORTAINER_URL }}" \
-            "${{ secrets.PORTAINER_USERNAME }}" \
-            "${{ secrets.PORTAINER_PASSWORD }}" \
-            "${{ secrets.STACK_ID }}" \
-            "${{ secrets.ENDPOINT_ID }}" \
             "${{ github.sha }}" \
             "${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}" \
             "${{ secrets.IMAGE_NAME || 'fateweaver' }}"
 
-      - name: Notify on success
+      - name: Notify deployment status
         if: success()
         run: |
-          echo "Deployment successful!"
-          echo "Backend image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}"
-          echo "Bot image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}"
+          echo " Deployment successful!"
+          echo " Backend image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}"
+          echo " Bot image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}"
