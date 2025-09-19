@@ -108,3 +108,5 @@ export default {
 
 - Consider migrating to slash commands if you don’t want Message Content intent.
 - Use `services/database.js` to call the backend (`API_URL`).
+
+test update
