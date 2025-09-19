@@ -22,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Vérification de la structure du build
-RUN ls -la dist/
+RUN find /app/dist -type f -print
 
 # Suppression des dépendances de développement
 RUN npm prune --production
@@ -45,5 +45,8 @@ RUN apk --no-cache add openssl
 # Exposition du port
 EXPOSE 3000
 
+# Afficher la structure du dossier dist
+RUN find /app/dist -type f -print
+
 # Commande de démarrage
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
+CMD ["sh", "-c", "find /app -type f -name '*.js' && npx prisma migrate deploy && node /app/dist/src/main.js"]
