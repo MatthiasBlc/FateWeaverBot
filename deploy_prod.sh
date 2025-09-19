@@ -132,6 +132,9 @@ jq -n \
   --arg registry_url "${REGISTRY_URL:-registry.matthias-bouloc.fr}" \
   --arg image_name "${IMAGE_NAME:-fateweaver}" \
   --arg tag "${GITHUB_SHA:-latest}" \
+  --arg postgres_password "${POSTGRES_PASSWORD}" \
+  --arg session_secret "${SESSION_SECRET}" \
+  --arg discord_token "${DISCORD_TOKEN}" \
   '{
     "stackFileContent": $content,
     "prune": true,
@@ -139,7 +142,10 @@ jq -n \
     "env": [
       {"name": "REGISTRY_URL", "value": $registry_url},
       {"name": "IMAGE_NAME", "value": $image_name},
-      {"name": "TAG", "value": $tag}
+      {"name": "TAG", "value": $tag},
+      {"name": "POSTGRES_PASSWORD", "value": $postgres_password},
+      {"name": "SESSION_SECRET", "value": $session_secret},
+      {"name": "DISCORD_TOKEN", "value": $discord_token}
     ]
   }' > "$TMP_PAYLOAD"
 
@@ -147,12 +153,29 @@ jq -n \
 echo "📄 Payload généré :"
 cat "$TMP_PAYLOAD" | jq .
 
+# Récupération de la clé API
+echo "🔑 Récupération de la clé API Portainer..."
+API_KEY_RESPONSE=$(curl -s -k -X POST \
+  -H "Content-Type: application/json" \
+  -d "{}" \
+  "$PORTAINER_URL/api/users/2/tokens" \
+  -H "Authorization: Bearer $TOKEN")
+
+# Extraction de la clé API
+API_KEY=$(echo "$API_KEY_RESPONSE" | jq -r '.rawAPIKey')
+if [ -z "$API_KEY" ] || [ "$API_KEY" = "null" ]; then
+  echo "⚠️ Impossible de récupérer la clé API, utilisation du token JWT"
+  AUTH_HEADER="Authorization: Bearer $TOKEN"
+else
+  echo "✅ Clé API récupérée avec succès"
+  AUTH_HEADER="X-API-Key: $API_KEY"
+fi
+
 # Mise à jour de la stack
 echo "🔄 Mise à jour de la stack Portainer (ID: $STACK_ID)..."
-# Ajout de l'en-tête X-Requested-With pour éviter les problèmes CSRF
 RESPONSE_CODE=$(curl -L -k -v -s -o /tmp/response.json -w "%{http_code}" -X PUT \
   "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "$AUTH_HEADER" \
   -H "Content-Type: application/json" \
   -H "X-Requested-With: XMLHttpRequest" \
   --data-binary @"$TMP_PAYLOAD" 2>/dev/null)
@@ -172,10 +195,10 @@ fi
 rm -f "$TMP_PAYLOAD" /tmp/response.json /tmp/docker-compose-substituted.yml 2>/dev/null || true
 
 # Vérification du code de statut
-if [ "$RESPONSE_CODE" -eq 200 ]; then
+if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 202 ]; then
   echo "✅ Stack mise à jour avec succès !"
   exit 0
 else
-  echo "❌ Erreur lors de la mise à jour de la stack"
+  echo "❌ Erreur lors de la mise à jour de la stack (HTTP $RESPONSE_CODE)"
   exit 1
 fi
