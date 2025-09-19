@@ -14,11 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install CA certificates
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
+          sudo update-ca-certificates
+
       - name: Set up Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: "18"
           cache: "npm"
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
       - name: Install backend dependencies
         working-directory: ./backend
@@ -70,14 +79,14 @@ jobs:
           export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
           export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
-          ./deploy_prod.sh \
-            "${{ github.sha }}" \
-            "${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}" \
-            "${{ secrets.IMAGE_NAME || 'fateweaver' }}"
+          export CORS_ORIGIN="${{ secrets.CORS_ORIGIN || 'https://fateweaver.matthias-bouloc.fr' }}"
+          export TAG="${{ github.sha }}"
+          export IMAGE_NAME="${{ secrets.IMAGE_NAME || 'fateweaver' }}"
+          ./deploy_prod.sh
 
       - name: Notify deployment status
         if: success()
         run: |
-          echo " Deployment successful!"
-          echo " Backend image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}"
-          echo " Bot image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}"
+          echo "🚀 Déploiement réussi !"
+          echo "Backend image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/backend:${{ github.sha }}"
+          echo "Bot image: ${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}/${{ secrets.IMAGE_NAME || 'fateweaver' }}/bot:${{ github.sha }}"

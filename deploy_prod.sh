@@ -2,6 +2,7 @@
 set -e
 
 echo "🔍 Vérification des variables critiques..."
+
 # Forcer l'URL à utiliser HTTPS si ce n'est pas déjà le cas
 if [[ ! "$PORTAINER_URL" =~ ^https:// ]]; then
   if [[ "$PORTAINER_URL" =~ ^http:// ]]; then
@@ -12,15 +13,18 @@ if [[ ! "$PORTAINER_URL" =~ ^https:// ]]; then
   echo "⚠️  L'URL a été mise à jour pour utiliser HTTPS: $PORTAINER_URL"
 fi
 
+# Afficher les variables (sans les mots de passe)
 echo "PORTAINER_URL: $PORTAINER_URL"
-echo "PORTAINER_USERNAME: [REDACTED]"
-echo "PORTAINER_PASSWORD: [REDACTED]"
+echo "PORTAINER_USERNAME: ${PORTAINER_USERNAME:0:3}***"
 echo "STACK_ID: ${STACK_ID:?Missing STACK_ID}"
 echo "ENDPOINT_ID: ${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 
-# Vérification des variables sensibles (sans les afficher)
+# Vérification des variables sensibles
 : "${PORTAINER_USERNAME:?Missing PORTAINER_USERNAME}"
 : "${PORTAINER_PASSWORD:?Missing PORTAINER_PASSWORD}"
+: "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"
+: "${SESSION_SECRET:?Missing SESSION_SECRET}"
+: "${DISCORD_TOKEN:?Missing DISCORD_TOKEN}"
 
 # Récupération du token d'authentification
 echo "🔑 Authentification auprès de Portainer..."
@@ -28,8 +32,7 @@ API_URL="$PORTAINER_URL/api/auth"
 echo "URL d'API: $API_URL"
 
 echo "Envoi de la requête d'authentification..."
-# Utilisation de -L pour suivre les redirections et -k pour ignorer les erreurs SSL si nécessaire
-HTTP_RESPONSE=$(curl -L -k -v -s -w "\n%{http_code}\n" -X POST \
+HTTP_RESPONSE=$(curl -L -k -s -w "\n%{http_code}\n" -X POST \
   "$API_URL" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}" 2>&1)
@@ -41,7 +44,6 @@ AUTH_RESPONSE=$(echo "$HTTP_RESPONSE" | sed -n '/^[{[]/p' | tail -1)
 echo "Code HTTP final: $HTTP_STATUS"
 echo "En-têtes de la réponse:"
 echo "$HTTP_RESPONSE" | grep -v '^[{}]' | grep -v '^$' | head -n -2
-echo "Corps de la réponse: $AUTH_RESPONSE"
 
 # Vérification du code de statut HTTP
 if [ "$HTTP_STATUS" -ne 200 ]; then
@@ -50,155 +52,175 @@ if [ "$HTTP_STATUS" -ne 200 ]; then
   exit 1
 fi
 
-# Vérification que la réponse est un JSON valide
-if ! echo "$AUTH_RESPONSE" | jq -e . >/dev/null 2>&1; then
-  echo "❌ La réponse de l'API n'est pas un JSON valide"
-  echo "Premiers caractères de la réponse: ${AUTH_RESPONSE:0:100}..."
-  echo "Tentative d'extraction du token JWT directement..."
-  
-  # Essayer d'extraire le token JWT même si ce n'est pas du JSON valide
-  TOKEN=$(echo "$AUTH_RESPONSE" | grep -oP '(?<="jwt":")[^"]*' || true)
-  
-  if [ -z "$TOKEN" ]; then
-    echo "❌ Impossible d'extraire le token JWT de la réponse"
-    exit 1
-  else
-    echo "✅ Token JWT extrait avec succès (format non standard)"
-  fi
-else
-  # Extraction normale du token JWT depuis le JSON
-  TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.jwt')
-  if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-    echo "❌ Échec de l'authentification: JWT non trouvé dans la réponse"
-    echo "Réponse complète: $AUTH_RESPONSE"
-    exit 1
-  fi
-  echo "✅ Token JWT extrait avec succès"
+# Extraction du token JWT
+TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.jwt' 2>/dev/null || echo "$AUTH_RESPONSE" | grep -oP '(?<="jwt":")([^"]+)')
+
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+  echo "❌ Impossible d'extraire le token JWT de la réponse"
+  echo "Réponse complète: $AUTH_RESPONSE"
+  exit 1
 fi
+
+echo "✅ Token JWT extrait avec succès"
 
 # Fonction pour décoder le JWT
 decode_jwt() {
-  local token=$1
-  local payload=$(echo "$token" | cut -d"." -f2 | base64 -d 2>/dev/null)
-  echo "Décodage du JWT:"
-  echo "$payload" | jq .
-  echo "--------------------------------"
+  local jwt="$1"
+  local payload=$(echo "$jwt" | cut -d'.' -f2)
+  local len=$((${#payload} % 4))
+  
+  if [ $len -eq 2 ]; then payload="$payload=="
+  elif [ $len -eq 3 ]; then payload="$payload="
+  fi
+  
+  echo "$payload" | base64 -d 2>/dev/null | jq '.'
 }
 
 # Afficher les infos du token JWT (pour débogage)
+echo "Décodage du JWT:"
 decode_jwt "$TOKEN"
+echo "--------------------------------"
 
-# Vérifier les permissions de l'utilisateur
+# Vérification des permissions de l'utilisateur
 echo "🔍 Vérification des permissions de l'utilisateur..."
-USER_INFO=$(curl -s -k "$PORTAINER_URL/api/users" \
-  -H "Authorization: Bearer $TOKEN")
+USER_INFO=$(curl -s -k -X GET \
+  -H "Authorization: Bearer $TOKEN" \
+  "$PORTAINER_URL/api/users")
+
 echo "Informations utilisateur:"
-echo "$USER_INFO" | jq .
+echo "$USER_INFO" | jq '.'
 
+# Vérification de l'endpoint
 echo "🔍 Vérification de l'endpoint (ID: $ENDPOINT_ID)..."
-ENDPOINT_INFO=$(curl -s -k "$PORTAINER_URL/api/endpoints/$ENDPOINT_ID" \
-  -H "Authorization: Bearer $TOKEN")
+ENDPOINT_INFO=$(curl -s -k -X GET \
+  -H "Authorization: Bearer $TOKEN" \
+  "$PORTAINER_URL/api/endpoints/$ENDPOINT_ID")
+
 echo "Informations de l'endpoint:"
-echo "$ENDPOINT_INFO" | jq .
+echo "$ENDPOINT_INFO" | jq '.'
 
+# Vérification de la stack
 echo "🔍 Vérification de la stack (ID: $STACK_ID)..."
-STACK_INFO=$(curl -s -k "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
-  -H "Authorization: Bearer $TOKEN")
+STACK_INFO=$(curl -s -k -X GET \
+  -H "Authorization: Bearer $TOKEN" \
+  "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID")
+
 echo "Informations de la stack:"
-echo "$STACK_INFO" | jq .
-
-# Vérification du fichier docker-compose
-if [ ! -f "docker-compose.prod.yml" ]; then
-  echo "❌ Fichier docker-compose.prod.yml introuvable"
-  exit 1
-fi
-
-# Préparation du contenu en utilisant envsubst si nécessaire
-echo "📄 Préparation du contenu du docker-compose..."
-if command -v envsubst >/dev/null 2>&1; then
-  COMPOSE_CONTENT=$(envsubst < docker-compose.prod.yml)
-  echo "$COMPOSE_CONTENT" > /tmp/docker-compose-substituted.yml
-  COMPOSE_CONTENT=$(cat /tmp/docker-compose-substituted.yml | jq -Rs .)
-else
-  echo "⚠️ envsubst non trouvé, utilisation du fichier brut"
-  COMPOSE_CONTENT=$(cat docker-compose.prod.yml | jq -Rs .)
-fi
-
-# Création du payload dans un fichier temporaire
-echo "📦 Préparation du payload..."
-TMP_PAYLOAD=$(mktemp)
-jq -n \
-  --arg content "$COMPOSE_CONTENT" \
-  --arg registry_url "${REGISTRY_URL:-registry.matthias-bouloc.fr}" \
-  --arg image_name "${IMAGE_NAME:-fateweaver}" \
-  --arg tag "${GITHUB_SHA:-latest}" \
-  --arg postgres_password "${POSTGRES_PASSWORD}" \
-  --arg session_secret "${SESSION_SECRET}" \
-  --arg discord_token "${DISCORD_TOKEN}" \
-  '{
-    "stackFileContent": $content,
-    "prune": true,
-    "pullImage": true,
-    "env": [
-      {"name": "REGISTRY_URL", "value": $registry_url},
-      {"name": "IMAGE_NAME", "value": $image_name},
-      {"name": "TAG", "value": $tag},
-      {"name": "POSTGRES_PASSWORD", "value": $postgres_password},
-      {"name": "SESSION_SECRET", "value": $session_secret},
-      {"name": "DISCORD_TOKEN", "value": $discord_token}
-    ]
-  }' > "$TMP_PAYLOAD"
-
-# Debug: Afficher le payload
-echo "📄 Payload généré :"
-cat "$TMP_PAYLOAD" | jq .
-
-# Récupération de la clé API
-echo "🔑 Récupération de la clé API Portainer..."
-API_KEY_RESPONSE=$(curl -s -k -X POST \
-  -H "Content-Type: application/json" \
-  -d "{}" \
-  "$PORTAINER_URL/api/users/2/tokens" \
-  -H "Authorization: Bearer $TOKEN")
-
-# Extraction de la clé API
-API_KEY=$(echo "$API_KEY_RESPONSE" | jq -r '.rawAPIKey')
-if [ -z "$API_KEY" ] || [ "$API_KEY" = "null" ]; then
-  echo "⚠️ Impossible de récupérer la clé API, utilisation du token JWT"
-  AUTH_HEADER="Authorization: Bearer $TOKEN"
-else
-  echo "✅ Clé API récupérée avec succès"
-  AUTH_HEADER="X-API-Key: $API_KEY"
-fi
+echo "$STACK_INFO" | jq '.'
 
 # Mise à jour de la stack
-echo "🔄 Mise à jour de la stack Portainer (ID: $STACK_ID)..."
-RESPONSE_CODE=$(curl -L -k -v -s -o /tmp/response.json -w "%{http_code}" -X PUT \
-  "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
-  -H "$AUTH_HEADER" \
+echo "🔄 Mise à jour de la stack..."
+UPDATE_RESPONSE=$(curl -s -k -X PUT \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -H "X-Requested-With: XMLHttpRequest" \
-  --data-binary @"$TMP_PAYLOAD" 2>/dev/null)
+  -d "{
+    \"stackFileContent\": $(jq -n --arg version '3.8' --arg image "registry.matthias-bouloc.fr/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}" --arg botImage "registry.matthias-bouloc.fr/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}" --arg postgresPass "$POSTGRES_PASSWORD" --arg sessionSecret "$SESSION_SECRET" --arg discordToken "$DISCORD_TOKEN" --arg corsOrigin "$CORS_ORIGIN" '{
+      "version": $version,
+      "services": {
+        "fateweaver-postgres": {
+          "image": "postgres:15",
+          "restart": "always",
+          "container_name": "fateweaver-postgres",
+          "hostname": "fateweaver-postgres",
+          "environment": {
+            "POSTGRES_USER": "fateweaver",
+            "POSTGRES_PASSWORD": $postgresPass,
+            "POSTGRES_DB": "fateweaver",
+            "POSTGRES_INITDB_ARGS": "--data-checksums",
+            "POSTGRES_HOST_AUTH_METHOD": "trust"
+          },
+          "volumes": [
+            "postgres_data:/var/lib/postgresql/data"
+          ],
+          "networks": ["internal"],
+          "healthcheck": {
+            "test": ["CMD-SHELL", "pg_isready -U fateweaver -d fateweaver"],
+            "interval": "10s",
+            "timeout": "5s",
+            "retries": 5,
+            "start_period": "30s"
+          }
+        },
+        "fateweaver-backend": {
+          "image": $image,
+          "container_name": "fateweaver-backend",
+          "hostname": "fateweaver-backend",
+          "restart": "unless-stopped",
+          "environment": {
+            "NODE_ENV": "production",
+            "DATABASE_URL": "postgresql://fateweaver:\($postgresPass)@fateweaver-postgres:5432/fateweaver?schema=backend&connection_limit=20&pool_timeout=30",
+            "PORT": "3000",
+            "NODE_OPTIONS": "--max-old-space-size=1024",
+            "PRISMA_CLIENT_ENGINE_TYPE": "library",
+            "CORS_ORIGIN": $corsOrigin,
+            "SESSION_SECRET": $sessionSecret
+          },
+          "ports": ["3000:3000"],
+          "depends_on": {
+            "fateweaver-postgres": {
+              "condition": "service_healthy"
+            }
+          },
+          "networks": ["internal"],
+          "healthcheck": {
+            "test": ["CMD", "wget", "--spider", "http://localhost:3000/health"],
+            "interval": "30s",
+            "timeout": "10s",
+            "retries": 3,
+            "start_period": "30s"
+          }
+        },
+        "fateweaver-discord-bot": {
+          "image": $botImage,
+          "container_name": "fateweaver-discord-bot",
+          "hostname": "fateweaver-discord-bot",
+          "restart": "always",
+          "environment": {
+            "NODE_ENV": "production",
+            "DISCORD_TOKEN": $discordToken,
+            "API_URL": "http://fateweaver-backend:3000",
+            "HEALTH_URL": "http://localhost:3001/health"
+          },
+          "volumes": ["bot-logs:/app/logs"],
+          "healthcheck": {
+            "test": ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"],
+            "interval": "30s",
+            "timeout": "10s",
+            "retries": 3,
+            "start_period": "10s"
+          },
+          "depends_on": {
+            "fateweaver-backend": {
+              "condition": "service_healthy"
+            }
+          },
+          "networks": ["internal"]
+        }
+      },
+      "networks": {
+        "internal": {
+          "driver": "bridge",
+          "name": "fateweaver_internal"
+        }
+      },
+      "volumes": {
+        "postgres_data": {
+          "name": "fateweaver_postgres_data"
+        },
+        "bot-logs": {
+          "name": "fateweaver_bot_logs"
+        }
+      }
+    }' | jq -c .)
+  }" \
+  "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID")
 
-# Affichage de la réponse
-echo "📥 Réponse de l'API (HTTP $RESPONSE_CODE):"
-if [ -f "/tmp/response.json" ]; then
-  cat /tmp/response.json | jq .
-else
-  echo "Aucune réponse JSON reçue"
-  if [ -n "$RESPONSE_CODE" ]; then
-    echo "Code de statut HTTP: $RESPONSE_CODE"
-  fi
-fi
+echo "Réponse de la mise à jour de la stack:"
+echo "$UPDATE_RESPONSE" | jq '.'
 
-# Nettoyage
-rm -f "$TMP_PAYLOAD" /tmp/response.json /tmp/docker-compose-substituted.yml 2>/dev/null || true
-
-# Vérification du code de statut
-if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 202 ]; then
-  echo "✅ Stack mise à jour avec succès !"
-  exit 0
-else
-  echo "❌ Erreur lors de la mise à jour de la stack (HTTP $RESPONSE_CODE)"
+if [ $? -ne 0 ]; then
+  echo "❌ Erreur lors de la mise à jour de la stack"
   exit 1
 fi
+
+echo "✅ Déploiement réussi !"
