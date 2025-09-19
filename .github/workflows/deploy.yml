@@ -17,8 +17,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         working-directory: ./backend
@@ -59,40 +59,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq curl
 
-      - name: Update Portainer Stack
-        env:
-          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
-          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
-          PORTAINER_PASSWORD: ${{ secrets.PORTAINER_PASSWORD }}
-          STACK_ID: ${{ secrets.STACK_ID }}
-          ENDPOINT_ID: ${{ secrets.ENDPOINT_ID }}
-        run: |
-          # Récupération du token d'authentification
-          AUTH_RESPONSE=$(curl -s -X POST \
-            "$PORTAINER_URL/api/auth" \
-            -H "Content-Type: application/json" \
-            -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}")
-
-          TOKEN=$(echo $AUTH_RESPONSE | jq -r '.jwt')
-
-          # Mise à jour de la stack
-          curl -X PUT \
-            "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"stackFileContent\": $(jq -n --arg content "$(cat docker-compose.prod.yml)" '$content | @json'),
-              \"prune\": true,
-              \"pullImage\": true,
-              \"env\": [
-                {\"name\": \"REGISTRY_URL\", \"value\": \"${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}\"},
-                {\"name\": \"IMAGE_NAME\", \"value\": \"${{ secrets.IMAGE_NAME || 'fateweaver' }}\"},
-                {\"name\": \"TAG\", \"value\": \"${{ github.sha }}\"},
-                {\"name\": \"POSTGRES_PASSWORD\", \"value\": \"${{ secrets.POSTGRES_PASSWORD }}\"},
-                {\"name\": \"SESSION_SECRET\", \"value\": \"${{ secrets.SESSION_SECRET }}\"},
-                {\"name\": \"DISCORD_TOKEN\", \"value\": \"${{ secrets.DISCORD_TOKEN }}\"}
-              ]
-            }"
+          - name: Update Portainer Stack
+          env:
+            POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+            SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+            DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          run: |
+            chmod +x ./deploy_prod.sh
+            ./deploy_prod.sh \
+              "${{ secrets.PORTAINER_URL }}" \
+              "${{ secrets.PORTAINER_USERNAME }}" \
+              "${{ secrets.PORTAINER_PASSWORD }}" \
+              "${{ secrets.STACK_ID }}" \
+              "${{ secrets.ENDPOINT_ID }}" \
+              "${{ github.sha }}" \
+              "${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}" \
+              "${{ secrets.IMAGE_NAME || 'fateweaver' }}"
 
       - name: Notify on success
         if: success()
