@@ -1,7 +1,7 @@
 FROM node:18.18-alpine3.17
 
 # Installer les dépendances système nécessaires
-RUN apk add --no-cache netcat-openbsd wget
+RUN apk add --no-cache netcat-openbsd wget file
 
 # Créer le répertoire de l'application
 WORKDIR /app
