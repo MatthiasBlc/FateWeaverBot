@@ -2,7 +2,6 @@
 set -e
 
 echo "[deploy_prod] Vérification des variables critiques..."
-: "${PORTAINER_URL:?Missing PORTAINER_URL}"
 : "${PORTAINER_API:?Missing PORTAINER_API}"
 : "${STACK_ID:?Missing STACK_ID}"
 : "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
@@ -10,83 +9,56 @@ echo "[deploy_prod] Vérification des variables critiques..."
 : "${DISCORD_TOKEN:?Missing DISCORD_TOKEN}"
 : "${SESSION_SECRET:?Missing SESSION_SECRET}"
 
-# Configuration par défaut
-export REGISTRY_URL=${REGISTRY_URL:-'registry.matthias-bouloc.fr'}
-export IMAGE_NAME=${IMAGE_NAME:-'fateweaver'}
-export TAG=${TAG:-'latest'}
-export CORS_ORIGIN=${CORS_ORIGIN:-'https://fateweaver.matthias-bouloc.fr'}
+# Export des variables critiques dans l'environnement
+export POSTGRES_PASSWORD
+export DISCORD_TOKEN
+export SESSION_SECRET
+export PORTAINER_USERNAME=${PORTAINER_USERNAME:-}
+export PORTAINER_PASSWORD=${PORTAINER_PASSWORD:-}
+export PORTAINER_URL=${PORTAINER_URL:-'https://fateweaver.matthias-bouloc.fr'}
 
-echo "[deploy_prod] Configuration:"
-echo "[deploy_prod] - PORTAINER_URL: $PORTAINER_URL"
-echo "[deploy_prod] - IMAGE_NAME: $IMAGE_NAME"
-echo "[deploy_prod] - TAG: ${TAG:0:7}..."
-echo "[deploy_prod] - CORS_ORIGIN: $CORS_ORIGIN"
+echo "[deploy_prod] Variables chargées :"
+echo "[deploy_prod] PORTAINER_URL=$PORTAINER_URL"
+echo "[deploy_prod] STACK_ID=$STACK_ID"
+echo "[deploy_prod] ENDPOINT_ID=$ENDPOINT_ID"
 
-# Nettoyer l'URL et ajouter /api si nécessaire
-PORTAINER_URL=${PORTAINER_URL%/}
-[[ ! $PORTAINER_URL =~ /api$ ]] && PORTAINER_URL="${PORTAINER_URL}/api"
-
-# Récupérer le YAML actuel de la stack depuis Portainer
-echo "[deploy_prod] Récupération du docker-compose existant depuis Portainer..."
-RAW_STACK_YAML=$(curl -s -H "X-API-Key: $PORTAINER_API" \
-  "$PORTAINER_URL/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
-  | jq -r '.StackFileContent')
-
-if [ -z "$RAW_STACK_YAML" ]; then
-  echo "[deploy_prod] ERREUR: Impossible de récupérer le docker-compose de la stack"
+# Vérifier si le fichier docker-compose.prod.yml existe
+if [ ! -f docker-compose.prod.yml ]; then
+  echo "[deploy_prod] ERREUR: docker-compose.prod.yml introuvable"
   exit 1
 fi
 
-# Décoder le YAML pour qu'il soit valide
-STACK_CONTENT=$(echo "$RAW_STACK_YAML" | sed 's/\\n/\n/g' | sed 's/\\"/"/g')
+# Substituer les variables dans le docker-compose local
+STACK_CONTENT=$(envsubst < docker-compose.prod.yml)
+echo "[deploy_prod] YAML substitué sauvegardé dans stack_debug_subst.yml"
+echo "$STACK_CONTENT" > stack_debug_subst.yml
 
-# Construire le bloc env à partir des variables critiques
-ENV_VARS_JSON=$(jq -n \
-  --arg POSTGRES_PASSWORD "$POSTGRES_PASSWORD" \
-  --arg DISCORD_TOKEN "$DISCORD_TOKEN" \
-  --arg SESSION_SECRET "$SESSION_SECRET" \
-  --arg PORTAINER_USERNAME "${PORTAINER_USERNAME:-}" \
-  --arg PORTAINER_PASSWORD "${PORTAINER_PASSWORD:-}" \
-  --arg PORTAINER_URL "$PORTAINER_URL" \
-  '[
-    {name: "POSTGRES_PASSWORD", value: $POSTGRES_PASSWORD},
-    {name: "DISCORD_TOKEN", value: $DISCORD_TOKEN},
-    {name: "SESSION_SECRET", value: $SESSION_SECRET},
-    {name: "PORTAINER_USERNAME", value: $PORTAINER_USERNAME},
-    {name: "PORTAINER_PASSWORD", value: $PORTAINER_PASSWORD},
-    {name: "PORTAINER_URL", value: $PORTAINER_URL}
-  ]'
-)
-
-# Construire le JSON final pour le PUT
-STACK_JSON=$(jq -Rn \
-  --arg yml "$STACK_CONTENT" \
-  --argjson env "$ENV_VARS_JSON" \
-  '{"prune":true,"pullImage":true,"stackFileContent":$yml,"env":$env}')
+# Construire JSON pour Portainer
+STACK_JSON=$(jq -Rn --arg yml "$STACK_CONTENT" \
+  '{"prune":true,"pullImage":true,"stackFileContent":$yml}')
 
 TMP_FILE=$(mktemp)
 echo "$STACK_JSON" > "$TMP_FILE"
 
-STACK_UPDATE_URL="${PORTAINER_URL}/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
+# Déployer via l'API Portainer
+STACK_UPDATE_URL="https://portainer.matthias-bouloc.fr/api/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
 
 echo "[deploy_prod] Mise à jour de la stack ID: $STACK_ID..."
-HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -L \
-  -X PUT \
+HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -X PUT \
   "$STACK_UPDATE_URL" \
   -H "X-API-Key: $PORTAINER_API" \
   -H "Content-Type: application/json" \
-  --data @"$TMP_FILE"
-)
+  --data @"$TMP_FILE")
 
 echo "[deploy_prod] HTTP code: $HTTP_CODE"
+cat response.json
 
 if [ "$HTTP_CODE" -ne 200 ]; then
-  echo "[deploy_prod] ERREUR: Échec de la mise à jour de la stack (HTTP $HTTP_CODE)"
-  cat response.json
+  echo "[deploy_prod] Stack update failed"
   rm -f "$TMP_FILE" response.json
   exit 1
 fi
 
-echo "[deploy_prod] Stack mise à jour avec succès !"
+echo "[deploy_prod] Stack déployée avec succès !"
 rm -f "$TMP_FILE" response.json
 exit 0
