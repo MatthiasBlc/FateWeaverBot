@@ -29,11 +29,9 @@ services:
       - PORT=3000
       - POSTGRES_HOST=fateweaver-postgres
     volumes:
-      - .:/app
-      - /app/node_modules
       - ./logs:/app/logs
-    working_dir: /app
-    command: sh -c "chmod +x /app/deploy.sh && /app/deploy.sh"
+    ports:
+      - "3000:3000"
     depends_on:
       fateweaver-postgres:
         condition: service_healthy
