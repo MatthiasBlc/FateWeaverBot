@@ -2,18 +2,17 @@
 FROM node:18.18-alpine3.17 AS builder
 
 # Création des dossiers nécessaires
-RUN mkdir -p /app/config /app/src
 WORKDIR /app
 
 # Copie des fichiers de configuration et de dépendances
-COPY prisma ./prisma/
-COPY @types ./@types/
-COPY tsconfig.json ./
-COPY .eslintrc.js ./
 COPY package*.json ./
+COPY prisma ./prisma/
+COPY tsconfig.json ./
 
-# Installation des dépendances et génération du client Prisma
-RUN npm install
+# Installation des dépendances
+RUN npm ci
+
+# Génération du client Prisma
 RUN npx prisma generate
 
 # Copie du code source
@@ -22,19 +21,20 @@ COPY . .
 # Construction de l'application
 RUN npm run build
 
+# Vérification de la structure du build
+RUN ls -la dist/
+
 # Suppression des dépendances de développement
 RUN npm prune --production
 
 # Étape d'exécution
 FROM node:18.18-alpine3.17
 
-# Création des dossiers nécessaires
-RUN mkdir -p /app/config /app/src
 WORKDIR /app
 
 # Copie des fichiers nécessaires depuis le builder
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
@@ -46,4 +46,4 @@ RUN apk --no-cache add openssl
 EXPOSE 3000
 
 # Commande de démarrage
-CMD ["npm", "run", "start:migrate:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
