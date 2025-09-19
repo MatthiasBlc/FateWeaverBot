@@ -48,24 +48,12 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - TEST=${TEST}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-fateweaver}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB:-fateweaver}?schema=backend&connection_limit=20&pool_timeout=30
       - PORT=3000
       - NODE_OPTIONS=--max-old-space-size=1024
       - PRISMA_CLIENT_ENGINE_TYPE=library
       - CORS_ORIGIN=${CORS_ORIGIN}
       - SESSION_SECRET=${SESSION_SECRET}
-    command: >
-      sh -c "
-      echo '=== Variables d\'environnement du backend ===' &&
-      echo 'TEST: $TEST' &&
-      echo 'NODE_ENV: $NODE_ENV' &&
-      echo 'CORS_ORIGIN: $CORS_ORIGIN' &&
-      echo 'POSTGRES_USER: $POSTGRES_USER' &&
-      echo 'POSTGRES_DB: $POSTGRES_DB' &&
-      echo '=== Démarrage du serveur ===' &&
-      npm start
-      "
     ports:
       - "3000:3000"
     depends_on:
@@ -96,19 +84,9 @@ services:
     pull_policy: if_not_present
     environment:
       - NODE_ENV=production
-      - TEST=${TEST}
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - API_URL=http://fateweaver-backend:3000
+      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
       - HEALTH_URL=http://localhost:3001/health
-    command: >
-      sh -c "
-      echo '=== Variables d\'environnement du bot ===' &&
-      echo 'TEST: $TEST' &&
-      echo 'NODE_ENV: $NODE_ENV' &&
-      echo 'API_URL: $API_URL' &&
-      echo '=== Démarrage du bot ===' &&
-      npm start
-      "
     volumes:
       - bot-logs:/app/logs
     healthcheck:
