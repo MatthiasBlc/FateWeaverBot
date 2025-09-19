@@ -59,22 +59,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq curl
 
-          - name: Update Portainer Stack
-          env:
-            POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-            SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-            DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          run: |
-            chmod +x ./deploy_prod.sh
-            ./deploy_prod.sh \
-              "${{ secrets.PORTAINER_URL }}" \
-              "${{ secrets.PORTAINER_USERNAME }}" \
-              "${{ secrets.PORTAINER_PASSWORD }}" \
-              "${{ secrets.STACK_ID }}" \
-              "${{ secrets.ENDPOINT_ID }}" \
-              "${{ github.sha }}" \
-              "${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}" \
-              "${{ secrets.IMAGE_NAME || 'fateweaver' }}"
+      - name: Update Portainer Stack
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: |
+          chmod +x ./deploy_prod.sh
+          ./deploy_prod.sh \
+            "${{ secrets.PORTAINER_URL }}" \
+            "${{ secrets.PORTAINER_USERNAME }}" \
+            "${{ secrets.PORTAINER_PASSWORD }}" \
+            "${{ secrets.STACK_ID }}" \
+            "${{ secrets.ENDPOINT_ID }}" \
+            "${{ github.sha }}" \
+            "${{ secrets.REGISTRY_URL || 'registry.matthias-bouloc.fr' }}" \
+            "${{ secrets.IMAGE_NAME || 'fateweaver' }}"
 
       - name: Notify on success
         if: success()
