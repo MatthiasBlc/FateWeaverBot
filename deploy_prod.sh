@@ -16,9 +16,24 @@ export IMAGE_NAME=${IMAGE_NAME:-'fateweaver'}
 export TAG=${TAG:-'latest'}
 export CORS_ORIGIN=${CORS_ORIGIN:-'https://fateweaver.matthias-bouloc.fr'}
 
-# Nettoyer l'URL de Portainer pour s'assurer qu'elle se termine par un /
-PORTAINER_URL=${PORTAINER_URL%/}
-PORTAINER_URL=${PORTAINER_URL}/api
+# Variable de test
+export TEST="TEST_$(date +%s)"
+
+echo "[deploy_prod] Vérification des variables d'environnement :"
+echo "[deploy_prod] - TEST: $TEST"
+echo "[deploy_prod] - NOMBRE_DE_VARIABLES_ENV: $(env | wc -l)"
+echo "[deploy_prod] - VARIABLES_CRITIQUES_DEFINIES: $(env | grep -E 'PORTAINER_|POSTGRES_|DISCORD_|SESSION_' | awk -F= '{print $1}' | tr '\n' ' ')"
+
+# Nettoyer l'URL de Portainer et ajouter le protocole si nécessaire
+PORTAINER_URL=${PORTAINER_URL%/}  # Supprimer le / final s'il existe
+# Ajouter https:// si ce n'est pas déjà fait
+if [[ ! $PORTAINER_URL =~ ^https?:// ]]; then
+    PORTAINER_URL="https://$PORTAINER_URL"
+fi
+# Ajouter /api à l'URL si ce n'est pas déjà fait
+if [[ ! $PORTAINER_URL =~ /api$ ]]; then
+    PORTAINER_URL="${PORTAINER_URL}/api"
+fi
 
 echo "[deploy_prod] Configuration:"
 echo "[deploy_prod] - PORTAINER_URL: $PORTAINER_URL"
