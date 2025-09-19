@@ -20,6 +20,7 @@ echo "[deploy_prod] Configuration:"
 echo "[deploy_prod] - PORTAINER_URL: $PORTAINER_URL"
 echo "[deploy_prod] - IMAGE_NAME: $IMAGE_NAME"
 echo "[deploy_prod] - TAG: ${TAG:0:7}..."
+echo "[deploy_prod] - CORS_ORIGIN: $CORS_ORIGIN"
 
 # Nettoyer l'URL et ajouter /api si nécessaire
 PORTAINER_URL=${PORTAINER_URL%/}
@@ -27,14 +28,17 @@ PORTAINER_URL=${PORTAINER_URL%/}
 
 # Récupérer le YAML actuel de la stack depuis Portainer
 echo "[deploy_prod] Récupération du docker-compose existant depuis Portainer..."
-STACK_YAML=$(curl -s -H "X-API-Key: $PORTAINER_API" \
+RAW_STACK_YAML=$(curl -s -H "X-API-Key: $PORTAINER_API" \
   "$PORTAINER_URL/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
   | jq -r '.StackFileContent')
 
-if [ -z "$STACK_YAML" ]; then
+if [ -z "$RAW_STACK_YAML" ]; then
   echo "[deploy_prod] ERREUR: Impossible de récupérer le docker-compose de la stack"
   exit 1
 fi
+
+# Décoder le YAML pour qu'il soit valide
+STACK_CONTENT=$(echo "$RAW_STACK_YAML" | sed 's/\\n/\n/g' | sed 's/\\"/"/g')
 
 # Construire le bloc env à partir des variables critiques
 ENV_VARS_JSON=$(jq -n \
@@ -55,8 +59,8 @@ ENV_VARS_JSON=$(jq -n \
 )
 
 # Construire le JSON final pour le PUT
-STACK_JSON=$(jq -n \
-  --arg yml "$STACK_YAML" \
+STACK_JSON=$(jq -Rn \
+  --arg yml "$STACK_CONTENT" \
   --argjson env "$ENV_VARS_JSON" \
   '{"prune":true,"pullImage":true,"stackFileContent":$yml,"env":$env}')
 
