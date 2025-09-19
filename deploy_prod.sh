@@ -2,24 +2,49 @@
 set -e
 
 echo "🔍 Vérification des variables critiques..."
-: "${PORTAINER_URL:?Missing PORTAINER_URL}"
+echo "PORTAINER_URL: ${PORTAINER_URL:?Missing PORTAINER_URL}"
+echo "PORTAINER_USERNAME: [REDACTED]"
+echo "PORTAINER_PASSWORD: [REDACTED]"
+echo "STACK_ID: ${STACK_ID:?Missing STACK_ID}"
+echo "ENDPOINT_ID: ${ENDPOINT_ID:?Missing ENDPOINT_ID}"
+
+# Vérification des variables sensibles (sans les afficher)
 : "${PORTAINER_USERNAME:?Missing PORTAINER_USERNAME}"
 : "${PORTAINER_PASSWORD:?Missing PORTAINER_PASSWORD}"
-: "${STACK_ID:?Missing STACK_ID}"
-: "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 
 # Récupération du token d'authentification
 echo "🔑 Authentification auprès de Portainer..."
-AUTH_RESPONSE=$(curl -s -X POST \
+echo "URL d'API: $PORTAINER_URL/api/auth"
+
+# Ajout de l'option -v pour le débogage et capture du code de statut HTTP
+HTTP_STATUS=$(curl -s -o /tmp/auth_response -w "%{http_code}" -X POST \
   "$PORTAINER_URL/api/auth" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}")
 
+AUTH_RESPONSE=$(cat /tmp/auth_response)
+echo "Code HTTP: $HTTP_STATUS"
+echo "Réponse brute: $AUTH_RESPONSE"
+
+# Vérification du code de statut HTTP
+if [ "$HTTP_STATUS" -ne 200 ]; then
+  echo "❌ Erreur lors de l'authentification (HTTP $HTTP_STATUS)"
+  echo "Réponse du serveur: $AUTH_RESPONSE"
+  exit 1
+fi
+
+# Vérification que la réponse est un JSON valide
+if ! jq -e . >/dev/null 2>&1 <<<"$AUTH_RESPONSE"; then
+  echo "❌ La réponse de l'API n'est pas un JSON valide"
+  echo "Réponse reçue: $AUTH_RESPONSE"
+  exit 1
+fi
+
 # Extraction du token JWT
-TOKEN=$(echo $AUTH_RESPONSE | jq -r '.jwt')
+TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.jwt')
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-  echo "❌ Échec de l'authentification"
-  echo "Réponse de l'API: $AUTH_RESPONSE"
+  echo "❌ Échec de l'authentification: JWT non trouvé dans la réponse"
+  echo "Réponse complète: $AUTH_RESPONSE"
   exit 1
 fi
 
