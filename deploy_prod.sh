@@ -17,14 +17,20 @@ echo "🔑 Authentification auprès de Portainer..."
 echo "URL d'API: $PORTAINER_URL/api/auth"
 
 # Ajout de l'option -v pour le débogage et capture du code de statut HTTP
-HTTP_STATUS=$(curl -s -o /tmp/auth_response -w "%{http_code}" -X POST \
+echo "Envoi de la requête d'authentification..."
+HTTP_RESPONSE=$(curl -v -s -w "\n%{http_code}\n" -X POST \
   "$PORTAINER_URL/api/auth" \
   -H "Content-Type: application/json" \
-  -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}")
+  -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}" 2>&1)
 
-AUTH_RESPONSE=$(cat /tmp/auth_response)
+# Extraction du code HTTP et du corps de la réponse
+HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+AUTH_RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d' | tail -n1)
+
 echo "Code HTTP: $HTTP_STATUS"
-echo "Réponse brute: $AUTH_RESPONSE"
+echo "En-têtes de la réponse:"
+echo "$HTTP_RESPONSE" | head -n -2
+echo "Corps de la réponse: $AUTH_RESPONSE"
 
 # Vérification du code de statut HTTP
 if [ "$HTTP_STATUS" -ne 200 ]; then
@@ -34,18 +40,29 @@ if [ "$HTTP_STATUS" -ne 200 ]; then
 fi
 
 # Vérification que la réponse est un JSON valide
-if ! jq -e . >/dev/null 2>&1 <<<"$AUTH_RESPONSE"; then
+if ! echo "$AUTH_RESPONSE" | jq -e . >/dev/null 2>&1; then
   echo "❌ La réponse de l'API n'est pas un JSON valide"
-  echo "Réponse reçue: $AUTH_RESPONSE"
-  exit 1
-fi
-
-# Extraction du token JWT
-TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.jwt')
-if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-  echo "❌ Échec de l'authentification: JWT non trouvé dans la réponse"
-  echo "Réponse complète: $AUTH_RESPONSE"
-  exit 1
+  echo "Premiers caractères de la réponse: ${AUTH_RESPONSE:0:100}..."
+  echo "Tentative d'extraction du token JWT directement..."
+  
+  # Essayer d'extraire le token JWT même si ce n'est pas du JSON valide
+  TOKEN=$(echo "$AUTH_RESPONSE" | grep -oP '(?<="jwt":")[^"]*' || true)
+  
+  if [ -z "$TOKEN" ]; then
+    echo "❌ Impossible d'extraire le token JWT de la réponse"
+    exit 1
+  else
+    echo "✅ Token JWT extrait avec succès (format non standard)"
+  fi
+else
+  # Extraction normale du token JWT depuis le JSON
+  TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.jwt')
+  if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+    echo "❌ Échec de l'authentification: JWT non trouvé dans la réponse"
+    echo "Réponse complète: $AUTH_RESPONSE"
+    exit 1
+  fi
+  echo "✅ Token JWT extrait avec succès"
 fi
 
 # Vérification du fichier docker-compose
