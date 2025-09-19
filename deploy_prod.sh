@@ -3,7 +3,7 @@ set -e
 
 echo "[deploy_prod] Vérification des variables critiques..."
 : "${PORTAINER_URL:?Missing PORTAINER_URL}"
-: "${PORTAINER_API_KEY:?Missing PORTAINER_API_KEY}"
+: "${PORTAINER_API:?Missing PORTAINER_API}"
 : "${STACK_ID:?Missing STACK_ID}"
 : "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 : "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"

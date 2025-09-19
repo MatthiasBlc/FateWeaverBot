@@ -74,6 +74,7 @@ jobs:
           export PORTAINER_URL="${{ secrets.PORTAINER_URL }}"
           export PORTAINER_USERNAME="${{ secrets.PORTAINER_USERNAME }}"
           export PORTAINER_PASSWORD="${{ secrets.PORTAINER_PASSWORD }}"
+          export PORTAINER_API="${{ secrets.PORTAINER_API }}"
           export STACK_ID="${{ secrets.STACK_ID }}"
           export ENDPOINT_ID="${{ secrets.ENDPOINT_ID }}"
           export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
