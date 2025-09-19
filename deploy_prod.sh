@@ -2,7 +2,17 @@
 set -e
 
 echo "🔍 Vérification des variables critiques..."
-echo "PORTAINER_URL: ${PORTAINER_URL:?Missing PORTAINER_URL}"
+# Forcer l'URL à utiliser HTTPS si ce n'est pas déjà le cas
+if [[ ! "$PORTAINER_URL" =~ ^https:// ]]; then
+  if [[ "$PORTAINER_URL" =~ ^http:// ]]; then
+    PORTAINER_URL="https://${PORTAINER_URL#http://}"
+  else
+    PORTAINER_URL="https://$PORTAINER_URL"
+  fi
+  echo "⚠️  L'URL a été mise à jour pour utiliser HTTPS: $PORTAINER_URL"
+fi
+
+echo "PORTAINER_URL: $PORTAINER_URL"
 echo "PORTAINER_USERNAME: [REDACTED]"
 echo "PORTAINER_PASSWORD: [REDACTED]"
 echo "STACK_ID: ${STACK_ID:?Missing STACK_ID}"
@@ -14,22 +24,23 @@ echo "ENDPOINT_ID: ${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 
 # Récupération du token d'authentification
 echo "🔑 Authentification auprès de Portainer..."
-echo "URL d'API: $PORTAINER_URL/api/auth"
+API_URL="$PORTAINER_URL/api/auth"
+echo "URL d'API: $API_URL"
 
-# Ajout de l'option -v pour le débogage et capture du code de statut HTTP
 echo "Envoi de la requête d'authentification..."
-HTTP_RESPONSE=$(curl -v -s -w "\n%{http_code}\n" -X POST \
-  "$PORTAINER_URL/api/auth" \
+# Utilisation de -L pour suivre les redirections et -k pour ignorer les erreurs SSL si nécessaire
+HTTP_RESPONSE=$(curl -L -k -v -s -w "\n%{http_code}\n" -X POST \
+  "$API_URL" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"$PORTAINER_USERNAME\",\"password\":\"$PORTAINER_PASSWORD\"}" 2>&1)
 
 # Extraction du code HTTP et du corps de la réponse
 HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-AUTH_RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d' | tail -n1)
+AUTH_RESPONSE=$(echo "$HTTP_RESPONSE" | sed -n '/^[{[]/p' | tail -1)
 
-echo "Code HTTP: $HTTP_STATUS"
+echo "Code HTTP final: $HTTP_STATUS"
 echo "En-têtes de la réponse:"
-echo "$HTTP_RESPONSE" | head -n -2
+echo "$HTTP_RESPONSE" | grep -v '^[{}]' | grep -v '^$' | head -n -2
 echo "Corps de la réponse: $AUTH_RESPONSE"
 
 # Vérification du code de statut HTTP
@@ -107,7 +118,7 @@ cat "$TMP_PAYLOAD" | jq .
 
 # Mise à jour de la stack
 echo "🔄 Mise à jour de la stack Portainer (ID: $STACK_ID)..."
-RESPONSE_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X PUT \
+RESPONSE_CODE=$(curl -L -k -s -o /tmp/response.json -w "%{http_code}" -X PUT \
   "$PORTAINER_URL/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
