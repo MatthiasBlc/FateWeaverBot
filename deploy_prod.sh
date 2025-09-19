@@ -16,10 +16,15 @@ export IMAGE_NAME=${IMAGE_NAME:-'fateweaver'}
 export TAG=${TAG:-'latest'}
 export CORS_ORIGIN=${CORS_ORIGIN:-'https://fateweaver.matthias-bouloc.fr'}
 
+# Nettoyer l'URL de Portainer pour s'assurer qu'elle se termine par un /
+PORTAINER_URL=${PORTAINER_URL%/}
+PORTAINER_URL=${PORTAINER_URL}/api
+
 echo "[deploy_prod] Configuration:"
+echo "[deploy_prod] - PORTAINER_URL: $PORTAINER_URL"
 echo "[deploy_prod] - REGISTRY_URL: $REGISTRY_URL"
 echo "[deploy_prod] - IMAGE_NAME: $IMAGE_NAME"
-echo "[deploy_prod] - TAG: $TAG"
+echo "[deploy_prod] - TAG: ${TAG:0:7}..."  # Afficher uniquement les 7 premiers caractères du tag pour la sécurité
 echo "[deploy_prod] - CORS_ORIGIN: $CORS_ORIGIN"
 
 # Vérifier si le fichier docker-compose.prod.yml existe
@@ -36,11 +41,16 @@ STACK_CONTENT=$(envsubst < docker-compose.prod.yml)
 TMP_FILE=$(mktemp)
 echo "$STACK_CONTENT" > "$TMP_FILE"
 
+# URL complète pour la mise à jour de la stack
+STACK_UPDATE_URL="${PORTAINER_URL}/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
+
 echo "[deploy_prod] Mise à jour de la stack ID: $STACK_ID..."
-HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
+echo "[deploy_prod] URL: $STACK_UPDATE_URL"
+
+HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -L \
   -X PUT \
-  "${PORTAINER_URL}/api/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}" \
-  -H "X-API-Key: $PORTAINER_API_KEY" \
+  "$STACK_UPDATE_URL" \
+  -H "X-API-Key: $PORTAINER_API" \
   -H "Content-Type: application/json" \
   --data @- <<EOF
 {
@@ -52,15 +62,22 @@ EOF
 )
 
 echo "[deploy_prod] HTTP code: $HTTP_CODE"
+
+# Afficher la réponse seulement en cas d'erreur
+if [ "$HTTP_CODE" -ne 200 ]; then
+  echo "[deploy_prod] Réponse du serveur:"
+  cat response.json
+  echo ""
+  echo "[deploy_prod] ERREUR: Échec de la mise à jour de la stack (HTTP $HTTP_CODE)"
+  rm -f "$TMP_FILE" response.json
+  exit 1
+fi
+
+echo "[deploy_prod] Réponse du serveur:"
 cat response.json
 
 # Nettoyer les fichiers temporaires
 rm -f "$TMP_FILE" response.json
-
-if [ "$HTTP_CODE" -ne 200 ]; then
-  echo "[deploy_prod] ERREUR: Échec de la mise à jour de la stack"
-  exit 1
-fi
 
 echo "[deploy_prod] Déploiement réussi!"
 exit 0
