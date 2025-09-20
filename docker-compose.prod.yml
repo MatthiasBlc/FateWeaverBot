@@ -42,7 +42,7 @@ services:
     logging: *default-logging
 
   fateweaver-backend:
-    image: ${REGISTRY_URL}/${IMAGE_NAME}/backend:${TAG}
+    image: ${REGISTRY_URL}/${IMAGE_NAME}/backend:${TAG:-latest}
     container_name: fateweaver-backend
     hostname: fateweaver-backend
     restart: no
