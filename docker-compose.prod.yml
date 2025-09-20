@@ -48,7 +48,7 @@ services:
     restart: no
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-fateweaver}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB:-fateweaver}?schema=backend&connection_limit=20&pool_timeout=30
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-truc}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB:-muche}?schema=backend&connection_limit=20&pool_timeout=30
       - PORT=3000
       - NODE_OPTIONS=--max-old-space-size=1024
       - PRISMA_CLIENT_ENGINE_TYPE=library
