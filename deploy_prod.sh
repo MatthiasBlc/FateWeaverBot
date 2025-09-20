@@ -2,6 +2,8 @@
 set -e
 
 echo "[deploy_prod] Vérification des variables critiques..."
+
+# Variables critiques obligatoires
 : "${PORTAINER_API:?Missing PORTAINER_API}"
 : "${STACK_ID:?Missing STACK_ID}"
 : "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
@@ -11,6 +13,8 @@ echo "[deploy_prod] Vérification des variables critiques..."
 
 # Export des variables critiques dans l'environnement
 export POSTGRES_PASSWORD
+export POSTGRES_USER="${POSTGRES_USER:-fateweaver}"
+export POSTGRES_DB="${POSTGRES_DB:-fateweaver}"
 export DISCORD_TOKEN
 export SESSION_SECRET
 export PORTAINER_USERNAME=${PORTAINER_USERNAME:-}
@@ -21,6 +25,8 @@ echo "[deploy_prod] Variables chargées :"
 echo "[deploy_prod] PORTAINER_URL=$PORTAINER_URL"
 echo "[deploy_prod] STACK_ID=$STACK_ID"
 echo "[deploy_prod] ENDPOINT_ID=$ENDPOINT_ID"
+echo "[deploy_prod] POSTGRES_USER=$POSTGRES_USER"
+echo "[deploy_prod] POSTGRES_DB=$POSTGRES_DB"
 
 # Vérifier si le fichier docker-compose.prod.yml existe
 if [ ! -f docker-compose.prod.yml ]; then
