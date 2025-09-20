@@ -45,7 +45,8 @@ services:
     image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
     container_name: fateweaver-backend
     hostname: fateweaver-backend
-    restart: no
+    restart: alays
+    pull_policy: if_not_present
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB}?schema=backend&connection_limit=20&pool_timeout=30
@@ -72,31 +73,31 @@ services:
           memory: 1G
     logging: *default-logging
 
-  # fateweaver-discord-bot:
-  #   image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
-  #   container_name: fateweaver-discord-bot
-  #   hostname: fateweaver-discord-bot
-  #   restart: always
-  #   pull_policy: if_not_present
-  #   environment:
-  #     - NODE_ENV=production
-  #     - DISCORD_TOKEN=${DISCORD_TOKEN}
-  #     - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
-  #     - HEALTH_URL=http://localhost:3001/health
-  #   volumes:
-  #     - bot-logs:/app/logs
-  #   healthcheck:
-  #     test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 30s
-  #   depends_on:
-  #     fateweaver-backend:
-  #       condition: service_healthy
-  #   networks:
-  #     - internal
-  #   logging: *default-logging
+  fateweaver-discord-bot:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
+    container_name: fateweaver-discord-bot
+    hostname: fateweaver-discord-bot
+    restart: always
+    pull_policy: if_not_present
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - HEALTH_URL=http://localhost:3001/health
+    volumes:
+      - bot-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      fateweaver-backend:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
 
   # fateweaver-frontend:
   #   build:
