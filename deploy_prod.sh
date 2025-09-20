@@ -13,13 +13,13 @@ echo "[deploy_prod] Vérification des variables critiques..."
 
 # Export des variables critiques dans l'environnement
 export POSTGRES_PASSWORD
-export POSTGRES_USER="${POSTGRES_USER:-fateweaver}"
-export POSTGRES_DB="${POSTGRES_DB:-fateweaver}"
+export POSTGRES_USER="${POSTGRES_USER}"
+export POSTGRES_DB="${POSTGRES_DB}"
 export DISCORD_TOKEN
 export SESSION_SECRET
-export PORTAINER_USERNAME=${PORTAINER_USERNAME:-}
-export PORTAINER_PASSWORD=${PORTAINER_PASSWORD:-}
-export PORTAINER_URL=${PORTAINER_URL:-'https://fateweaver.matthias-bouloc.fr'}
+export PORTAINER_USERNAME=${PORTAINER_USERNAME}
+export PORTAINER_PASSWORD=${PORTAINER_PASSWORD}
+export PORTAINER_URL=${PORTAINER_URL}
 
 echo "[deploy_prod] Variables chargées :"
 echo "[deploy_prod] PORTAINER_URL=$PORTAINER_URL"

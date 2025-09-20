@@ -13,9 +13,9 @@ services:
     container_name: fateweaver-postgres
     hostname: fateweaver-postgres
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-fateweaver}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
-      - POSTGRES_DB=${POSTGRES_DB:-fateweaver}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_INITDB_ARGS=--data-checksums
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
@@ -33,7 +33,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-fateweaver} -d ${POSTGRES_DB:-fateweaver}",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
         ]
       interval: 10s
       timeout: 5s
@@ -42,13 +42,13 @@ services:
     logging: *default-logging
 
   fateweaver-backend:
-    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
+    image: ${REGISTRY_URL}/${IMAGE_NAME}/backend:${TAG}
     container_name: fateweaver-backend
     hostname: fateweaver-backend
     restart: no
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-truc}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB:-muche}?schema=backend&connection_limit=20&pool_timeout=30
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB}?schema=backend&connection_limit=20&pool_timeout=30
       - PORT=3000
       - NODE_OPTIONS=--max-old-space-size=1024
       - PRISMA_CLIENT_ENGINE_TYPE=library
@@ -139,15 +139,15 @@ services:
 networks:
   internal:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_internal
+    name: ${COMPOSE_PROJECT_NAME}_internal
   proxy:
     external: true
     name: proxy
 
 volumes:
   postgres_data:
-    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_postgres_data
+    name: ${COMPOSE_PROJECT_NAME}_postgres_data
   bot-logs:
-    name: ${COMPOSE_PROJECT_NAME:-fateweaver}_bot_logs
+    name: ${COMPOSE_PROJECT_NAME}_bot_logs
   fateweaver-backend-logs:
     name: fateweaver-backend-logs
