@@ -60,7 +60,7 @@ TMP_FILE=$(mktemp)
 echo "$STACK_JSON" > "$TMP_FILE"
 
 # Déployer via l'API Portainer
-STACK_UPDATE_URL="${PORTAINER_URL}/api/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
+STACK_UPDATE_URL="${PORTAINER_URL}/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
 echo "[deploy_prod] Mise à jour de la stack ID: $STACK_ID..."
 
 HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -X PUT \
