@@ -25,7 +25,7 @@ export POSTGRES_PASSWORD
 export DISCORD_TOKEN
 export SESSION_SECRET
 export IMAGE_NAME="${IMAGE_NAME:-fateweaver}"
-export TAG="${TAG:-latest}"
+export TAG="${TAG:-latest}"                     # TAG par défaut latest
 export CORS_ORIGIN="${CORS_ORIGIN:-https://fateweaver.matthias-bouloc.fr}"
 
 echo "[deploy_prod] Variables chargées :"

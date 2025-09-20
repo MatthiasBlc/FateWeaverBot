@@ -33,7 +33,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
         ]
       interval: 10s
       timeout: 5s
@@ -42,7 +42,7 @@ services:
     logging: *default-logging
 
   fateweaver-backend:
-    image: ${REGISTRY_URL}/${IMAGE_NAME}/backend:${TAG:-latest}
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
     container_name: fateweaver-backend
     hostname: fateweaver-backend
     restart: no
@@ -71,13 +71,6 @@ services:
         reservations:
           memory: 1G
     logging: *default-logging
-    # healthcheck désactivé pour debug
-    # healthcheck:
-    #   test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
-    #   start_period: 60s
 
   # fateweaver-discord-bot:
   #   image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
