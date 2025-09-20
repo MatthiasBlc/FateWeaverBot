@@ -1,0 +1,151 @@
+version: "3.8"
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  fateweaver-postgres:
+    image: postgres:15
+    restart: no
+    container_name: fateweaver-postgres
+    hostname: fateweaver-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "1"
+    #       memory: 1G
+    #     reservations:
+    #       memory: 512M
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  fateweaver-backend:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
+    container_name: fateweaver-backend
+    hostname: fateweaver-backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB}?schema=backend&connection_limit=20&pool_timeout=30
+      - PORT=3000
+      - NODE_OPTIONS=--max-old-space-size=1024
+      - PRISMA_CLIENT_ENGINE_TYPE=library
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - SESSION_SECRET=${SESSION_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      fateweaver-postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      - fateweaver-backend-logs:/app/logs
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "1"
+    #       memory: 1.5G
+    #     reservations:
+    #       memory: 1G
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  fateweaver-discord-bot:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
+    container_name: fateweaver-discord-bot
+    hostname: fateweaver-discord-bot
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - HEALTH_URL=http://localhost:3001/health
+    volumes:
+      - bot-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      fateweaver-backend:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
+
+  # fateweaver-frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: fateweaver-frontend
+  #   restart: always
+  #   pull_policy: if_not_present
+  #   environment:
+  #     - NODE_ENV=production
+  #     - VITE_API_URL=${VITE_BACKEND_URL:-https://api.fate-weaver.matthias-bouloc.fr}
+  #     - HEALTH_URL=http://localhost:8080
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 10s
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.fateweaver.rule=Host(`fate-weaver.matthias-bouloc.fr`)"
+  #     - "traefik.http.routers.fateweaver.entrypoints=websecure"
+  #     - "traefik.http.routers.fateweaver.tls.certresolver=letsencrypt"
+  #     - "traefik.docker.network=proxy"
+  #     - "traefik.http.services.fateweaver.loadbalancer.server.port=8080"
+  #   depends_on:
+  #     fateweaver-backend:
+  #       condition: service_healthy
+  #   networks:
+  #     - proxy
+  #   logging: *default-logging
+
+networks:
+  internal:
+    driver: bridge
+    name: fateweaver_internal
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  postgres_data:
+    name: fateweaver_postgres_data
+  bot-logs:
+    name: fateweaver_bot_logs
+  fateweaver-backend-logs:
+    name: fateweaver-backend-logs
