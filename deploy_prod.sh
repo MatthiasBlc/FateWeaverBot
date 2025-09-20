@@ -5,7 +5,7 @@ echo "[deploy_prod] Vérification des variables critiques..."
 
 # Variables obligatoires
 : "${PORTAINER_API:?Missing PORTAINER_API}"
-: "${STACK_ID:?Missing STACK_ID}"
+: "${STACK_NAME:?Missing STACK_NAME}"      # On utilise le nom de stack maintenant
 : "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 : "${POSTGRES_USER:?Missing POSTGRES_USER}"
 : "${POSTGRES_DB:?Missing POSTGRES_DB}"
@@ -14,9 +14,9 @@ echo "[deploy_prod] Vérification des variables critiques..."
 : "${SESSION_SECRET:?Missing SESSION_SECRET}"
 
 # Export des variables critiques
-export PORTAINER_URL="${PORTAINER_URL}"
-export PORTAINER_USERNAME="${PORTAINER_USERNAME}"
-export PORTAINER_PASSWORD="${PORTAINER_PASSWORD}"
+export PORTAINER_URL="${PORTAINER_URL:-https://fateweaver.matthias-bouloc.fr}"
+export PORTAINER_USERNAME="${PORTAINER_USERNAME:-}"
+export PORTAINER_PASSWORD="${PORTAINER_PASSWORD:-}"
 
 # Export PostgreSQL et autres variables pour envsubst
 export POSTGRES_USER
@@ -25,17 +25,21 @@ export POSTGRES_PASSWORD
 export DISCORD_TOKEN
 export SESSION_SECRET
 export IMAGE_NAME="${IMAGE_NAME:-fateweaver}"
-export TAG="${TAG}"
-export CORS_ORIGIN="${CORS_ORIGIN}"
+export TAG="${TAG:-latest}"
+export CORS_ORIGIN="${CORS_ORIGIN:-https://fateweaver.matthias-bouloc.fr}"
 
-echo "[deploy_prod] Variables chargées :"
-echo "[deploy_prod] PORTAINER_URL=$PORTAINER_URL"
-echo "[deploy_prod] STACK_ID=$STACK_ID"
-echo "[deploy_prod] ENDPOINT_ID=$ENDPOINT_ID"
-echo "[deploy_prod] POSTGRES_USER=$POSTGRES_USER"
-echo "[deploy_prod] POSTGRES_DB=$POSTGRES_DB"
-echo "[deploy_prod] IMAGE_NAME=$IMAGE_NAME"
-echo "[deploy_prod] TAG=$TAG"
+# Récupérer STACK_ID automatiquement depuis le nom de stack
+echo "[deploy_prod] Récupération automatique de STACK_ID pour la stack $STACK_NAME..."
+STACK_ID=$(curl -s -H "X-API-Key: $PORTAINER_API" \
+  "${PORTAINER_URL}/api/stacks?endpointId=${ENDPOINT_ID}" | \
+  jq -r --arg name "$STACK_NAME" '.[] | select(.Name==$name) | .Id')
+
+if [ -z "$STACK_ID" ]; then
+  echo "[deploy_prod] ERREUR: Impossible de trouver l'ID de la stack '$STACK_NAME' sur l'endpoint $ENDPOINT_ID"
+  exit 1
+fi
+
+echo "[deploy_prod] STACK_ID trouvé : $STACK_ID"
 
 # Vérification du fichier docker-compose.prod.yml
 if [ ! -f docker-compose.prod.yml ]; then
@@ -48,7 +52,7 @@ STACK_CONTENT=$(envsubst < docker-compose.prod.yml)
 echo "[deploy_prod] YAML substitué sauvegardé dans stack_debug_subst.yml"
 echo "$STACK_CONTENT" > stack_debug_subst.yml
 
-# Debug : vérifier DATABASE_URL dans le YAML
+# Debug : vérifier DATABASE_URL
 echo "[deploy_prod] DEBUG : extrait DATABASE_URL"
 echo "$STACK_CONTENT" | grep DATABASE_URL || echo "[deploy_prod] Aucun DATABASE_URL trouvé"
 
