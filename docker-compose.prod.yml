@@ -22,13 +22,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - internal
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
-        reservations:
-          memory: 512M
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "1"
+    #       memory: 1G
+    #     reservations:
+    #       memory: 512M
     healthcheck:
       test:
         [
@@ -45,8 +45,7 @@ services:
     image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/backend:${TAG:-latest}
     container_name: fateweaver-backend
     hostname: fateweaver-backend
-    restart: alays
-    pull_policy: if_not_present
+    restart: always
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB}?schema=backend&connection_limit=20&pool_timeout=30
@@ -59,18 +58,18 @@ services:
       - "3000:3000"
     depends_on:
       fateweaver-postgres:
-        condition: service_started
+        condition: service_healthy
     networks:
       - internal
     volumes:
       - fateweaver-backend-logs:/app/logs
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1.5G
-        reservations:
-          memory: 1G
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "1"
+    #       memory: 1.5G
+    #     reservations:
+    #       memory: 1G
     logging: *default-logging
 
   fateweaver-discord-bot:
@@ -78,7 +77,6 @@ services:
     container_name: fateweaver-discord-bot
     hostname: fateweaver-discord-bot
     restart: always
-    pull_policy: if_not_present
     environment:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
