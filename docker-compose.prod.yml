@@ -132,15 +132,15 @@ services:
 networks:
   internal:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME}_internal
+    name: fateweaver_internal
   proxy:
     external: true
     name: proxy
 
 volumes:
   postgres_data:
-    name: ${COMPOSE_PROJECT_NAME}_postgres_data
+    name: fateweaver_postgres_data
   bot-logs:
-    name: ${COMPOSE_PROJECT_NAME}_bot_logs
+    name: fateweaver_bot_logs
   fateweaver-backend-logs:
     name: fateweaver-backend-logs
