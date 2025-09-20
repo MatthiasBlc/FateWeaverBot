@@ -5,7 +5,7 @@ echo "[deploy_prod] Vérification des variables critiques..."
 
 # Variables obligatoires
 : "${PORTAINER_API:?Missing PORTAINER_API}"
-: "${STACK_ID:?Missing STACK_ID}"          # Utilisation directe de l'ID numérique
+: "${STACK_ID:?Missing STACK_ID}"          # ID interne API exact de la stack
 : "${ENDPOINT_ID:?Missing ENDPOINT_ID}"
 : "${POSTGRES_USER:?Missing POSTGRES_USER}"
 : "${POSTGRES_DB:?Missing POSTGRES_DB}"
@@ -62,6 +62,7 @@ echo "$STACK_JSON" > "$TMP_FILE"
 # Déployer via l'API Portainer
 STACK_UPDATE_URL="${PORTAINER_URL}/api/stacks/${STACK_ID}?endpointId=${ENDPOINT_ID}"
 echo "[deploy_prod] Mise à jour de la stack ID: $STACK_ID..."
+
 HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" -X PUT \
   "$STACK_UPDATE_URL" \
   -H "X-API-Key: $PORTAINER_API" \
