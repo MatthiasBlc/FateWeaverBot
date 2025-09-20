@@ -52,7 +52,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ github.sha }}
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ secrets.TAG }}
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:latest
 
       - name: Build and push Discord Bot image
         uses: docker/build-push-action@v4
@@ -61,7 +61,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ github.sha }}
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ secrets.TAG }}
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:latest
 
       - name: Install system dependencies
         run: |
