@@ -52,7 +52,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ github.sha }}
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ secrets.TAG:-latest }}
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ secrets.TAG }}
 
       - name: Build and push Discord Bot image
         uses: docker/build-push-action@v4
@@ -61,7 +61,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ github.sha }}
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ secrets.TAG:-latest }}
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ secrets.TAG }}
 
       - name: Install system dependencies
         run: |
@@ -84,7 +84,7 @@ jobs:
           export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
           export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
           export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
-          export TAG="${{ secrets.TAG:-latest }}"
+          export TAG="${{ secrets.TAG }}"
           export IMAGE_NAME="${{ secrets.IMAGE_NAME }}"
           ./deploy_prod.sh
 
@@ -92,5 +92,5 @@ jobs:
         if: success()
         run: |
           echo "🚀 Déploiement réussi !"
-          echo "Backend image: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ secrets.TAG:-latest }}"
-          echo "Bot image: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ secrets.TAG:-latest }}"
+          echo "Backend image: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:${{ secrets.TAG }}"
+          echo "Bot image: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:${{ secrets.TAG }}"
