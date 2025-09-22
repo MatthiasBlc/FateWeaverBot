@@ -3,8 +3,8 @@ name: Build and Deploy
 on:
   push:
     branches: [master]
-  pull_request:
-    branches: [master]
+  # pull_request:
+  #   branches: [master]
 
 jobs:
   build-and-deploy:
@@ -83,6 +83,8 @@ jobs:
           export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
           export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
+          export DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}"
+          export API_URL="${{ secrets.API_URL }}"
           export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
           export TAG="${{ secrets.TAG }}"
           export IMAGE_NAME="${{ secrets.IMAGE_NAME }}"

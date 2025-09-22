@@ -2,22 +2,25 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies (include devDeps for tsx/typescript)
+# Install dependencies as root first
 COPY package.json package-lock.json ./
-RUN npm ci && npm install winston
+RUN npm ci && npm install -g tsx
 
-# Create logs directory
+# Create logs directory and set permissions
 RUN mkdir -p /app/logs && \
-    chown -R node:node /app/logs
+    chown -R node:node /app
 
 # Copy source code
 COPY --chown=node:node . .
 
-# Expose health port (default 3001)
-EXPOSE 3001
-
 # Switch to non-root user
 USER node
 
-# Start the bot using tsx
-CMD ["npm", "run", "dev"]
+# Install app dependencies as non-root user
+RUN npm ci --no-optional
+
+# Expose health port (default 3001)
+EXPOSE 3001
+
+# Default command (can be overridden in docker-compose)
+CMD ["sh", "-c", "npx tsx src/deploy-commands.ts && npm start"]

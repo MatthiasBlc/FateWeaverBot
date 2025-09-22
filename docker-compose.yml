@@ -5,6 +5,14 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+x-healthcheck: &health_http
+  test:
+    ["CMD", "wget", "--spider", "${HEALTH_URL:-http://localhost:3000/health}"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 20s
+
 services:
   postgres:
     image: postgres:15
@@ -21,10 +29,6 @@ services:
       - internal
     expose:
       - "5432"
-    # Uncomment the following to access Postgres from your host (psql/GUI)
-    # ports:
-    #   - "5432:5432"
-    logging: *default-logging
     healthcheck:
       test:
         [
@@ -36,16 +40,23 @@ services:
       retries: 5
 
   backenddev:
-    extends:
-      file: common.yml
-      service: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backenddev
+    restart: unless-stopped
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
-    command: sh -c "npm install && npm run dev"
+      - PORT=3000
+      - CORS_ORIGIN=*
+      - SESSION_SECRET=${SESSION_SECRET}
+      - HEALTH_URL=http://localhost:3000/health
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     expose:
       - "3000"
-    # Publish if you need to call the API from your host (Postman, browser, etc.)
     ports:
       - "3000:3000"
     depends_on:
@@ -53,31 +64,48 @@ services:
         condition: service_healthy
     networks:
       - internal
-
-  # frontenddev:
-  #   extends:
-  #     file: common.yml
-  #     service: frontend
-  #   expose:
-  #     - "8080"
-  #   # Publish to access the frontend from your host browser
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     backenddev:
-  #       condition: service_healthy
-  #   networks:
-  #     - internal
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
 
   discord-botdev:
-    extends:
-      file: common.yml
-      service: discord-bot
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
+    container_name: discord-botdev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - API_URL=http://backenddev:3000
+      - HEALTH_URL=http://localhost:3001/health
     depends_on:
       backenddev:
         condition: service_healthy
+    volumes:
+      - ./bot:/app
+      - /app/node_modules
+      - bot-logs:/app/logs
+    ports:
+      - "3001:3001"
     networks:
       - internal
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
 
 networks:
   internal:

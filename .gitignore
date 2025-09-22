@@ -5,3 +5,4 @@
 docker-compose.yml.local.truc
 
 postgresql/data/
+botold/
