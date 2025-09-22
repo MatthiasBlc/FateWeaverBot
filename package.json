@@ -8,9 +8,12 @@
     "docker:down": "docker-compose -p boilerjs down",
     "docker:up": "docker-compose -p boilerjs up",
     "docker:upd": "docker-compose -p boilerjs up -d",
+    "prisma:generate": "./prisma-docker.sh generate",
+    "prisma:migrate": "./prisma-docker.sh migrate",
+    "prisma:deploy": "./prisma-docker.sh all",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-    "repository": {
+  "repository": {
     "type": "git",
     "url": ""
   },

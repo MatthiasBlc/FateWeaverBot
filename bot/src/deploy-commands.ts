@@ -1,7 +1,11 @@
 import { REST, Routes } from "discord.js";
 import { readdir } from "fs/promises";
-import { join } from "path";
+import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+
+// Get directory name in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Vérification des variables d'environnement requises
 const requiredEnvVars = ["DISCORD_TOKEN", "DISCORD_CLIENT_ID"];
@@ -16,15 +20,11 @@ if (missingVars.length > 0) {
 
 const commands = [];
 
-// Get directory name in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-
 // Load all commands
 try {
-  const commandsPath = join(__dirname, "commands");
-  const commandFiles = (await readdir(commandsPath)).filter(
-    (file) => file.endsWith(".js") || file.endsWith(".ts")
+  const commandsPath = join(process.cwd(), "src", "commands");
+  const commandFiles = (await readdir(commandsPath)).filter((file) =>
+    file.endsWith(".ts")
   );
 
   for (const file of commandFiles) {
@@ -58,7 +58,12 @@ try {
   );
 
   const data = (await rest.put(
-    Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
+    process.env.DISCORD_GUILD_ID
+      ? Routes.applicationGuildCommands(
+          process.env.DISCORD_CLIENT_ID!,
+          process.env.DISCORD_GUILD_ID
+        )
+      : Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
     { body: commands }
   )) as unknown[];
 
