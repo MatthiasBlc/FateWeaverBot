@@ -83,7 +83,7 @@ services:
     environment:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
       - HEALTH_URL=http://localhost:3001/health
     volumes:

@@ -49,30 +49,56 @@ try {
   process.exit(1);
 }
 
+// Définition du type pour une commande Discord
+interface DiscordCommand {
+  id: string;
+  application_id: string;
+  name: string;
+  description: string;
+  version: string;
+  default_permission: boolean;
+  type?: number;
+  // Ajoutez d'autres propriétés si nécessaire
+}
+
 // Deploy commands
 const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
 
+const clientId = process.env.DISCORD_CLIENT_ID!;
+
 try {
+  console.log(`🔄 Démarrage du déploiement des commandes...`);
+
+  // 1. Récupérer toutes les commandes existantes
+  console.log("🔄 Récupération des commandes existantes...");
+  const existingCommands = (await rest.get(
+    Routes.applicationCommands(clientId)
+  )) as DiscordCommand[];
+
+  // 2. Supprimer toutes les commandes existantes
   console.log(
-    `🔄 Started refreshing ${commands.length} application (/) commands.`
+    `🗑️  Suppression de ${existingCommands.length} commandes existantes...`
+  );
+  await Promise.all(
+    existingCommands.map((cmd) =>
+      rest
+        .delete(Routes.applicationCommand(clientId, cmd.id))
+        .catch(console.error)
+    )
   );
 
-  const data = (await rest.put(
-    process.env.DISCORD_GUILD_ID
-      ? Routes.applicationGuildCommands(
-          process.env.DISCORD_CLIENT_ID!,
-          process.env.DISCORD_GUILD_ID
-        )
-      : Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-    { body: commands }
-  )) as unknown[];
+  // 3. Enregistrer les nouvelles commandes
+  console.log(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
+  const data = (await rest.put(Routes.applicationCommands(clientId), {
+    body: commands,
+  })) as unknown[];
 
   console.log(
-    `✅ Successfully reloaded ${data.length} application (/) commands.`
+    `✅ ${data.length} commandes (/) globales déployées avec succès.`
   );
   process.exit(0);
 } catch (error) {
-  console.error("❌ Error deploying commands:");
+  console.error("❌ Erreur lors du déploiement des commandes :");
   console.error(error);
   process.exit(1);
 }

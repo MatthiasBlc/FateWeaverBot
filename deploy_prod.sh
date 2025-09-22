@@ -11,18 +11,22 @@ echo "[deploy_prod] Vérification des variables critiques..."
 : "${POSTGRES_DB:?Missing POSTGRES_DB}"
 : "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"
 : "${DISCORD_TOKEN:?Missing DISCORD_TOKEN}"
+: "${DISCORD_CLIENT_ID:?Missing DISCORD_CLIENT_ID}"
 : "${SESSION_SECRET:?Missing SESSION_SECRET}"
+: "${API_URL:?Missing API_URL}"
 
 # Export des variables critiques
 export PORTAINER_URL="${PORTAINER_URL:-https://fateweaver.matthias-bouloc.fr}"
 export PORTAINER_USERNAME="${PORTAINER_USERNAME:-}"
 export PORTAINER_PASSWORD="${PORTAINER_PASSWORD:-}"
+export API_URL="${API_URL:-}"
 
 # Export PostgreSQL et autres variables pour envsubst
 export POSTGRES_USER
 export POSTGRES_DB
 export POSTGRES_PASSWORD
 export DISCORD_TOKEN
+export DISCORD_CLIENT_ID
 export SESSION_SECRET
 export IMAGE_NAME="${IMAGE_NAME:-fateweaver}"
 export TAG="${TAG:-latest}"                     # TAG par défaut latest
@@ -36,6 +40,7 @@ echo "[deploy_prod] POSTGRES_USER=$POSTGRES_USER"
 echo "[deploy_prod] POSTGRES_DB=$POSTGRES_DB"
 echo "[deploy_prod] IMAGE_NAME=$IMAGE_NAME"
 echo "[deploy_prod] TAG=$TAG"
+echo "[deploy_prod] API_URL=$API_URL"
 
 # Vérification du fichier docker-compose.prod.yml
 if [ ! -f docker-compose.prod.yml ]; then
