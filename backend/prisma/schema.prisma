@@ -18,19 +18,26 @@ model Session {
 }
 
 model User {
-  id       String @id @default(uuid())
-  username String @unique
-  email    String @unique
-  password String
-  notes    Note[]
+  id         String   @id @default(uuid())
+  username   String   @unique
+  email      String   @unique
+  password   String
+  discordId  String?  @unique
+  guildId    String?  // optional: add later for multi-server
+  globalName String?
+  avatar     String?
+  pa         Int      @default(2)  // Points d'action
+  notes      Note[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Note {
   id        String   @id @default(uuid())
   title     String
   text      String
-  createdAt DateTime @default(now())
-  updatedAT DateTime @updatedAt
   author    User?    @relation(fields: [authorId], references: [id])
   authorId  String?  @map("userId")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
