@@ -78,6 +78,9 @@ if [ "$HTTP_CODE" -ne 200 ]; then
   exit 1
 fi
 
+echo "[deploy_prod] Déploiement des commandes Discord..."
+docker-compose -f docker-compose.prod.yml run --rm bot npm run deploy-commands
+
 echo "[deploy_prod] Stack déployée avec succès !"
 rm -f "$TMP_FILE" response.json
 exit 0

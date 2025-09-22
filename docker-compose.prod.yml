@@ -30,11 +30,7 @@ services:
     #     reservations:
     #       memory: 512M
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,7 +68,8 @@ services:
     #       memory: 1G
     logging: *default-logging
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
+      test:
+        ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -86,6 +83,7 @@ services:
     environment:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - CLIENT_ID=${DISCORD_CLIENT_ID}
       - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
       - HEALTH_URL=http://localhost:3001/health
     volumes:
@@ -99,6 +97,7 @@ services:
     depends_on:
       fateweaver-backend:
         condition: service_healthy
+    command: npm run dev
     networks:
       - internal
     logging: *default-logging
