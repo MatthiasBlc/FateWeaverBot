@@ -39,8 +39,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Installation de Prisma et des outils nécessaires
-RUN npm install -g prisma
-RUN apk --no-cache add openssl
+RUN npm install -g prisma && \
+    apk update && \
+    apk add --no-cache openssl
 
 # Exposition du port
 EXPOSE 3000
