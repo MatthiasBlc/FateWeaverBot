@@ -35,30 +35,14 @@ services:
       timeout: 5s
       retries: 5
 
-  prisma-migrate:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
-    command: >
-      sh -c "npx prisma migrate deploy || npx prisma db push"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - internal
-    logging: *default-logging
-    restart: "no"
-
   backenddev:
     extends:
       file: common.yml
       service: backend
     environment:
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
-    command: npm run start
+    command: sh -c "npm install && npm run dev"
     expose:
       - "3000"
     # Publish if you need to call the API from your host (Postman, browser, etc.)
@@ -67,8 +51,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      prisma-migrate:
-        condition: service_completed_successfully
     networks:
       - internal
 
