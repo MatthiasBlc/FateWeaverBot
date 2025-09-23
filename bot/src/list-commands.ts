@@ -2,7 +2,7 @@ import { REST, Routes } from "discord.js";
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
 const clientId = process.env.DISCORD_CLIENT_ID!;
-const guildId = process.env.GUILD_ID!; // facultatif : pour voir les commandes guildées
+const guildId = process.env.DISCORD_GUILD_ID!; // facultatif : pour voir les commandes guildées
 
 async function listCommands() {
   try {

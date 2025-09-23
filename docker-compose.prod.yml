@@ -84,6 +84,7 @@ services:
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - API_URL=http://fateweaver-backend:3000
       - HEALTH_URL=http://localhost:3001/health
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
     volumes:
       - bot-logs:/app/logs
     healthcheck:
