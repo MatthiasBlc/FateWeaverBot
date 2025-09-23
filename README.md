@@ -1,3 +1,7 @@
+#lister les commandes du bot :
+npx tsx src/list-commands.ts
+a utiliser dans le container du bot
+
 # Boiler Plate JS
 
 docker compose up -d --build
