@@ -15,29 +15,63 @@ model Session {
   sid       String   @unique
   data      String
   expiresAt DateTime
+
+  @@map("sessions")
 }
 
 model User {
-  id         String   @id @default(uuid())
-  username   String   @unique
-  email      String   @unique
-  password   String
-  discordId  String?  @unique
-  guildId    String?  // optional: add later for multi-server
-  globalName String?
-  avatar     String?
-  pa         Int      @default(2)  // Points d'action
-  notes      Note[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String     @id @default(cuid())
+  discordId    String     @unique
+  globalName   String?
+  avatar       String?
+  email        String?    @unique
+  characters   Character[]
+  notes        Note[]
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Server {
+  id             String     @id @default(cuid())
+  discordGuildId String     @unique @map("discord_guild_id")
+  name           String?
+  characters     Character[]
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@map("servers")
+}
+
+model Character {
+  id            String    @id @default(cuid())
+  name          String?
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @map("user_id")
+  server        Server    @relation(fields: [serverId], references: [id])
+  serverId      String    @map("server_id")
+  role          String?
+  notes         Note[]
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, serverId])
+  @@index([userId])
+  @@index([serverId])
+  @@map("characters")
 }
 
 model Note {
-  id        String   @id @default(uuid())
-  title     String
-  text      String
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  String?  @map("userId")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  title        String
+  content      String    @map("text")
+  author       User?     @relation(fields: [authorId], references: [id])
+  authorId     String?   @map("author_id")
+  character    Character? @relation(fields: [characterId], references: [id])
+  characterId  String?   @map("character_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("notes")
 }
