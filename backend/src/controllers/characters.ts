@@ -45,6 +45,9 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       },
     });
 
+    // Déterminer le rôle le plus élevé (premier rôle non @everyone)
+    const highestRole = roles?.length > 0 ? roles[0] : null;
+
     let character;
 
     if (existingCharacter) {
@@ -52,8 +55,8 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       character = await prisma.character.update({
         where: { id: existingCharacter.id },
         data: {
-          name: nickname,
-          role: roles[0],
+          name: nickname || user.username, // Utiliser le surnom ou le nom d'utilisateur par défaut
+          role: highestRole,
         },
         include: {
           user: true,
@@ -66,8 +69,8 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         data: {
           userId,
           serverId,
-          name: nickname,
-          role: roles[0],
+          name: nickname || user.username, // Utiliser le surnom ou le nom d'utilisateur par défaut
+          role: highestRole,
         },
         include: {
           user: true,

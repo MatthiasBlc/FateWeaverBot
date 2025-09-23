@@ -32,20 +32,20 @@ class APIService {
    * Récupère ou crée un utilisateur
    * @param discordId L'ID Discord de l'utilisateur
    * @param username Le nom d'utilisateur Discord
+   * @param discriminator Le tag Discord (ex: "1234")
    * @returns Les informations de l'utilisateur
    * @throws {Error} Si une erreur se produit
    */
-  public async getOrCreateUser(discordId: string, username: string) {
+  public async getOrCreateUser(
+    discordId: string,
+    username: string,
+    discriminator: string
+  ) {
     try {
       // Essayer de récupérer l'utilisateur
       const response = await this.api.get(`/api/users/discord/${discordId}`);
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        "[getOrCreateUser] Erreur lors de la récupération de l'utilisateur:",
-        error
-      );
-
       // Vérifier si c'est une erreur Axios
       if (axios.isAxiosError(error)) {
         // Si l'utilisateur n'existe pas (404), le créer
@@ -54,7 +54,8 @@ class APIService {
             const newUser = {
               discordId,
               username,
-              globalName: username, // Utiliser le même nom d'utilisateur comme globalName
+              discriminator,
+              globalName: username, // Utiliser le même nom d'utilisateur comme globalName par défaut
               avatar: null, // L'avatar sera mis à jour plus tard
             };
             console.log(
@@ -79,17 +80,12 @@ class APIService {
 
         // Si c'est une autre erreur HTTP, la propager avec plus de détails
         const errorMessage = error.response?.data?.message || error.message;
-        console.error(
-          `[getOrCreateUser] Erreur API (${error.response?.status}):`,
-          errorMessage
-        );
         throw new Error(
           `Erreur lors de la récupération de l'utilisateur: ${errorMessage}`
         );
       }
 
       // Si ce n'est pas une erreur Axios, envelopper dans une erreur plus descriptive
-      console.error("[getOrCreateUser] Erreur inattendue:", error);
       throw new Error(
         `Erreur inattendue: ${
           error instanceof Error ? error.message : "Erreur inconnue"
@@ -108,24 +104,31 @@ class APIService {
   public async updateUser(
     discordId: string,
     userData: {
-      globalName?: string;
-      avatar?: string;
-      email?: string;
+      username: string;
+      discriminator: string;
+      globalName?: string | null;
+      avatar?: string | null;
+      email?: string | null;
     }
   ) {
     try {
-      const response = await this.api.patch(
+      const response = await this.api.put(
         `/api/users/discord/${discordId}`,
         userData
       );
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          `Erreur lors de la mise à jour de l'utilisateur: ${error.message}`
-        );
-      }
-      throw error;
+    } catch (error) {
+      console.error(
+        "[updateUser] Erreur lors de la mise à jour de l'utilisateur:",
+        error
+      );
+      throw new Error(
+        `Impossible de mettre à jour l'utilisateur: ${
+          axios.isAxiosError(error)
+            ? error.response?.data?.message || error.message
+            : "Erreur inconnue"
+        }`
+      );
     }
   }
 
@@ -133,37 +136,42 @@ class APIService {
    * Récupère ou crée un serveur
    * @param discordId L'ID Discord du serveur
    * @param name Le nom du serveur
+   * @param memberCount Le nombre de membres dans le serveur
    * @returns Les informations du serveur
    * @throws {Error} Si une erreur se produit
    */
-  public async getOrCreateServer(discordId: string, name: string) {
+  public async getOrCreateServer(
+    discordId: string,
+    name: string,
+    memberCount: number
+  ) {
     try {
       // Essayer de récupérer le serveur
       const response = await this.api.get(`/api/servers/discord/${discordId}`);
+
+      // Mettre à jour les informations du serveur si nécessaire
+      await this.api.put(`/api/servers/discord/${discordId}`, {
+        name,
+        memberCount,
+      });
+
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        `[getOrCreateServer] Erreur lors de la récupération du serveur ${discordId}:`,
-        error
-      );
-
       // Vérifier si c'est une erreur Axios
       if (axios.isAxiosError(error)) {
         // Si le serveur n'existe pas (404), le créer
         if (error.response?.status === 404) {
           try {
-            console.log(
-              `[getOrCreateServer] Création d'un nouveau serveur: ${discordId} (${name})`
-            );
             const newServer = {
               discordId,
               name,
+              memberCount,
             };
-            const createResponse = await this.api.post(
-              "/api/servers",
-              newServer
+            console.log(
+              `[getOrCreateServer] Création d'un nouveau serveur: ${name} (${discordId})`
             );
-            return createResponse.data;
+            const response = await this.api.post("/api/servers", newServer);
+            return response.data;
           } catch (createError) {
             console.error(
               "[getOrCreateServer] Erreur lors de la création du serveur:",
@@ -181,17 +189,12 @@ class APIService {
 
         // Si c'est une autre erreur HTTP, la propager avec plus de détails
         const errorMessage = error.response?.data?.message || error.message;
-        console.error(
-          `[getOrCreateServer] Erreur API (${error.response?.status}):`,
-          errorMessage
-        );
         throw new Error(
           `Erreur lors de la récupération du serveur: ${errorMessage}`
         );
       }
 
       // Si ce n'est pas une erreur Axios, envelopper dans une erreur plus descriptive
-      console.error("[getOrCreateServer] Erreur inattendue:", error);
       throw new Error(
         `Erreur inattendue: ${
           error instanceof Error ? error.message : "Erreur inconnue"
@@ -217,15 +220,8 @@ class APIService {
     }
   ) {
     try {
-      console.log(
-        `[getOrCreateCharacter] Récupération du personnage pour l'utilisateur ${userId} sur le serveur ${serverId}`
-      );
-
-      // D'abord, essayer de récupérer l'utilisateur pour avoir son ID interne
-      const user = await this.getOrCreateUser(
-        userId,
-        characterData.nickname || "Utilisateur Discord"
-      );
+      // D'abord, récupérer l'utilisateur pour avoir son ID interne
+      const user = await this.getOrCreateUser(userId, "", "0000"); // Les valeurs vides seront mises à jour plus tard
 
       if (!user) {
         throw new Error("Impossible de récupérer ou créer l'utilisateur");
@@ -234,7 +230,7 @@ class APIService {
       // S'assurer que le serveur existe et obtenir son ID interne
       let server;
       try {
-        server = await this.getOrCreateServer(serverId, "Serveur Discord");
+        server = await this.getOrCreateServer(serverId, "Serveur Discord", 0);
       } catch (serverError) {
         console.error(
           `[getOrCreateCharacter] Erreur lors de la vérification du serveur ${serverId}:`,
@@ -247,88 +243,27 @@ class APIService {
         throw new Error("ID du serveur non valide");
       }
 
-      // Maintenant, essayer de récupérer le personnage avec l'ID interne de l'utilisateur et du serveur
-      const response = await this.api.get(
-        `/api/characters/user/${user.id}/server/${server.id}`
-      );
+      // Créer ou mettre à jour le personnage
+      const response = await this.api.post("/api/characters", {
+        userId: user.id,
+        serverId: server.id,
+        nickname: characterData.nickname,
+        roles: characterData.roles,
+      });
 
       return response.data;
-    } catch (error: unknown) {
+    } catch (error) {
       console.error(
-        `[getOrCreateCharacter] Erreur lors de la récupération du personnage (${userId}, ${serverId}):`,
+        `[getOrCreateCharacter] Erreur lors de la récupération/création du personnage (${userId}, ${serverId}):`,
         error
       );
-
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          try {
-            console.log(
-              `[getOrCreateCharacter] Création d'un nouveau personnage pour l'utilisateur ${userId} sur le serveur ${serverId}`
-            );
-
-            // Récupérer l'utilisateur pour avoir son ID interne
-            const user = await this.getOrCreateUser(
-              userId,
-              characterData.nickname || "Utilisateur Discord"
-            );
-
-            if (!user) {
-              throw new Error("Impossible de récupérer ou créer l'utilisateur");
-            }
-
-            // Récupérer le serveur pour avoir son ID interne
-            const server = await this.getOrCreateServer(
-              serverId,
-              "Serveur Discord"
-            );
-            if (!server || !server.id) {
-              throw new Error("ID du serveur non valide");
-            }
-
-            // Créer le personnage avec l'ID interne de l'utilisateur et du serveur
-            const newCharacter = {
-              userId: user.id,
-              serverId: server.id, // Utiliser l'ID interne du serveur
-              nickname: characterData.nickname,
-              roles: characterData.roles,
-            };
-
-            const createResponse = await this.api.post(
-              "/api/characters",
-              newCharacter
-            );
-
-            return createResponse.data;
-          } catch (createError) {
-            console.error(
-              "[getOrCreateCharacter] Erreur lors de la création du personnage:",
-              createError
-            );
-            throw new Error(
-              `Impossible de créer le personnage: ${
-                axios.isAxiosError(createError) &&
-                createError.response?.data?.message
-                  ? createError.response.data.message
-                  : axios.isAxiosError(createError)
-                  ? createError.message
-                  : "Erreur inconnue"
-              }`
-            );
-          }
-        }
-        const errorMessage = error.response?.data?.message || error.message;
-        console.error(
-          `[getOrCreateCharacter] Erreur API (${error.response?.status}):`,
-          errorMessage
-        );
-        throw new Error(
-          `Erreur lors de la récupération du personnage: ${errorMessage}`
-        );
-      }
-      console.error("[getOrCreateCharacter] Erreur inattendue:", error);
       throw new Error(
-        `Erreur inattendue: ${
-          error instanceof Error ? error.message : "Erreur inconnue"
+        `Impossible de récupérer ou créer le personnage: ${
+          axios.isAxiosError(error)
+            ? error.response?.data?.message || error.message
+            : error instanceof Error
+            ? error.message
+            : "Erreur inconnue"
         }`
       );
     }

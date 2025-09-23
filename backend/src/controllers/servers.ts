@@ -6,12 +6,13 @@ import { prisma } from "../util/db";
 interface ServerInput {
   discordId: string;
   name: string;
+  memberCount?: number;
 }
 
 // Crée ou met à jour un serveur Discord
 export const upsertServer: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, name } = req.body as ServerInput;
+    const { discordId, name, memberCount } = req.body as ServerInput;
 
     if (!discordId || !name) {
       throw createHttpError(400, "Les champs discordId et name sont requis");
@@ -28,7 +29,13 @@ export const upsertServer: RequestHandler = async (req, res, next) => {
       // Mettre à jour le serveur existant
       server = await prisma.server.update({
         where: { discordGuildId: discordId },
-        data: { name },
+        data: {
+          name,
+          memberCount:
+            memberCount !== undefined
+              ? memberCount
+              : existingServer.memberCount,
+        },
       });
     } else {
       // Créer un nouveau serveur
@@ -36,6 +43,7 @@ export const upsertServer: RequestHandler = async (req, res, next) => {
         data: {
           discordGuildId: discordId,
           name,
+          memberCount: memberCount || 0,
         },
       });
     }

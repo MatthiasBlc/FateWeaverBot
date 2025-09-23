@@ -11,6 +11,8 @@ export async function ensureUserExists(interaction: CommandInteraction) {
   const guildId = interaction.guildId;
   const userId = member.id;
   const username = member.user.username;
+  const discriminator = member.user.discriminator;
+  const globalName = member.user.globalName || null;
   const userAvatar = member.user.displayAvatarURL({
     extension: "png",
     size: 1024,
@@ -20,13 +22,23 @@ export async function ensureUserExists(interaction: CommandInteraction) {
     .filter((role) => role.id !== interaction.guildId)
     .map((role) => role.id);
 
+  // Trier les rôles par position (du plus élevé au plus bas)
+  const sortedRoles = Array.from(member.roles.cache.values())
+    .sort((a, b) => b.position - a.position)
+    .map((role) => role.id)
+    .filter((id) => id !== interaction.guildId);
+
   try {
     console.log(
-      `[ensureUserExists] Vérification de l'utilisateur ${userId} (${username})...`
+      `[ensureUserExists] Vérification de l'utilisateur ${userId} (${username}#${discriminator})...`
     );
 
     // 1. Vérifier et créer l'utilisateur si nécessaire
-    const user = await apiService.getOrCreateUser(userId, username);
+    const user = await apiService.getOrCreateUser(
+      userId,
+      username,
+      discriminator
+    );
     console.log(
       `[ensureUserExists] Utilisateur ${userId} vérifié:`,
       user ? `ID: ${user.id}` : "non trouvé"
@@ -37,7 +49,9 @@ export async function ensureUserExists(interaction: CommandInteraction) {
       `[ensureUserExists] Mise à jour des informations de l'utilisateur...`
     );
     await apiService.updateUser(userId, {
-      globalName: member.user.username,
+      username,
+      discriminator,
+      globalName,
       avatar: userAvatar,
       email: `${userId}@discord.app`,
     });
@@ -46,7 +60,8 @@ export async function ensureUserExists(interaction: CommandInteraction) {
     console.log(`[ensureUserExists] Vérification du serveur ${guildId}...`);
     const server = await apiService.getOrCreateServer(
       guildId,
-      interaction.guild?.name || "Serveur inconnu"
+      interaction.guild?.name || "Serveur inconnu",
+      interaction.guild?.memberCount || 0
     );
     console.log(
       `[ensureUserExists] Serveur ${guildId} vérifié:`,
@@ -59,7 +74,7 @@ export async function ensureUserExists(interaction: CommandInteraction) {
     );
     const character = await apiService.getOrCreateCharacter(userId, guildId, {
       nickname: userNickname,
-      roles: userRoles,
+      roles: sortedRoles,
     });
     console.log(
       `[ensureUserExists] Personnage vérifié:`,
@@ -98,11 +113,20 @@ export function withUser(
       await ensureUserExists(interaction);
       return handler(interaction);
     } catch (error) {
-      console.error("Erreur dans le middleware withUser:", error);
-      if (!interaction.replied && !interaction.deferred) {
+      console.error("Erreur dans withUser:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Une erreur inconnue est survenue";
+
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: `❌ ${errorMessage}`,
+          ephemeral: true,
+        });
+      } else {
         await interaction.reply({
-          content:
-            "Une erreur est survenue lors du traitement de votre commande.",
+          content: `❌ ${errorMessage}`,
           ephemeral: true,
         });
       }

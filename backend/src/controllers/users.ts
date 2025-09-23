@@ -27,6 +27,7 @@ interface SignUpBody {
   username?: string;
   email?: string;
   password?: string;
+  discriminator?: string;
 }
 
 export const signUp: RequestHandler<
@@ -35,8 +36,7 @@ export const signUp: RequestHandler<
   SignUpBody,
   unknown
 > = async (req, res, next) => {
-  const username = req.body.username;
-  const email = req.body.email;
+  const { username, email, discriminator } = req.body as SignUpBody;
   const passwordRaw = req.body.password;
 
   try {
@@ -82,6 +82,8 @@ export const signUp: RequestHandler<
       data: {
         discordId: "",
         email,
+        username,
+        discriminator: discriminator || "0000",
         // password: passwordHashed,
         globalName: null,
         avatar: null,
@@ -89,6 +91,8 @@ export const signUp: RequestHandler<
       select: {
         id: true,
         discordId: true,
+        username: true,
+        discriminator: true,
         globalName: true,
         avatar: true,
         email: true,
@@ -164,11 +168,13 @@ export const logout: RequestHandler = (req, res, next) => {
 };
 
 // Interfaces pour les requêtes
-export interface DiscordUserInput {
+interface DiscordUserInput {
   discordId: string;
   username: string;
+  discriminator: string;
   globalName?: string | null;
   avatar?: string | null;
+  email?: string | null;
 }
 
 /**
@@ -176,38 +182,48 @@ export interface DiscordUserInput {
  */
 export const upsertDiscordUser: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, username, globalName, avatar }: DiscordUserInput =
-      req.body;
+    const { discordId, username, discriminator, globalName, avatar, email } =
+      req.body as DiscordUserInput;
 
-    if (!discordId || !username) {
+    if (!discordId || !username || !discriminator) {
       throw createHttpError(
         400,
-        "Les champs discordId et username sont obligatoires"
+        "Les champs discordId, username et discriminator sont requis"
       );
     }
 
-    const user = await prisma.user.upsert({
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await prisma.user.findUnique({
       where: { discordId },
-      update: {
-        discordId,
-        globalName,
-        avatar,
-      },
-      create: {
-        discordId,
-        globalName,
-        avatar,
-        email: `${discordId}@discord.app`, // Email temporaire unique
-        // password: crypto.randomBytes(16).toString("hex"), // Mot de passe temporaire
-      },
-      select: {
-        id: true,
-        discordId: true,
-        globalName: true,
-        avatar: true,
-        createdAt: true,
-      },
     });
+
+    let user;
+
+    if (existingUser) {
+      // Mettre à jour l'utilisateur existant
+      user = await prisma.user.update({
+        where: { discordId },
+        data: {
+          username: username || undefined,
+          discriminator: discriminator || undefined,
+          globalName: globalName || null,
+          avatar: avatar || null,
+          ...(email ? { email } : {}),
+        },
+      });
+    } else {
+      // Créer un nouvel utilisateur
+      user = await prisma.user.create({
+        data: {
+          discordId,
+          username,
+          discriminator,
+          globalName: globalName || null,
+          avatar: avatar || null,
+          ...(email && { email }),
+        },
+      });
+    }
 
     res.status(200).json(user);
   } catch (error) {

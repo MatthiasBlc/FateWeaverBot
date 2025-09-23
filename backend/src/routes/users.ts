@@ -18,5 +18,6 @@ router.get("/discord/:discordId/profile", UserController.getDiscordUserProfile);
 router.post("/", UserController.upsertDiscordUser);
 router.get("/discord/:discordId", UserController.getDiscordUserProfile);
 router.patch("/discord/:discordId", UserController.updateDiscordUser);
+router.put("/discord/:discordId", UserController.updateDiscordUser);
 
 export default router;
