@@ -34,8 +34,8 @@ const commands = [];
 // Load all commands
 try {
   const commandsPath = join(process.cwd(), "src", "commands");
-  const commandFiles = (await readdir(commandsPath)).filter((file) =>
-    file.endsWith(".ts")
+  const commandFiles = (await readdir(commandsPath)).filter(
+    (file) => file.endsWith(".ts") && !file.startsWith("_")
   );
 
   for (const file of commandFiles) {

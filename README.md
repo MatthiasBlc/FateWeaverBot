@@ -1,6 +1,18 @@
-#lister les commandes du bot :
+# lister les commandes du bot :
+
 npx tsx src/list-commands.ts
-a utiliser dans le container du bot
+a utiliser dans le container du bot (paser en sh et pas en bash)
+
+# Various info
+
+deploy.yml :
+La variable DISCORD_GUILD_ID n'est pas exportée dans le workflow GitHub Actions.
+deploy_prod.sh :
+La variable DISCORD_GUILD_ID n'est pas listée dans les variables obligatoires (contrairement à DISCORD_TOKEN et DISCORD_CLIENT_ID).
+Elle n'est pas non plus exportée dans le script.
+
+-> de fait le bot est déployé globalement et non sur une guilde
+(temps de maj possible)
 
 # Boiler Plate JS
 

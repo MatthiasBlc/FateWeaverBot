@@ -20,7 +20,8 @@ async function loadCommands() {
     // Utilisation de new URL pour les chemins en ES modules
     const commandsPath = new URL("commands", import.meta.url);
     const commandFiles = (await fs.readdir(commandsPath)).filter(
-      (file) => file.endsWith(".js") || file.endsWith(".ts")
+      (file) =>
+        (file.endsWith(".js") || file.endsWith(".ts")) && !file.startsWith("_")
     );
 
     for (const file of commandFiles) {
