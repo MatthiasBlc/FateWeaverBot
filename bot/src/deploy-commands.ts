@@ -80,44 +80,71 @@ const clientId = process.env.DISCORD_CLIENT_ID!;
 try {
   console.log(`🔄 Démarrage du déploiement des commandes...`);
 
-  // 1. Récupérer toutes les commandes existantes
-  console.log("🔄 Récupération des commandes existantes...");
+  // Déterminer la route en fonction du mode de déploiement
+  const getCommandsRoute = (forceGlobal = false) =>
+    !forceGlobal && isGuildDeployment
+      ? Routes.applicationGuildCommands(clientId, guildId!)
+      : Routes.applicationCommands(clientId);
+
+  const getCommandRoute = (commandId: string, forceGlobal = false) =>
+    !forceGlobal && isGuildDeployment
+      ? Routes.applicationGuildCommand(clientId, guildId!, commandId)
+      : Routes.applicationCommand(clientId, commandId);
+
+  // 1. Nettoyer les commandes globales si on est en mode guilde
+  if (isGuildDeployment) {
+    try {
+      console.log("🔄 Nettoyage des commandes globales...");
+      const globalCommands = (await rest.get(
+        getCommandsRoute(true) // Force le mode global
+      )) as DiscordCommand[];
+
+      if (globalCommands.length > 0) {
+        console.log(
+          `🗑️  Suppression de ${globalCommands.length} commandes globales existantes...`
+        );
+        await Promise.all(
+          globalCommands.map((cmd) =>
+            rest
+              .delete(getCommandRoute(cmd.id, true)) // Force le mode global
+              .catch(console.error)
+          )
+        );
+        console.log("✅ Nettoyage des commandes globales terminé");
+      }
+    } catch (error) {
+      console.warn(
+        "⚠️  Impossible de nettoyer les commandes globales :",
+        error
+      );
+    }
+  }
+
+  // 2. Récupérer les commandes existantes (guilde ou globales)
+  console.log(`🔄 Récupération des commandes existantes...`);
   const existingCommands = (await rest.get(
-    isGuildDeployment
-      ? Routes.applicationGuildCommands(clientId, guildId)
-      : Routes.applicationCommands(clientId)
+    getCommandsRoute()
   )) as DiscordCommand[];
 
-  // 2. Supprimer toutes les commandes existantes
+  // 3. Supprimer les commandes existantes
   console.log(
     `🗑️  Suppression de ${existingCommands.length} commandes existantes...`
   );
   await Promise.all(
     existingCommands.map((cmd) =>
-      rest
-        .delete(
-          isGuildDeployment
-            ? Routes.applicationGuildCommand(clientId, guildId, cmd.id)
-            : Routes.applicationCommand(clientId, cmd.id)
-        )
-        .catch(console.error)
+      rest.delete(getCommandRoute(cmd.id)).catch(console.error)
     )
   );
 
-  // 3. Enregistrer les nouvelles commandes
+  // 4. Enregistrer les nouvelles commandes
   console.log(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
-  const data = (await rest.put(
-    isGuildDeployment
-      ? Routes.applicationGuildCommands(clientId, guildId)
-      : Routes.applicationCommands(clientId),
-    {
-      body: commands,
-    }
-  )) as unknown[];
+  const data = (await rest.put(getCommandsRoute(), {
+    body: commands,
+  })) as unknown[];
 
   console.log(
     `✅ ${data.length} commandes ${
-      isGuildDeployment ? "(guilde)" : "(globales)"
+      isGuildDeployment ? "de guilde" : "globales"
     } déployées avec succès.`
   );
   process.exit(0);
