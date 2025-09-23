@@ -18,6 +18,17 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
+const guildId = process.env.DISCORD_GUILD_ID?.trim(); // Supprime les espaces inutiles
+const isGuildDeployment = guildId && guildId.length > 0; // Vérifie si la chaîne n'est pas vide
+
+if (isGuildDeployment) {
+  console.log(`ℹ️  Déploiement en mode guilde (ID: ${guildId})`);
+} else {
+  console.log(
+    `ℹ️  Déploiement en mode global (DISCORD_GUILD_ID non défini ou vide)`
+  );
+}
+
 const commands = [];
 
 // Load all commands
@@ -72,7 +83,9 @@ try {
   // 1. Récupérer toutes les commandes existantes
   console.log("🔄 Récupération des commandes existantes...");
   const existingCommands = (await rest.get(
-    Routes.applicationCommands(clientId)
+    isGuildDeployment
+      ? Routes.applicationGuildCommands(clientId, guildId)
+      : Routes.applicationCommands(clientId)
   )) as DiscordCommand[];
 
   // 2. Supprimer toutes les commandes existantes
@@ -82,19 +95,30 @@ try {
   await Promise.all(
     existingCommands.map((cmd) =>
       rest
-        .delete(Routes.applicationCommand(clientId, cmd.id))
+        .delete(
+          isGuildDeployment
+            ? Routes.applicationGuildCommand(clientId, guildId, cmd.id)
+            : Routes.applicationCommand(clientId, cmd.id)
+        )
         .catch(console.error)
     )
   );
 
   // 3. Enregistrer les nouvelles commandes
   console.log(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
-  const data = (await rest.put(Routes.applicationCommands(clientId), {
-    body: commands,
-  })) as unknown[];
+  const data = (await rest.put(
+    isGuildDeployment
+      ? Routes.applicationGuildCommands(clientId, guildId)
+      : Routes.applicationCommands(clientId),
+    {
+      body: commands,
+    }
+  )) as unknown[];
 
   console.log(
-    `✅ ${data.length} commandes (/) globales déployées avec succès.`
+    `✅ ${data.length} commandes ${
+      isGuildDeployment ? "(guilde)" : "(globales)"
+    } déployées avec succès.`
   );
   process.exit(0);
 } catch (error) {
