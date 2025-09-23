@@ -15,7 +15,7 @@ export const getNotes: RequestHandler = async (req, res, next) => {
       select: {
         id: true,
         title: true,
-        text: true,
+        content: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -40,7 +40,7 @@ export const getNote: RequestHandler = async (req, res, next) => {
       select: {
         id: true,
         title: true,
-        text: true,
+        content: true,
         createdAt: true,
         updatedAt: true,
         author: true,
@@ -86,7 +86,7 @@ export const createNote: RequestHandler<
     const newNote = await prisma.note.create({
       data: {
         title: title,
-        text: text,
+        content: text,
         authorId: authenticatedUserId,
       },
     });
@@ -127,7 +127,7 @@ export const updateNote: RequestHandler<
       where: { id: noteId },
       data: {
         title: newTitle,
-        text: newText,
+        content: newText,
       },
     });
 

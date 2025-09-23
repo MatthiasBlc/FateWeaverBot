@@ -17,5 +17,6 @@ router.get("/discord/:discordId/profile", UserController.getDiscordUserProfile);
 // Nouvelles routes correspondant aux attentes du bot
 router.post("/", UserController.upsertDiscordUser);
 router.get("/discord/:discordId", UserController.getDiscordUserProfile);
+router.patch("/discord/:discordId", UserController.updateDiscordUser);
 
 export default router;

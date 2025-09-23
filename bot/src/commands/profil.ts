@@ -1,80 +1,59 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  type GuildMember,
+} from "discord.js";
 import type { Command } from "../types/command";
-import { apiService } from "../services/api";
-import { AxiosError } from "axios";
+import { withUser } from "../middleware/ensureUser";
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("profil")
-    .setDescription("Affiche ou crée votre profil utilisateur"),
+    .setDescription("Affiche votre profil et vos informations"),
 
-  async execute(interaction) {
-    try {
-      // Différer la réponse pour avoir plus de temps
-      await interaction.deferReply({ ephemeral: true });
+  execute: withUser(async (interaction) => {
+    // Le middleware withUser s'occupe déjà de vérifier/créer l'utilisateur, le serveur et le personnage
+    const member = interaction.member as GuildMember;
+    const user = interaction.user;
+    const guild = interaction.guild!;
 
-      const discordId = interaction.user.id;
-      const username = interaction.user.username;
-
-      // Récupérer ou créer l'utilisateur
-      const user = await apiService.getOrCreateUser(discordId, username);
-
-      // Créer un embed pour afficher les informations du profil
-      const embed = new EmbedBuilder()
-        .setColor("#0099ff")
-        .setTitle("👤 Profil utilisateur")
-        .setThumbnail(interaction.user.displayAvatarURL())
-        .addFields(
-          { name: "Nom d'utilisateur", value: user.username, inline: true },
-          { name: "ID Discord", value: user.discordId, inline: true },
-          {
-            name: "Date de création",
-            value: new Date(user.createdAt).toLocaleDateString("fr-FR"),
-            inline: true,
-          }
-        )
-        .setFooter({
-          text: `Profil mis à jour le ${new Date().toLocaleString("fr-FR")}`,
-        });
-
-      // Ajouter des champs supplémentaires si disponibles
-      if (user.email) {
-        embed.addFields({ name: "Email", value: user.email, inline: true });
-      }
-
-      if (user.roles && user.roles.length > 0) {
-        embed.addFields({
-          name: "Rôles",
-          value: user.roles.join(", "),
-          inline: false,
-        });
-      }
-
-      // Répondre avec l'embed
-      await interaction.editReply({ embeds: [embed] });
-    } catch (error) {
-      console.error("Erreur dans la commande /profil:", error);
-
-      let errorMessage =
-        "❌ Une erreur est survenue lors de la récupération de votre profil.";
-
-      if (error instanceof AxiosError && error.response) {
-        // Erreur de l'API
-        errorMessage += `\n\`\`\`${
-          error.response.data?.message || error.message
-        }\`\`\``;
-      }
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.editReply(errorMessage);
-      } else {
-        await interaction.reply({
-          content: errorMessage,
-          ephemeral: true,
-        });
-      }
+    // Vérifier si on peut accéder aux propriétés du membre
+    if (!("joinedTimestamp" in member) || !member.joinedTimestamp) {
+      await interaction.reply({
+        content: "Je n'ai pas pu récupérer la date d'arrivée sur ce serveur.",
+        ephemeral: true,
+      });
+      return;
     }
-  },
+
+    // Créer un embed pour afficher les informations du profil
+    const embed = new EmbedBuilder()
+      .setColor("#0099ff")
+      .setTitle(`Profil de ${member.user.username}`)
+      .setThumbnail(user.displayAvatarURL())
+      .addFields(
+        { name: "👤 Pseudo", value: user.username, inline: true },
+        { name: "🆔 ID", value: user.id, inline: true },
+        {
+          name: "📅 Membre depuis",
+          value: new Date(member.joinedTimestamp).toLocaleDateString(),
+          inline: true,
+        },
+        { name: "🏠 Serveur", value: guild.name, inline: true },
+        {
+          name: "👑 Rôle",
+          value: member.roles.highest?.toString() || "Aucun rôle",
+          inline: true,
+        }
+      )
+      .setFooter({
+        text: `Profil de ${user.tag}`,
+        iconURL: user.displayAvatarURL(),
+      })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+  }),
 };
 
 export default command;

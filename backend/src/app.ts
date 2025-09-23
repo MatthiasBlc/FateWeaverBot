@@ -2,6 +2,8 @@ import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import notesRoutes from "./routes/notes";
 import userRoutes from "./routes/users";
+import serverRoutes from "./routes/servers";
+import characterRoutes from "./routes/characters";
 import morgan from "morgan";
 import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
@@ -42,7 +44,12 @@ app.use(
   })
 );
 
+// Routes publiques
 app.use("/api/users", userRoutes);
+app.use("/api/servers", serverRoutes);
+app.use("/api/characters", characterRoutes);
+
+// Routes protégées
 app.use("/api/notes", requireAuth, notesRoutes);
 
 // Health endpoint for container healthcheck
@@ -59,10 +66,12 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
   console.error(error);
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
+
   if (isHttpError(error)) {
     statusCode = error.status;
     errorMessage = error.message;
   }
+
   res.status(statusCode).json({ error: errorMessage });
 });
 
