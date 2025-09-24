@@ -109,13 +109,12 @@ const command: Command = {
         }
       );
 
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed] });
     } catch (error) {
       console.error("Erreur lors de la récupération du profil:", error);
       await interaction.reply({
         content:
           "Une erreur est survenue lors de la récupération de votre profil.",
-        ephemeral: true,
       });
     }
   }),
