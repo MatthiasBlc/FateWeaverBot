@@ -13,12 +13,13 @@ Elle n'est pas non plus exportée dans le script.
 
 -> de fait le bot est déployé globalement et non sur une guilde
 (temps de maj possible)
-
+ATTENTION
+-> ça a été changé, à reverse lorsque ça sera plus stable
 
 # prisma studio en local
- docker compose exec backenddev sh 
-  npx prisma studio
 
+docker compose exec backenddev sh
+npx prisma studio
 
 # Boiler Plate JS
 

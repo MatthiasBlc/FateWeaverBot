@@ -84,6 +84,7 @@ jobs:
           export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
           export DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
           export DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}"
+          export DISCORD_GUILD_ID="${{ secrets.DISCORD_GUILD_ID }}"
           export API_URL="${{ secrets.API_URL }}"
           export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
           export TAG="${{ secrets.TAG }}"
