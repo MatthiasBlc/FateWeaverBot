@@ -48,6 +48,7 @@ services:
       - PRISMA_CLIENT_ENGINE_TYPE=library
       - CORS_ORIGIN=${CORS_ORIGIN}
       - SESSION_SECRET=${SESSION_SECRET}
+      - TRUST_PROXY=1
     ports:
       - "3000:3000"
     depends_on:
@@ -57,13 +58,6 @@ services:
       - internal
     volumes:
       - fateweaver-backend-logs:/app/logs
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "1"
-    #       memory: 1.5G
-    #     reservations:
-    #       memory: 1G
     logging: *default-logging
     healthcheck:
       test:

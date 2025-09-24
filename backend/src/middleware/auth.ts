@@ -19,31 +19,61 @@ export const requireInternal: RequestHandler = (req, res, next) => {
   // En production, on vérifie que la requête vient du réseau interne
   const clientIp =
     req.ip || (req.connection && req.connection.remoteAddress) || "";
+  const xForwardedFor = req.headers["x-forwarded-for"];
+  const xRealIp = req.headers["x-real-ip"];
+
+  // Log pour le débogage
+  console.log(
+    "Requête reçue - IP:",
+    clientIp,
+    "X-Forwarded-For:",
+    xForwardedFor,
+    "X-Real-IP:",
+    xRealIp
+  );
 
   // Liste des plages d'IP considérées comme internes
-  const isInternal = [
-    "127.0.0.1", // localhost
-    "::1", // IPv6 localhost
-    "10.0.0.0/8", // réseau privé
-    "172.16.0.0/12", // réseau privé
-    "192.168.0.0/16", // réseau privé
-    "fd00::/8", // IPv6 ULA
-    "backend", // Nom du service dans Docker
-    "bot", // Nom potentiel du service bot
-  ].some((ip) => {
-    if (ip.includes("/")) {
+  const internalRanges = [
+    // Réseaux privés standards
+    "10.0.0.0/8",
+    "172.16.0.0/12", // Inclut 172.16.0.0 à 172.31.255.255
+    "192.168.0.0/16",
+    // Localhost
+    "127.0.0.1",
+    "::1",
+    // Docker
+    "172.17.0.0/16", // Réseau Docker par défaut
+    "172.18.0.0/16", // Autre réseau Docker potentiel
+    // Noms de conteneurs
+    "fateweaver-backend",
+    "fateweaver-discord-bot",
+  ];
+
+  // Vérifier si l'IP est dans une des plages internes
+  const isInternal = internalRanges.some((range) => {
+    if (range.includes("/")) {
       // Vérification CIDR
-      const [subnet, bits] = ip.split("/");
+      const [subnet, bits] = range.split("/");
       return isInSubnet(clientIp, subnet, parseInt(bits, 10));
     }
-    return clientIp.includes(ip);
+    return clientIp.includes(range);
+  });
+
+  console.log("Vérification IP interne:", {
+    ip: clientIp,
+    isInternal,
+    internalRanges,
   });
 
   if (isInternal) {
     return next();
   }
 
-  console.log("Accès non autorisé depuis l'IP:", clientIp);
+  console.log("Accès non autorisé depuis l'IP:", clientIp, "Headers:", {
+    "x-forwarded-for": xForwardedFor,
+    "x-real-ip": xRealIp,
+    host: req.headers["host"],
+  });
   next(createHttpError(403, "Accès non autorisé"));
 };
 
@@ -83,27 +113,34 @@ export const requireAuthOrInternal: RequestHandler = (req, res, next) => {
   // Ensuite vérifier si c'est un appel interne
   const clientIp =
     req.ip || (req.connection && req.connection.remoteAddress) || "";
+  const xForwardedFor = req.headers["x-forwarded-for"];
 
-  const isInternal = [
-    "127.0.0.1",
-    "::1",
+  const internalRanges = [
     "10.0.0.0/8",
     "172.16.0.0/12",
+    "172.17.0.0/16",
     "192.168.0.0/16",
-    "backend",
-    "bot",
-  ].some((ip) => {
-    if (ip.includes("/")) {
-      const [subnet, bits] = ip.split("/");
+    "127.0.0.1",
+    "::1",
+    "fateweaver-backend",
+    "fateweaver-discord-bot",
+  ];
+
+  const isInternal = internalRanges.some((range) => {
+    if (range.includes("/")) {
+      const [subnet, bits] = range.split("/");
       return isInSubnet(clientIp, subnet, parseInt(bits, 10));
     }
-    return clientIp.includes(ip);
+    return clientIp.includes(range);
   });
 
   if (isInternal) {
     return next();
   }
 
-  console.log("Accès non autorisé depuis l'IP:", clientIp);
+  console.log("Accès non autorisé depuis l'IP:", clientIp, "Headers:", {
+    "x-forwarded-for": xForwardedFor,
+    host: req.headers["host"],
+  });
   next(createHttpError(401, "Authentication required"));
 };

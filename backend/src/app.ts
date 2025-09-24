@@ -16,7 +16,36 @@ import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 const app = express();
 
 // Configuration du proxy trust
-app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
+const isBehindProxy =
+  process.env.TRUST_PROXY === "1" || process.env.NODE_ENV === "production";
+console.log(`Trust proxy settings: ${isBehindProxy ? "enabled" : "disabled"}`);
+
+if (isBehindProxy) {
+  // Faire confiance au premier proxy
+  app.set("trust proxy", 1);
+
+  // Middleware pour logger les informations de la requête
+  app.use((req, res, next) => {
+    console.log("Request received:", {
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+      ips: req.ips,
+      protocol: req.protocol,
+      secure: req.secure,
+      hostname: req.hostname,
+      originalUrl: req.originalUrl,
+      headers: {
+        "x-forwarded-for": req.headers["x-forwarded-for"],
+        "x-forwarded-proto": req.headers["x-forwarded-proto"],
+        "x-forwarded-host": req.headers["x-forwarded-host"],
+        "x-real-ip": req.headers["x-real-ip"],
+        host: req.headers["host"],
+      },
+    });
+    next();
+  });
+}
 
 // cors needed for dev environment
 app.use(
