@@ -68,6 +68,48 @@ export async function ensureUserExists(interaction: CommandInteraction) {
       server ? `ID: ${server.id}` : "non trouvé"
     );
 
+    // 3.1 Synchroniser les rôles du serveur
+    console.log(
+      `[ensureUserExists] Synchronisation des rôles pour le serveur ${guildId}...`
+    );
+    const guildRoles = Array.from(
+      interaction.guild?.roles.cache.values() || []
+    );
+
+    // Filtrer pour ne garder que les rôles qui ne sont pas le rôle @everyone
+    const rolesToSync = guildRoles.filter(
+      (role) => role.id !== interaction.guildId
+    );
+
+    // Synchroniser chaque rôle avec la base de données
+    const syncedRoles = await Promise.all(
+      rolesToSync.map(async (role) => {
+        try {
+          const syncedRole = await apiService.upsertRole(
+            server.id,
+            role.id,
+            role.name,
+            role.hexColor
+          );
+          return syncedRole;
+        } catch (error) {
+          console.error(
+            `[ensureUserExists] Erreur lors de la synchronisation du rôle ${role.id}:`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    // Filtrer les rôles qui ont été synchronisés avec succès
+    const validSyncedRoles = syncedRoles.filter(
+      (role): role is NonNullable<typeof role> => role !== null
+    );
+    console.log(
+      `[ensureUserExists] ${validSyncedRoles.length}/${rolesToSync.length} rôles synchronisés avec succès`
+    );
+
     // 4. Vérifier et créer le personnage si nécessaire
     console.log(
       `[ensureUserExists] Vérification du personnage pour ${userId} sur ${guildId}...`
@@ -77,9 +119,13 @@ export async function ensureUserExists(interaction: CommandInteraction) {
       guildId,
       interaction.guild?.name || "Serveur inconnu",
       {
-        nickname: userNickname,
-        roles: sortedRoles,
-      }
+        username: user.username,
+        nickname: member.nickname || null,
+        roles: member.roles.cache
+          .filter((role) => role.id !== interaction.guildId) // Exclure le rôle @everyone
+          .map((role) => role.id),
+      },
+      interaction.client
     );
     console.log(
       `[ensureUserExists] Personnage vérifié:`,

@@ -23,9 +23,13 @@ const command: Command = {
         interaction.guildId!,
         interaction.guild?.name || "Serveur inconnu",
         {
+          username: user.username,
           nickname: member.nickname || null,
-          roles: member.roles.cache.map((role) => role.id),
-        }
+          roles: member.roles.cache
+            .filter((role) => role.id !== interaction.guildId) // Exclure le rôle @everyone
+            .map((role) => role.id),
+        },
+        interaction.client
       );
 
       // Créer l'embed principal avec uniquement les informations de la base de données

@@ -1,10 +1,8 @@
 -------------------------Todo-------------------------
 
 Server:
-Name devrait être le nom de guild ?
-email et notes pas nécessaire
-Character user id ne sert à rien
-rôle est une suite de chiffres ? 
+rôle est une suite de chiffres ?
+si character name est null alors prendre nom du compte
 
 @bot
 lors d'une commande par un utilisateur, on regarde toujours si:
