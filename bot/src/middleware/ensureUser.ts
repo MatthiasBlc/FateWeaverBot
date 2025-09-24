@@ -72,10 +72,15 @@ export async function ensureUserExists(interaction: CommandInteraction) {
     console.log(
       `[ensureUserExists] Vérification du personnage pour ${userId} sur ${guildId}...`
     );
-    const character = await apiService.getOrCreateCharacter(userId, guildId, {
-      nickname: userNickname,
-      roles: sortedRoles,
-    });
+    const character = await apiService.getOrCreateCharacter(
+      userId,
+      guildId,
+      interaction.guild?.name || "Serveur inconnu",
+      {
+        nickname: userNickname,
+        roles: sortedRoles,
+      }
+    );
     console.log(
       `[ensureUserExists] Personnage vérifié:`,
       character ? `ID: ${character.id}` : "non trouvé"

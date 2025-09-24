@@ -26,9 +26,7 @@ model User {
   discriminator String    // Tag Discord (ex: "1234")
   globalName   String?    // Nom global Discord (peut être null)
   avatar       String?    // Hash de l'avatar
-  email        String?    @unique
   characters   Character[]
-  notes        Note[]
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
@@ -38,7 +36,7 @@ model User {
 model Server {
   id             String     @id @default(cuid())
   discordGuildId String     @unique @map("discord_guild_id")
-  name           String?    // Nom du serveur
+  name           String     // Nom du serveur
   memberCount    Int        @default(0) // Nombre de membres dans le serveur
   characters     Character[]
   createdAt      DateTime   @default(now()) @map("created_at")
@@ -55,7 +53,6 @@ model Character {
   server        Server    @relation(fields: [serverId], references: [id])
   serverId      String    @map("server_id")
   role          String?   // Rôle le plus élevé du personnage sur le serveur
-  notes         Note[]
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -65,16 +62,4 @@ model Character {
   @@map("characters")
 }
 
-model Note {
-  id           String    @id @default(cuid())
-  title        String
-  content      String    @map("text")
-  author       User?     @relation(fields: [authorId], references: [id])
-  authorId     String?   @map("author_id")
-  character    Character? @relation(fields: [characterId], references: [id])
-  characterId  String?   @map("character_id")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  @@map("notes")
-}

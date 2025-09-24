@@ -21,6 +21,7 @@ const command: Command = {
       const character = await apiService.getOrCreateCharacter(
         user.id,
         interaction.guildId!,
+        interaction.guild?.name || "Serveur inconnu",
         {
           nickname: member.nickname || null,
           roles: member.roles.cache.map((role) => role.id),

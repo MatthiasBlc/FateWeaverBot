@@ -207,6 +207,7 @@ class APIService {
    * Récupère ou crée un personnage pour un utilisateur dans un serveur
    * @param userId L'ID Discord de l'utilisateur
    * @param serverId L'ID Discord du serveur
+   * @param serverName Le nom du serveur
    * @param characterData Les données du personnage (nickname, roles, etc.)
    * @returns Les informations du personnage
    * @throws {Error} Si une erreur se produit
@@ -214,23 +215,24 @@ class APIService {
   public async getOrCreateCharacter(
     userId: string,
     serverId: string,
+    serverName: string,
     characterData: {
       nickname?: string | null;
       roles: string[];
     }
   ) {
     try {
-      // D'abord, récupérer l'utilisateur pour avoir son ID interne
+      // Vérifier que l'utilisateur existe
       const user = await this.getOrCreateUser(userId, "", "0000"); // Les valeurs vides seront mises à jour plus tard
 
       if (!user) {
-        throw new Error("Impossible de récupérer ou créer l'utilisateur");
+        throw new Error("Utilisateur non trouvé");
       }
 
       // S'assurer que le serveur existe et obtenir son ID interne
       let server;
       try {
-        server = await this.getOrCreateServer(serverId, "Serveur Discord", 0);
+        server = await this.getOrCreateServer(serverId, serverName, 0); // Utiliser le nom du serveur fourni
       } catch (serverError) {
         console.error(
           `[getOrCreateCharacter] Erreur lors de la vérification du serveur ${serverId}:`,

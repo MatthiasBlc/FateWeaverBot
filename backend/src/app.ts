@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
-import notesRoutes from "./routes/notes";
 import userRoutes from "./routes/users";
 import serverRoutes from "./routes/servers";
 import characterRoutes from "./routes/characters";
@@ -9,7 +8,7 @@ import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
 import session from "express-session";
 import env from "./util/validateEnv";
-import { requireAuth } from "./middleware/auth";
+// import { requireAuth } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
@@ -50,7 +49,7 @@ app.use("/api/servers", serverRoutes);
 app.use("/api/characters", characterRoutes);
 
 // Routes protégées
-app.use("/api/notes", requireAuth, notesRoutes);
+// app.use("/api/notes", requireAuth, notesRoutes);
 
 // Health endpoint for container healthcheck
 app.get("/health", (_req: Request, res: Response) => {
