@@ -1,7 +1,33 @@
 -------------------------Todo-------------------------
 
-@bot
-avec la commande /profil, on affiche le nombre de PA restant.
+@part0
+PA est strictement positif et <=4
+
+@part1
+Pour chaque serveur, il existe une liste de chantiers
+chaque chantier est composé de :
+un nom,
+une date de début (date à laquelle le premier PA a été investi, nul de base),
+un cout en PA (un nombre de PA requis pour le contruire),
+un nombre de PA investi dedans (débute à 0),
+un statut
+
+- plan : 0PA dedans et n'a pas été encore sélectionné (date de début à nul),
+- en cours de construction : des PA ont été investis dedans mais il y en a moins que le nombre total requis,
+- Terminé : si le nombre investit == au cout.
+
+Les characters ayants le rôle admin, ADMIN_ROLE dans le .env, et seulement eux peuvent créer un nouveau chantier à ajouter à la liste en utilisant la commande /addch et en reseignant :
+nom et cost
+
+@part2
+Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
+Exemple Si un utilisateur a 1PA en stock et qu'il veut en utiliser 2, son PA est retiré et seulement 1 PA est investi dans le chantier.
+
+avec /chantier, les utilisateurs peuvent voir une liste déroulante des chantiers, en choisir un (voir le nombre de PA investi/cout dans la liste) et indiquer le nombre de PA qu'ils veulent investir dedans.
+valider la commande retire ce nombre de PA du user et les ajoute au total investi du chantier choisi
+
+Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
+Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
 
 -------------------------Done-------------------------
 @backend
@@ -28,27 +54,6 @@ chaque utilisateurs a deux PA par jour .
 chaque PA peut être individuellement conservé un maximum de 48h.
 Nous avons donc un maximum de 4PA sur un utilisateur.
 le total de PA >= 0 et toujours <= 4.
-
+@bot
+avec la commande /profil, on affiche le nombre de PA restant.
 -------------------------Notes-------------------------
-le backend est dans @backend
-
-Il existe une liste de chantiers
-chaque chantier est composé de :
-un nom, une date de début, un nombre de PA requis pour le contruire (cout en PA), un nombre de PA investi dedans (débuteà 0), un statut (plan : 0PA dedans et n'a pas été encore sélectionné, en cours de construction : des PA ont été investis dedans mais il y en a moins que le nombre requis, Terminé si le nombre investit = au cout.)
-Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
-
-Les administrateurs peuvent créer un nouveau chantier à ajouter à la liste en reseignant :
-nom et cost
-
-Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
-
-le bot est dans @bot
-
-avec /profil un utilisateur peut voir son nombre de PA restant
-
-une commande spéciale /addch disponible uniquement aux admins du serveur permet de créer un nouveau chantier à ajouter à la liste
-
-avec /chantier, les utilisateurs peuvent voir une liste déroulante des chantiers, en choisir un (voir le nombre de PA investi/cout dans la liste) et indiquer le nombre de PA qu'ils veulent investir dedans.
-valider la commande retire ce nombre de PA du user et les ajoute au total investi du chantier choisi
-
-Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
