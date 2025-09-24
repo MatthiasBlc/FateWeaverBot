@@ -12,7 +12,11 @@ class APIService {
   private constructor() {
     // Utiliser l'URL de l'API depuis les variables d'environnement fournies par Docker
     // Cette variable est définie dans le docker-compose.yml
-    const baseURL = process.env.API_URL || "http://localhost:3000";
+    const baseURL =
+      process.env.API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "http://fateweaver-backend:3000/api"
+        : "http://backenddev:3000/api");
 
     if (!baseURL) {
       throw new Error("La variable d'environnement API_URL n'est pas définie");
@@ -22,6 +26,10 @@ class APIService {
       baseURL,
       headers: {
         "Content-Type": "application/json",
+        // Ajout d'un en-tête personnalisé pour les appels internes
+        "X-Internal-Request": "true",
+        // Si nécessaire, vous pouvez ajouter un token secret partagé
+        // "X-Internal-Token": process.env.INTERNAL_API_SECRET
       },
     });
 
@@ -374,6 +382,26 @@ class APIService {
             : "Erreur inconnue"
         }`
       );
+    }
+  }
+
+  /**
+   * Récupère les informations des points d'action d'un personnage
+   */
+  public async getActionPoints(characterId: string, token: string) {
+    try {
+      const response = await this.api.get(`/action-points/${characterId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Erreur lors de la récupération des points d'action:",
+        error
+      );
+      throw error;
     }
   }
 }

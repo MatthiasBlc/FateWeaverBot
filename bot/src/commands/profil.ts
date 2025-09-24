@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   type GuildMember,
+  time,
+  TimestampStyles,
 } from "discord.js";
 import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";
@@ -32,17 +34,38 @@ const command: Command = {
         interaction.client
       );
 
-      // Créer l'embed principal avec uniquement les informations de la base de données
+      // Récupérer les points d'action du personnage
+      const actionPoints = await apiService.getActionPoints(
+        character.id,
+        interaction.token
+      );
+
+      // Calculer le temps restant avant la prochaine mise à jour (minuit prochain)
+      const now = new Date();
+      const nextUpdate = new Date(now);
+      nextUpdate.setHours(24, 0, 0, 0); // Minuit prochain
+      if (now >= nextUpdate) {
+        nextUpdate.setDate(nextUpdate.getDate() + 1); // Si on est après minuit, prendre minuit du lendemain
+      }
+      const timeUntilUpdate = Math.floor(
+        (nextUpdate.getTime() - now.getTime()) / 1000
+      );
+
+      // Créer l'embed principal
       const embed = new EmbedBuilder()
         .setColor("#0099ff")
         .setTitle(`📋 Profil de ${character.name || "Sans nom"}`)
         .setThumbnail(user.displayAvatarURL())
+        .addFields({
+          name: "🎭 **INFORMATIONS DU PERSONNAGE**",
+          value: "",
+          inline: false,
+        })
         .setFooter({
           text: `Profil de: ${character.name}`,
           iconURL: user.displayAvatarURL(),
         })
         .setTimestamp();
-
       // Bloc Informations du Personnage (uniquement depuis la base de données)
       const rolesText =
         character.roles && character.roles.length > 0
@@ -57,11 +80,6 @@ const command: Command = {
 
       embed.addFields(
         {
-          name: "🎭 **INFORMATIONS DU PERSONNAGE**",
-          value: "",
-          inline: false,
-        },
-        {
           name: "Nom",
           value: character.name || "Non défini",
           inline: true,
@@ -70,15 +88,33 @@ const command: Command = {
           name: "Rôles",
           value: rolesText,
           inline: true,
+        },
+        {
+          name: "Points d'Action (PA)",
+          value: `${
+            actionPoints.points === 0 ||
+            actionPoints.points === 3 ||
+            actionPoints.points === 4
+              ? "⚠️"
+              : ""
+          } **${actionPoints.points || 0}/4**`,
+          inline: true,
+        },
+        {
+          name: "Prochaine mise à jour",
+          value: `Dans ${Math.floor(timeUntilUpdate / 3600)}h ${Math.floor(
+            (timeUntilUpdate % 3600) / 60
+          )}m`,
+          inline: true,
         }
       );
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
     } catch (error) {
       console.error("Erreur lors de la récupération du profil:", error);
       await interaction.reply({
         content:
-          "Une erreur est survenue lors de la récupération du profil depuis la base de données.",
+          "Une erreur est survenue lors de la récupération de votre profil.",
         ephemeral: true,
       });
     }

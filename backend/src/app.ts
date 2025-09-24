@@ -4,6 +4,7 @@ import userRoutes from "./routes/users";
 import serverRoutes from "./routes/servers";
 import characterRoutes from "./routes/characters";
 import roleRoutes from "./routes/roles";
+import actionPointRoutes from "./routes/action-point.routes";
 import morgan from "morgan";
 import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
@@ -12,8 +13,14 @@ import env from "./util/validateEnv";
 // import { requireAuth } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
+import { setupDailyPaJob } from "./cron/daily-pa.cron";
 
 const app = express();
+
+// Démarrer le job CRON pour la mise à jour quotidienne des PA
+if (process.env.NODE_ENV !== "test") {
+  setupDailyPaJob();
+}
 
 // Configuration du proxy trust
 const isBehindProxy =
@@ -81,6 +88,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/servers", serverRoutes);
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api/action-points", actionPointRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
