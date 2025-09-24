@@ -24,8 +24,7 @@ function isIpInRange(ip: string, range: string): boolean {
 
   if (range.includes("/")) {
     // Vérification CIDR
-    const [subnet, bits] = range.split("/");
-    return isInSubnet(normalizedIp, subnet, parseInt(bits, 10));
+    return isInSubnet(normalizedIp, range);
   }
 
   return normalizedIp === range;
@@ -61,13 +60,12 @@ export const requireInternal: RequestHandler = (req, res, next) => {
     // Réseaux privés standards
     "10.0.0.0/8",
     "172.16.0.0/12", // Inclut 172.16.0.0 à 172.31.255.255
+    "172.17.0.0/16", // Réseau Docker par défaut (toutes les IP commençant par 172.17.x.x)
+    "172.17.1.0/24", // Sous-réseau spécifique pour le conteneur
     "192.168.0.0/16",
     // Localhost
     "127.0.0.1",
     "::1",
-    // Docker
-    "172.17.0.0/16", // Réseau Docker par défaut
-    "172.18.0.0/16", // Autre réseau Docker potentiel
     // Noms de conteneurs
     "fateweaver-backend",
     "fateweaver-discord-bot",
@@ -75,6 +73,21 @@ export const requireInternal: RequestHandler = (req, res, next) => {
 
   // Vérifier si l'IP est dans une des plages internes
   const normalizedClientIp = normalizeIp(clientIp);
+
+  // Log de débogage
+  console.log("Vérification IP:", {
+    originalIp: clientIp,
+    normalizedIp: normalizedClientIp,
+    internalRanges,
+    isInternal: internalRanges.some((range) => {
+      const result = isIpInRange(normalizedClientIp, range);
+      console.log(
+        `Vérification ${normalizedClientIp} dans ${range}: ${result}`
+      );
+      return result;
+    }),
+  });
+
   const isInternal = internalRanges.some((range) =>
     isIpInRange(normalizedClientIp, range)
   );
@@ -103,24 +116,52 @@ export const requireInternal: RequestHandler = (req, res, next) => {
 };
 
 // Fonction utilitaire pour vérifier si une IP est dans un sous-réseau CIDR
-function isInSubnet(ip: string, subnet: string, prefix: number) {
-  const ipParts = ip.split(".").map(Number);
-  const subnetParts = subnet.split(".").map(Number);
+function isInSubnet(ip: string, subnetRange: string): boolean {
+  try {
+    // Séparer l'adresse réseau et le masque
+    const [subnet, bitsStr] = subnetRange.split("/");
+    const bits = bitsStr ? parseInt(bitsStr, 10) : 32;
 
-  if (ipParts.length !== 4 || subnetParts.length !== 4) {
-    return false;
-  }
+    // Convertir les adresses IP en tableaux de nombres
+    const ipParts = ip.split(".").map(Number);
+    const subnetParts = subnet.split(".").map(Number);
 
-  for (let i = 0; i < 4; i++) {
-    const shift = Math.max(0, 8 - Math.max(0, prefix - i * 8));
-    const mask = shift < 8 ? ~(0xff >> shift) & 0xff : 0xff;
-
-    if ((ipParts[i] & mask) !== (subnetParts[i] & mask)) {
+    // Vérifier le format des adresses
+    if (
+      ipParts.length !== 4 ||
+      subnetParts.length !== 4 ||
+      ipParts.some((part) => isNaN(part) || part < 0 || part > 255) ||
+      subnetParts.some((part) => isNaN(part) || part < 0 || part > 255)
+    ) {
+      console.error(`Format d'IP invalide - IP: ${ip}, Subnet: ${subnetRange}`);
       return false;
     }
-  }
 
-  return true;
+    // Vérifier chaque octet selon le masque
+    for (let i = 0; i < 4; i++) {
+      const bitsLeft = Math.max(0, bits - i * 8);
+      if (bitsLeft >= 8) {
+        // Tous les bits de cet octet doivent correspondre
+        if (ipParts[i] !== subnetParts[i]) {
+          return false;
+        }
+      } else if (bitsLeft > 0) {
+        // Seuls les bits significatifs doivent correspondre
+        const mask = 0xff << (8 - bitsLeft);
+        if ((ipParts[i] & mask) !== (subnetParts[i] & mask)) {
+          return false;
+        }
+      } else {
+        // Masque épuisé, on a fini la vérification
+        break;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Erreur dans isInSubnet:", error, { ip, subnetRange });
+    return false;
+  }
 }
 
 // Middleware qui accepte soit une authentification utilisateur, soit un appel interne
@@ -144,6 +185,7 @@ export const requireAuthOrInternal: RequestHandler = (req, res, next) => {
     "10.0.0.0/8",
     "172.16.0.0/12",
     "172.17.0.0/16",
+    "172.17.1.0/24",
     "192.168.0.0/16",
     "127.0.0.1",
     "::1",

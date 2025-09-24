@@ -86,7 +86,19 @@ app.use("/api/roles", roleRoutes);
 // app.use("/api/notes", requireAuth, notesRoutes);
 
 // Health endpoint for container healthcheck
-app.get("/health", (_req: Request, res: Response) => {
+app.get("/health", (req: Request, res: Response) => {
+  // Log simplifié pour le healthcheck
+  if (process.env.NODE_ENV === "production") {
+    console.log(`[HealthCheck] ${new Date().toISOString()} - Status: OK`);
+  } else {
+    console.log({
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+      status: "OK",
+    });
+  }
   res.status(200).json({ status: "ok" });
 });
 
