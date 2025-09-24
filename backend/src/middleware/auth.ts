@@ -9,6 +9,28 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   next(createHttpError(401, "User not authenticated"));
 };
 
+// Fonction utilitaire pour normaliser les adresses IP (gestion IPv6 mappé en IPv4)
+function normalizeIp(ip: string): string {
+  // Si c'est une adresse IPv6 mappée en IPv4 (format ::ffff:192.168.x.x)
+  if (ip.startsWith("::ffff:")) {
+    return ip.substring(7); // Retourne uniquement la partie IPv4
+  }
+  return ip;
+}
+
+// Fonction pour vérifier si une IP est dans une plage donnée
+function isIpInRange(ip: string, range: string): boolean {
+  const normalizedIp = normalizeIp(ip);
+
+  if (range.includes("/")) {
+    // Vérification CIDR
+    const [subnet, bits] = range.split("/");
+    return isInSubnet(normalizedIp, subnet, parseInt(bits, 10));
+  }
+
+  return normalizedIp === range;
+}
+
 // Middleware pour les appels internes entre services
 export const requireInternal: RequestHandler = (req, res, next) => {
   // Pour le développement local, on accepte toutes les requêtes
@@ -26,6 +48,8 @@ export const requireInternal: RequestHandler = (req, res, next) => {
   console.log(
     "Requête reçue - IP:",
     clientIp,
+    "Normalisée:",
+    normalizeIp(clientIp),
     "X-Forwarded-For:",
     xForwardedFor,
     "X-Real-IP:",
@@ -50,17 +74,14 @@ export const requireInternal: RequestHandler = (req, res, next) => {
   ];
 
   // Vérifier si l'IP est dans une des plages internes
-  const isInternal = internalRanges.some((range) => {
-    if (range.includes("/")) {
-      // Vérification CIDR
-      const [subnet, bits] = range.split("/");
-      return isInSubnet(clientIp, subnet, parseInt(bits, 10));
-    }
-    return clientIp.includes(range);
-  });
+  const normalizedClientIp = normalizeIp(clientIp);
+  const isInternal = internalRanges.some((range) =>
+    isIpInRange(normalizedClientIp, range)
+  );
 
   console.log("Vérification IP interne:", {
     ip: clientIp,
+    normalizedIp: normalizedClientIp,
     isInternal,
     internalRanges,
   });
@@ -69,10 +90,14 @@ export const requireInternal: RequestHandler = (req, res, next) => {
     return next();
   }
 
-  console.log("Accès non autorisé depuis l'IP:", clientIp, "Headers:", {
-    "x-forwarded-for": xForwardedFor,
-    "x-real-ip": xRealIp,
-    host: req.headers["host"],
+  console.log("Accès non autorisé depuis l'IP:", {
+    originalIp: clientIp,
+    normalizedIp: normalizedClientIp,
+    headers: {
+      "x-forwarded-for": xForwardedFor,
+      "x-real-ip": xRealIp,
+      host: req.headers["host"],
+    },
   });
   next(createHttpError(403, "Accès non autorisé"));
 };
@@ -113,7 +138,7 @@ export const requireAuthOrInternal: RequestHandler = (req, res, next) => {
   // Ensuite vérifier si c'est un appel interne
   const clientIp =
     req.ip || (req.connection && req.connection.remoteAddress) || "";
-  const xForwardedFor = req.headers["x-forwarded-for"];
+  const normalizedClientIp = normalizeIp(clientIp);
 
   const internalRanges = [
     "10.0.0.0/8",
@@ -126,21 +151,21 @@ export const requireAuthOrInternal: RequestHandler = (req, res, next) => {
     "fateweaver-discord-bot",
   ];
 
-  const isInternal = internalRanges.some((range) => {
-    if (range.includes("/")) {
-      const [subnet, bits] = range.split("/");
-      return isInSubnet(clientIp, subnet, parseInt(bits, 10));
-    }
-    return clientIp.includes(range);
-  });
+  const isInternal = internalRanges.some((range) =>
+    isIpInRange(normalizedClientIp, range)
+  );
 
   if (isInternal) {
     return next();
   }
 
-  console.log("Accès non autorisé depuis l'IP:", clientIp, "Headers:", {
-    "x-forwarded-for": xForwardedFor,
-    host: req.headers["host"],
+  console.log("Accès non autorisé depuis l'IP:", {
+    originalIp: clientIp,
+    normalizedIp: normalizedClientIp,
+    headers: {
+      "x-forwarded-for": req.headers["x-forwarded-for"],
+      host: req.headers["host"],
+    },
   });
   next(createHttpError(401, "Authentication required"));
 };
