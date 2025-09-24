@@ -21,6 +21,54 @@ ATTENTION
 docker compose exec backenddev sh
 npx prisma studio
 
+
+
+# prisma studio en distanciel
+Étapes concrètes
+1. Lancer Prisma Studio dans ton container
+
+Sur ton VPS, ouvre un shell dans le container backend :
+
+docker exec -it fateweaver-backend sh
+
+
+Puis démarre Prisma Studio en écoutant sur toutes les interfaces du container :
+
+npx prisma studio --hostname 0.0.0.0 --port 5555 --browser none
+
+
+👉 Prisma tourne maintenant dans ton container sur port 5555, mais ce port n’est pas publié vers l’extérieur (il reste privé au réseau Docker).
+
+2. Trouver l’IP interne du container
+
+Toujours sur ton VPS :
+
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fateweaver-backend
+
+
+Tu obtiendras une IP genre 172.18.0.5.
+
+3. Créer un tunnel SSH depuis ta machine locale
+
+Sur ta machine (pas sur le VPS), lance :
+
+ssh -L 5555:172.18.0.5:5555 user@ton-vps
+
+
+user@ton-vps → ton utilisateur SSH et l’adresse IP/domaine du VPS
+
+5555:172.18.0.5:5555 → ça dit à SSH de rediriger ton localhost:5555 vers le port 5555 du container
+
+4. Ouvrir Prisma Studio dans ton navigateur
+
+Une fois le tunnel actif, sur ta machine locale :
+👉 Va sur http://localhost:5555
+
+Tu verras Prisma Studio, mais il reste totalement invisible à Internet 🌍 (seul ton tunnel SSH l’expose localement).
+
+✅ Donc, le lien final où tu ouvres Prisma Studio est :
+👉 http://localhost:5555 (sur ton PC, pas sur le VPS)
+
 # Boiler Plate JS
 
 docker compose up -d --build
