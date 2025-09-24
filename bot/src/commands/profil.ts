@@ -38,7 +38,7 @@ const command: Command = {
         .setTitle(`📋 Profil de ${character.name || "Sans nom"}`)
         .setThumbnail(user.displayAvatarURL())
         .setFooter({
-          text: `ID: ${character.id}`,
+          text: `Profil de: ${character.name}`,
           iconURL: user.displayAvatarURL(),
         })
         .setTimestamp();
@@ -47,9 +47,11 @@ const command: Command = {
       const rolesText =
         character.roles && character.roles.length > 0
           ? character.roles
-              .map((role: { id: string; name: string; color: string }) => {
-                return `<@&${role.id}>`;
-              })
+              .map(
+                (role: { discordId: string; name: string; color: string }) => {
+                  return `<@&${role.discordId}>`;
+                }
+              )
               .join(", ")
           : "Aucun rôle";
 

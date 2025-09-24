@@ -140,18 +140,26 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       }
 
       // Recharger le personnage avec les relations mises à jour
-      return prisma.character.findUniqueOrThrow({
+      const updatedCharacter = await prisma.character.findUniqueOrThrow({
         where: { id: character.id },
         include: {
           user: true,
           server: true,
           characterRoles: {
             include: {
-              role: true,
+              role: {
+                select: {
+                  id: true,
+                  discordId: true,
+                  name: true,
+                  color: true,
+                },
+              },
             },
           },
         },
       });
+      return updatedCharacter;
     });
 
     // Utiliser le mapper pour transformer la réponse
