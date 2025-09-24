@@ -1,12 +1,24 @@
 import express from "express";
-import * as ServerController from "../controllers/servers";
+import {
+  upsertServer,
+  getServerByDiscordId,
+  getAllServers,
+  deleteServer,
+} from "../controllers/servers";
+import { requireAuthOrInternal } from "../middleware/auth";
 
 const router = express.Router();
 
-// Créer ou mettre à jour un serveur
-router.post("/", ServerController.upsertServer);
+// Crée ou met à jour un serveur
+router.post("/", requireAuthOrInternal, upsertServer);
 
-// Récupérer un serveur par son ID Discord
-router.get("/discord/:discordId", ServerController.getServerByDiscordId);
+// Récupère un serveur par son ID Discord
+router.get("/discord/:discordId", requireAuthOrInternal, getServerByDiscordId);
+
+// Récupère tous les serveurs
+router.get("/", requireAuthOrInternal, getAllServers);
+
+// Supprime un serveur et toutes ses données associées
+router.delete("/:id", requireAuthOrInternal, deleteServer);
 
 export default router;

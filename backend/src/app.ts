@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import userRoutes from "./routes/users";
 import serverRoutes from "./routes/servers";
 import characterRoutes from "./routes/characters";
+import roleRoutes from "./routes/roles";
 import morgan from "morgan";
 import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
@@ -13,6 +14,9 @@ import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
 const app = express();
+
+// Configuration du proxy trust
+app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 // cors needed for dev environment
 app.use(
@@ -36,7 +40,7 @@ app.use(
     },
     rolling: true,
     store: new PrismaSessionStore(prisma, {
-      checkPeriod: 2 * 60 * 1000, //ms
+      checkPeriod: 2 * 60 * 1000, // Vérification des sessions expirées toutes les 2 minutes
       dbRecordIdIsSessionId: true,
       dbRecordIdFunction: undefined,
     }),
@@ -47,6 +51,7 @@ app.use(
 app.use("/api/users", userRoutes);
 app.use("/api/servers", serverRoutes);
 app.use("/api/characters", characterRoutes);
+app.use("/api/roles", roleRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
@@ -69,6 +74,10 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
   if (isHttpError(error)) {
     statusCode = error.status;
     errorMessage = error.message;
+  }
+
+  if (createHttpError.isHttpError(error)) {
+    statusCode = error.status;
   }
 
   res.status(statusCode).json({ error: errorMessage });

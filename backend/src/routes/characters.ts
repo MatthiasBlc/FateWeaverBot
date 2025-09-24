@@ -12,10 +12,7 @@ router.get("/:id", CharacterController.getCharacterById);
 // Récupérer un personnage par userId et serverId
 router.get(
   "/user/:userId/server/:serverId",
-  CharacterController.getCharacterByUserAndServer
+  CharacterController.getCharacterByDiscordIds
 );
-
-// Récupérer tous les personnages d'un utilisateur
-router.get("/user/:userId", CharacterController.getUserCharacters);
 
 export default router;
