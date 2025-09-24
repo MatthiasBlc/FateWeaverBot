@@ -44,10 +44,19 @@ const command: Command = {
         .setTimestamp();
 
       // Bloc Informations du Personnage (uniquement depuis la base de données)
+      const rolesText =
+        character.roles && character.roles.length > 0
+          ? character.roles
+              .map((role: { id: string; name: string; color: string }) => {
+                return `<@&${role.id}>`;
+              })
+              .join(", ")
+          : "Aucun rôle";
+
       embed.addFields(
         {
           name: "🎭 **INFORMATIONS DU PERSONNAGE**",
-          value: "Ces informations sont stockées dans notre base de données",
+          value: "",
           inline: false,
         },
         {
@@ -56,22 +65,8 @@ const command: Command = {
           inline: true,
         },
         {
-          name: "Rôle",
-          value: character.role || "Non défini",
-          inline: true,
-        },
-        {
-          name: "Créé le",
-          value: `<t:${Math.floor(
-            new Date(character.createdAt).getTime() / 1000
-          )}:D>`,
-          inline: true,
-        },
-        {
-          name: "Dernière mise à jour",
-          value: `<t:${Math.floor(
-            new Date(character.updatedAt).getTime() / 1000
-          )}:R>`,
+          name: "Rôles",
+          value: rolesText,
           inline: true,
         }
       );

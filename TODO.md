@@ -1,20 +1,5 @@
 -------------------------Todo-------------------------
 
-Server:
-rôle est une suite de chiffres ?
-si character name est null alors prendre nom du compte
-
-@bot
-lors d'une commande par un utilisateur, on regarde toujours si:
-son discordId existe, si non on créer l'utilisateur.
-son guildId existe, si non on créer le serveur.
-son characterId existe, si non on créer le personnage.
-
-lorsqu'un utilisateur fait une commande /profile dans le @bot
-On regarde si so discordId et guildId existent dans la base de données
-si non on les ajoute
-si oui on les met à jour
-
 Gestion des PA:
 @backend
 chaque utilisateurs a deux PA par jour .
