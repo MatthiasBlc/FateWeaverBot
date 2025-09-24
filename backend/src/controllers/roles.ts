@@ -200,11 +200,33 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
 
     // Créer les nouvelles associations de rôles
     if (roleIds && roleIds.length > 0) {
+      // Récupérer les informations du personnage et des rôles
+      const [characterWithUser, roles] = await Promise.all([
+        prisma.character.findUnique({
+          where: { id: characterId },
+          include: { user: true },
+        }),
+        prisma.role.findMany({
+          where: { id: { in: roleIds } },
+          select: { id: true, name: true },
+        }),
+      ]);
+
+      if (!characterWithUser) {
+        throw createHttpError(404, "Personnage non trouvé");
+      }
+
+      // Créer un map des rôles pour un accès facile
+      const roleMap = new Map(roles.map((role) => [role.id, role.name]));
+
+      // Créer les entrées avec tous les champs requis
       await prisma.characterRole.createMany({
         data: roleIds.map((roleId) => ({
           characterId,
           roleId,
           assignedAt: new Date(),
+          username: characterWithUser.user?.username || "Inconnu",
+          roleName: roleMap.get(roleId) || "Rôle inconnu",
         })),
         skipDuplicates: true,
       });
