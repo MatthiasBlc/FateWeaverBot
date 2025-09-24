@@ -14,7 +14,7 @@ import env from "./util/validateEnv";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
-import chantierRoutes from "./routes/chantier.routes";
+import chantierRoutes from "./routes/chantier";
 
 const app = express();
 

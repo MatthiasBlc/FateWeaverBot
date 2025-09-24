@@ -1,7 +1,14 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { CommandInteraction, PermissionFlagsBits } from "discord.js";
-import { api } from "../services/api";
 import { checkAdmin } from "../utils/roles";
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  type GuildMember,
+  time,
+  TimestampStyles,
+} from "discord.js";
+import type { Command } from "../types/command";
+import { withUser } from "../middleware/ensureUser";
+import { apiService } from "../services/api";
 
 export const data = new SlashCommandBuilder()
   .setName("addch")
@@ -15,8 +22,7 @@ export const data = new SlashCommandBuilder()
       .setDescription("Coût total en PA")
       .setRequired(true)
       .setMinValue(1)
-  )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  );
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) {

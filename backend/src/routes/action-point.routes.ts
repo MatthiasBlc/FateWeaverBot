@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { actionPointController } from "../controllers/action-point.controller";
+import { actionPointController } from "../controllers/action-point";
 import { requireAuthOrInternal } from "../middleware/auth";
 
 const router = Router();
