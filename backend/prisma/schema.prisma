@@ -40,6 +40,7 @@ model Server {
   memberCount    Int        @default(0) // Nombre de membres dans le serveur
   characters     Character[]
   roles          Role[]     // Ajout de la relation avec les rôles
+  chantiers      Chantier[] // Relation avec les chantiers
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
@@ -93,4 +94,26 @@ model CharacterRole {
 
   @@unique([characterId, roleId], name: "character_role_unique")
   @@map("character_roles")
+}
+
+enum ChantierStatus {
+  PLAN
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Chantier {
+  id          String   @id @default(cuid())
+  name        String   // Nom du chantier
+  startDate   DateTime? @map("start_date") // Date du premier investissement de PA (null si pas commencé)
+  cost        Int      // Coût total en PA
+  spendOnIt   Int      @default(0) // Nombre de PA investis
+  status      ChantierStatus @default(PLAN) // plan, in_progress, completed
+  server      Server   @relation(fields: [serverId], references: [id])
+  serverId    String   @map("server_id")
+  createdBy   String   @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("chantiers")
 }

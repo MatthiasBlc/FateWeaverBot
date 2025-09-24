@@ -14,6 +14,7 @@ import env from "./util/validateEnv";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
+import chantierRoutes from "./routes/chantier.routes";
 
 const app = express();
 
@@ -89,6 +90,7 @@ app.use("/api/servers", serverRoutes);
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/action-points", actionPointRoutes);
+app.use("/api/chantiers", chantierRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
