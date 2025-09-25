@@ -7,7 +7,6 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
 } from "discord.js";
-import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";
 import { apiService } from "../services/api";
 

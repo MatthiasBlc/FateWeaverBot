@@ -7,17 +7,13 @@ import {
   TextInputBuilder,
   TextInputStyle,
   type ModalSubmitInteraction,
-  type MessageComponentInteraction,
   type StringSelectMenuInteraction,
-  type APIEmbedField,
-  type ButtonInteraction,
   ModalActionRowComponentBuilder,
   StringSelectMenuBuilder,
   ComponentType,
   Client,
 } from "discord.js";
 import type { Command } from "../types/command";
-import { withUser } from "../middleware/ensureUser";
 import { apiService } from "../services/api";
 
 interface Chantiers {

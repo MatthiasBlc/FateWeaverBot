@@ -1,8 +1,4 @@
-import {
-  CommandInteraction,
-  GuildMember,
-  ChatInputCommandInteraction,
-} from "discord.js";
+import { GuildMember, ChatInputCommandInteraction } from "discord.js";
 import { apiService } from "../services/api";
 import { isAxiosError } from "axios";
 
@@ -23,16 +19,6 @@ export async function ensureUserExists(
     extension: "png",
     size: 1024,
   });
-  const userNickname = member.nickname || null;
-  const userRoles = member.roles.cache
-    .filter((role) => role.id !== interaction.guildId)
-    .map((role) => role.id);
-
-  // Trier les rôles par position (du plus élevé au plus bas)
-  const sortedRoles = Array.from(member.roles.cache.values())
-    .sort((a, b) => b.position - a.position)
-    .map((role) => role.id)
-    .filter((id) => id !== interaction.guildId);
 
   try {
     console.log(

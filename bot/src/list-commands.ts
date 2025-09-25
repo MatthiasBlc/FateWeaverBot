@@ -1,9 +1,4 @@
-import {
-  REST,
-  Routes,
-  RESTGetAPIApplicationCommandsResult,
-  ApplicationCommand,
-} from "discord.js";
+import { REST, Routes, ApplicationCommand } from "discord.js";
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
 const clientId = process.env.DISCORD_CLIENT_ID!;

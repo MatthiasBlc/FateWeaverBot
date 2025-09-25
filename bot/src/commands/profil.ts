@@ -2,8 +2,6 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   type GuildMember,
-  time,
-  TimestampStyles,
 } from "discord.js";
 import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";

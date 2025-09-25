@@ -2,7 +2,6 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandsOnlyBuilder,
   ChatInputCommandInteraction,
-  AutocompleteInteraction,
 } from "discord.js";
 
 export type Command = {

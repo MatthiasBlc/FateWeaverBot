@@ -1,0 +1,27 @@
+import { httpClient } from "./httpClient";
+import axios from "axios";
+import { getErrorMessage } from "./errors";
+
+export async function getOrCreateServer(
+  discordId: string,
+  name: string,
+  memberCount: number
+) {
+  try {
+    // Backend handles upsert on POST /servers
+    const response = await httpClient.post("/servers", {
+      discordId,
+      name,
+      memberCount,
+    });
+    return response.data;
+  } catch (error) {
+    // Provide detailed error while keeping behavior simple
+    const message = axios.isAxiosError(error)
+      ? error.response?.data?.message || error.message
+      : getErrorMessage(error);
+    throw new Error(
+      `Erreur lors de la récupération/création du serveur: ${message}`
+    );
+  }
+}

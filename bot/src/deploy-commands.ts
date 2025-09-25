@@ -1,11 +1,6 @@
 import { REST, Routes } from "discord.js";
 import { readdir } from "fs/promises";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-
-// Get directory name in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { join } from "path";
 
 // Vérification des variables d'environnement requises
 const requiredEnvVars = ["DISCORD_TOKEN", "DISCORD_CLIENT_ID"];
