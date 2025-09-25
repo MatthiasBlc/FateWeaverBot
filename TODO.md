@@ -6,13 +6,69 @@ PA est strictement positif et <=4
 @part1
 
 Ajouter un log global des actions?
+
+
+
 Utiliser une commande admin avec des sous commandes si besoin ?
 
 @part2
 
 @par3
 Manger
-+log ?
+1 unité de nourriture / pers / 2 jours
+
+Prévoir un channel avec un bot 
+Nous ajoutons les unités selon les évènements
+Les joueurs mangent en mettant un message
+
+
+1 jour raté = 1/2 PA
+2 jours ratés = hospit (besoin double dose)
+3 jours ratés = morts
+
+Pouvoir faire manger les copains ? 
+
+
++log ? ok dans un channel groupé 
+
+
+Actions des charactes : 
+- manger
+  - systèmede faim
+  - que en ville ? 
+- faire manger
+  - que en ville ?
+- faire avancer un chantier 
+  - voir commandes chantiers
+- lancer un chantier / demander sa création
+  - asynchrone ? 
+- partir en expédition
+ - règle des expéditions
+ - nombre de characters
+ - nombre d'évent etc
+ - que rapporte des expeds ? 
+- Il peut utiliser une compétence activable
+  - Soigner: il peut soigner quelqu'un (ou lui même)
+  - Réconforter: il peut soigner la santé mentale de quelqu'un (ou lui même)
+
+
+
+Action des Admins:
+- donner des PA 
+- retirer des PA
+- donner des PV 
+- retirer des PV
+- donner des PM 
+- retirer des PM
+
+- système d'évènements
+
+
+Action auto :
+- message quotidien "belle journée" ou "journée pluvieuse" etc 
+- pouvoir lui donner un message différent la veille 
+
+
 
 -------------------------Done-------------------------
 @backend
