@@ -11,16 +11,6 @@ Ajouter un log ?
 
 @part2
 
-Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
-Exemple Si un utilisateur a 1PA en stock et qu'il veut en utiliser 2, son PA est retiré et seulement 1 PA est investi dans le chantier.
-
-avec /chantier, les utilisateurs peuvent voir une liste déroulante des chantiers, en choisir un (voir le nombre de PA investi/cout dans la liste) et indiquer le nombre de PA qu'ils veulent investir dedans.
-valider la commande retire ce nombre de PA du user et les ajoute au total investi du chantier choisi
-
-Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
-Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
-Ajouter un log ?
-
 @par3
 Manger
 +log ?
@@ -67,4 +57,14 @@ un statut
 
 Les characters ayants le rôle admin, ADMIN_ROLE dans le .env, et seulement eux peuvent créer un nouveau chantier à ajouter à la liste en utilisant la commande /addch et en reseignant :
 nom et cost
+
+Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
+Exemple Si un utilisateur a 1PA en stock et qu'il veut en utiliser 2, son PA est retiré et seulement 1 PA est investi dans le chantier.
+
+avec /chantier, les utilisateurs peuvent voir une liste déroulante des chantiers, en choisir un (voir le nombre de PA investi/cout dans la liste) et indiquer le nombre de PA qu'ils veulent investir dedans.
+valider la commande retire ce nombre de PA du user et les ajoute au total investi du chantier choisi
+
+Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
+Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
+
 -------------------------Notes-------------------------

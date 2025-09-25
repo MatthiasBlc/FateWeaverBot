@@ -132,10 +132,19 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       interaction.guildId!
     );
 
-    // Filtrer les chantiers non terminés
-    const availableChantiers = chantiers.filter(
-      (c) => c.status !== "COMPLETED"
-    );
+    // Filtrer et trier les chantiers selon les critères
+    const availableChantiers = chantiers
+      .filter((c) => c.status !== "COMPLETED") // Exclure les chantiers terminés
+      .sort((a, b) => {
+        // Trier d'abord par statut (EN_COURS avant PLAN)
+        if (a.status === "IN_PROGRESS" && b.status !== "IN_PROGRESS") return -1;
+        if (a.status !== "IN_PROGRESS" && b.status === "IN_PROGRESS") return 1;
+
+        // Ensuite par nombre de PA manquants (du plus petit au plus grand)
+        const aRemaining = a.cost - a.spendOnIt;
+        const bRemaining = b.cost - b.spendOnIt;
+        return aRemaining - bRemaining;
+      });
 
     if (availableChantiers.length === 0) {
       return interaction.reply({

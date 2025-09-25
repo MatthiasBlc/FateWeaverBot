@@ -43,7 +43,7 @@ async function loadCommands() {
 }
 
 // When the client is ready, run this code (only once)
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`Logged in as ${client.user?.tag}!`);
 });
 
