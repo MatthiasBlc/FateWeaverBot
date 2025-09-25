@@ -1,7 +1,9 @@
 -------------------------Todo-------------------------
 
 @part0
-PA est strictement positif et <=4
+
+Ajouter une commande pour setup la variable d'ADMIN_ROLE
+
 
 @part1
 
@@ -123,5 +125,8 @@ Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chant
 Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
 
 ajouter delete et add chantier en sous commandes
+
+PA est strictement positif et <=4
+
 
 -------------------------Notes-------------------------
