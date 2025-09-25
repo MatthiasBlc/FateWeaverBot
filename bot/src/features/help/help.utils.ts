@@ -48,18 +48,18 @@ export function generateDynamicHelpSections(
     const options = (command.data as any).options || [];
     const subcommands = options.filter((option: any) => option.name && option.type === undefined);
 
-    // Déterminer si cette commande est "admin" basée sur ses sous-commandes
-    const hasAdminSubcommands = subcommands.some((sub: any) =>
-      ['add', 'delete', 'admin'].includes(sub.name)
-    );
+    // Cas spécial pour la commande help : elle n'est pas admin mais contient des sous-commandes admin
+    const isHelpCommand = command.data.name === "help";
+    const isCommandAdmin = command.data.name.includes("-admin") || hasAdminPermissions;
+    const isAdminCommand = isCommandAdmin || (isHelpCommand && isAdmin);
 
     // Filtrer selon le contexte - mais maintenant on filtre au niveau des sous-commandes
     // Donc on traite toutes les commandes et on filtre les sous-commandes individuellement
     if (subcommands.length === 0) {
       // Si pas de sous-commandes, vérifier les permissions admin
-      if (isAdmin && !hasAdminPermissions) {
+      if (isAdmin && !isCommandAdmin) {
         return;
-      } else if (!isAdmin && hasAdminPermissions) {
+      } else if (!isAdmin && isCommandAdmin) {
         return;
       }
     }
@@ -69,7 +69,7 @@ export function generateDynamicHelpSections(
 
     if (command.data.name.includes("chantier")) {
       category = "🏗️ Commandes des chantiers";
-    } else if (hasAdminSubcommands) {
+    } else if (isCommandAdmin) {
       category = "🔧 Commandes administrateur";
     }
 
@@ -87,13 +87,24 @@ export function generateDynamicHelpSections(
         const subcommandName = subcommand.name;
         const isAdminSubcommand = ['add', 'delete', 'admin'].includes(subcommandName);
 
-        // Filtrer selon le contexte
-        if (isAdmin && !isAdminSubcommand) {
-          // Dans le contexte admin, ignorer les sous-commandes utilisateur
-          return;
-        } else if (!isAdmin && isAdminSubcommand) {
-          // Dans le contexte utilisateur, ignorer les sous-commandes admin
-          return;
+        // Logique de filtrage selon le contexte
+        if (isHelpCommand) {
+          // Cas spécial pour /help : afficher la sous-commande appropriée selon le contexte
+          if (isAdmin && subcommandName === "admin") {
+            // Dans le contexte admin, afficher la sous-commande admin
+          } else if (!isAdmin && subcommandName === "user") {
+            // Dans le contexte utilisateur, afficher la sous-commande user
+          } else {
+            // Ne pas afficher les autres sous-commandes
+            return;
+          }
+        } else {
+          // Logique normale pour les autres commandes
+          if (isAdmin && !isAdminSubcommand) {
+            return;
+          } else if (!isAdmin && isAdminSubcommand) {
+            return;
+          }
         }
 
         const subcommandDescription = subcommand.description || "Aucune description disponible";
@@ -106,8 +117,32 @@ export function generateDynamicHelpSections(
     }
   });
 
-  // Convertir les groupes en sections d'aide
-  Object.entries(commandGroups).forEach(([categoryName, commandsList]) => {
+  // Convertir les groupes en sections d'aide avec un ordre cohérent
+  const categoryOrder = [
+    "⚙️ Commandes de base",
+    "🏗️ Commandes des chantiers",
+    "🔧 Commandes administrateur"
+  ];
+
+  // Trier les catégories selon l'ordre défini
+  const sortedEntries = Object.entries(commandGroups).sort(([a], [b]) => {
+    const indexA = categoryOrder.indexOf(a);
+    const indexB = categoryOrder.indexOf(b);
+
+    // Si les deux catégories sont dans l'ordre défini, les trier selon cet ordre
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+
+    // Si une catégorie n'est pas dans l'ordre défini, la mettre à la fin
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+
+    // Ordre alphabétique pour les autres catégories
+    return a.localeCompare(b);
+  });
+
+  sortedEntries.forEach(([categoryName, commandsList]) => {
     sections.push({
       name: categoryName,
       value: "```\n" + commandsList.join("\n") + "\n```",

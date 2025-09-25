@@ -5,9 +5,8 @@ PA est strictement positif et <=4
 
 @part1
 
-ajouter delete et add chantier en sous commandes
-
-Ajouter un log ?
+Ajouter un log global des actions?
+Utiliser une commande admin avec des sous commandes si besoin ?
 
 @part2
 
@@ -66,5 +65,7 @@ valider la commande retire ce nombre de PA du user et les ajoute au total invest
 
 Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
 Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
+
+ajouter delete et add chantier en sous commandes
 
 -------------------------Notes-------------------------

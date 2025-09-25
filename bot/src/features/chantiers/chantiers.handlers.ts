@@ -272,6 +272,10 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
 
 export async function handleAddCommand(interaction: CommandInteraction) {
   try {
+    // Vérifier que l'utilisateur est admin avant de créer un chantier
+    const isUserAdmin = await checkAdmin(interaction);
+    if (!isUserAdmin) return;
+
     // Vérifier que c'est une commande slash avec options
     if (!interaction.isChatInputCommand()) return;
 

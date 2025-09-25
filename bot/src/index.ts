@@ -28,14 +28,19 @@ async function loadCommands() {
 
     for (const file of commandFiles) {
       const filePath = new URL(`commands/${file}`, import.meta.url);
-      const command = (await import(filePath.href)).default as Command;
+      const commandModule = (await import(filePath.href)).default;
 
-      if ("data" in command && "execute" in command) {
-        client.commands.set(command.data.name, command);
-      } else {
-        logger.warn(
-          `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
-        );
+      // Handle both single commands and arrays of commands
+      const commandsToProcess = Array.isArray(commandModule) ? commandModule : [commandModule];
+
+      for (const command of commandsToProcess) {
+        if ("data" in command && "execute" in command) {
+          client.commands.set(command.data.name, command);
+        } else {
+          logger.warn(
+            `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
+          );
+        }
       }
     }
 
@@ -56,14 +61,19 @@ async function loadCommands() {
 
       for (const file of featureFiles) {
         const filePath = new URL(`features/${dir}/${file}`, import.meta.url);
-        const command = (await import(filePath.href)).default as Command;
+        const commandModule = (await import(filePath.href)).default;
 
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        } else {
-          logger.warn(
-            `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
-          );
+        // Handle both single commands and arrays of commands
+        const commandsToProcess = Array.isArray(commandModule) ? commandModule : [commandModule];
+
+        for (const command of commandsToProcess) {
+          if ("data" in command && "execute" in command) {
+            client.commands.set(command.data.name, command);
+          } else {
+            logger.warn(
+              `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
+            );
+          }
         }
       }
     }

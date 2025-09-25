@@ -65,15 +65,20 @@ try {
     for (const file of featureFiles) {
       try {
         const filePath = join(featurePath, file);
-        const command = (await import(filePath)).default;
+        const commandModule = (await import(filePath)).default;
 
-        if ("data" in command && "execute" in command) {
-          commands.push(command.data.toJSON());
-          logger.info(`✅ Loaded feature command: ${command.data.name}`);
-        } else {
-          logger.warn(
-            `⚠️  Command at ${file} is missing required "data" or "execute" property.`
-          );
+        // Handle both single commands and arrays of commands
+        const commandsToProcess = Array.isArray(commandModule) ? commandModule : [commandModule];
+
+        for (const command of commandsToProcess) {
+          if ("data" in command && "execute" in command) {
+            commands.push(command.data.toJSON());
+            logger.info(`✅ Loaded feature command: ${command.data.name}`);
+          } else {
+            logger.warn(
+              `⚠️  Command at ${file} is missing required "data" or "execute" property.`
+            );
+          }
         }
       } catch (error) {
         logger.error(`❌ Error loading feature command ${file}:`, { error });
