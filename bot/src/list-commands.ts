@@ -17,6 +17,11 @@ async function listCommands() {
         id: c.id,
         name: c.name,
         description: c.description,
+        subcommands:
+          c.options
+            ?.filter((opt) => opt.type === 1 || opt.type === 2)
+            .map((opt) => (opt.type === 2 ? `${opt.name} (group)` : opt.name))
+            .join(", ") || "Aucune",
       }))
     );
 
@@ -31,6 +36,11 @@ async function listCommands() {
           id: c.id,
           name: c.name,
           description: c.description,
+          subcommands:
+            c.options
+              ?.filter((opt) => opt.type === 1 || opt.type === 2)
+              .map((opt) => (opt.type === 2 ? `${opt.name} (group)` : opt.name))
+              .join(", ") || "Aucune",
         }))
       );
     }

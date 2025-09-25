@@ -16,6 +16,8 @@ import {
 import type { Command } from "../types/command";
 import { apiService } from "../services/api";
 import { logger } from "../services/logger";
+import { checkAdmin } from "../utils/roles";
+import type { ChatInputCommandInteraction } from "discord.js";
 
 interface Chantiers {
   id: string;
@@ -43,6 +45,29 @@ const command: Command = {
       subcommand
         .setName("build")
         .setDescription("Investir des points dans un chantier")
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("add")
+        .setDescription("Ajouter un nouveau chantier")
+        .addStringOption((option) =>
+          option
+            .setName("nom")
+            .setDescription("Nom du chantier")
+            .setRequired(true)
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName("cout")
+            .setDescription("Coût total en points d'action")
+            .setRequired(true)
+            .setMinValue(1)
+        )
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("delete")
+        .setDescription("Supprimer un chantier existant")
     ),
 
   async execute(interaction: CommandInteraction) {
@@ -55,6 +80,10 @@ const command: Command = {
         await handleListCommand(interaction);
       } else if (subcommand === "build") {
         await handleInvestCommand(interaction);
+      } else if (subcommand === "add") {
+        await handleAddCommand(interaction);
+      } else if (subcommand === "delete") {
+        await handleDeleteCommand(interaction);
       }
     } catch (error) {
       logger.error("Error in chantiers command:", { error });
@@ -311,6 +340,159 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       await interaction.followUp({
         content:
           "Une erreur est survenue lors de la préparation de l'investissement.",
+        ephemeral: true,
+      });
+    }
+  }
+}
+
+async function handleAddCommand(interaction: CommandInteraction) {
+  try {
+    // Vérifier que c'est une commande slash avec options
+    if (!interaction.isChatInputCommand()) return;
+
+    const chatInputInteraction = interaction as ChatInputCommandInteraction;
+
+    // Récupérer les options
+    const nom = chatInputInteraction.options.getString("nom");
+    const cout = chatInputInteraction.options.getInteger("cout");
+
+    // Vérifier que les options requises sont présentes
+    if (!nom || cout === null) {
+      await interaction.reply({
+        content:
+          "❌ Erreur: Les paramètres 'nom' et 'cout' sont requis pour créer un chantier.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Créer le chantier
+    const result = await apiService.createChantier(
+      {
+        name: nom,
+        cost: cout,
+        serverId: chatInputInteraction.guildId!,
+      },
+      interaction.user.id
+    );
+
+    // Répondre avec le résultat
+    await chatInputInteraction.reply({
+      content: `✅ Chantier "${result.name}" créé avec succès !\n📊 Coût: ${
+        result.cost
+      } PA\n📋 Statut: ${getStatusText(result.status)}`,
+      ephemeral: true,
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la création du chantier :", { error });
+    await interaction.reply({
+      content: "Une erreur est survenue lors de la création du chantier.",
+      ephemeral: true,
+    });
+  }
+}
+
+async function handleDeleteCommand(interaction: CommandInteraction) {
+  try {
+    // Vérifier si l'utilisateur est admin
+    const isUserAdmin = await checkAdmin(interaction);
+    if (!isUserAdmin) return;
+
+    // Récupérer les chantiers du serveur
+    const chantiers: Chantiers[] = await apiService.getChantiersByServer(
+      interaction.guildId!
+    );
+
+    if (chantiers.length === 0) {
+      return interaction.reply({
+        content: "❌ Aucun chantier trouvé sur ce serveur.",
+        ephemeral: true,
+      });
+    }
+
+    // Créer un menu de sélection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("select_chantier_delete")
+      .setPlaceholder("Sélectionnez un chantier")
+      .addOptions(
+        chantiers.map((chantier) => ({
+          label: chantier.name,
+          description: `${chantier.spendOnIt}/${
+            chantier.cost
+          } PA - ${getStatusText(chantier.status)}`,
+          value: chantier.id,
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
+
+    await interaction.reply({
+      content: "Choisissez un chantier à supprimer :",
+      components: [row],
+      ephemeral: true,
+    });
+
+    // Gérer la sélection du chantier
+    const filter = (i: StringSelectMenuInteraction) =>
+      i.customId === "select_chantier_delete" &&
+      i.user.id === interaction.user.id;
+
+    try {
+      const response = (await interaction.channel?.awaitMessageComponent({
+        filter,
+        componentType: ComponentType.StringSelect,
+        time: 60000, // 1 minute pour choisir
+      })) as StringSelectMenuInteraction;
+
+      if (!response) return;
+
+      const selectedChantierId = response.values[0];
+      const selectedChantier = chantiers.find(
+        (c) => c.id === selectedChantierId
+      );
+
+      if (!selectedChantier) {
+        await response.update({
+          content: "Chantier non trouvé. Veuillez réessayer.",
+          components: [],
+        });
+        return;
+      }
+
+      // Supprimer le chantier
+      await apiService.deleteChantier(selectedChantierId);
+
+      // Répondre avec le résultat
+      await response.update({
+        content: `✅ Le chantier "${selectedChantier.name}" a été supprimé avec succès.`,
+        components: [],
+      });
+    } catch (error) {
+      logger.error("Erreur lors de la suppression du chantier :", { error });
+      if (!interaction.replied) {
+        await interaction.followUp({
+          content: "Temps écoulé ou erreur lors de la suppression.",
+          ephemeral: true,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error("Erreur lors de la préparation de la suppression :", {
+      error,
+    });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content:
+          "Une erreur est survenue lors de la préparation de la suppression.",
+        ephemeral: true,
+      });
+    } else {
+      await interaction.followUp({
+        content:
+          "Une erreur est survenue lors de la préparation de la suppression.",
         ephemeral: true,
       });
     }
