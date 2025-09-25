@@ -1,6 +1,8 @@
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";
+import { logger } from "./services/logger.js";
+import { config, validateConfig } from "./config/index.js";
 
 // Create a new client instance
 const client = new Client({
@@ -17,33 +19,74 @@ client.commands = new Collection();
 // Load commands
 async function loadCommands() {
   try {
-    // Utilisation de new URL pour les chemins en ES modules
+    // Load commands from commands directory
     const commandsPath = new URL("commands", import.meta.url);
     const commandFiles = (await fs.readdir(commandsPath)).filter(
-      (file) => file.endsWith(".js") || file.endsWith(".ts")
+      (file) =>
+        (file.endsWith(".js") || file.endsWith(".ts")) && !file.startsWith("_")
     );
 
     for (const file of commandFiles) {
       const filePath = new URL(`commands/${file}`, import.meta.url);
-      const command = (await import(filePath.href)).default as Command;
+      const commandModule = (await import(filePath.href)).default;
 
-      if ("data" in command && "execute" in command) {
-        client.commands.set(command.data.name, command);
-      } else {
-        console.log(
-          `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
-        );
+      // Handle both single commands and arrays of commands
+      const commandsToProcess = Array.isArray(commandModule) ? commandModule : [commandModule];
+
+      for (const command of commandsToProcess) {
+        if ("data" in command && "execute" in command) {
+          client.commands.set(command.data.name, command);
+        } else {
+          logger.warn(
+            `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
+          );
+        }
       }
     }
-    console.log("Commands loaded successfully");
+
+    // Load commands from features directory
+    const featuresPath = new URL("features", import.meta.url);
+    const featureDirs = (await fs.readdir(featuresPath)).filter(
+      (file) => !file.endsWith(".ts") && !file.endsWith(".js")
+    );
+
+    for (const dir of featureDirs) {
+      const featurePath = new URL(`features/${dir}`, import.meta.url);
+      const featureFiles = (await fs.readdir(featurePath)).filter(
+        (file) =>
+          (file.endsWith(".js") || file.endsWith(".ts")) &&
+          file.includes("command") &&
+          !file.startsWith("_")
+      );
+
+      for (const file of featureFiles) {
+        const filePath = new URL(`features/${dir}/${file}`, import.meta.url);
+        const commandModule = (await import(filePath.href)).default;
+
+        // Handle both single commands and arrays of commands
+        const commandsToProcess = Array.isArray(commandModule) ? commandModule : [commandModule];
+
+        for (const command of commandsToProcess) {
+          if ("data" in command && "execute" in command) {
+            client.commands.set(command.data.name, command);
+          } else {
+            logger.warn(
+              `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
+            );
+          }
+        }
+      }
+    }
+
+    logger.info("Commands loaded successfully");
   } catch (error) {
-    console.error("Error loading commands:", error);
+    logger.error("Error loading commands:", { error });
   }
 }
 
 // When the client is ready, run this code (only once)
-client.once("ready", () => {
-  console.log(`Logged in as ${client.user?.tag}!`);
+client.once("clientReady", () => {
+  logger.info(`Logged in as ${client.user?.tag}!`);
 });
 
 // Listen for interactions (slash commands)
@@ -53,28 +96,33 @@ client.on("interactionCreate", async (interaction) => {
   const command = client.commands.get(interaction.commandName);
 
   if (!command) {
-    console.error(`No command matching ${interaction.commandName} was found.`);
+    logger.error(`No command matching ${interaction.commandName} was found.`);
     return;
   }
 
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
+    logger.error("Error executing command:", { error });
     await interaction.reply({
       content: "There was an error executing this command!",
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
   }
 });
 
-// Login to Discord with your client's token
-if (!process.env.DISCORD_TOKEN) {
-  console.error("DISCORD_TOKEN is not defined in environment variables");
+// Validate configuration at startup
+try {
+  validateConfig();
+} catch (error) {
+  logger.error("Configuration validation failed:", { error });
   process.exit(1);
 }
 
-client.login(process.env.DISCORD_TOKEN);
+// Login to Discord with your client's token
+client.login(config.discord.token);
 
 // Load commands when starting
-loadCommands().catch(console.error);
+loadCommands().catch((e) =>
+  logger.error("Error while loading commands:", { error: e })
+);

@@ -1,3 +1,74 @@
+# lister les commandes du bot :
+
+npx tsx src/list-commands.ts
+a utiliser dans le container du bot (paser en sh et pas en bash)
+
+# Various info
+
+deploy.yml :
+La variable DISCORD_GUILD_ID n'est pas exportée dans le workflow GitHub Actions.
+deploy_prod.sh :
+La variable DISCORD_GUILD_ID n'est pas listée dans les variables obligatoires (contrairement à DISCORD_TOKEN et DISCORD_CLIENT_ID).
+Elle n'est pas non plus exportée dans le script.
+
+-> de fait le bot est déployé globalement et non sur une guilde
+(temps de maj possible)
+ATTENTION
+-> ça a été changé, à reverse lorsque ça sera plus stable
+
+# prisma studio en local
+
+docker compose exec backenddev sh
+npx prisma studio
+
+
+
+# prisma studio en distanciel
+Étapes concrètes
+1. Lancer Prisma Studio dans ton container
+
+Sur ton VPS, ouvre un shell dans le container backend :
+
+docker exec -it fateweaver-backend sh
+
+
+Puis démarre Prisma Studio en écoutant sur toutes les interfaces du container :
+
+npx prisma studio --hostname 0.0.0.0 --port 5555 --browser none
+
+
+👉 Prisma tourne maintenant dans ton container sur port 5555, mais ce port n’est pas publié vers l’extérieur (il reste privé au réseau Docker).
+
+2. Trouver l’IP interne du container
+
+Toujours sur ton VPS :
+
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fateweaver-backend
+
+
+Tu obtiendras une IP genre 172.18.0.5.
+
+3. Créer un tunnel SSH depuis ta machine locale
+
+Sur ta machine (pas sur le VPS), lance :
+
+ssh -L 5555:172.18.0.5:5555 user@ton-vps
+
+
+user@ton-vps → ton utilisateur SSH et l’adresse IP/domaine du VPS
+
+5555:172.18.0.5:5555 → ça dit à SSH de rediriger ton localhost:5555 vers le port 5555 du container
+
+4. Ouvrir Prisma Studio dans ton navigateur
+
+Une fois le tunnel actif, sur ta machine locale :
+👉 Va sur http://localhost:5555
+
+Tu verras Prisma Studio, mais il reste totalement invisible à Internet 🌍 (seul ton tunnel SSH l’expose localement).
+
+✅ Donc, le lien final où tu ouvres Prisma Studio est :
+👉 http://localhost:5555 (sur ton PC, pas sur le VPS)
+
 # Boiler Plate JS
 
 docker compose up -d --build

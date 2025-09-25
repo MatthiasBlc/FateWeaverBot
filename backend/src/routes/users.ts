@@ -1,21 +1,28 @@
 import express from "express";
-import * as UserController from "../controllers/users";
+import {
+  upsertUser,
+  getUserByDiscordId,
+  updateUserByDiscordId,
+  getAllUsers,
+  deleteUser,
+} from "../controllers/users";
+import { requireAuthOrInternal } from "../middleware/auth";
 
 const router = express.Router();
 
-// Routes existantes
-router.get("/", UserController.getAuthenticatedUser);
-router.post("/signup", UserController.signUp);
-router.post("/login", UserController.login);
-router.post("/logout", UserController.logout);
+// Crée ou met à jour un utilisateur
+router.post("/", upsertUser);
 
-// Routes pour le bot Discord
-// Anciennes routes (conservées pour la rétrocompatibilité)
-router.post("/upsert", UserController.upsertDiscordUser);
-router.get("/discord/:discordId/profile", UserController.getDiscordUserProfile);
+// Récupère un utilisateur par son ID Discord (accessible en interne ou avec session utilisateur)
+router.get("/discord/:discordId", requireAuthOrInternal, getUserByDiscordId);
 
-// Nouvelles routes correspondant aux attentes du bot
-router.post("/", UserController.upsertDiscordUser);
-router.get("/discord/:discordId", UserController.getDiscordUserProfile);
+// Met à jour un utilisateur par son ID Discord (accessible en interne ou avec session utilisateur)
+router.put("/discord/:discordId", requireAuthOrInternal, updateUserByDiscordId);
+
+// Récupère tous les utilisateurs (nécessite une authentification utilisateur)
+router.get("/", requireAuthOrInternal, getAllUsers);
+
+// Supprime un utilisateur et toutes ses données associées (nécessite une authentification utilisateur)
+router.delete("/:id", requireAuthOrInternal, deleteUser);
 
 export default router;
