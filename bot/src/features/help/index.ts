@@ -1,0 +1,1 @@
+export { default, helpAdminCommand } from "./help.command";

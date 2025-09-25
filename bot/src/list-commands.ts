@@ -1,9 +1,18 @@
 import { REST, Routes, ApplicationCommand } from "discord.js";
 import { logger } from "./services/logger";
+import { config, validateConfig } from "./config/index";
 
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
-const clientId = process.env.DISCORD_CLIENT_ID!;
-const guildId = process.env.DISCORD_GUILD_ID!; // facultatif : pour voir les commandes guildées
+// Validate configuration at startup
+try {
+  validateConfig();
+} catch (error) {
+  logger.error("Configuration validation failed:", { error });
+  process.exit(1);
+}
+
+const rest = new REST({ version: "10" }).setToken(config.discord.token);
+const clientId = config.discord.clientId;
+const guildId = config.discord.guildId; // facultatif : pour voir les commandes guildées
 
 async function listCommands() {
   try {

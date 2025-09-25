@@ -1,9 +1,10 @@
 import { createLogger, format, transports } from "winston";
+import { config } from "../config/index";
 
 const isProd = process.env.NODE_ENV === "production";
 
 const logger = createLogger({
-  level: process.env.LOG_LEVEL || (isProd ? "info" : "debug"),
+  level: config.logging.level,
   format: isProd
     ? format.combine(
         format.timestamp(),

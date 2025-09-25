@@ -1,5 +1,6 @@
 import { CommandInteraction, GuildMember } from "discord.js";
 import { logger } from "../services/logger";
+import { config } from "../config/index";
 
 export async function isAdmin(
   interaction: CommandInteraction
@@ -9,9 +10,11 @@ export async function isAdmin(
   }
 
   // Vérifier si l'utilisateur a le rôle admin défini dans les variables d'environnement
-  const hasAdminRole = interaction.member.roles.cache.some(
-    (role) => role.id === process.env.ADMIN_ROLE
-  );
+  const hasAdminRole = config.bot.adminRoleId
+    ? interaction.member.roles.cache.some(
+        (role) => role.id === config.bot.adminRoleId
+      )
+    : false;
 
   // Vérifier si l'utilisateur est propriétaire du serveur
   const isOwner = interaction.guild.ownerId === interaction.user.id;
@@ -31,7 +34,7 @@ export async function checkAdmin(
     try {
       await interaction.reply({
         content: "❌ Seuls les administrateurs peuvent effectuer cette action.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     } catch (e) {
       logger.error("Erreur lors de l'envoi du message d'erreur :", {

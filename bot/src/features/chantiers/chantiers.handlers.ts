@@ -1,110 +1,34 @@
 import {
-  SlashCommandBuilder,
   EmbedBuilder,
-  type CommandInteraction,
   ActionRowBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  type ModalSubmitInteraction,
-  type StringSelectMenuInteraction,
-  ModalActionRowComponentBuilder,
   StringSelectMenuBuilder,
   ComponentType,
+  type CommandInteraction,
+  type StringSelectMenuInteraction,
+  type ModalSubmitInteraction,
+  ModalActionRowComponentBuilder,
+  type ChatInputCommandInteraction,
   Client,
 } from "discord.js";
-import type { Command } from "../types/command";
-import { apiService } from "../services/api";
-import { logger } from "../services/logger";
-import { checkAdmin } from "../utils/roles";
-import type { ChatInputCommandInteraction } from "discord.js";
+import { apiService } from "../../services/api";
+import { logger } from "../../services/logger";
+import { checkAdmin } from "../../utils/roles";
+import type { Chantier } from "./chantiers.types";
+import { getStatusText, getStatusEmoji } from "./chantiers.utils";
 
-interface Chantiers {
-  id: string;
-  name: string;
-  cost: number;
-  spendOnIt: number;
-  status: "PLAN" | "IN_PROGRESS" | "COMPLETED";
-  serverId: string;
-  createdBy: string;
-  startDate?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const command: Command = {
-  data: new SlashCommandBuilder()
-    .setName("chantiers")
-    .setDescription("Gère les chantiers du serveur")
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("liste")
-        .setDescription("Affiche la liste des chantiers")
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("build")
-        .setDescription("Investir des points dans un chantier")
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("add")
-        .setDescription("Ajouter un nouveau chantier")
-        .addStringOption((option) =>
-          option
-            .setName("nom")
-            .setDescription("Nom du chantier")
-            .setRequired(true)
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("cout")
-            .setDescription("Coût total en points d'action")
-            .setRequired(true)
-            .setMinValue(1)
-        )
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("delete")
-        .setDescription("Supprimer un chantier existant")
-    ),
-
-  async execute(interaction: CommandInteraction) {
-    if (!interaction.isChatInputCommand()) return;
-
-    const subcommand = interaction.options.getSubcommand();
-
-    try {
-      if (subcommand === "liste") {
-        await handleListCommand(interaction);
-      } else if (subcommand === "build") {
-        await handleInvestCommand(interaction);
-      } else if (subcommand === "add") {
-        await handleAddCommand(interaction);
-      } else if (subcommand === "delete") {
-        await handleDeleteCommand(interaction);
-      }
-    } catch (error) {
-      logger.error("Error in chantiers command:", { error });
-      await interaction.reply({
-        content: "Une erreur est survenue lors de l'exécution de la commande.",
-        ephemeral: true,
-      });
-    }
-  },
-};
-
-async function handleListCommand(interaction: CommandInteraction) {
+export async function handleListCommand(interaction: CommandInteraction) {
   try {
-    const chantiers: Chantiers[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
 
     if (chantiers.length === 0) {
       return interaction.reply({
         content: "Aucun chantier n'a encore été créé sur ce serveur.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     }
 
@@ -114,12 +38,12 @@ async function handleListCommand(interaction: CommandInteraction) {
       .setDescription("Voici la liste des chantiers en cours sur ce serveur :");
 
     // Grouper les chantiers par statut
-    const chantiersParStatut = chantiers.reduce<Record<string, Chantiers[]>>(
-      (acc, chantiers) => {
-        if (!acc[chantiers.status]) {
-          acc[chantiers.status] = [];
+    const chantiersParStatut = chantiers.reduce<Record<string, Chantier[]>>(
+      (acc, chantier) => {
+        if (!acc[chantier.status]) {
+          acc[chantier.status] = [];
         }
-        acc[chantiers.status].push(chantiers);
+        acc[chantier.status].push(chantier);
         return acc;
       },
       {}
@@ -129,8 +53,8 @@ async function handleListCommand(interaction: CommandInteraction) {
     for (const [statut, listeChantiers] of Object.entries(chantiersParStatut)) {
       const chantiersText = listeChantiers
         .map(
-          (chantiers) =>
-            `**${chantiers.name}** - ${chantiers.spendOnIt}/${chantiers.cost} PA`
+          (chantier) =>
+            `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`
         )
         .join("\n");
 
@@ -141,20 +65,20 @@ async function handleListCommand(interaction: CommandInteraction) {
       });
     }
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors de la récupération des chantiers :", { error });
     await interaction.reply({
       content: "Une erreur est survenue lors de la récupération des chantiers.",
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
   }
 }
 
-async function handleInvestCommand(interaction: CommandInteraction) {
+export async function handleInvestCommand(interaction: CommandInteraction) {
   try {
     // Récupérer les chantiers du serveur
-    const chantiers: Chantiers[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
 
@@ -175,7 +99,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
     if (availableChantiers.length === 0) {
       return interaction.reply({
         content: "Aucun chantier n'est disponible pour l'instant.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     }
 
@@ -200,7 +124,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
     await interaction.reply({
       content: "Choisissez un chantier dans lequel investir :",
       components: [row],
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
 
     // Gérer la sélection du chantier
@@ -274,7 +198,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
         if (isNaN(points) || points <= 0) {
           await modalResponse.reply({
             content: "Veuillez entrer un nombre valide de points d'action.",
-            ephemeral: true,
+            flags: ["Ephemeral"],
           });
           return;
         }
@@ -306,14 +230,14 @@ async function handleInvestCommand(interaction: CommandInteraction) {
             (result.isCompleted
               ? "\n\n🎉 Félicitations ! Ce chantier est maintenant terminé !"
               : ""),
-          ephemeral: true,
+          flags: ["Ephemeral"],
         });
       } catch (error) {
         logger.error("Erreur lors de la soumission du modal:", { error });
         if (!interaction.replied) {
           await interaction.followUp({
             content: "Temps écoulé ou erreur lors de la saisie.",
-            ephemeral: true,
+            flags: ["Ephemeral"],
           });
         }
       }
@@ -322,7 +246,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       if (!interaction.replied) {
         await interaction.followUp({
           content: "Temps écoulé ou erreur lors de la sélection.",
-          ephemeral: true,
+          flags: ["Ephemeral"],
         });
       }
     }
@@ -334,19 +258,19 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       await interaction.reply({
         content:
           "Une erreur est survenue lors de la préparation de l'investissement.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
         content:
           "Une erreur est survenue lors de la préparation de l'investissement.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     }
   }
 }
 
-async function handleAddCommand(interaction: CommandInteraction) {
+export async function handleAddCommand(interaction: CommandInteraction) {
   try {
     // Vérifier que c'est une commande slash avec options
     if (!interaction.isChatInputCommand()) return;
@@ -362,7 +286,7 @@ async function handleAddCommand(interaction: CommandInteraction) {
       await interaction.reply({
         content:
           "❌ Erreur: Les paramètres 'nom' et 'cout' sont requis pour créer un chantier.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
       return;
     }
@@ -382,32 +306,32 @@ async function handleAddCommand(interaction: CommandInteraction) {
       content: `✅ Chantier "${result.name}" créé avec succès !\n📊 Coût: ${
         result.cost
       } PA\n📋 Statut: ${getStatusText(result.status)}`,
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
   } catch (error) {
     logger.error("Erreur lors de la création du chantier :", { error });
     await interaction.reply({
       content: "Une erreur est survenue lors de la création du chantier.",
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
   }
 }
 
-async function handleDeleteCommand(interaction: CommandInteraction) {
+export async function handleDeleteCommand(interaction: CommandInteraction) {
   try {
     // Vérifier si l'utilisateur est admin
     const isUserAdmin = await checkAdmin(interaction);
     if (!isUserAdmin) return;
 
     // Récupérer les chantiers du serveur
-    const chantiers: Chantiers[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
 
     if (chantiers.length === 0) {
       return interaction.reply({
         content: "❌ Aucun chantier trouvé sur ce serveur.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     }
 
@@ -432,7 +356,7 @@ async function handleDeleteCommand(interaction: CommandInteraction) {
     await interaction.reply({
       content: "Choisissez un chantier à supprimer :",
       components: [row],
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
 
     // Gérer la sélection du chantier
@@ -475,7 +399,7 @@ async function handleDeleteCommand(interaction: CommandInteraction) {
       if (!interaction.replied) {
         await interaction.followUp({
           content: "Temps écoulé ou erreur lors de la suppression.",
-          ephemeral: true,
+          flags: ["Ephemeral"],
         });
       }
     }
@@ -487,42 +411,14 @@ async function handleDeleteCommand(interaction: CommandInteraction) {
       await interaction.reply({
         content:
           "Une erreur est survenue lors de la préparation de la suppression.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
         content:
           "Une erreur est survenue lors de la préparation de la suppression.",
-        ephemeral: true,
+        flags: ["Ephemeral"],
       });
     }
   }
 }
-
-function getStatusText(status: string): string {
-  switch (status) {
-    case "PLAN":
-      return "En projet";
-    case "IN_PROGRESS":
-      return "En cours de construction";
-    case "COMPLETED":
-      return "Terminé";
-    default:
-      return status;
-  }
-}
-
-function getStatusEmoji(status: string): string {
-  switch (status) {
-    case "PLAN":
-      return "📝";
-    case "IN_PROGRESS":
-      return "🚧";
-    case "COMPLETED":
-      return "✅";
-    default:
-      return "❓";
-  }
-}
-
-export default command;

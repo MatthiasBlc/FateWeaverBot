@@ -1,7 +1,8 @@
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";
-import { logger } from "./services/logger";
+import { logger } from "./services/logger.js";
+import { config, validateConfig } from "./config/index.js";
 
 // Create a new client instance
 const client = new Client({
@@ -18,7 +19,7 @@ client.commands = new Collection();
 // Load commands
 async function loadCommands() {
   try {
-    // Utilisation de new URL pour les chemins en ES modules
+    // Load commands from commands directory
     const commandsPath = new URL("commands", import.meta.url);
     const commandFiles = (await fs.readdir(commandsPath)).filter(
       (file) =>
@@ -37,6 +38,36 @@ async function loadCommands() {
         );
       }
     }
+
+    // Load commands from features directory
+    const featuresPath = new URL("features", import.meta.url);
+    const featureDirs = (await fs.readdir(featuresPath)).filter(
+      (file) => !file.endsWith(".ts") && !file.endsWith(".js")
+    );
+
+    for (const dir of featureDirs) {
+      const featurePath = new URL(`features/${dir}`, import.meta.url);
+      const featureFiles = (await fs.readdir(featurePath)).filter(
+        (file) =>
+          (file.endsWith(".js") || file.endsWith(".ts")) &&
+          file.includes("command") &&
+          !file.startsWith("_")
+      );
+
+      for (const file of featureFiles) {
+        const filePath = new URL(`features/${dir}/${file}`, import.meta.url);
+        const command = (await import(filePath.href)).default as Command;
+
+        if ("data" in command && "execute" in command) {
+          client.commands.set(command.data.name, command);
+        } else {
+          logger.warn(
+            `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
+          );
+        }
+      }
+    }
+
     logger.info("Commands loaded successfully");
   } catch (error) {
     logger.error("Error loading commands:", { error });
@@ -65,18 +96,21 @@ client.on("interactionCreate", async (interaction) => {
     logger.error("Error executing command:", { error });
     await interaction.reply({
       content: "There was an error executing this command!",
-      ephemeral: true,
+      flags: ["Ephemeral"],
     });
   }
 });
 
-// Login to Discord with your client's token
-if (!process.env.DISCORD_TOKEN) {
-  logger.error("DISCORD_TOKEN is not defined in environment variables");
+// Validate configuration at startup
+try {
+  validateConfig();
+} catch (error) {
+  logger.error("Configuration validation failed:", { error });
   process.exit(1);
 }
 
-client.login(process.env.DISCORD_TOKEN);
+// Login to Discord with your client's token
+client.login(config.discord.token);
 
 // Load commands when starting
 loadCommands().catch((e) =>
