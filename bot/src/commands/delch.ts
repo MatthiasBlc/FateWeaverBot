@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import { withUser } from "../middleware/ensureUser";
 import { apiService } from "../services/api";
+import { logger } from "../services/logger";
 
 // Interface pour le type Chantier
 interface Chantier {
@@ -142,14 +143,14 @@ export default {
           });
         }
       } catch (error) {
-        console.error("Erreur lors de la sélection du chantier:", error);
+        logger.error("Erreur lors de la sélection du chantier:", { error });
         await interaction.editReply({
           content: "Temps écoulé ou erreur lors de la sélection.",
           components: [],
         });
       }
     } catch (error) {
-      console.error("Erreur lors de la suppression du chantier :", error);
+      logger.error("Erreur lors de la suppression du chantier :", { error });
       let errorMessage =
         "❌ Une erreur est survenue lors de la suppression du chantier.";
 
@@ -169,7 +170,9 @@ export default {
           });
         }
       } catch (e) {
-        console.error("Erreur lors de l'envoi du message d'erreur :", e);
+        logger.error("Erreur lors de l'envoi du message d'erreur :", {
+          error: e,
+        });
       }
     }
   }),

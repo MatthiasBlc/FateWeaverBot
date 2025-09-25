@@ -1,4 +1,5 @@
 import { REST, Routes, ApplicationCommand } from "discord.js";
+import { logger } from "./services/logger";
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
 const clientId = process.env.DISCORD_CLIENT_ID!;
@@ -10,7 +11,7 @@ async function listCommands() {
     const globalCommands = (await rest.get(
       Routes.applicationCommands(clientId)
     )) as ApplicationCommand[];
-    console.log("=== Commandes globales ===");
+    logger.info("=== Commandes globales ===");
     console.table(
       globalCommands.map((c) => ({
         id: c.id,
@@ -24,7 +25,7 @@ async function listCommands() {
       const guildCommands = (await rest.get(
         Routes.applicationGuildCommands(clientId, guildId)
       )) as ApplicationCommand[];
-      console.log("=== Commandes guildées ===");
+      logger.info("=== Commandes guildées ===");
       console.table(
         guildCommands.map((c) => ({
           id: c.id,
@@ -34,7 +35,7 @@ async function listCommands() {
       );
     }
   } catch (error) {
-    console.error("Erreur lors de la récupération des commandes :", error);
+    logger.error("Erreur lors de la récupération des commandes :", { error });
   }
 }
 

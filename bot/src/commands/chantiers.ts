@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 import type { Command } from "../types/command";
 import { apiService } from "../services/api";
+import { logger } from "../services/logger";
 
 interface Chantiers {
   id: string;
@@ -56,7 +57,7 @@ const command: Command = {
         await handleInvestCommand(interaction);
       }
     } catch (error) {
-      console.error("Error in chantiers command:", error);
+      logger.error("Error in chantiers command:", { error });
       await interaction.reply({
         content: "Une erreur est survenue lors de l'exécution de la commande.",
         ephemeral: true,
@@ -113,7 +114,7 @@ async function handleListCommand(interaction: CommandInteraction) {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } catch (error) {
-    console.error("Erreur lors de la récupération des chantiers :", error);
+    logger.error("Erreur lors de la récupération des chantiers :", { error });
     await interaction.reply({
       content: "Une erreur est survenue lors de la récupération des chantiers.",
       ephemeral: true,
@@ -279,7 +280,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
           ephemeral: true,
         });
       } catch (error) {
-        console.error("Erreur lors de la soumission du modal:", error);
+        logger.error("Erreur lors de la soumission du modal:", { error });
         if (!interaction.replied) {
           await interaction.followUp({
             content: "Temps écoulé ou erreur lors de la saisie.",
@@ -288,7 +289,7 @@ async function handleInvestCommand(interaction: CommandInteraction) {
         }
       }
     } catch (error) {
-      console.error("Erreur lors de la sélection du chantier:", error);
+      logger.error("Erreur lors de la sélection du chantier:", { error });
       if (!interaction.replied) {
         await interaction.followUp({
           content: "Temps écoulé ou erreur lors de la sélection.",
@@ -297,7 +298,9 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       }
     }
   } catch (error) {
-    console.error("Erreur lors de la préparation de l'investissement :", error);
+    logger.error("Erreur lors de la préparation de l'investissement :", {
+      error,
+    });
     if (!interaction.replied) {
       await interaction.reply({
         content:

@@ -6,6 +6,7 @@ import {
 import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";
 import { apiService } from "../services/api";
+import { logger } from "../services/logger";
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -109,7 +110,7 @@ const command: Command = {
 
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
-      console.error("Erreur lors de la récupération du profil:", error);
+      logger.error("Erreur lors de la récupération du profil:", { error });
       await interaction.reply({
         content:
           "Une erreur est survenue lors de la récupération de votre profil.",

@@ -7,6 +7,7 @@ import {
 import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";
 import { apiService } from "../services/api";
+import { logger } from "../services/logger";
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -59,7 +60,7 @@ const command: Command = {
           `Statut : ${getStatusText(response.status)}`,
       });
     } catch (error: unknown) {
-      console.error("Erreur lors de la création du chantier :", error);
+      logger.error("Erreur lors de la création du chantier :", { error });
       let errorMessage =
         "❌ Une erreur est survenue lors de la création du chantier.";
 
@@ -84,7 +85,9 @@ const command: Command = {
           });
         }
       } catch (e) {
-        console.error("Erreur lors de l'envoi du message d'erreur :", e);
+        logger.error("Erreur lors de l'envoi du message d'erreur :", {
+          error: e,
+        });
       }
     }
   }),
@@ -123,7 +126,9 @@ async function checkAdmin(interaction: CommandInteraction): Promise<boolean> {
         ephemeral: true,
       });
     } catch (e) {
-      console.error("Erreur lors de l'envoi du message d'erreur :", e);
+      logger.error("Erreur lors de l'envoi du message d'erreur :", {
+        error: e,
+      });
     }
     return false;
   }

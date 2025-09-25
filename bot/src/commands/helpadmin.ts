@@ -4,6 +4,7 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 import type { Command } from "../types/command";
+import { logger } from "../services/logger";
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -70,7 +71,7 @@ const command: Command = {
         ephemeral: true,
       });
     } catch (error) {
-      console.error("Error in helpadmin command:", error);
+      logger.error("Error in helpadmin command:", { error });
 
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({

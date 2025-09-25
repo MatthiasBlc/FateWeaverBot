@@ -4,6 +4,7 @@ import { getErrorMessage } from "./errors";
 import { getOrCreateUser as getOrCreateUserSvc } from "./users.service";
 import { getOrCreateServer as getOrCreateServerSvc } from "./servers.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
+import { logger } from "./logger";
 
 export async function getOrCreateCharacter(
   userId: string,
@@ -46,10 +47,9 @@ export async function getOrCreateCharacter(
             try {
               await upsertRoleSvc(server.id, role.id, role.name, role.hexColor);
             } catch (error) {
-              // Log silently here; do not block character creation on role sync
-              console.error(
+              logger.error(
                 `[characters.service] Erreur lors de la synchronisation du rôle ${role.id}:`,
-                error
+                { error }
               );
             }
           }

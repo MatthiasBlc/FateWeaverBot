@@ -1,6 +1,7 @@
 import { GuildMember, ChatInputCommandInteraction } from "discord.js";
 import { apiService } from "../services/api";
 import { isAxiosError } from "axios";
+import { logger } from "../services/logger";
 
 export async function ensureUserExists(
   interaction: ChatInputCommandInteraction
@@ -21,7 +22,7 @@ export async function ensureUserExists(
   });
 
   try {
-    console.log(
+    logger.info(
       `[ensureUserExists] Vérification de l'utilisateur ${userId} (${username}#${discriminator})...`
     );
 
@@ -31,13 +32,14 @@ export async function ensureUserExists(
       username,
       discriminator
     );
-    console.log(
-      `[ensureUserExists] Utilisateur ${userId} vérifié:`,
-      user ? `ID: ${user.id}` : "non trouvé"
+    logger.info(
+      `[ensureUserExists] Utilisateur ${userId} vérifié: ${
+        user ? `ID: ${user.id}` : "non trouvé"
+      }`
     );
 
     // 2. Mettre à jour les informations de l'utilisateur
-    console.log(
+    logger.info(
       `[ensureUserExists] Mise à jour des informations de l'utilisateur...`
     );
     await apiService.updateUser(userId, {
@@ -49,19 +51,20 @@ export async function ensureUserExists(
     });
 
     // 3. Vérifier et créer le serveur si nécessaire
-    console.log(`[ensureUserExists] Vérification du serveur ${guildId}...`);
+    logger.info(`[ensureUserExists] Vérification du serveur ${guildId}...`);
     const server = await apiService.getOrCreateServer(
       guildId,
       interaction.guild?.name || "Serveur inconnu",
       interaction.guild?.memberCount || 0
     );
-    console.log(
-      `[ensureUserExists] Serveur ${guildId} vérifié:`,
-      server ? `ID: ${server.id}` : "non trouvé"
+    logger.info(
+      `[ensureUserExists] Serveur ${guildId} vérifié: ${
+        server ? `ID: ${server.id}` : "non trouvé"
+      }`
     );
 
     // 3.1 Synchroniser les rôles du serveur
-    console.log(
+    logger.info(
       `[ensureUserExists] Synchronisation des rôles pour le serveur ${guildId}...`
     );
     const guildRoles = Array.from(
@@ -85,9 +88,9 @@ export async function ensureUserExists(
           );
           return syncedRole;
         } catch (error) {
-          console.error(
+          logger.error(
             `[ensureUserExists] Erreur lors de la synchronisation du rôle ${role.id}:`,
-            error
+            { error }
           );
           return null;
         }
@@ -98,12 +101,12 @@ export async function ensureUserExists(
     const validSyncedRoles = syncedRoles.filter(
       (role): role is NonNullable<typeof role> => role !== null
     );
-    console.log(
+    logger.info(
       `[ensureUserExists] ${validSyncedRoles.length}/${rolesToSync.length} rôles synchronisés avec succès`
     );
 
     // 4. Vérifier et créer le personnage si nécessaire
-    console.log(
+    logger.info(
       `[ensureUserExists] Vérification du personnage pour ${userId} sur ${guildId}...`
     );
     const character = await apiService.getOrCreateCharacter(
@@ -119,16 +122,17 @@ export async function ensureUserExists(
       },
       interaction.client
     );
-    console.log(
-      `[ensureUserExists] Personnage vérifié:`,
-      character ? `ID: ${character.id}` : "non trouvé"
+    logger.info(
+      `[ensureUserExists] Personnage vérifié: ${
+        character ? `ID: ${character.id}` : "non trouvé"
+      }`
     );
 
     return { user, server, character };
   } catch (error) {
-    console.error(
+    logger.error(
       "[ensureUserExists] Erreur lors de la vérification/création de l'utilisateur :",
-      error
+      { error }
     );
 
     // Type guard to check if error is an AxiosError
@@ -156,7 +160,7 @@ export function withUser(
       await ensureUserExists(interaction);
       return await handler(interaction);
     } catch (error) {
-      console.error("Error in withUser middleware:", error);
+      logger.error("Error in withUser middleware:", { error });
 
       if (!interaction.replied && !interaction.deferred) {
         await interaction
@@ -167,7 +171,9 @@ export function withUser(
                 : "Une erreur inconnue est survenue.",
             ephemeral: true,
           })
-          .catch(console.error);
+          .catch((e) =>
+            logger.error("Reply error in withUser middleware:", { error: e })
+          );
       } else if (interaction.deferred) {
         await interaction
           .editReply({
@@ -176,7 +182,11 @@ export function withUser(
                 ? error.message
                 : "Une erreur inconnue est survenue.",
           })
-          .catch(console.error);
+          .catch((e) =>
+            logger.error("Edit reply error in withUser middleware:", {
+              error: e,
+            })
+          );
       }
     }
   };

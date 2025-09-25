@@ -1,6 +1,7 @@
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";
+import { logger } from "./services/logger";
 
 // Create a new client instance
 const client = new Client({
@@ -31,20 +32,20 @@ async function loadCommands() {
       if ("data" in command && "execute" in command) {
         client.commands.set(command.data.name, command);
       } else {
-        console.log(
+        logger.warn(
           `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
         );
       }
     }
-    console.log("Commands loaded successfully");
+    logger.info("Commands loaded successfully");
   } catch (error) {
-    console.error("Error loading commands:", error);
+    logger.error("Error loading commands:", { error });
   }
 }
 
 // When the client is ready, run this code (only once)
 client.once("clientReady", () => {
-  console.log(`Logged in as ${client.user?.tag}!`);
+  logger.info(`Logged in as ${client.user?.tag}!`);
 });
 
 // Listen for interactions (slash commands)
@@ -54,14 +55,14 @@ client.on("interactionCreate", async (interaction) => {
   const command = client.commands.get(interaction.commandName);
 
   if (!command) {
-    console.error(`No command matching ${interaction.commandName} was found.`);
+    logger.error(`No command matching ${interaction.commandName} was found.`);
     return;
   }
 
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
+    logger.error("Error executing command:", { error });
     await interaction.reply({
       content: "There was an error executing this command!",
       ephemeral: true,
@@ -71,11 +72,13 @@ client.on("interactionCreate", async (interaction) => {
 
 // Login to Discord with your client's token
 if (!process.env.DISCORD_TOKEN) {
-  console.error("DISCORD_TOKEN is not defined in environment variables");
+  logger.error("DISCORD_TOKEN is not defined in environment variables");
   process.exit(1);
 }
 
 client.login(process.env.DISCORD_TOKEN);
 
 // Load commands when starting
-loadCommands().catch(console.error);
+loadCommands().catch((e) =>
+  logger.error("Error while loading commands:", { error: e })
+);

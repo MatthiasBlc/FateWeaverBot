@@ -1,13 +1,14 @@
 import { REST, Routes } from "discord.js";
 import { readdir } from "fs/promises";
 import { join } from "path";
+import { logger } from "./services/logger";
 
 // Vérification des variables d'environnement requises
 const requiredEnvVars = ["DISCORD_TOKEN", "DISCORD_CLIENT_ID"];
 const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
-  console.error(
+  logger.error(
     `Missing required environment variables: ${missingVars.join(", ")}`
   );
   process.exit(1);
@@ -17,9 +18,9 @@ const guildId = process.env.DISCORD_GUILD_ID?.trim(); // Supprime les espaces in
 const isGuildDeployment = guildId && guildId.length > 0; // Vérifie si la chaîne n'est pas vide
 
 if (isGuildDeployment) {
-  console.log(`ℹ️  Déploiement en mode guilde (ID: ${guildId})`);
+  logger.info(`ℹ️  Déploiement en mode guilde (ID: ${guildId})`);
 } else {
-  console.log(
+  logger.info(
     `ℹ️  Déploiement en mode global (DISCORD_GUILD_ID non défini ou vide)`
   );
 }
@@ -40,18 +41,18 @@ try {
 
       if ("data" in command && "execute" in command) {
         commands.push(command.data.toJSON());
-        console.log(`✅ Loaded command: ${command.data.name}`);
+        logger.info(`✅ Loaded command: ${command.data.name}`);
       } else {
-        console.warn(
+        logger.warn(
           `⚠️  Command at ${file} is missing required "data" or "execute" property.`
         );
       }
     } catch (error) {
-      console.error(`❌ Error loading command ${file}:`, error);
+      logger.error(`❌ Error loading command ${file}:`, { error });
     }
   }
 } catch (error) {
-  console.error("❌ Error reading commands directory:", error);
+  logger.error("❌ Error reading commands directory:", { error });
   process.exit(1);
 }
 
@@ -73,7 +74,7 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
 const clientId = process.env.DISCORD_CLIENT_ID!;
 
 try {
-  console.log(`🔄 Démarrage du déploiement des commandes...`);
+  logger.info(`🔄 Démarrage du déploiement des commandes...`);
 
   // Déterminer la route en fonction du mode de déploiement
   const getCommandsRoute = (forceGlobal = false) =>
@@ -89,62 +90,68 @@ try {
   // 1. Nettoyer les commandes globales si on est en mode guilde
   if (isGuildDeployment) {
     try {
-      console.log("🔄 Nettoyage des commandes globales...");
+      logger.info("🔄 Nettoyage des commandes globales...");
       const globalCommands = (await rest.get(
         getCommandsRoute(true) // Force le mode global
       )) as DiscordCommand[];
 
       if (globalCommands.length > 0) {
-        console.log(
+        logger.info(
           `🗑️  Suppression de ${globalCommands.length} commandes globales existantes...`
         );
         await Promise.all(
           globalCommands.map((cmd) =>
             rest
               .delete(getCommandRoute(cmd.id, true)) // Force le mode global
-              .catch(console.error)
+              .catch((e) =>
+                logger.error("Erreur suppression commande globale:", {
+                  error: e,
+                })
+              )
           )
         );
-        console.log("✅ Nettoyage des commandes globales terminé");
+        logger.info("✅ Nettoyage des commandes globales terminé");
       }
     } catch (error) {
-      console.warn(
-        "⚠️  Impossible de nettoyer les commandes globales :",
-        error
-      );
+      logger.warn("⚠️  Impossible de nettoyer les commandes globales :", {
+        error,
+      });
     }
   }
 
   // 2. Récupérer les commandes existantes (guilde ou globales)
-  console.log(`🔄 Récupération des commandes existantes...`);
+  logger.info(`🔄 Récupération des commandes existantes...`);
   const existingCommands = (await rest.get(
     getCommandsRoute()
   )) as DiscordCommand[];
 
   // 3. Supprimer les commandes existantes
-  console.log(
+  logger.info(
     `🗑️  Suppression de ${existingCommands.length} commandes existantes...`
   );
   await Promise.all(
     existingCommands.map((cmd) =>
-      rest.delete(getCommandRoute(cmd.id)).catch(console.error)
+      rest
+        .delete(getCommandRoute(cmd.id))
+        .catch((e) =>
+          logger.error("Erreur suppression commande existante:", { error: e })
+        )
     )
   );
 
   // 4. Enregistrer les nouvelles commandes
-  console.log(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
+  logger.info(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
   const data = (await rest.put(getCommandsRoute(), {
     body: commands,
   })) as unknown[];
 
-  console.log(
+  logger.info(
     `✅ ${data.length} commandes ${
       isGuildDeployment ? "de guilde" : "globales"
     } déployées avec succès.`
   );
   process.exit(0);
 } catch (error) {
-  console.error("❌ Erreur lors du déploiement des commandes :");
-  console.error(error);
+  logger.error("❌ Erreur lors du déploiement des commandes :", { error });
   process.exit(1);
 }
