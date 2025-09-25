@@ -4,6 +4,7 @@ import {
   createChantier,
   getChantiersByServer,
   getChantierById,
+  deleteChantier,
 } from "../controllers/chantier";
 
 const router = Router();
@@ -16,5 +17,8 @@ router.get("/server/:serverId", requireAuthOrInternal, getChantiersByServer);
 
 // Récupérer un chantier par son ID
 router.get("/:id", requireAuthOrInternal, getChantierById);
+
+// Supprimer un chantier
+router.delete("/:id", requireAuthOrInternal, deleteChantier);
 
 export default router;

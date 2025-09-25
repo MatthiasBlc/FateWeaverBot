@@ -405,15 +405,20 @@ class APIService {
     }
   }
 
+  /**
+   * Récupère tous les chantiers d'un serveur
+   * @param serverId L'ID Discord du serveur
+   * @returns La liste des chantiers du serveur
+   * @throws {Error} Si une erreur se produit lors de la récupération
+   */
   public async getChantiersByServer(serverId: string) {
     try {
-      // On envoie l'ID Discord du serveur dans l'URL
       const response = await this.api.get(`/chantiers/server/${serverId}`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching chantiers:", error);
+      console.error("Error getting chantiers by server:", error);
       throw new Error(
-        `Failed to fetch chantiers: ${this.getErrorMessage(error)}`
+        `Failed to get chantiers: ${this.getErrorMessage(error)}`
       );
     }
   }
@@ -445,6 +450,24 @@ class APIService {
       console.error("Error creating chantier:", error);
       throw new Error(
         `Failed to create chantier: ${this.getErrorMessage(error)}`
+      );
+    }
+  }
+
+  /**
+   * Supprime un chantier par son ID
+   * @param id L'ID du chantier à supprimer
+   * @returns Un message de confirmation
+   * @throws {Error} Si une erreur se produit lors de la suppression
+   */
+  public async deleteChantier(id: string) {
+    try {
+      const response = await this.api.delete(`/chantiers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting chantier:", error);
+      throw new Error(
+        `Failed to delete chantier: ${this.getErrorMessage(error)}`
       );
     }
   }

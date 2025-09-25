@@ -40,6 +40,20 @@ export const createChantier = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de serveur manquant" });
     }
 
+    // Vérifier si un chantier avec le même nom existe déjà sur ce serveur
+    const existingChantier = await prisma.chantier.findFirst({
+      where: {
+        name,
+        serverId: internalServerId,
+      },
+    });
+
+    if (existingChantier) {
+      return res
+        .status(400)
+        .json({ error: "Un chantier avec ce nom existe déjà sur ce serveur" });
+    }
+
     const chantier = await prisma.chantier.create({
       data: {
         name,
@@ -112,5 +126,32 @@ export const getChantierById = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erreur lors de la récupération du chantier:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+export const deleteChantier = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifier si le chantier existe
+    const chantier = await prisma.chantier.findUnique({
+      where: { id },
+    });
+
+    if (!chantier) {
+      return res.status(404).json({ error: "Chantier non trouvé" });
+    }
+
+    // Supprimer le chantier
+    await prisma.chantier.delete({
+      where: { id },
+    });
+
+    res.status(200).json({ message: "Chantier supprimé avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du chantier:", error);
+    res
+      .status(500)
+      .json({ error: "Erreur serveur lors de la suppression du chantier" });
   }
 };

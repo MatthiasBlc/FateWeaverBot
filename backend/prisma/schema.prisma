@@ -115,5 +115,6 @@ model Chantier {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@unique([name, serverId], name: "chantier_name_server_unique")
   @@map("chantiers")
 }
