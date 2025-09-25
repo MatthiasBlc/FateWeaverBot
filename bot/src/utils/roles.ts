@@ -20,12 +20,10 @@ export async function isAdmin(
   const isOwner = interaction.guild.ownerId === interaction.user.id;
 
   // Vérifier les permissions administrateur Discord
-  // NOTE: Ces permissions ne sont considérées que si un ADMIN_ROLE est défini
-  const hasAdminPermissions = config.bot.adminRoleId
-    ? interaction.member.permissions.has("Administrator")
-    : false;
+  const hasAdminPermissions = interaction.member.permissions.has("Administrator");
 
-  return hasAdminRole || isOwner || hasAdminPermissions;
+  // Logique hybride : soit ADMIN_ROLE, soit propriétaire, soit (permissions admin ET ADMIN_ROLE défini)
+  return hasAdminRole || isOwner || (hasAdminPermissions && !!config.bot.adminRoleId);
 }
 
 export async function checkAdmin(

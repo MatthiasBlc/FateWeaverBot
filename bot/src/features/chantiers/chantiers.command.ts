@@ -45,7 +45,7 @@ const chantiersUserCommand: Command = {
   },
 };
 
-// Commande admin (avec permissions admin)
+// Commande admin (avec permissions Discord Administrator pour la visibilité)
 const chantiersAdminCommand: Command = {
   data: new SlashCommandBuilder()
     .setName("chantiers-admin")
