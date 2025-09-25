@@ -1,1 +1,1 @@
-export { default, helpAdminCommand } from "./help.command";
+export { default } from "./help.command";

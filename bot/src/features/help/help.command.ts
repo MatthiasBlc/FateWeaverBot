@@ -1,26 +1,24 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import type { Command } from "../../types/command";
-import { handleHelpCommand, handleHelpAdminCommand } from "./help.handlers";
+import { handleHelpCommand } from "./help.handlers";
 
-// Commande help pour les utilisateurs
+// Commande help avec sous-commandes
 const helpCommand: Command = {
   data: new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Affiche la liste des commandes utilisateur disponibles"),
+    .setDescription("Affiche la liste des commandes disponibles")
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("user")
+        .setDescription("Affiche les commandes utilisateur")
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("admin")
+        .setDescription("Affiche les commandes administrateur")
+    ),
 
   execute: handleHelpCommand,
 };
 
-// Commande helpadmin pour les administrateurs
-const helpAdminCommand: Command = {
-  data: new SlashCommandBuilder()
-    .setName("helpadmin")
-    .setDescription("Affiche la liste des commandes réservées aux administrateurs")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .setDMPermission(false),
-
-  execute: handleHelpAdminCommand,
-};
-
 export default helpCommand;
-export { helpAdminCommand };
