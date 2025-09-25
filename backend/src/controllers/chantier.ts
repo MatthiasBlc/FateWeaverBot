@@ -3,14 +3,48 @@ import { prisma } from "../util/db";
 
 export const createChantier = async (req: Request, res: Response) => {
   try {
-    const { name, cost, serverId } = req.body;
-    const createdBy = req.user?.id; // Supposons que l'ID de l'utilisateur est disponible via l'authentification
+    const {
+      name,
+      cost,
+      serverId,
+      discordGuildId,
+      createdBy: requestCreatedBy,
+    } = req.body;
+
+    // Si c'est un appel interne (depuis le bot), on utilise le createdBy de la requête
+    // Sinon, on utilise la session
+    const createdBy =
+      req.get("x-internal-request") === "true"
+        ? requestCreatedBy
+        : req.session.userId;
+
+    if (!createdBy) {
+      return res.status(401).json({ error: "Utilisateur non authentifié" });
+    }
+
+    // Si on a un discordGuildId, on doit d'abord récupérer l'ID interne du serveur
+    let internalServerId = serverId;
+    if (discordGuildId && !serverId) {
+      const server = await prisma.server.findUnique({
+        where: { discordGuildId },
+        select: { id: true },
+      });
+
+      if (!server) {
+        return res.status(404).json({ error: "Serveur non trouvé" });
+      }
+      internalServerId = server.id;
+    }
+
+    if (!internalServerId) {
+      return res.status(400).json({ error: "ID de serveur manquant" });
+    }
 
     const chantier = await prisma.chantier.create({
       data: {
         name,
         cost: parseInt(cost, 10),
-        serverId,
+        serverId: internalServerId,
         createdBy,
         status: "PLAN",
         spendOnIt: 0,
@@ -19,8 +53,8 @@ export const createChantier = async (req: Request, res: Response) => {
 
     res.status(201).json(chantier);
   } catch (error) {
-    console.error("Error creating chantier:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Erreur lors de la création du chantier:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -28,18 +62,37 @@ export const getChantiersByServer = async (req: Request, res: Response) => {
   try {
     const { serverId } = req.params;
 
+    // Vérifier si c'est un ID Discord (commence par un chiffre et a une longueur de 17 à 19 caractères)
+    const isDiscordId = /^\d{17,19}$/.test(serverId);
+
+    let whereClause = {};
+
+    if (isDiscordId) {
+      // Si c'est un ID Discord, on doit d'abord trouver l'ID interne du serveur
+      const server = await prisma.server.findUnique({
+        where: { discordGuildId: serverId },
+        select: { id: true },
+      });
+
+      if (!server) {
+        return res.status(404).json({ error: "Serveur non trouvé" });
+      }
+
+      whereClause = { serverId: server.id };
+    } else {
+      // Sinon, on utilise directement l'ID fourni
+      whereClause = { serverId };
+    }
+
     const chantiers = await prisma.chantier.findMany({
-      where: { serverId },
-      orderBy: {
-        status: "asc",
-        updatedAt: "desc",
-      },
+      where: whereClause,
+      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
     });
 
     res.json(chantiers);
   } catch (error) {
-    console.error("Error fetching chantiers:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Erreur lors de la récupération des chantiers:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -52,12 +105,12 @@ export const getChantierById = async (req: Request, res: Response) => {
     });
 
     if (!chantier) {
-      return res.status(404).json({ error: "Chantier not found" });
+      return res.status(404).json({ error: "Chantier non trouvé" });
     }
 
     res.json(chantier);
   } catch (error) {
-    console.error("Error fetching chantier:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Erreur lors de la récupération du chantier:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };

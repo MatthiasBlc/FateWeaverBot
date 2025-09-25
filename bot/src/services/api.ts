@@ -404,6 +404,50 @@ class APIService {
       throw error;
     }
   }
+
+  public async getChantiersByServer(serverId: string) {
+    try {
+      // On envoie l'ID Discord du serveur dans l'URL
+      const response = await this.api.get(`/chantiers/server/${serverId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching chantiers:", error);
+      throw new Error(
+        `Failed to fetch chantiers: ${this.getErrorMessage(error)}`
+      );
+    }
+  }
+
+  /**
+   * Crée un nouveau chantier
+   * @param chantierData Les données du chantier à créer
+   * @param userId L'ID de l'utilisateur qui crée le chantier
+   * @returns Le chantier créé
+   * @throws {Error} Si une erreur se produit lors de la création
+   */
+  public async createChantier(
+    chantierData: {
+      name: string;
+      cost: number;
+      serverId: string; // Ceci est maintenant l'ID Discord du serveur
+    },
+    userId: string
+  ) {
+    try {
+      const { serverId, ...rest } = chantierData;
+      const response = await this.api.post("/chantiers", {
+        ...rest,
+        discordGuildId: serverId, // On envoie l'ID Discord du serveur
+        createdBy: userId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error creating chantier:", error);
+      throw new Error(
+        `Failed to create chantier: ${this.getErrorMessage(error)}`
+      );
+    }
+  }
 }
 
 export const apiService = APIService.getInstance();

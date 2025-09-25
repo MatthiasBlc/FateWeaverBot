@@ -88,6 +88,7 @@ services:
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - API_URL=http://backenddev:3000
+      - ADMIN_ROLE=${ADMIN_ROLE}
       - HEALTH_URL=http://localhost:3001/health
     depends_on:
       backenddev:

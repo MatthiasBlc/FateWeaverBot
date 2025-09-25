@@ -1,5 +1,4 @@
 import { CommandInteraction, GuildMember } from "discord.js";
-import { config } from "../config";
 
 export async function isAdmin(
   interaction: CommandInteraction
@@ -10,7 +9,7 @@ export async function isAdmin(
 
   // Vérifier si l'utilisateur a le rôle admin
   const hasAdminRole = interaction.member.roles.cache.some(
-    (role) => role.id === config.ADMIN_ROLE
+    (role) => role.id === process.env.ADMIN_ROLE
   );
 
   // Vérifier si l'utilisateur est propriétaire du serveur

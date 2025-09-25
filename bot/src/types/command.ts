@@ -9,6 +9,7 @@ export type Command = {
   data:
     | SlashCommandBuilder
     | SlashCommandSubcommandsOnlyBuilder
+    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
     | ReturnType<SlashCommandBuilder["toJSON"]>;
   execute(interaction: ChatInputCommandInteraction): Promise<void>;
   // Ajoutez cette ligne si vous prévoyez d'utiliser l'autocomplétion

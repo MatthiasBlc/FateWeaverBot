@@ -1,8 +1,14 @@
-import { CommandInteraction, GuildMember } from "discord.js";
+import {
+  CommandInteraction,
+  GuildMember,
+  ChatInputCommandInteraction,
+} from "discord.js";
 import { apiService } from "../services/api";
 import { isAxiosError } from "axios";
 
-export async function ensureUserExists(interaction: CommandInteraction) {
+export async function ensureUserExists(
+  interaction: ChatInputCommandInteraction
+) {
   if (!interaction.guildId || !interaction.member) {
     throw new Error("Cette commande ne peut être utilisée que dans un serveur");
   }
@@ -157,29 +163,34 @@ export async function ensureUserExists(interaction: CommandInteraction) {
 }
 
 export function withUser(
-  handler: (interaction: CommandInteraction) => Promise<void>
+  handler: (interaction: ChatInputCommandInteraction) => Promise<void>
 ) {
-  return async (interaction: CommandInteraction) => {
+  return async (interaction: ChatInputCommandInteraction) => {
     try {
       await ensureUserExists(interaction);
-      return handler(interaction);
+      return await handler(interaction);
     } catch (error) {
-      console.error("Erreur dans withUser:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Une erreur inconnue est survenue";
+      console.error("Error in withUser middleware:", error);
 
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: `❌ ${errorMessage}`,
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content: `❌ ${errorMessage}`,
-          ephemeral: true,
-        });
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction
+          .reply({
+            content:
+              error instanceof Error
+                ? error.message
+                : "Une erreur inconnue est survenue.",
+            ephemeral: true,
+          })
+          .catch(console.error);
+      } else if (interaction.deferred) {
+        await interaction
+          .editReply({
+            content:
+              error instanceof Error
+                ? error.message
+                : "Une erreur inconnue est survenue.",
+          })
+          .catch(console.error);
       }
     }
   };

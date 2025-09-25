@@ -3,6 +3,10 @@
 @part0
 PA est strictement positif et <=4
 
+tester création chantier en doublon ?
+delete un chantier ?
+erreur si chiffre non valide ?
+
 @part1
 Pour chaque serveur, il existe une liste de chantiers
 chaque chantier est composé de :
@@ -28,6 +32,11 @@ valider la commande retire ce nombre de PA du user et les ajoute au total invest
 
 Il ne peut pas y avoir plus de PA investit dans un chantier que le cout du chantier.
 Exemple un character a 3PA, un chantier est à 8/10, même si le character veut investir 3 PA seulement 2 seront retirés de sa réserve et 2 investis dans le chantier. Son dernier PA reste en réserve.
+Ajouter un log ?
+
+@par3
+Manger
++log ?
 
 -------------------------Done-------------------------
 @backend
