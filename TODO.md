@@ -3,27 +3,14 @@
 @part0
 PA est strictement positif et <=4
 
-tester création chantier en doublon ?
-delete un chantier ?
-erreur si chiffre non valide ?
-
 @part1
-Pour chaque serveur, il existe une liste de chantiers
-chaque chantier est composé de :
-un nom,
-une date de début (date à laquelle le premier PA a été investi, nul de base),
-un cout en PA (un nombre de PA requis pour le contruire),
-un nombre de PA investi dedans (débute à 0),
-un statut
 
-- plan : 0PA dedans et n'a pas été encore sélectionné (date de début à nul),
-- en cours de construction : des PA ont été investis dedans mais il y en a moins que le nombre total requis,
-- Terminé : si le nombre investit == au cout.
+ajouter delete et add chantier en sous commandes
 
-Les characters ayants le rôle admin, ADMIN_ROLE dans le .env, et seulement eux peuvent créer un nouveau chantier à ajouter à la liste en utilisant la commande /addch et en reseignant :
-nom et cost
+Ajouter un log ?
 
 @part2
+
 Les utilisateurs peuvent investir leurs PA tant qu'ils en ont (nombre de PA >0) dans les chantiers pour les construire.
 Exemple Si un utilisateur a 1PA en stock et qu'il veut en utiliser 2, son PA est retiré et seulement 1 PA est investi dans le chantier.
 
@@ -65,4 +52,19 @@ Nous avons donc un maximum de 4PA sur un utilisateur.
 le total de PA >= 0 et toujours <= 4.
 @bot
 avec la commande /profil, on affiche le nombre de PA restant.
+
+Pour chaque serveur, il existe une liste de chantiers
+chaque chantier est composé de :
+un nom,
+une date de début (date à laquelle le premier PA a été investi, nul de base),
+un cout en PA (un nombre de PA requis pour le contruire),
+un nombre de PA investi dedans (débute à 0),
+un statut
+
+- plan : 0PA dedans et n'a pas été encore sélectionné (date de début à nul),
+- en cours de construction : des PA ont été investis dedans mais il y en a moins que le nombre total requis,
+- Terminé : si le nombre investit == au cout.
+
+Les characters ayants le rôle admin, ADMIN_ROLE dans le .env, et seulement eux peuvent créer un nouveau chantier à ajouter à la liste en utilisant la commande /addch et en reseignant :
+nom et cost
 -------------------------Notes-------------------------

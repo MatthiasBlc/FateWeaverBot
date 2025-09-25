@@ -3,11 +3,18 @@ import {
   EmbedBuilder,
   type CommandInteraction,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuInteraction,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  type ModalSubmitInteraction,
+  type MessageComponentInteraction,
+  type StringSelectMenuInteraction,
+  type APIEmbedField,
+  type ButtonInteraction,
+  ModalActionRowComponentBuilder,
+  StringSelectMenuBuilder,
+  ComponentType,
+  Client,
 } from "discord.js";
 import type { Command } from "../types/command";
 import { withUser } from "../middleware/ensureUser";
@@ -37,7 +44,7 @@ const command: Command = {
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName("investir")
+        .setName("build")
         .setDescription("Investir des points dans un chantier")
     ),
 
@@ -49,7 +56,7 @@ const command: Command = {
     try {
       if (subcommand === "liste") {
         await handleListCommand(interaction);
-      } else if (subcommand === "investir") {
+      } else if (subcommand === "build") {
         await handleInvestCommand(interaction);
       }
     } catch (error) {
@@ -121,14 +128,16 @@ async function handleListCommand(interaction: CommandInteraction) {
 async function handleInvestCommand(interaction: CommandInteraction) {
   try {
     // Récupérer les chantiers du serveur
-    const response = await apiService.getChantiersByServer(
+    const chantiers: Chantiers[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
-    const chantiers: Chantiers[] = response.data.filter(
-      (c: Chantiers) => c.status !== "COMPLETED"
+
+    // Filtrer les chantiers non terminés
+    const availableChantiers = chantiers.filter(
+      (c) => c.status !== "COMPLETED"
     );
 
-    if (chantiers.length === 0) {
+    if (availableChantiers.length === 0) {
       return interaction.reply({
         content: "Aucun chantier n'est disponible pour l'instant.",
         ephemeral: true,
@@ -137,10 +146,10 @@ async function handleInvestCommand(interaction: CommandInteraction) {
 
     // Créer un menu de sélection
     const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId("select_chantier")
+      .setCustomId("select_chantier_invest")
       .setPlaceholder("Sélectionnez un chantier")
       .addOptions(
-        chantiers.map((chantier) => ({
+        availableChantiers.map((chantier) => ({
           label: chantier.name,
           description: `${chantier.spendOnIt}/${
             chantier.cost
@@ -158,13 +167,145 @@ async function handleInvestCommand(interaction: CommandInteraction) {
       components: [row],
       ephemeral: true,
     });
+
+    // Gérer la sélection du chantier
+    const filter = (i: StringSelectMenuInteraction) =>
+      i.customId === "select_chantier_invest" &&
+      i.user.id === interaction.user.id;
+
+    try {
+      const response = (await interaction.channel?.awaitMessageComponent({
+        filter,
+        componentType: ComponentType.StringSelect,
+        time: 60000, // 1 minute pour choisir
+      })) as StringSelectMenuInteraction;
+
+      if (!response) return;
+
+      const selectedChantierId = response.values[0];
+      const selectedChantier = availableChantiers.find(
+        (c) => c.id === selectedChantierId
+      );
+
+      if (!selectedChantier) {
+        await response.update({
+          content: "Chantier non trouvé. Veuillez réessayer.",
+          components: [],
+        });
+        return;
+      }
+
+      // Demander le nombre de PA à investir
+      const modal = new ModalBuilder()
+        .setCustomId("invest_modal")
+        .setTitle(`Investir dans ${selectedChantier.name}`);
+
+      const pointsInput = new TextInputBuilder()
+        .setCustomId("points_input")
+        .setLabel(
+          `PA à investir (max: ${
+            selectedChantier.cost - selectedChantier.spendOnIt
+          } PA)`
+        )
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder("Entrez le nombre de PA à investir")
+        .setMinLength(1)
+        .setMaxLength(2); // Max 2 chiffres (0-99)
+
+      const firstActionRow =
+        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
+          pointsInput,
+        ]);
+      modal.addComponents(firstActionRow);
+
+      await response.showModal(modal);
+
+      // Gérer la soumission du modal
+      const modalFilter = (i: ModalSubmitInteraction) =>
+        i.customId === "invest_modal" && i.user.id === interaction.user.id;
+
+      try {
+        const modalResponse = await interaction.awaitModalSubmit({
+          filter: modalFilter,
+          time: 300000, // 5 minutes pour répondre
+        });
+
+        const points = parseInt(
+          modalResponse.fields.getTextInputValue("points_input"),
+          10
+        );
+
+        if (isNaN(points) || points <= 0) {
+          await modalResponse.reply({
+            content: "Veuillez entrer un nombre valide de points d'action.",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        // Récupérer le personnage de l'utilisateur
+        const character = await apiService.getOrCreateCharacter(
+          interaction.user.id,
+          interaction.guildId!,
+          interaction.guild?.name || "Serveur inconnu",
+          {
+            nickname: interaction.user.username,
+            roles: [],
+          },
+          interaction.client as Client
+        );
+
+        // Effectuer l'investissement
+        const result = await apiService.investInChantier(
+          character.id,
+          selectedChantierId,
+          points
+        );
+
+        // Mettre à jour le message avec le résultat
+        await modalResponse.reply({
+          content:
+            `✅ Vous avez investi ${result.pointsInvested} PA dans le chantier "${selectedChantier.name}".\n` +
+            `Il vous reste ${result.remainingPoints} PA.` +
+            (result.isCompleted
+              ? "\n\n🎉 Félicitations ! Ce chantier est maintenant terminé !"
+              : ""),
+          ephemeral: true,
+        });
+      } catch (error) {
+        console.error("Erreur lors de la soumission du modal:", error);
+        if (!interaction.replied) {
+          await interaction.followUp({
+            content: "Temps écoulé ou erreur lors de la saisie.",
+            ephemeral: true,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la sélection du chantier:", error);
+      if (!interaction.replied) {
+        await interaction.followUp({
+          content: "Temps écoulé ou erreur lors de la sélection.",
+          ephemeral: true,
+        });
+      }
+    }
   } catch (error) {
     console.error("Erreur lors de la préparation de l'investissement :", error);
-    await interaction.reply({
-      content:
-        "Une erreur est survenue lors de la préparation de l'investissement.",
-      ephemeral: true,
-    });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content:
+          "Une erreur est survenue lors de la préparation de l'investissement.",
+        ephemeral: true,
+      });
+    } else {
+      await interaction.followUp({
+        content:
+          "Une erreur est survenue lors de la préparation de l'investissement.",
+        ephemeral: true,
+      });
+    }
   }
 }
 

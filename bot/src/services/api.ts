@@ -471,6 +471,35 @@ class APIService {
       );
     }
   }
+
+  /**
+   * Investit des points d'action dans un chantier
+   * @param characterId L'ID du personnage qui investit
+   * @param chantierId L'ID du chantier dans lequel investir
+   * @param points Le nombre de points à investir
+   * @returns Les informations mises à jour du chantier et les points restants
+   */
+  public async investInChantier(
+    characterId: string,
+    chantierId: string,
+    points: number
+  ) {
+    try {
+      const response = await this.api.post(
+        `/chantiers/${chantierId}/invest`,
+        { characterId, points },
+        {
+          headers: {
+            "X-Internal-Request": "true",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erreur lors de l'investissement dans le chantier:", error);
+      throw error;
+    }
+  }
 }
 
 export const apiService = APIService.getInstance();

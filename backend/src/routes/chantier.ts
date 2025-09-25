@@ -5,6 +5,7 @@ import {
   getChantiersByServer,
   getChantierById,
   deleteChantier,
+  investInChantier,
 } from "../controllers/chantier";
 
 const router = Router();
@@ -20,5 +21,8 @@ router.get("/:id", requireAuthOrInternal, getChantierById);
 
 // Supprimer un chantier
 router.delete("/:id", requireAuthOrInternal, deleteChantier);
+
+// Investir des points d'action dans un chantier
+router.post("/:chantierId/invest", requireAuthOrInternal, investInChantier);
 
 export default router;
