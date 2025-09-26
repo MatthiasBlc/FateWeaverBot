@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { Command } from "../../types/command.js";
 import { logger } from "../../services/logger.js";
-import { handleConfigChannelCommand } from "./config.handlers";
+import { handleConfigChannelCommand } from "../../features/config/config.handlers";
 
 // Commande pour configurer le salon de logs
 const configChannelCommand: Command = {

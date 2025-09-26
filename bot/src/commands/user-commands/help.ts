@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import type { Command } from "../../types/command";
-import { handleHelpCommand } from "./help.handlers";
+import { handleHelpCommand } from "../../features/help/help.handlers";
 
 // Commande help avec sous-commandes
 const helpCommand: Command = {

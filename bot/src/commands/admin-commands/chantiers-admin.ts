@@ -2,48 +2,9 @@ import { SlashCommandBuilder, PermissionFlagsBits, type CommandInteraction } fro
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
-  handleListCommand,
-  handleInvestCommand,
   handleAddCommand,
   handleDeleteCommand,
-} from "./chantiers.handlers";
-
-// Commande utilisateur (sans permissions admin)
-const chantiersUserCommand: Command = {
-  data: new SlashCommandBuilder()
-    .setName("chantiers")
-    .setDescription("Gère les chantiers du serveur")
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("liste")
-        .setDescription("Affiche la liste des chantiers")
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("build")
-        .setDescription("Investir des points dans un chantier")
-    ),
-
-  async execute(interaction: CommandInteraction) {
-    if (!interaction.isChatInputCommand()) return;
-
-    const subcommand = interaction.options.getSubcommand();
-
-    try {
-      if (subcommand === "liste") {
-        await handleListCommand(interaction);
-      } else if (subcommand === "build") {
-        await handleInvestCommand(interaction);
-      }
-    } catch (error) {
-      logger.error("Error in chantiers user command:", { error });
-      await interaction.reply({
-        content: "Une erreur est survenue lors de l'exécution de la commande.",
-        flags: ["Ephemeral"],
-      });
-    }
-  },
-};
+} from "../../features/chantiers/chantiers.handlers";
 
 // Commande admin (avec permissions Discord Administrator pour la visibilité)
 const chantiersAdminCommand: Command = {
@@ -96,4 +57,4 @@ const chantiersAdminCommand: Command = {
   },
 };
 
-export default [chantiersUserCommand, chantiersAdminCommand];
+export default chantiersAdminCommand;
