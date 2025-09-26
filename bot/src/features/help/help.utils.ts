@@ -32,7 +32,7 @@ export function createHelpEmbed(data: HelpEmbedData): EmbedBuilder {
  * @returns Array des sections d'aide générées dynamiquement
  */
 export function generateDynamicHelpSections(
-  commands: Collection<string, Command>,
+  commands: any,
   isAdmin: boolean = false
 ): HelpSection[] {
   const sections: HelpSection[] = [];
@@ -40,28 +40,16 @@ export function generateDynamicHelpSections(
   // Grouper les commandes par catégorie
   const commandGroups: { [key: string]: string[] } = {};
 
-  commands.forEach((command) => {
-    // Vérifier si la commande nécessite des permissions admin
+  commands.forEach((command: any) => {
+    // Exclure les commandes admin (celles qui contiennent "-admin" ou ont des permissions admin)
     const hasAdminPermissions = (command.data as any).default_member_permissions;
+    const isAdminCommand = command.data.name.includes("-admin") || hasAdminPermissions;
 
-    // Nouvelle logique de filtrage basée sur les sous-commandes
-    const options = (command.data as any).options || [];
-    const subcommands = options.filter((option: any) => option.name && option.type === undefined);
-
-    // Cas spécial pour la commande help : elle n'est pas admin mais contient des sous-commandes admin
-    const isHelpCommand = command.data.name === "help";
-    const isCommandAdmin = command.data.name.includes("-admin") || hasAdminPermissions;
-    const isAdminCommand = isCommandAdmin || (isHelpCommand && isAdmin);
-
-    // Filtrer selon le contexte - mais maintenant on filtre au niveau des sous-commandes
-    // Donc on traite toutes les commandes et on filtre les sous-commandes individuellement
-    if (subcommands.length === 0) {
-      // Si pas de sous-commandes, vérifier les permissions admin
-      if (isAdmin && !isCommandAdmin) {
-        return;
-      } else if (!isAdmin && isCommandAdmin) {
-        return;
-      }
+    // Filtrer selon le contexte
+    if (isAdmin && !isAdminCommand) {
+      return;
+    } else if (!isAdmin && isAdminCommand) {
+      return;
     }
 
     // Déterminer la catégorie basée sur le nom de la commande
@@ -69,7 +57,7 @@ export function generateDynamicHelpSections(
 
     if (command.data.name.includes("chantier")) {
       category = "🏗️ Commandes des chantiers";
-    } else if (isCommandAdmin) {
+    } else if (isAdminCommand) {
       category = "🔧 Commandes administrateur";
     }
 
@@ -79,49 +67,26 @@ export function generateDynamicHelpSections(
 
     // Vérifier si la commande a des sous-commandes
     const commandOptions = (command.data as any).options || [];
-    const commandSubcommands = commandOptions.filter((option: any) => option.name && option.type === undefined);
 
-    if (commandSubcommands.length > 0) {
-      // La commande a des sous-commandes, les lister individuellement en filtrant par contexte
-      commandSubcommands.forEach((subcommand: any) => {
-        const subcommandName = subcommand.name;
-        const isAdminSubcommand = ['add', 'delete', 'admin'].includes(subcommandName);
-
-        // Logique de filtrage selon le contexte
-        if (isHelpCommand) {
-          // Cas spécial pour /help : afficher la sous-commande appropriée selon le contexte
-          if (isAdmin && subcommandName === "admin") {
-            // Dans le contexte admin, afficher la sous-commande admin
-          } else if (!isAdmin && subcommandName === "user") {
-            // Dans le contexte utilisateur, afficher la sous-commande user
-          } else {
-            // Ne pas afficher les autres sous-commandes
-            return;
-          }
-        } else {
-          // Logique normale pour les autres commandes
-          if (isAdmin && !isAdminSubcommand) {
-            return;
-          } else if (!isAdmin && isAdminSubcommand) {
-            return;
-          }
-        }
-
-        const subcommandDescription = subcommand.description || "Aucune description disponible";
-        commandGroups[category].push(`/${command.data.name} ${subcommandName} - ${subcommandDescription}`);
-      });
-    } else {
-      // Commande simple sans sous-commandes
+    // Commande simple sans sous-commandes
+    if (commandOptions.length === 0) {
       const description = command.data.description || "Aucune description disponible";
       commandGroups[category].push(`/${command.data.name} - ${description}`);
+    } else {
+      // Commande avec sous-commandes
+      const subcommands = commandOptions.filter((option: any) => option.name && option.type === undefined);
+      subcommands.forEach((subcommand: any) => {
+        const description = subcommand.description || "Aucune description disponible";
+        commandGroups[category].push(`/${command.data.name} ${subcommand.name} - ${description}`);
+      });
     }
   });
 
   // Convertir les groupes en sections d'aide avec un ordre cohérent
   const categoryOrder = [
     "⚙️ Commandes de base",
-    "🏗️ Commandes des chantiers",
-    "🔧 Commandes administrateur"
+    "🔧 Commandes administrateur",
+    "🏗️ Commandes des chantiers"
   ];
 
   // Trier les catégories selon l'ordre défini

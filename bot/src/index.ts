@@ -1,8 +1,9 @@
-import { Client, Collection, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";
 import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
+import { Collection } from "@discordjs/collection";
 
 // Create a new client instance
 const client = new Client({
@@ -14,7 +15,7 @@ const client = new Client({
 }) as Client & { commands: Collection<string, Command> };
 
 // Create a collection to store commands
-client.commands = new Collection();
+client.commands = new Collection<string, Command>();
 
 // Load commands
 async function loadCommands() {
