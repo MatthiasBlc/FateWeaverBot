@@ -116,6 +116,42 @@ export const getAllServers: RequestHandler = async (req, res, next) => {
   }
 };
 
+// Met à jour le salon de logs d'un serveur
+export const updateServerLogChannel: RequestHandler = async (req, res, next) => {
+  try {
+    const { discordId } = req.params;
+    const { logChannelId } = req.body as { logChannelId: string | null };
+
+    if (!discordId) {
+      throw createHttpError(400, "Le paramètre discordId est requis");
+    }
+
+    // Vérifier si le serveur existe
+    const existingServer = await prisma.server.findUnique({
+      where: { discordGuildId: discordId },
+    });
+
+    if (!existingServer) {
+      throw createHttpError(404, "Serveur non trouvé");
+    }
+
+    // Mettre à jour le serveur avec le nouveau logChannelId
+    const server = await prisma.server.update({
+      where: { discordGuildId: discordId },
+      data: {
+        logChannelId,
+      },
+      include: {
+        roles: true,
+      },
+    });
+
+    res.status(200).json(server);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Supprime un serveur et toutes ses données associées
 export const deleteServer: RequestHandler = async (req, res, next) => {
   try {

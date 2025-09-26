@@ -13,6 +13,7 @@ import {
   type ChatInputCommandInteraction,
   Client,
 } from "discord.js";
+import { sendLogMessage } from "../../utils/channels.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { checkAdmin } from "../../utils/roles";
@@ -221,6 +222,11 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
           selectedChantierId,
           points
         );
+
+        // Envoyer un message de log automatique
+        const characterName = character.name || interaction.user.username;
+        const logMessage = `🏗️ **${characterName}** a investi **${result.pointsInvested} PA** dans **${selectedChantier.name}** (${result.chantier.spendOnIt}/${selectedChantier.cost})`;
+        await sendLogMessage(interaction.guildId!, interaction.client as Client, logMessage);
 
         // Mettre à jour le message avec le résultat
         await modalResponse.reply({

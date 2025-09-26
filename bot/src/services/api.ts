@@ -14,6 +14,7 @@ import {
 } from "./users.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
 import { getOrCreateCharacter as getOrCreateCharacterSvc } from "./characters.service";
+import { logger } from "./logger";
 
 class APIService {
   private static instance: APIService;
@@ -59,7 +60,7 @@ class APIService {
   }
 
   /**
-   * Récupère ou crée un serveur (upsert via POST)
+   * Récupère ou crée un serveur
    */
   public async getOrCreateServer(
     discordId: string,
@@ -67,6 +68,28 @@ class APIService {
     memberCount: number
   ) {
     return upsertServer(discordId, name, memberCount);
+  }
+  /**
+   * Récupère un serveur par son ID Discord
+   */
+  public async getServerByDiscordId(discordId: string) {
+    try {
+      const response = await this.api.get(`/servers/discord/${discordId}`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error fetching server by Discord ID:", {
+        discordId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -151,6 +174,19 @@ class APIService {
     points: number
   ) {
     return investInChantierSvc(characterId, chantierId, points);
+  }
+
+  /**
+   * Met à jour le canal de log d'un serveur
+   */
+  public async updateServerLogChannel(
+    discordId: string,
+    logChannelId: string | null
+  ) {
+    const response = await this.api.patch(`/servers/${discordId}/log-channel`, {
+      logChannelId,
+    });
+    return response.data;
   }
 }
 

@@ -4,6 +4,7 @@ import {
   getServerByDiscordId,
   getAllServers,
   deleteServer,
+  updateServerLogChannel,
 } from "../controllers/servers";
 import { requireAuthOrInternal } from "../middleware/auth";
 
@@ -14,6 +15,9 @@ router.post("/", requireAuthOrInternal, upsertServer);
 
 // Récupère un serveur par son ID Discord
 router.get("/discord/:discordId", requireAuthOrInternal, getServerByDiscordId);
+
+// Met à jour le salon de logs d'un serveur
+router.patch("/:discordId/log-channel", requireAuthOrInternal, updateServerLogChannel);
 
 // Récupère tous les serveurs
 router.get("/", requireAuthOrInternal, getAllServers);

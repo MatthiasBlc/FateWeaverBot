@@ -38,6 +38,7 @@ model Server {
   discordGuildId String     @unique @map("discord_guild_id")
   name           String     // Nom du serveur
   memberCount    Int        @default(0) // Nombre de membres dans le serveur
+  logChannelId   String?    // ID du salon Discord pour les logs automatiques
   characters     Character[]
   roles          Role[]     // Ajout de la relation avec les rôles
   chantiers      Chantier[] // Relation avec les chantiers
