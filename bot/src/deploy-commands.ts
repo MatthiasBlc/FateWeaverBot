@@ -3,6 +3,8 @@ import { readdir } from "fs/promises";
 import { join } from "path";
 import { logger } from "./services/logger";
 import { config, validateConfig } from "./config/index";
+import { createHash } from "crypto";
+import { readFile, writeFile } from "fs/promises";
 
 // Validate configuration at startup
 try {
@@ -16,12 +18,14 @@ const guildId = config.discord.guildId?.trim(); // Supprime les espaces inutiles
 const isGuildDeployment = guildId && guildId.length > 0; // Vérifie si la chaîne n'est pas vide
 
 if (isGuildDeployment) {
-  logger.info(`ℹ️  Déploiement sur guilde spécifique (ID: ${guildId})`);
+  logger.info(`ℹ️  Déploiement en mode guilde (ID: ${guildId})`);
 } else {
-  logger.info(`ℹ️  Déploiement global (DISCORD_GUILD_ID non défini)`);
+  logger.info(
+    `ℹ️  Déploiement en mode global (DISCORD_GUILD_ID non défini ou vide)`
+  );
 }
 
-const commands = [];
+const commands: DiscordCommand[] = [];
 
 // Load all commands
 try {
@@ -30,7 +34,26 @@ try {
     (file) => file.endsWith(".ts") && !file.startsWith("_")
   );
 
-  // Load commands from user-commands directory
+  // Charger les commandes à la racine (si présentes)
+  for (const file of commandFiles) {
+    try {
+      const filePath = join(commandsPath, file);
+      const command = (await import(filePath)).default;
+
+      if ("data" in command && "execute" in command) {
+        commands.push(command.data.toJSON());
+        logger.info(`✅ Loaded command: ${command.data.name}`);
+      } else {
+        logger.warn(
+          `⚠️  Command at ${file} is missing required "data" or "execute" property.`
+        );
+      }
+    } catch (error) {
+      logger.error(`❌ Error loading command ${file}:`, { error });
+    }
+  }
+
+  // Charger les commandes utilisateur
   const userCommandsPath = join(
     process.cwd(),
     "src",
@@ -40,13 +63,11 @@ try {
   const userCommandFiles = (await readdir(userCommandsPath)).filter(
     (file) => file.endsWith(".ts") && !file.startsWith("_")
   );
-
   logger.info(`Loading ${userCommandFiles.length} user commands...`);
   for (const file of userCommandFiles) {
     try {
       const filePath = join(userCommandsPath, file);
       const command = (await import(filePath)).default;
-
       if ("data" in command && "execute" in command) {
         commands.push(command.data.toJSON());
         logger.info(`✅ Loaded user command: ${command.data.name}`);
@@ -60,7 +81,7 @@ try {
     }
   }
 
-  // Load commands from admin-commands directory
+  // Charger les commandes admin
   const adminCommandsPath = join(
     process.cwd(),
     "src",
@@ -70,13 +91,11 @@ try {
   const adminCommandFiles = (await readdir(adminCommandsPath)).filter(
     (file) => file.endsWith(".ts") && !file.startsWith("_")
   );
-
   logger.info(`Loading ${adminCommandFiles.length} admin commands...`);
   for (const file of adminCommandFiles) {
     try {
       const filePath = join(adminCommandsPath, file);
       const command = (await import(filePath)).default;
-
       if ("data" in command && "execute" in command) {
         commands.push(command.data.toJSON());
         logger.info(`✅ Loaded admin command: ${command.data.name}`);
@@ -90,46 +109,43 @@ try {
     }
   }
 
-  // Load commands from features directory
-  const featuresPath = join(process.cwd(), "src", "features");
-  const featureDirs = (await readdir(featuresPath)).filter(
-    (file) => !file.endsWith(".ts") && !file.endsWith(".js")
-  );
-
-  for (const dir of featureDirs) {
-    const featurePath = join(featuresPath, dir);
-    const featureFiles = (await readdir(featurePath)).filter(
-      (file) =>
-        file.endsWith(".ts") &&
-        file.includes("command") &&
-        !file.startsWith("_")
+  // Charger les commandes issues des features (optionnel)
+  try {
+    const featuresPath = join(process.cwd(), "src", "features");
+    const featureDirs = (await readdir(featuresPath)).filter(
+      (file) => !file.endsWith(".ts") && !file.endsWith(".js")
     );
-
-    for (const file of featureFiles) {
-      try {
-        const filePath = join(featurePath, file);
-        const commandModule = (await import(filePath)).default;
-
-        // Handle both single commands and arrays of commands
-        const commandsToProcess = Array.isArray(commandModule)
-          ? commandModule
-          : [commandModule];
-
-        for (const command of commandsToProcess) {
-          if ("data" in command && "execute" in command) {
-            commands.push(command.data.toJSON());
-            logger.info(`✅ Loaded feature command: ${command.data.name}`);
-          } else {
-            logger.warn(
-              `⚠️  Command at ${file} is missing required "data" or "execute" property.`
-            );
+    for (const dir of featureDirs) {
+      const featurePath = join(featuresPath, dir);
+      const featureFiles = (await readdir(featurePath)).filter(
+        (file) =>
+          file.endsWith(".ts") &&
+          file.includes("command") &&
+          !file.startsWith("_")
+      );
+      for (const file of featureFiles) {
+        try {
+          const filePath = join(featurePath, file);
+          const commandModule = (await import(filePath)).default;
+          const toProcess = Array.isArray(commandModule)
+            ? commandModule
+            : [commandModule];
+          for (const cmd of toProcess) {
+            if ("data" in cmd && "execute" in cmd) {
+              commands.push(cmd.data.toJSON());
+              logger.info(`✅ Loaded feature command: ${cmd.data.name}`);
+            } else {
+              logger.warn(
+                `⚠️  Feature command at ${file} is missing required "data" or "execute" property.`
+              );
+            }
           }
+        } catch (error) {
+          logger.error(`❌ Error loading feature command ${file}:`, { error });
         }
-      } catch (error) {
-        logger.error(`❌ Error loading feature command ${file}:`, { error });
       }
     }
-  }
+  } catch {}
 } catch (error) {
   logger.error("❌ Error reading commands directory:", { error });
   process.exit(1);
@@ -148,115 +164,172 @@ interface DiscordCommand {
 }
 
 // Deploy commands
-const rest = new REST().setToken(config.discord.token);
-
+const rest = new REST({ version: "10" }).setToken(config.discord.token);
 const clientId = config.discord.clientId;
+const hashFile = "/app/logs/commands.hash";
 
 try {
   logger.info(`🔄 Démarrage du déploiement des commandes...`);
 
-  // 1. Nettoyer les commandes globales si on est en mode guilde spécifique
-  if (isGuildDeployment) {
-    try {
-      logger.info(
-        "🔄 Nettoyage des commandes globales avant déploiement sur guilde..."
-      );
-      const globalCommands = (await rest.get(
-        Routes.applicationCommands(clientId)
-      )) as DiscordCommand[];
+  // Déterminer les routes
+  const getCommandsRoute = (forceGlobal = false) =>
+    !forceGlobal && isGuildDeployment
+      ? Routes.applicationGuildCommands(clientId, guildId!)
+      : Routes.applicationCommands(clientId);
 
-      if (globalCommands.length > 0) {
-        logger.info(
-          `🗑️  Suppression de ${globalCommands.length} commandes globales existantes...`
-        );
-        // Supprimer toutes les commandes globales en parallèle
-        await Promise.all(
-          globalCommands.map((cmd) =>
-            rest
-              .delete(Routes.applicationCommand(clientId, cmd.id))
-              .then(() =>
-                logger.debug(
-                  `Commande globale supprimée: ${cmd.name} (${cmd.id})`
-                )
-              )
-              .catch((e) =>
-                logger.warn(
-                  `Échec de la suppression de la commande globale ${cmd.name}:`,
-                  {
-                    error: e.message,
-                  }
-                )
-              )
-          )
-        );
+  const getCommandRoute = (commandId: string, forceGlobal = false) =>
+    !forceGlobal && isGuildDeployment
+      ? Routes.applicationGuildCommand(clientId, guildId!, commandId)
+      : Routes.applicationCommand(clientId, commandId);
 
-        // Vérifier que toutes les commandes ont bien été supprimées
-        const remainingCommands = (await rest.get(
-          Routes.applicationCommands(clientId)
-        )) as DiscordCommand[];
-
-        if (remainingCommands.length > 0) {
-          logger.warn(
-            `⚠️  ${remainingCommands.length} commandes globales n'ont pas pu être supprimées`
-          );
-        } else {
-          logger.info(
-            "✅ Toutes les commandes globales ont été supprimées avec succès"
-          );
-        }
-      } else {
-        logger.info("✅ Aucune commande globale à nettoyer");
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      logger.error("❌ Erreur lors du nettoyage des commandes globales :", {
-        error: errorMessage,
-      });
-      // Ne pas sortir en erreur pour ne pas bloquer le déploiement
-    }
-  }
-
-  // 2. Récupérer les commandes existantes (uniquement sur la guilde si spécifiée, sinon globalement)
+  // 2. Récupérer les commandes existantes (guilde ou globales)
   logger.info(`🔄 Récupération des commandes existantes...`);
   const existingCommands = (await rest.get(
-    isGuildDeployment
-      ? Routes.applicationGuildCommands(clientId, guildId!)
-      : Routes.applicationCommands(clientId)
+    getCommandsRoute()
   )) as DiscordCommand[];
 
+  // 3. Supprimer les commandes existantes
   logger.info(
     `🗑️  Suppression de ${existingCommands.length} commandes existantes...`
   );
   await Promise.all(
     existingCommands.map((cmd) =>
       rest
-        .delete(
-          isGuildDeployment
-            ? Routes.applicationGuildCommand(clientId, guildId!, cmd.id)
-            : Routes.applicationCommand(clientId, cmd.id)
-        )
+        .delete(getCommandRoute(cmd.id))
         .catch((e) =>
           logger.error("Erreur suppression commande existante:", { error: e })
         )
     )
   );
 
-  // 3. Enregistrer les nouvelles commandes
-  logger.info(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
-  const data = (await rest.put(
-    isGuildDeployment
-      ? Routes.applicationGuildCommands(clientId, guildId!)
-      : Routes.applicationCommands(clientId),
-    {
-      body: commands,
+  // 3.5 Skip si aucun changement (hash)
+  const hash = createHash("sha256")
+    .update(JSON.stringify(commands))
+    .digest("hex");
+  try {
+    const prev = (await readFile(hashFile, "utf8")).trim();
+    if (prev === hash) {
+      logger.info(
+        "⏭️  Aucun changement détecté dans les commandes. Déploiement ignoré."
+      );
+      process.exit(0);
     }
-  )) as unknown[];
+  } catch {}
+
+  // 4. Enregistrer les nouvelles commandes
+  logger.info(`🔄 Enregistrement de ${commands.length} nouvelles commandes...`);
+  logger.debug(
+    "Noms des commandes envoyées:",
+    commands.map((c: any) => c?.name)
+  );
+
+  // Timeout court et configurable pour accélérer les itérations dev
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.DEPLOY_TIMEOUT_MS || 20000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let deployed = 0;
+  try {
+    const data = (await rest.put(getCommandsRoute(), {
+      body: commands,
+      signal: controller.signal as unknown as AbortSignal,
+    })) as unknown[];
+    deployed = Array.isArray(data) ? data.length : 0;
+    logger.info(
+      `✅ ${deployed} commandes ${
+        isGuildDeployment ? "de guilde" : "globales"
+      } déployées avec succès.`
+    );
+    await writeFile(hashFile, hash, "utf8");
+  } catch (e) {
+    logger.warn(
+      "⚠️ PUT bulk échoué/expiré. Passage en fallback upsert concurrent…",
+      { error: e }
+    );
+
+    // Fallback: upsert (PATCH/POST) avec concurrence limitée
+    const byName = new Map(existingCommands.map((c) => [c.name, c]));
+    const concurrency = Math.max(
+      1,
+      Number(process.env.DEPLOY_CONCURRENCY || 3)
+    );
+    let inFlight = 0;
+    let idx = 0;
+    let success = 0;
+    await new Promise<void>((resolve) => {
+      const next = () => {
+        if (idx >= commands.length && inFlight === 0) return resolve();
+        while (inFlight < concurrency && idx < commands.length) {
+          const cmd = commands[idx++] as any;
+          inFlight++;
+          (async () => {
+            const existing = byName.get(cmd.name);
+            try {
+              if (existing) {
+                await rest.patch(getCommandRoute(existing.id), { body: cmd });
+                logger.info(`🔁 Commande mise à jour: ${cmd.name}`);
+              } else {
+                await rest.post(getCommandsRoute(), { body: cmd });
+                logger.info(`➕ Commande créée: ${cmd.name}`);
+              }
+              success++;
+            } catch (err) {
+              logger.error(`❌ Échec upsert ${cmd.name}`, { error: err });
+            } finally {
+              inFlight--;
+              next();
+            }
+          })();
+        }
+      };
+      next();
+    });
+    deployed = success;
+    logger.info(
+      `✅ Upsert terminé: ${success}/${commands.length} commandes ok.`
+    );
+    if (success === commands.length) {
+      await writeFile(hashFile, hash, "utf8");
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  // Repli global si en mode guilde et que rien n'a été déployé
+  if (isGuildDeployment && deployed === 0) {
+    logger.warn("⚠️ Aucune commande déployée en mode guilde. Repli GLOBAL…");
+    const controller2 = new AbortController();
+    const timeout2 = setTimeout(
+      () => controller2.abort(),
+      Math.max(20000, timeoutMs)
+    );
+    try {
+      const data = (await rest.put(getCommandsRoute(true), {
+        body: commands,
+        signal: controller2.signal as unknown as AbortSignal,
+      })) as unknown[];
+      const count = Array.isArray(data) ? data.length : 0;
+      logger.info(`✅ ${count} commandes globales déployées (repli).`);
+    } catch (e2) {
+      logger.warn("⚠️ PUT global échoué. Upsert global séquentiel…", {
+        error: e2,
+      });
+      for (const cmd of commands as any[]) {
+        try {
+          await rest.post(getCommandsRoute(true), { body: cmd });
+          logger.info(`➕ Commande globale créée: ${cmd.name}`);
+        } catch (err) {
+          logger.error(`❌ Échec création globale ${cmd.name}`, { error: err });
+        }
+      }
+    } finally {
+      clearTimeout(timeout2);
+    }
+  }
 
   logger.info(
-    `✅ ${data.length} commandes ${
-      isGuildDeployment ? "de guilde" : "globales"
-    } déployées avec succès.`
+    `🏁 Déploiement terminé (${isGuildDeployment ? "guilde" : "global"}${
+      isGuildDeployment ? " avec fallback possible" : ""
+    }).`
   );
   process.exit(0);
 } catch (error) {

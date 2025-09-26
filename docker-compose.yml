@@ -90,6 +90,8 @@ services:
       - API_URL=http://backenddev:3000
       - ADMIN_ROLE=${ADMIN_ROLE}
       - HEALTH_URL=http://localhost:3001/health
+      - DEPLOY_TIMEOUT_MS=20000
+      - DEPLOY_CONCURRENCY=3
     depends_on:
       backenddev:
         condition: service_healthy
