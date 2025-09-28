@@ -23,4 +23,4 @@ RUN npm ci --no-optional
 EXPOSE 3001
 
 # Default command (can be overridden in docker-compose)
-CMD ["sh", "-c", "npx tsx src/deploy-commands.ts && npm start"]
+CMD ["npm", "start"]

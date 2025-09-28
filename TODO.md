@@ -1,5 +1,9 @@
 -------------------------Todo-------------------------
 
+Revoir le deploy-commands pour le passer que en guild
+
+
+
 Manger
 1 unité de nourriture / pers / 2 jours
 

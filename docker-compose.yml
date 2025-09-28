@@ -93,6 +93,8 @@ services:
       - DEPLOY_TIMEOUT_MS=20000
       - DEPLOY_CONCURRENCY=3
     depends_on:
+      discord-bot-deploy:
+        condition: service_completed_successfully
       backenddev:
         condition: service_healthy
     volumes:
@@ -105,11 +107,37 @@ services:
       - internal
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3001/health"]
-      interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
     logging: *default-logging
+
+  discord-bot-deploy:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
+    container_name: discord-bot-deploy
+    restart: "no"
+    environment:
+      - NODE_ENV=development
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - API_URL=http://backenddev:3000
+      - ADMIN_ROLE=${ADMIN_ROLE}
+    depends_on:
+      backenddev:
+        condition: service_healthy
+    volumes:
+      - ./bot:/app
+      - /app/node_modules
+      - bot-logs:/app/logs
+    networks:
+      - internal
+    logging: *default-logging
+    command: npx tsx src/deploy-commands.ts
 
 networks:
   internal:
