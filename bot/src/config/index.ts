@@ -7,11 +7,7 @@ export const config = {
   api: {
     baseUrl: process.env.API_URL || "http://localhost:3000",
   },
-  bot: {
-    adminRoleId: process.env.ADMIN_ROLE,
-    maxChantierCost: 1000,
-    defaultActionPoints: 10,
-  },
+  bot: {},
   logging: {
     level: process.env.LOG_LEVEL || "info",
   },

@@ -9,21 +9,12 @@ export async function isAdmin(
     return false;
   }
 
-  // Vérifier si l'utilisateur a le rôle admin défini dans les variables d'environnement
-  const hasAdminRole = config.bot.adminRoleId
-    ? interaction.member.roles.cache.some(
-        (role) => role.id === config.bot.adminRoleId
-      )
-    : false;
-
-  // Vérifier si l'utilisateur est propriétaire de la guilde
+  // Vérifier si l'utilisateur est propriétaire de la guilde ou a les permissions administrateur Discord
   const isOwner = interaction.guild.ownerId === interaction.user.id;
-
-  // Vérifier les permissions administrateur Discord
   const hasAdminPermissions = interaction.member.permissions.has("Administrator");
 
-  // Logique hybride : soit ADMIN_ROLE, soit propriétaire, soit (permissions admin ET ADMIN_ROLE défini)
-  return hasAdminRole || isOwner || (hasAdminPermissions && !!config.bot.adminRoleId);
+  // L'utilisateur est admin s'il est propriétaire ou a les permissions administrateur Discord
+  return isOwner || hasAdminPermissions;
 }
 
 export async function checkAdmin(
