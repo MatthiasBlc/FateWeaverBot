@@ -7,13 +7,9 @@ const router = Router();
 /**
  * @route GET /api/action-points/:characterId
  * @description Récupère le nombre de points d'action disponibles pour un personnage
- * @access Privé (propriétaire du personnage)
+ * @access Public (pour le bot Discord)
  */
-router.get(
-  "/:characterId",
-  requireAuthOrInternal,
-  actionPointController.getPoints.bind(actionPointController)
-);
+router.get("/:characterId", actionPointController.getPoints.bind(actionPointController));
 
 /**
  * @route POST /api/action-points/:characterId/use

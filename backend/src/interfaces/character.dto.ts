@@ -5,6 +5,9 @@ export interface CharacterDto {
   guildId: string;
   createdAt: Date;
   updatedAt: Date;
+  paTotal: number;
+  lastPaUpdate: Date;
+  hungerLevel: number;
   user?: {
     id: string;
     discordId: string;
@@ -20,6 +23,7 @@ export interface CharacterDto {
   };
   roles?: Array<{
     id: string;
+    discordId: string;
     name: string;
     color: string | null;
   }>;

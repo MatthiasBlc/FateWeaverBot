@@ -2,7 +2,11 @@ import { EmbedBuilder, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import type { ProfileData } from "./users.types";
-import { calculateTimeUntilNextUpdate, formatTimeUntilUpdate, getActionPointsEmoji } from "./users.utils";
+import {
+  calculateTimeUntilNextUpdate,
+  formatTimeUntilUpdate,
+  getActionPointsEmoji,
+} from "./users.utils";
 
 export async function handleProfileCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -25,10 +29,7 @@ export async function handleProfileCommand(interaction: any) {
     );
 
     // Récupérer les points d'action du personnage
-    const actionPointsData = await apiService.getActionPoints(
-      character.id,
-      interaction.token
-    );
+    const actionPointsData = await apiService.getActionPoints(character.id);
 
     // Calculer le temps restant avant la prochaine mise à jour
     const timeUntilUpdate = calculateTimeUntilNextUpdate();
@@ -42,8 +43,8 @@ export async function handleProfileCommand(interaction: any) {
         hungerLevel: character.hungerLevel || 0,
       },
       actionPoints: {
-        points: actionPointsData.points || 0,
-        lastUpdated: actionPointsData.lastUpdated || new Date(),
+        points: actionPointsData?.points || 0,
+        lastUpdated: actionPointsData?.lastUpdated || new Date(),
       },
       timeUntilUpdate,
       user: {
@@ -63,7 +64,8 @@ export async function handleProfileCommand(interaction: any) {
   } catch (error) {
     logger.error("Erreur lors de la récupération du profil:", { error });
     await interaction.reply({
-      content: "Une erreur est survenue lors de la récupération de votre profil.",
+      content:
+        "Une erreur est survenue lors de la récupération de votre profil.",
       flags: ["Ephemeral"],
     });
   }
@@ -88,9 +90,7 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
   // Formatage des rôles
   const rolesText =
     data.character.roles && data.character.roles.length > 0
-      ? data.character.roles
-          .map((role) => `<@&${role.discordId}>`)
-          .join(", ")
+      ? data.character.roles.map((role) => `<@&${role.discordId}>`).join(", ")
       : "Aucun rôle";
 
   // Formatage avancé de l'état de faim
@@ -110,7 +110,9 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Points d'Action (PA)",
-      value: `${getActionPointsEmoji(data.actionPoints.points)} **${data.actionPoints.points || 0}/4**`,
+      value: `${getActionPointsEmoji(data.actionPoints.points)} **${
+        data.actionPoints.points || 0
+      }/4**`,
       inline: true,
     },
     {
@@ -125,59 +127,47 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     }
   );
 
-  // Ajouter la barre de progression de faim si nécessaire
-  if (data.character.hungerLevel > 0) {
-    embed.addFields({
-      name: "Progression de la Faim",
-      value: createHungerProgressBar(data.character.hungerLevel),
-      inline: false,
-    });
-  }
-
   return embed;
-}
-
-function createHungerProgressBar(level: number): string {
-  const maxLevel = 4;
-  const filled = "🔴";
-  const empty = "⚫";
-
-  let bar = "";
-  for (let i = 0; i < maxLevel; i++) {
-    if (i < level) {
-      bar += filled;
-    } else {
-      bar += empty;
-    }
-  }
-
-  const percentage = Math.round((level / maxLevel) * 100);
-  return `${bar} **${percentage}%** vers la mort`;
 }
 
 function getHungerLevelText(level: number): string {
   switch (level) {
-    case 0: return "En bonne santé";
-    case 1: return "Faim";
-    case 2: return "Affamé";
-    case 3: return "Agonie";
-    case 4: return "Mort";
-    default: return "Inconnu";
+    case 0:
+      return "En bonne santé";
+    case 1:
+      return "Faim";
+    case 2:
+      return "Affamé";
+    case 3:
+      return "Agonie";
+    case 4:
+      return "Mort";
+    default:
+      return "Inconnu";
   }
 }
 
 function getHungerColor(level: number): number {
   switch (level) {
-    case 0: return 0x00ff00; // Vert - bonne santé
-    case 1: return 0xffff00; // Jaune - faim
-    case 2: return 0xffa500; // Orange - affamé
-    case 3: return 0xff4500; // Rouge-orange - agonie
-    case 4: return 0x000000; // Noir - mort
-    default: return 0x808080; // Gris - inconnu
+    case 0:
+      return 0x00ff00; // Vert - bonne santé
+    case 1:
+      return 0xffff00; // Jaune - faim
+    case 2:
+      return 0xffa500; // Orange - affamé
+    case 3:
+      return 0xff4500; // Rouge-orange - agonie
+    case 4:
+      return 0x000000; // Noir - mort
+    default:
+      return 0x808080; // Gris - inconnu
   }
 }
 
-function createAdvancedHungerDisplay(level: number): { text: string; emoji: string } {
+function createAdvancedHungerDisplay(level: number): {
+  text: string;
+  emoji: string;
+} {
   const baseEmoji = getHungerEmoji(level);
   const baseText = getHungerLevelText(level);
 
@@ -185,43 +175,49 @@ function createAdvancedHungerDisplay(level: number): { text: string; emoji: stri
     case 0:
       return {
         text: `${baseEmoji} **${baseText}** - Parfait état !`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
     case 1:
       return {
         text: `${baseEmoji} **${baseText}** - Commence à avoir faim`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
     case 2:
       return {
         text: `${baseEmoji} **${baseText}** - Régénération PA réduite`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
     case 3:
       return {
         text: `${baseEmoji} **${baseText}** - Plus de régénération PA !`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
     case 4:
       return {
         text: `${baseEmoji} **${baseText}** - Incapable d'agir`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
     default:
       return {
         text: `${baseEmoji} **État inconnu**`,
-        emoji: baseEmoji
+        emoji: baseEmoji,
       };
   }
 }
 
 function getHungerEmoji(level: number): string {
   switch (level) {
-    case 0: return "😊";
-    case 1: return "😕";
-    case 2: return "😰";
-    case 3: return "🤤";
-    case 4: return "💀";
-    default: return "❓";
+    case 0:
+      return "😊";
+    case 1:
+      return "🤤";
+    case 2:
+      return "😕";
+    case 3:
+      return "😰";
+    case 4:
+      return "💀";
+    default:
+      return "❓";
   }
 }

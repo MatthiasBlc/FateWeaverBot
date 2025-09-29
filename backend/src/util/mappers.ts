@@ -18,6 +18,9 @@ type TransactionCharacter = {
   name: string | null;
   userId: string;
   guildId: string;
+  paTotal: number;
+  lastPaUpdate: Date;
+  hungerLevel: number;
   createdAt: Date;
   updatedAt: Date;
   user: {
@@ -68,6 +71,9 @@ export function toCharacterDto(
     guildId: character.guildId,
     createdAt: character.createdAt,
     updatedAt: character.updatedAt,
+    paTotal: character.paTotal || 2,
+    lastPaUpdate: character.lastPaUpdate || character.createdAt,
+    hungerLevel: character.hungerLevel || 0,
     user: {
       id: character.user.id,
       discordId: character.user.discordId,

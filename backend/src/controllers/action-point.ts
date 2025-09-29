@@ -13,8 +13,23 @@ export class ActionPointController {
         return res.status(400).json({ error: "L'ID du personnage est requis" });
       }
 
-      const points = await actionPointService.getAvailablePoints(characterId);
-      return res.json({ points });
+      const character = await prisma.character.findUnique({
+        where: { id: characterId },
+        select: {
+          id: true,
+          paTotal: true,
+          lastPaUpdate: true,
+        },
+      });
+
+      if (!character) {
+        return res.status(404).json({ error: "Personnage non trouvé" });
+      }
+
+      return res.json({
+        points: character.paTotal,
+        lastUpdated: character.lastPaUpdate,
+      });
     } catch (error) {
       console.error("Erreur lors de la récupération des points:", error);
       return res.status(500).json({ error: "Erreur interne du serveur" });

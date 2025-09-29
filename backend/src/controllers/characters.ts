@@ -416,3 +416,78 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+// Met à jour les valeurs PA et Faim d'un personnage
+export const updateCharacterStats: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { paTotal, hungerLevel } = req.body;
+
+    if (!id) {
+      throw createHttpError(400, "L'ID du personnage est requis");
+    }
+
+    // Vérifier que au moins un champ est fourni
+    if (paTotal === undefined && hungerLevel === undefined) {
+      throw createHttpError(400, "Au moins un des champs paTotal ou hungerLevel doit être fourni");
+    }
+
+    // Valider les valeurs si elles sont fournies
+    if (paTotal !== undefined && (paTotal < 0 || paTotal > 4)) {
+      throw createHttpError(400, "Les PA doivent être entre 0 et 4");
+    }
+
+    if (hungerLevel !== undefined && (hungerLevel < 0 || hungerLevel > 4)) {
+      throw createHttpError(400, "Le niveau de faim doit être entre 0 et 4");
+    }
+
+    // Récupérer le personnage actuel
+    const character = await prisma.character.findUnique({
+      where: { id },
+    });
+
+    if (!character) {
+      throw createHttpError(404, "Personnage non trouvé");
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: {
+      updatedAt: Date;
+      paTotal?: number;
+      lastPaUpdate?: Date;
+      hungerLevel?: number;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (paTotal !== undefined) {
+      updateData.paTotal = paTotal;
+      updateData.lastPaUpdate = new Date();
+    }
+
+    if (hungerLevel !== undefined) {
+      updateData.hungerLevel = hungerLevel;
+    }
+
+    // Mettre à jour le personnage
+    const updatedCharacter = await prisma.character.update({
+      where: { id },
+      data: updateData,
+      include: {
+        user: true,
+        guild: true,
+        characterRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    // Utiliser le mapper pour transformer la réponse
+    const characterDto = toCharacterDto(updatedCharacter);
+    res.status(200).json(characterDto);
+  } catch (error) {
+    next(error);
+  }
+};

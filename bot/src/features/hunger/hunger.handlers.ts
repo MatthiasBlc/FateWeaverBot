@@ -54,25 +54,38 @@ export async function handleEatCommand(interaction: any) {
     let errorMessage = "Une erreur est survenue lors du repas.";
 
     // Cas spécial : le personnage n'a pas faim
-    if (error.response?.data?.error?.includes("pas faim") || 
-        error.response?.data?.error?.includes("pas besoin de manger") ||
-        error.message?.includes("pas faim") || 
-        error.message?.includes("pas besoin de manger")) {
+    if (
+      error.response?.data?.error?.includes("pas faim") ||
+      error.response?.data?.error?.includes("pas besoin de manger") ||
+      error.message?.includes("pas faim") ||
+      error.message?.includes("pas besoin de manger")
+    ) {
       const embed = new EmbedBuilder()
         .setColor(0x00ff00)
         .setTitle("🍽️ Pas faim")
-        .setDescription("😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !")
+        .setDescription(
+          "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+        )
         .setTimestamp();
 
       await interaction.reply({ embeds: [embed] });
       return;
     }
 
-    if (error.response?.data?.error?.includes("mort") || error.message?.includes("mort")) {
+    if (
+      error.response?.data?.error?.includes("mort") ||
+      error.message?.includes("mort")
+    ) {
       errorMessage = "❌ Votre personnage est mort et ne peut plus manger.";
-    } else if (error.response?.data?.error?.includes("vivres") || error.message?.includes("vivres")) {
+    } else if (
+      error.response?.data?.error?.includes("vivres") ||
+      error.message?.includes("vivres")
+    ) {
       errorMessage = "❌ La ville n'a plus de vivres disponibles.";
-    } else if (error.response?.data?.error?.includes("nécessaires") || error.message?.includes("nécessaires")) {
+    } else if (
+      error.response?.data?.error?.includes("nécessaires") ||
+      error.message?.includes("nécessaires")
+    ) {
       errorMessage = "❌ La ville n'a pas assez de vivres pour votre repas.";
     }
 

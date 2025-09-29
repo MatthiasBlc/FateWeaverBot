@@ -1,25 +1,9 @@
 -------------------------Todo-------------------------
 
 Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
-Créer une commande admin pour gérer les stocks de vivres des villes
-
-Ajouter des effets visuels dans les messages d'investissement
-Système de réapprovisionnement automatique des vivres via des chantiers
-
-Manger
-1 unité de nourriture / pers / 2 jours
-
-Prévoir un channel avec un bot
-Nous ajoutons les unités selon les évènements
-Les joueurs mangent en mettant un message
-
-1 jour raté = 1/2 PA
-2 jours ratés = hospit (besoin double dose)
-3 jours ratés = morts
 
 # Pouvoir faire manger les copains ?
 
-Rename serveur en guild là ou il faut ✅
 Refacto le backend
 
 Actions des charactes :
@@ -59,6 +43,9 @@ Action auto :
 
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
+
+#info
+Système de réapprovisionnement automatique des vivres via des chantiers ??
 
 #logs génériques à ajouter
 logs des morts
@@ -140,6 +127,7 @@ Utiliser une commande admin avec des sous commandes si besoin ?
 
 #guild
 Rename server -> guil pour plus de cohérence discord.
+Rename serveur en guild là ou il faut ✅
 
 # ville
 
@@ -190,6 +178,17 @@ Incrémente hungerLevel d’un cran,
 Applique les conséquences correspondantes.
 
 #eat
+Manger
+1 unité de nourriture / pers / 2 jours
+
+Prévoir un channel avec un bot
+Nous ajoutons les unités selon les évènements
+Les joueurs mangent en mettant un message
+
+1 jour raté = 1/2 PA
+2 jours ratés = hospit (besoin double dose)
+3 jours ratés = morts
+
 🍽️ Commande /manger
 Description :
 Commande utilisateur permettant de nourrir son personnage.
@@ -261,4 +260,7 @@ retrait de /foodstock-admin, /foodstock-view est suffisant
 
 Mettre à jour l'affichage du profil pour montrer l'état de faim
 Créer une commande admin pour gérer les stocks de vivres des villes
+
+Créer une commande admin pour gérer les stocks de vivres des villes
+
 -------------------------Notes-------------------------

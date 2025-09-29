@@ -2,7 +2,7 @@ export interface ProfileData {
   character: {
     id: string;
     name: string;
-    roles: Array<{ discordId: string; name: string; color: string }>;
+    roles: Array<{ id: string; discordId: string; name: string; color: string | null }>;
     hungerLevel: number;
   };
   actionPoints: {

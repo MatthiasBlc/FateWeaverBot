@@ -201,11 +201,24 @@ class APIService {
   /**
    * Récupère les informations des points d'action d'un personnage
    */
-  public async getActionPoints(characterId: string, token: string) {
-    const response = await this.api.get(`/action-points/${characterId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
+  public async getActionPoints(characterId: string) {
+    try {
+      const response = await this.api.get(`/action-points/${characterId}`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error fetching action points:", {
+        characterId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -214,6 +227,70 @@ class APIService {
   public async eatFood(characterId: string) {
     const response = await this.api.post(`/characters/${characterId}/eat`);
     return response.data;
+  }
+
+  /**
+   * Récupère tous les personnages d'une guilde
+   */
+  public async getGuildCharacters(guildId: string) {
+    try {
+      const response = await this.api.get(`/characters/guild/${guildId}`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error fetching guild characters:", {
+        guildId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Met à jour les statistiques d'un personnage (PA et Faim)
+   */
+  public async updateCharacterStats(
+    characterId: string,
+    stats: {
+      paTotal?: number;
+      hungerLevel?: number;
+    }
+  ) {
+    try {
+      logger.info("Appel API updateCharacterStats", {
+        characterId,
+        stats,
+        baseURL: this.api.defaults.baseURL,
+      });
+      const response = await this.api.patch(`/characters/${characterId}/stats`, stats);
+      logger.info("Réponse API updateCharacterStats réussie", {
+        characterId,
+        stats,
+        status: response.status,
+        data: response.data,
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error("Erreur API updateCharacterStats", {
+        characterId,
+        stats,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+      });
+      throw error;
+    }
   }
 
   /**
