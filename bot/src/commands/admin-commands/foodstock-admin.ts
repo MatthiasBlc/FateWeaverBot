@@ -1,10 +1,13 @@
-import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
   handleAddFoodCommand,
   handleRemoveFoodCommand,
-  handleViewFoodCommand,
 } from "../../features/admin/food-admin.handlers";
 
 // Commande admin pour gérer le stock de foodstock (réservé aux admins)
@@ -22,11 +25,6 @@ const foodAdminCommand: Command = {
       subcommand
         .setName("remove")
         .setDescription("Retirer des foodstock de la ville")
-    )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("view")
-        .setDescription("Voir le stock actuel de foodstock")
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -39,8 +37,6 @@ const foodAdminCommand: Command = {
         await handleAddFoodCommand(interaction);
       } else if (subcommand === "remove") {
         await handleRemoveFoodCommand(interaction);
-      } else if (subcommand === "view") {
-        await handleViewFoodCommand(interaction);
       }
     } catch (error) {
       logger.error("Error in vivres admin command:", { error });

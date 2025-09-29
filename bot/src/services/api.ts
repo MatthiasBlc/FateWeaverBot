@@ -132,22 +132,28 @@ class APIService {
    */
   public async getTownByGuildId(guildId: string) {
     try {
+      logger.info("Appel API getTownByGuildId", {
+        guildId,
+        baseURL: this.api.defaults.baseURL,
+      });
       const response = await this.api.get(`/towns/guild/${guildId}`);
+      logger.info("Réponse API getTownByGuildId réussie", {
+        guildId,
+        status: response.status,
+        data: response.data,
+      });
       return response.data;
     } catch (error: any) {
-      logger.error("Error fetching town by guild ID:", {
+      logger.error("Erreur API getTownByGuildId", {
         guildId,
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
       });
       throw error;
     }
@@ -215,22 +221,33 @@ class APIService {
    */
   public async updateTownFoodStock(townId: string, foodStock: number) {
     try {
+      logger.info("Appel API updateTownFoodStock", {
+        townId,
+        foodStock,
+        baseURL: this.api.defaults.baseURL,
+      });
       const response = await this.api.patch(`/towns/${townId}/food-stock`, {
         foodStock,
       });
-      return response.data;
-    } catch (error: any) {
-      logger.error("Error updating town food stock:", {
+      logger.info("Réponse API updateTownFoodStock réussie", {
         townId,
         foodStock,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
+        status: response.status,
+        data: response.data,
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error("Erreur API updateTownFoodStock", {
+        townId,
+        foodStock,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
       });
       throw error;
     }

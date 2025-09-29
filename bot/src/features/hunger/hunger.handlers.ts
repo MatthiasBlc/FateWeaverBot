@@ -8,9 +8,11 @@ export async function handleEatCommand(interaction: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
 
+  let character: any = null;
+
   try {
     // Récupérer le personnage
-    const character = await apiService.getOrCreateCharacter(
+    character = await apiService.getOrCreateCharacter(
       user.id,
       interaction.guildId!,
       interaction.guild?.name || "Serveur inconnu",
@@ -42,15 +44,35 @@ export async function handleEatCommand(interaction: any) {
       }** de vivres dans la ville`
     );
   } catch (error: any) {
-    logger.error("Erreur lors de la commande manger:", { error });
+    logger.warn("Commande manger - situation non-error gérée:", {
+      error: error.message,
+      responseData: error.response?.data,
+      status: error.status,
+      characterId: character?.id,
+    });
 
     let errorMessage = "Une erreur est survenue lors du repas.";
 
-    if (error.message?.includes("mort")) {
+    // Cas spécial : le personnage n'a pas faim
+    if (error.response?.data?.error?.includes("pas faim") || 
+        error.response?.data?.error?.includes("pas besoin de manger") ||
+        error.message?.includes("pas faim") || 
+        error.message?.includes("pas besoin de manger")) {
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle("🍽️ Pas faim")
+        .setDescription("😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !")
+        .setTimestamp();
+
+      await interaction.reply({ embeds: [embed] });
+      return;
+    }
+
+    if (error.response?.data?.error?.includes("mort") || error.message?.includes("mort")) {
       errorMessage = "❌ Votre personnage est mort et ne peut plus manger.";
-    } else if (error.message?.includes("vivres")) {
+    } else if (error.response?.data?.error?.includes("vivres") || error.message?.includes("vivres")) {
       errorMessage = "❌ La ville n'a plus de vivres disponibles.";
-    } else if (error.message?.includes("nécessaires")) {
+    } else if (error.response?.data?.error?.includes("nécessaires") || error.message?.includes("nécessaires")) {
       errorMessage = "❌ La ville n'a pas assez de vivres pour votre repas.";
     }
 

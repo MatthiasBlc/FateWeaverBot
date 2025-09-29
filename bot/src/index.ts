@@ -4,6 +4,7 @@ import { promises as fs } from "fs";
 import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
 import { Collection } from "@discordjs/collection";
+import { getOrCreateGuild } from './services/guilds.service.js';
 
 // Create a new client instance
 const client = new Client({
@@ -186,6 +187,24 @@ client.on("interactionCreate", async (interaction) => {
       content: "There was an error executing this command!",
       flags: ["Ephemeral"],
     });
+  }
+});
+
+// Listen for guild create events (when bot joins a new server)
+client.on('guildCreate', async (guild) => {
+  try {
+    logger.info(`Bot joined new guild: ${guild.name} (${guild.id})`);
+    
+    // Create or update guild in database with automatic town creation
+    await getOrCreateGuild(
+      guild.id,
+      guild.name,
+      guild.memberCount
+    );
+    
+    logger.info(`Successfully set up guild: ${guild.name} (${guild.id})`);
+  } catch (error) {
+    logger.error(`Error setting up guild ${guild.name} (${guild.id}):`, { error });
   }
 });
 

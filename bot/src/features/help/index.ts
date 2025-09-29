@@ -1,2 +1,2 @@
-import command from "./help.command.js";
+import command from "./help.command";
 export default command;

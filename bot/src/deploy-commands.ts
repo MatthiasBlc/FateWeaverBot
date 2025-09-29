@@ -18,18 +18,19 @@ const isGuildDeployment = !!guildId;
 const rest = new REST().setToken(config.discord.token);
 
 // --- Command Loading Logic ---
-async function loadCommands(dir: string): Promise<any[]> {
+async function loadCommandsRecursively(dir: string): Promise<any[]> {
   const commands: any[] = [];
   const entries = await readdir(dir, { withFileTypes: true });
 
   for (const entry of entries) {
     const fullPath = resolve(dir, entry.name);
     if (entry.isDirectory()) {
-      commands.push(...(await loadCommands(fullPath)));
+      commands.push(...(await loadCommandsRecursively(fullPath)));
     } else if (
       entry.isFile() &&
       (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) &&
-      !entry.name.startsWith("_")
+      !entry.name.startsWith("_") &&
+      entry.name !== "index.ts"
     ) {
       try {
         logger.info(`   -> Chargement du fichier: ${entry.name}`);
@@ -54,6 +55,86 @@ async function loadCommands(dir: string): Promise<any[]> {
   return commands;
 }
 
+async function loadCommandsFromCommands(dir: string): Promise<any[]> {
+  const commands: any[] = [];
+  const entries = await readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = resolve(dir, entry.name);
+    if (entry.isDirectory()) {
+      commands.push(...(await loadCommandsRecursively(fullPath)));
+    } else if (
+      entry.isFile() &&
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) &&
+      !entry.name.startsWith("_") &&
+      entry.name !== "index.ts"
+    ) {
+      try {
+        logger.info(`   -> Chargement du fichier: ${entry.name}`);
+        const commandModule = (await import(fullPath)).default;
+        if (commandModule?.data && commandModule?.execute) {
+          commands.push(commandModule.data.toJSON());
+          logger.info(
+            `      ✅ Commande '${commandModule.data.name}' chargée.`
+          );
+        } else {
+          logger.warn(
+            `      ⚠️  Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
+          );
+        }
+      } catch (error) {
+        logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
+          error,
+        });
+      }
+    }
+  }
+  return commands;
+}
+
+async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
+  const commands: any[] = [];
+  const entries = await readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const featurePath = resolve(dir, entry.name);
+      const featureEntries = await readdir(featurePath, { withFileTypes: true });
+
+      const commandFiles = featureEntries.filter(
+        (file) =>
+          file.isFile() &&
+          (file.name.endsWith(".ts") || file.name.endsWith(".js")) &&
+          file.name.includes("command") &&
+          !file.name.startsWith("_")
+      );
+
+      for (const file of commandFiles) {
+        const fullPath = resolve(featurePath, file.name);
+        try {
+          logger.info(`   -> Chargement du fichier: ${entry.name}/${file.name}`);
+          const commandModule = (await import(fullPath)).default;
+          if (commandModule?.data && commandModule?.execute) {
+            commands.push(commandModule.data.toJSON());
+            logger.info(
+              `      ✅ Commande '${commandModule.data.name}' chargée.`
+            );
+          } else {
+            logger.warn(
+              `      ⚠️  Fichier ${entry.name}/${file.name} ignoré (pas de 'data' ou 'execute').`
+            );
+          }
+        } catch (error) {
+          logger.error(`      ❌ Erreur lors du chargement de ${entry.name}/${file.name}:`, {
+            error,
+          });
+        }
+      }
+    }
+  }
+  return commands;
+}
+
 // --- Main Execution ---
 (async () => {
   try {
@@ -64,7 +145,13 @@ async function loadCommands(dir: string): Promise<any[]> {
 
     logger.info("🔍 Chargement des fichiers de commandes...");
     const commandsPath = resolve(process.cwd(), "src", "commands");
-    const commands = await loadCommands(commandsPath);
+    const commands = await loadCommandsFromCommands(commandsPath);
+
+    // Load commands from features directory (similar to index.ts logic)
+    const featuresPath = resolve(process.cwd(), "src", "features");
+    const featureCommands = await loadCommandsFromFeatures(featuresPath);
+    commands.push(...featureCommands);
+
     logger.info(`✅ ${commands.length} commandes chargées avec succès.`);
 
     if (commands.length === 0) {
