@@ -113,7 +113,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
       components = [row];
     }
 
-    await interaction.reply({ embeds: [embed], components });
+    await interaction.reply({ embeds: [embed], components, flags: ["Ephemeral"] });
   } catch (error: any) {
     logger.error("Erreur lors de la récupération du stock de foodstock:", {
       guildId: interaction.guildId,

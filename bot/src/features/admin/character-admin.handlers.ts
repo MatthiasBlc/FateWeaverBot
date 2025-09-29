@@ -178,7 +178,7 @@ export async function handleCharacterAdminCommand(
         )
         .setTimestamp();
 
-      await modalInteraction.reply({ embeds: [embed] });
+      await modalInteraction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 
     } catch (error) {
       logger.error("Erreur lors de la sélection ou soumission du modal:", { error });

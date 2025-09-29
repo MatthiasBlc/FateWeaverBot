@@ -60,7 +60,7 @@ export async function handleProfileCommand(interaction: any) {
     // Créer l'embed du profil
     const embed = createProfileEmbed(profileData);
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors de la récupération du profil:", { error });
     await interaction.reply({

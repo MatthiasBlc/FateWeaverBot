@@ -33,7 +33,7 @@ export async function handleEatCommand(interaction: any) {
     const embed = createEatEmbed(eatResult, character.name || user.username);
 
     // Envoyer la réponse à l'utilisateur
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 
     // Envoyer le message de log
     await sendLogMessage(
@@ -68,7 +68,7 @@ export async function handleEatCommand(interaction: any) {
         )
         .setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
       return;
     }
 
