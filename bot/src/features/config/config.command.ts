@@ -1,11 +1,11 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  type CommandInteraction,
+  type ChatInputCommandInteraction,
 } from "discord.js";
 import type { Command } from "../../types/command.js";
 import { logger } from "../../services/logger.js";
-import { handleConfigChannelCommand } from "../../features/config/config.handlers";
+import { handleConfigChannelCommand } from "./config.handlers";
 
 // Commande pour configurer le salon de logs
 const configChannelCommand: Command = {
@@ -14,7 +14,7 @@ const configChannelCommand: Command = {
     .setDescription("Configure le salon pour les logs automatiques")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
 
     try {

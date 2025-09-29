@@ -1,1 +1,2 @@
-export { default } from "./users.command";
+import command from "./users.command";
+export default command;

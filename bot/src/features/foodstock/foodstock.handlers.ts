@@ -49,13 +49,29 @@ export async function handleViewFoodStockCommand(interaction: any) {
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
-  } catch (error) {
-    logger.error("Erreur lors de la récupération du stock de vivres:", {
-      error,
+  } catch (error: any) {
+    logger.error("Erreur lors de la récupération du stock de foodstock:", {
+      guildId: interaction.guildId,
+      error: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
     });
+
+    let errorMessage =
+      "❌ Une erreur est survenue lors de la récupération du stock de foodstock.";
+
+    if (error.response?.status === 404) {
+      errorMessage =
+        "❌ Aucune ville trouvée pour ce serveur. Contactez un administrateur.";
+    } else if (
+      error.response?.status === 401 ||
+      error.response?.status === 403
+    ) {
+      errorMessage = "❌ Problème d'autorisation. Contactez un administrateur.";
+    }
+
     await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la récupération du stock de vivres.",
+      content: errorMessage,
       flags: ["Ephemeral"],
     });
   }

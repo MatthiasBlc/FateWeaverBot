@@ -1,14 +1,14 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  type CommandInteraction,
+  type ChatInputCommandInteraction,
 } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
   handleListCommand,
   handleInvestCommand,
-} from "../../features/chantiers/chantiers.handlers";
+} from "./chantiers.handlers";
 
 // Commande utilisateur (sans permissions admin)
 const chantiersUserCommand: Command = {
@@ -26,7 +26,7 @@ const chantiersUserCommand: Command = {
         .setDescription("Investir des points dans un chantier")
     ),
 
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
 
     const subcommand = interaction.options.getSubcommand();

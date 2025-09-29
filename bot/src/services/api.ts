@@ -128,13 +128,29 @@ class APIService {
   }
 
   /**
-   * Récupère les informations des points d'action d'un personnage
+   * Récupère une ville par l'ID de sa guilde
    */
-  public async getActionPoints(characterId: string, token: string) {
-    const response = await this.api.get(`/action-points/${characterId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
+  public async getTownByGuildId(guildId: string) {
+    try {
+      const response = await this.api.get(`/towns/guild/${guildId}`);
+      return response.data;
+    } catch (error: any) {
+      logger.error("Error fetching town by guild ID:", {
+        guildId,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -177,12 +193,76 @@ class APIService {
   }
 
   /**
+   * Récupère les informations des points d'action d'un personnage
+   */
+  public async getActionPoints(characterId: string, token: string) {
+    const response = await this.api.get(`/action-points/${characterId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  }
+
+  /**
    * Permet à un personnage de manger
    */
   public async eatFood(characterId: string) {
     const response = await this.api.post(`/characters/${characterId}/eat`);
     return response.data;
   }
-}
 
+  /**
+   * Met à jour le stock de foodstock d'une ville
+   */
+  public async updateTownFoodStock(townId: string, foodStock: number) {
+    try {
+      const response = await this.api.patch(`/towns/${townId}/food-stock`, {
+        foodStock,
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error("Error updating town food stock:", {
+        townId,
+        foodStock,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  public async updateGuildLogChannel(
+    discordId: string,
+    logChannelId: string | null
+  ) {
+    try {
+      const response = await this.api.patch(
+        `/guilds/${discordId}/log-channel`,
+        {
+          logChannelId,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      logger.error("Error updating guild log channel:", {
+        discordId,
+        logChannelId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+}
 export const apiService = APIService.getInstance();

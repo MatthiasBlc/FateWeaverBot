@@ -1,1 +1,1 @@
-export { default } from "./chantiers.command";
+export { default } from "./chantiers.command.js";

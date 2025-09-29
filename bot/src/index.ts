@@ -47,7 +47,7 @@ async function loadCommands() {
       }
     }
 
-    // Load commands from user-commands directory
+    // Load user commands from user-commands directory
     const userCommandsPath = new URL("commands/user-commands", import.meta.url);
     const userCommandFiles = (await fs.readdir(userCommandsPath)).filter(
       (file) =>

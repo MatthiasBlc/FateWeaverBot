@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, type CommandInteraction } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
@@ -29,7 +29,7 @@ const foodAdminCommand: Command = {
         .setDescription("Voir le stock actuel de foodstock")
     ),
 
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
 
     const subcommand = interaction.options.getSubcommand();

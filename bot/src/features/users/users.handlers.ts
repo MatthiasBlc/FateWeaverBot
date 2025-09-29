@@ -25,7 +25,7 @@ export async function handleProfileCommand(interaction: any) {
     );
 
     // Récupérer les points d'action du personnage
-    const actionPoints = await apiService.getActionPoints(
+    const actionPointsData = await apiService.getActionPoints(
       character.id,
       interaction.token
     );
@@ -42,8 +42,8 @@ export async function handleProfileCommand(interaction: any) {
         hungerLevel: character.hungerLevel || 0,
       },
       actionPoints: {
-        points: actionPoints.points,
-        lastUpdated: actionPoints.lastUpdated,
+        points: actionPointsData.points || 0,
+        lastUpdated: actionPointsData.lastUpdated || new Date(),
       },
       timeUntilUpdate,
       user: {

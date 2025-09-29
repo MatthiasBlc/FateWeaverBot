@@ -9,7 +9,7 @@ import {
   Client,
   PermissionFlagsBits,
 } from "discord.js";
-import { apiService } from "../../services/api.js";
+import { apiService } from "../../services/api";
 import { logger } from "../../services/logger.js";
 
 export async function handleConfigChannelCommand(
