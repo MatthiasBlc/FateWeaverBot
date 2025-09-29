@@ -19,7 +19,7 @@ router.get("/guild/:guildId", requireAuthOrInternal, getTownByGuildId);
 // Récupère une ville par son ID
 router.get("/:id", requireAuthOrInternal, getTownById);
 
-// Met à jour le stock de vivres d'une ville
+// Met à jour le stock de foodstock d'une ville
 router.patch("/:id/food-stock", requireAuthOrInternal, updateTownFoodStock);
 
 // Récupère toutes les villes

@@ -71,7 +71,7 @@ export async function handleProfileCommand(interaction: any) {
 
 function createProfileEmbed(data: ProfileData): EmbedBuilder {
   const embed = new EmbedBuilder()
-    .setColor("#0099ff")
+    .setColor(getHungerColor(data.character.hungerLevel))
     .setTitle(`📋 Profil de ${data.character.name || "Sans nom"}`)
     .setThumbnail(data.user.displayAvatarURL)
     .addFields({
@@ -93,9 +93,8 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
           .join(", ")
       : "Aucun rôle";
 
-  // Formatage de l'état de faim
-  const hungerText = getHungerLevelText(data.character.hungerLevel);
-  const hungerEmoji = getHungerEmoji(data.character.hungerLevel);
+  // Formatage avancé de l'état de faim
+  const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
 
   // Ajout des champs d'information
   embed.addFields(
@@ -115,8 +114,8 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
       inline: true,
     },
     {
-      name: "État de faim",
-      value: `${hungerEmoji} ${hungerText}`,
+      name: "État de Faim",
+      value: hungerDisplay.text,
       inline: true,
     },
     {
@@ -126,7 +125,34 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     }
   );
 
+  // Ajouter la barre de progression de faim si nécessaire
+  if (data.character.hungerLevel > 0) {
+    embed.addFields({
+      name: "Progression de la Faim",
+      value: createHungerProgressBar(data.character.hungerLevel),
+      inline: false,
+    });
+  }
+
   return embed;
+}
+
+function createHungerProgressBar(level: number): string {
+  const maxLevel = 4;
+  const filled = "🔴";
+  const empty = "⚫";
+
+  let bar = "";
+  for (let i = 0; i < maxLevel; i++) {
+    if (i < level) {
+      bar += filled;
+    } else {
+      bar += empty;
+    }
+  }
+
+  const percentage = Math.round((level / maxLevel) * 100);
+  return `${bar} **${percentage}%** vers la mort`;
 }
 
 function getHungerLevelText(level: number): string {
@@ -137,6 +163,55 @@ function getHungerLevelText(level: number): string {
     case 3: return "Agonie";
     case 4: return "Mort";
     default: return "Inconnu";
+  }
+}
+
+function getHungerColor(level: number): number {
+  switch (level) {
+    case 0: return 0x00ff00; // Vert - bonne santé
+    case 1: return 0xffff00; // Jaune - faim
+    case 2: return 0xffa500; // Orange - affamé
+    case 3: return 0xff4500; // Rouge-orange - agonie
+    case 4: return 0x000000; // Noir - mort
+    default: return 0x808080; // Gris - inconnu
+  }
+}
+
+function createAdvancedHungerDisplay(level: number): { text: string; emoji: string } {
+  const baseEmoji = getHungerEmoji(level);
+  const baseText = getHungerLevelText(level);
+
+  switch (level) {
+    case 0:
+      return {
+        text: `${baseEmoji} **${baseText}** - Parfait état !`,
+        emoji: baseEmoji
+      };
+    case 1:
+      return {
+        text: `${baseEmoji} **${baseText}** - Commence à avoir faim`,
+        emoji: baseEmoji
+      };
+    case 2:
+      return {
+        text: `${baseEmoji} **${baseText}** - Régénération PA réduite`,
+        emoji: baseEmoji
+      };
+    case 3:
+      return {
+        text: `${baseEmoji} **${baseText}** - Plus de régénération PA !`,
+        emoji: baseEmoji
+      };
+    case 4:
+      return {
+        text: `${baseEmoji} **${baseText}** - Incapable d'agir`,
+        emoji: baseEmoji
+      };
+    default:
+      return {
+        text: `${baseEmoji} **État inconnu**`,
+        emoji: baseEmoji
+      };
   }
 }
 

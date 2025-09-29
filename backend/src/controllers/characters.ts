@@ -322,24 +322,30 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Vérifier si le personnage est mort
     if (character.hungerLevel >= 4) {
-      throw createHttpError(400, "Ce personnage est mort et ne peut plus manger");
+      throw createHttpError(
+        400,
+        "Ce personnage est mort et ne peut plus manger"
+      );
     }
 
-    // Vérifier si la ville a des vivres
+    // Vérifier si la ville a des foodstock
     if (character.guild.town.foodStock <= 0) {
       throw createHttpError(400, "La ville n'a plus de vivres disponibles");
     }
 
-    // Calculer combien de vivres consommer selon l'état de faim
+    // Calculer combien de foodstock consommer selon l'état de faim
     let foodToConsume = 1;
     if (character.hungerLevel === 3) {
-      // Faim prolongée nécessite 2 repas pour passer au niveau 2
+      // Agonie nécessite 2 repas pour passer au niveau 2
       foodToConsume = 2;
     }
 
-    // Vérifier si la ville a assez de vivres
+    // Vérifier si la ville a assez de foodstock
     if (character.guild.town.foodStock < foodToConsume) {
-      throw createHttpError(400, `La ville n'a que ${character.guild.town.foodStock} vivres, mais ${foodToConsume} sont nécessaires`);
+      throw createHttpError(
+        400,
+        `La ville n'a que ${character.guild.town.foodStock} vivres, mais ${foodToConsume} sont nécessaires`
+      );
     }
 
     // Calculer le nouveau niveau de faim
@@ -369,7 +375,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         },
       });
 
-      // Mettre à jour le stock de vivres de la ville
+      // Mettre à jour le stock de foodstock de la ville
       const updatedTown = await prisma.town.update({
         where: { id: character.guild.town!.id },
         data: {

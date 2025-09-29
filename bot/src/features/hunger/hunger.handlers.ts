@@ -37,9 +37,10 @@ export async function handleEatCommand(interaction: any) {
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
-      `🍽️ **${character.name || user.username}** a pris un repas, il reste **${eatResult.town.foodStock}** de vivres dans la ville`
+      `🍽️ **${character.name || user.username}** a pris un repas, il reste **${
+        eatResult.town.foodStock
+      }** de vivres dans la ville`
     );
-
   } catch (error: any) {
     logger.error("Erreur lors de la commande manger:", { error });
 
@@ -60,7 +61,10 @@ export async function handleEatCommand(interaction: any) {
   }
 }
 
-function createEatEmbed(eatResult: EatResult, characterName: string): EmbedBuilder {
+function createEatEmbed(
+  eatResult: EatResult,
+  characterName: string
+): EmbedBuilder {
   const hungerLevelText = getHungerLevelText(eatResult.character.hungerLevel);
   const hungerEmoji = getHungerEmoji(eatResult.character.hungerLevel);
 
@@ -92,33 +96,51 @@ function createEatEmbed(eatResult: EatResult, characterName: string): EmbedBuild
 
 function getHungerLevelText(level: number): string {
   switch (level) {
-    case 0: return "En bonne santé";
-    case 1: return "Faim";
-    case 2: return "Affamé";
-    case 3: return "Agonie";
-    case 4: return "Mort";
-    default: return "Inconnu";
+    case 0:
+      return "En bonne santé";
+    case 1:
+      return "Faim";
+    case 2:
+      return "Affamé";
+    case 3:
+      return "Agonie";
+    case 4:
+      return "Mort";
+    default:
+      return "Inconnu";
   }
 }
 
 function getHungerEmoji(level: number): string {
   switch (level) {
-    case 0: return "😊";
-    case 1: return "😕";
-    case 2: return "😰";
-    case 3: return "🤤";
-    case 4: return "💀";
-    default: return "❓";
+    case 0:
+      return "😊";
+    case 1:
+      return "🤤";
+    case 2:
+      return "😕";
+    case 3:
+      return "😰";
+    case 4:
+      return "💀";
+    default:
+      return "❓";
   }
 }
 
 function getHungerColor(level: number): number {
   switch (level) {
-    case 0: return 0x00ff00; // Vert
-    case 1: return 0xffff00; // Jaune
-    case 2: return 0xffa500; // Orange
-    case 3: return 0xff4500; // Rouge-orange
-    case 4: return 0x000000; // Noir
-    default: return 0x808080; // Gris
+    case 0:
+      return 0x00ff00; // Vert
+    case 1:
+      return 0xffff00; // Jaune
+    case 2:
+      return 0xffa500; // Orange
+    case 3:
+      return 0xff4500; // Rouge-orange
+    case 4:
+      return 0x000000; // Noir
+    default:
+      return 0x808080; // Gris
   }
 }

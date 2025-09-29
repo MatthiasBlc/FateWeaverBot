@@ -1,9 +1,5 @@
 -------------------------Todo-------------------------
 
-Commande admin pour gérer le stock de vivres
-
-Effets visuels avancés dans les embeds
-
 logs des morts
 
 Mettre à jour l'affichage du profil pour montrer l'état de faim
@@ -233,11 +229,14 @@ Si un personnage meurt de faim, il ne peut plus agir (investir, se déplacer, et
 Les actions sont loguées dans le salon configuré pour le serveur.
 
 🧪 Bonus :
-Ajouter un effet visuel ou embed spécial dans /profil pour refléter l’état de faim du personnage.
 Intégrer la faim dans les messages d’investissement (X a investi Y PA → X (Affamé) a investi Y PA).
 
 # eat Ajouts
 
 Système de CRON pour l'augmentation automatique de la faim (tous les 2 jours)
+On va ajouter des Commandes admin pour gérer le stock de vivres. Pour la commande Add, faire un promt avec un int demandé
+
+Effets visuels avancés dans les embeds
+Ajouter un effet visuel ou embed spécial dans /profil pour refléter l’état de faim du personnage.
 
 -------------------------Notes-------------------------

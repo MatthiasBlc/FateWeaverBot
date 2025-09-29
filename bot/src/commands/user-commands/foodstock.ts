@@ -1,16 +1,14 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../../types/command";
 import { withUser } from "../../core/middleware/ensureUser";
-import { handleEatCommand } from "../../features/hunger/hunger.handlers";
+import { handleViewFoodStockCommand } from "../../features/foodstock/foodstock.handlers";
 
 const command: Command = {
   data: new SlashCommandBuilder()
-    .setName("manger")
-    .setDescription(
-      "Permet à votre personnage de manger (consomme 1 vivre de la ville)"
-    ),
+    .setName("foodstock")
+    .setDescription("Voir le stock actuel de foodstock de la ville"),
 
-  execute: withUser(handleEatCommand),
+  execute: withUser(handleViewFoodStockCommand),
 };
 
 export default command;

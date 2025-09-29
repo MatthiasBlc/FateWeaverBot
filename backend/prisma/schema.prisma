@@ -36,7 +36,7 @@ model User {
 model Town {
   id        String   @id @default(cuid())
   name      String   // Nom de la ville
-  foodStock Int      @default(100) @map("food_stock") // Stock de vivres disponibles
+  foodStock Int      @default(100) @map("food_stock") // Stock de foodstock disponibles
   guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
   guildId   String   @unique @map("guild_id") // Chaque serveur a exactement une ville
   chantiers Chantier[]

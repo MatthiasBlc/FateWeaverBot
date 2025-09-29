@@ -40,11 +40,15 @@ export const upsertCity: RequestHandler = async (req, res, next) => {
         where: { guildId },
         data: {
           name,
-          foodStock: foodStock !== undefined ? foodStock : existingTown.foodStock,
+          foodStock:
+            foodStock !== undefined ? foodStock : existingTown.foodStock,
         },
       });
     } else {
-      throw createHttpError(400, "Une ville devrait déjà exister pour cette guilde. Utilisez la création automatique via upsertGuild.");
+      throw createHttpError(
+        400,
+        "Une ville devrait déjà exister pour cette guilde. Utilisez la création automatique via upsertGuild."
+      );
     }
 
     res.status(200).json(town);
@@ -144,7 +148,7 @@ export const getAllTowns: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Met à jour le stock de vivres d'une ville
+// Met à jour le stock de foodstock d'une ville
 export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -155,7 +159,10 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
     }
 
     if (foodStock === undefined || foodStock < 0) {
-      throw createHttpError(400, "Le stock de vivres doit être un nombre positif");
+      throw createHttpError(
+        400,
+        "Le stock de vivres doit être un nombre positif"
+      );
     }
 
     // Vérifier si la ville existe
@@ -167,7 +174,7 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Ville non trouvée");
     }
 
-    // Mettre à jour la ville avec le nouveau stock de vivres
+    // Mettre à jour la ville avec le nouveau stock de foodstock
     const town = await prisma.town.update({
       where: { id },
       data: {
