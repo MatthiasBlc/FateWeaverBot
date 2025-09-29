@@ -1,8 +1,11 @@
 -------------------------Todo-------------------------
 
-Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
+Ajouter un bouton manger à la commande foodstock
+Il faut que le bouton ne soit visible que si le character n'a pas "faim ==0 ou qu'il est mort"
 
 # Pouvoir faire manger les copains ?
+
+Refacto les add + remove commands in one and only
 
 Refacto le backend
 
@@ -262,5 +265,7 @@ Mettre à jour l'affichage du profil pour montrer l'état de faim
 Créer une commande admin pour gérer les stocks de vivres des villes
 
 Créer une commande admin pour gérer les stocks de vivres des villes
+
+Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
 
 -------------------------Notes-------------------------

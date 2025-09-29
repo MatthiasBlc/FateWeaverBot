@@ -5,6 +5,38 @@ import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
 import { Collection } from "@discordjs/collection";
 import { getOrCreateGuild } from './services/guilds.service.js';
+// Handle button interactions
+async function handleButtonInteraction(interaction: any) {
+  const { customId } = interaction;
+
+  logger.info(`Button interaction received: ${customId}`);
+
+  // Handle different button actions
+  if (customId === 'eat_food') {
+    // Defer the update to show loading state
+    await interaction.deferUpdate();
+
+    try {
+      // Import the eat button handler dynamically to avoid circular dependencies
+      const { handleEatButton } = await import('./features/hunger/hunger.handlers.js');
+      await handleEatButton(interaction);
+    } catch (error) {
+      logger.error("Error handling eat button:", { error });
+
+      // Send error message
+      await interaction.editReply({
+        content: "❌ Une erreur est survenue lors de l'action de manger.",
+        embeds: [],
+        components: []
+      });
+    }
+  } else {
+    await interaction.reply({
+      content: "Bouton non reconnu.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
 
 // Create a new client instance
 const client = new Client({
@@ -168,25 +200,36 @@ client.once("clientReady", async () => {
   );
 });
 
-// Listen for interactions (slash commands)
+// Listen for interactions (slash commands and buttons)
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
 
-  const command = client.commands.get(interaction.commandName);
+    if (!command) {
+      logger.error(`No command matching ${interaction.commandName} was found.`);
+      return;
+    }
 
-  if (!command) {
-    logger.error(`No command matching ${interaction.commandName} was found.`);
-    return;
-  }
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    logger.error("Error executing command:", { error });
-    await interaction.reply({
-      content: "There was an error executing this command!",
-      flags: ["Ephemeral"],
-    });
+    try {
+      await command.execute(interaction);
+    } catch (error) {
+      logger.error("Error executing command:", { error });
+      await interaction.reply({
+        content: "There was an error executing this command!",
+        flags: ["Ephemeral"],
+      });
+    }
+  } else if (interaction.isButton()) {
+    // Handle button interactions
+    try {
+      await handleButtonInteraction(interaction);
+    } catch (error) {
+      logger.error("Error handling button interaction:", { error });
+      await interaction.reply({
+        content: "There was an error with the button interaction!",
+        flags: ["Ephemeral"],
+      });
+    }
   }
 });
 

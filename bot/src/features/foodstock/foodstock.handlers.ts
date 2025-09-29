@@ -1,4 +1,4 @@
-import { EmbedBuilder, type GuildMember } from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 
@@ -48,7 +48,17 @@ export async function handleViewFoodStockCommand(interaction: any) {
       })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    // Créer le bouton manger
+    const eatButton = new ButtonBuilder()
+      .setCustomId('eat_food')
+      .setLabel('🍽️ Manger')
+      .setStyle(ButtonStyle.Primary);
+
+    // Créer la rangée de boutons
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(eatButton);
+
+    await interaction.reply({ embeds: [embed], components: [row] });
   } catch (error: any) {
     logger.error("Erreur lors de la récupération du stock de foodstock:", {
       guildId: interaction.guildId,
