@@ -1,8 +1,12 @@
 -------------------------Todo-------------------------
 
-Revoir le deploy-commands pour le passer que en guild
+Mettre à jour l'affichage du profil pour montrer l'état de faim
+Créer une commande admin pour gérer les stocks de vivres des villes
+Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
+Créer une commande admin pour gérer les stocks de vivres des villes
 
-
+Ajouter des effets visuels dans les messages d'investissement
+Système de réapprovisionnement automatique des vivres via des chantiers
 
 Manger
 1 unité de nourriture / pers / 2 jours
@@ -15,12 +19,15 @@ Les joueurs mangent en mettant un message
 2 jours ratés = hospit (besoin double dose)
 3 jours ratés = morts
 
-Pouvoir faire manger les copains ?
+# Pouvoir faire manger les copains ?
+
+Rename serveur en guild là ou il faut
+Refacto le backend
 
 Actions des charactes :
 
 - manger
-  - systèmede faim
+  - systèmed e faim
   - que en ville ?
 - faire manger
   - que en ville ?

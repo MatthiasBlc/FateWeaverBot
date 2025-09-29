@@ -25,19 +25,29 @@ async function loadCommands(dir: string): Promise<any[]> {
   for (const entry of entries) {
     const fullPath = resolve(dir, entry.name);
     if (entry.isDirectory()) {
-      commands.push(...await loadCommands(fullPath));
-    } else if (entry.isFile() && (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) && !entry.name.startsWith("_")) {
+      commands.push(...(await loadCommands(fullPath)));
+    } else if (
+      entry.isFile() &&
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".js")) &&
+      !entry.name.startsWith("_")
+    ) {
       try {
         logger.info(`   -> Chargement du fichier: ${entry.name}`);
         const commandModule = (await import(fullPath)).default;
         if (commandModule?.data && commandModule?.execute) {
           commands.push(commandModule.data.toJSON());
-          logger.info(`      ✅ Commande '${commandModule.data.name}' chargée.`);
+          logger.info(
+            `      ✅ Commande '${commandModule.data.name}' chargée.`
+          );
         } else {
-          logger.warn(`      ⚠️  Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`);
+          logger.warn(
+            `      ⚠️  Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
+          );
         }
       } catch (error) {
-        logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, { error });
+        logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
+          error,
+        });
       }
     }
   }
@@ -48,7 +58,9 @@ async function loadCommands(dir: string): Promise<any[]> {
 (async () => {
   try {
     logger.info("--- Démarrage du déploiement des commandes ---");
-    logger.info(isGuildDeployment ? `Mode: Guilde (${guildId})` : "Mode: Global");
+    logger.info(
+      isGuildDeployment ? `Mode: Guilde (${guildId})` : "Mode: Global"
+    );
 
     logger.info("🔍 Chargement des fichiers de commandes...");
     const commandsPath = resolve(process.cwd(), "src", "commands");
@@ -67,18 +79,22 @@ async function loadCommands(dir: string): Promise<any[]> {
     logger.info("🗑️  Nettoyage des anciennes commandes sur Discord...");
     // Using PUT with an empty array is the official way to bulk delete all commands.
     await rest.put(route, { body: [] });
+    // await rest.put(Routes.applicationCommands(clientId), { body: [] });
     logger.info("✅ Nettoyage terminé.");
 
-    logger.info(`✍️  Enregistrement des ${commands.length} nouvelles commandes...`);
+    logger.info(
+      `✍️  Enregistrement des ${commands.length} nouvelles commandes...`
+    );
     // We can use a single PUT now that loading is confirmed to be stable.
     await rest.put(route, { body: commands });
 
     logger.info("--- ✅ Déploiement terminé avec succès ---");
     process.exit(0);
-
   } catch (error) {
-    logger.error("--- ❌ Une erreur critique est survenue lors du déploiement ---", { error });
+    logger.error(
+      "--- ❌ Une erreur critique est survenue lors du déploiement ---",
+      { error }
+    );
     process.exit(1);
   }
 })();
-
