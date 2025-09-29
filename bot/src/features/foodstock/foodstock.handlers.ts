@@ -18,6 +18,48 @@ export async function handleViewFoodStockCommand(interaction: any) {
       return;
     }
 
+    // Récupérer le personnage de l'utilisateur
+    let character = null;
+    let showEatButton = false;
+    let characterHungerStatus = "";
+
+    try {
+      character = await apiService.getOrCreateCharacter(
+        user.id,
+        interaction.guildId!,
+        interaction.guild?.name || "Serveur inconnu",
+        {
+          username: user.username,
+          nickname: member.nickname || null,
+          roles: member.roles.cache
+            .filter((role) => role.id !== interaction.guildId)
+            .map((role) => role.id),
+        },
+        interaction.client
+      );
+
+      // Déterminer si le bouton doit être affiché et le statut de faim
+      if (character.hungerLevel >= 4) {
+        // Personnage mort
+        showEatButton = false;
+        characterHungerStatus = "💀 Mort - ne peut plus manger";
+      } else if (character.hungerLevel === 0) {
+        // Personnage en pleine forme
+        showEatButton = false;
+        characterHungerStatus = "😊 En pleine forme";
+      } else {
+        // Personnage a faim (niveau 1, 2 ou 3)
+        showEatButton = true;
+        const hungerText = getHungerLevelText(character.hungerLevel);
+        const hungerEmoji = getHungerEmoji(character.hungerLevel);
+        characterHungerStatus = `${hungerEmoji} ${hungerText}`;
+      }
+    } catch (error) {
+      // Si on ne peut pas récupérer le personnage, afficher le bouton par défaut
+      showEatButton = true;
+      characterHungerStatus = "❓ Statut inconnu";
+    }
+
     // Créer l'embed d'information
     const embed = new EmbedBuilder()
       .setColor(getFoodStockColor(town.foodStock))
@@ -48,17 +90,30 @@ export async function handleViewFoodStockCommand(interaction: any) {
       })
       .setTimestamp();
 
-    // Créer le bouton manger
-    const eatButton = new ButtonBuilder()
-      .setCustomId('eat_food')
-      .setLabel('🍽️ Manger')
-      .setStyle(ButtonStyle.Primary);
+    // Ajouter le champ du statut de faim du personnage
+    if (character) {
+      embed.addFields({
+        name: "🍽️ Votre État",
+        value: characterHungerStatus,
+        inline: false,
+      });
+    }
 
-    // Créer la rangée de boutons
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(eatButton);
+    // Préparer les composants (boutons) si nécessaire
+    let components: any[] = [];
+    if (showEatButton && town.foodStock > 0) {
+      const eatButton = new ButtonBuilder()
+        .setCustomId('eat_food')
+        .setLabel('🍽️ Manger')
+        .setStyle(ButtonStyle.Primary);
 
-    await interaction.reply({ embeds: [embed], components: [row] });
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(eatButton);
+
+      components = [row];
+    }
+
+    await interaction.reply({ embeds: [embed], components });
   } catch (error: any) {
     logger.error("Erreur lors de la récupération du stock de foodstock:", {
       guildId: interaction.guildId,
@@ -101,4 +156,38 @@ function getFoodStockAdvice(stock: number): string {
   if (stock <= 100)
     return "✅ Vivres correctes, vous pouvez manger normalement";
   return "🌟 Vivres élevées, profitez-en pour faire des réserves !";
+}
+
+function getHungerLevelText(level: number): string {
+  switch (level) {
+    case 0:
+      return "En bonne santé";
+    case 1:
+      return "Faim";
+    case 2:
+      return "Affamé";
+    case 3:
+      return "Agonie";
+    case 4:
+      return "Mort";
+    default:
+      return "Inconnu";
+  }
+}
+
+function getHungerEmoji(level: number): string {
+  switch (level) {
+    case 0:
+      return "😊";
+    case 1:
+      return "🤤";
+    case 2:
+      return "😕";
+    case 3:
+      return "😰";
+    case 4:
+      return "💀";
+    default:
+      return "❓";
+  }
 }
