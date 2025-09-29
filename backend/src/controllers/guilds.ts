@@ -41,18 +41,26 @@ export const upsertGuild: RequestHandler = async (req, res, next) => {
         },
         include: {
           roles: true,
+          town: true,
         },
       });
     } else {
-      // Créer une nouvelle guilde
+      // Créer une nouvelle guilde avec sa ville par défaut
       guild = await prisma.guild.create({
         data: {
           discordGuildId: discordId,
           name,
           memberCount: memberCount || 0,
+          town: {
+            create: {
+              name: `${name} City`, // Nom par défaut de la ville
+              foodStock: 100, // Stock initial de vivres
+            },
+          },
         },
         include: {
           roles: true,
+          town: true,
         },
       });
     }

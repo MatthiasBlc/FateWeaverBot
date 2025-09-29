@@ -5,6 +5,7 @@ import guildRoutes from "./routes/guilds";
 import characterRoutes from "./routes/characters";
 import roleRoutes from "./routes/roles";
 import actionPointRoutes from "./routes/action-point.routes";
+import townRoutes from "./routes/towns";
 import morgan from "morgan";
 import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
@@ -90,6 +91,7 @@ app.use("/api/guilds", guildRoutes);
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/action-points", actionPointRoutes);
+app.use("/api/towns", townRoutes);
 app.use("/api/chantiers", chantierRoutes);
 
 // Routes protégées

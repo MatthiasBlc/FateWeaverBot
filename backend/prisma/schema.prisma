@@ -33,34 +33,32 @@ model User {
   @@map("users")
 }
 
+model Town {
+  id        String   @id @default(cuid())
+  name      String   // Nom de la ville
+  foodStock Int      @default(100) @map("food_stock") // Stock de vivres disponibles
+  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guildId   String   @unique @map("guild_id") // Chaque serveur a exactement une ville
+  chantiers Chantier[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("towns")
+}
+
 model Guild {
   id             String     @id @default(cuid())
   discordGuildId String     @unique @map("discord_guild_id")
   name           String     // Nom de la guilde
   memberCount    Int        @default(0) // Nombre de membres dans la guilde
   logChannelId   String?    // ID du salon Discord pour les logs automatiques
+  town           Town?      // Relation 1:1 avec la ville
   characters     Character[]
   roles          Role[]     // Ajout de la relation avec les rôles
-  chantiers      Chantier[] // Relation avec les chantiers
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
   @@map("guilds")
-}
-
-model Role {
-  id          String          @id @default(cuid())
-  discordId   String          // ID du rôle dans Discord
-  name        String          // Nom du rôle
-  color       String?         // Couleur du rôle (optionnel)
-  guild      Guild          @relation(fields: [guildId], references: [id])
-  guildId    String          @map("guild_id")
-  characters  CharacterRole[]
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-
-  @@unique([discordId, guildId], name: "role_guild_unique")
-  @@map("roles")
 }
 
 model Character {
@@ -81,6 +79,44 @@ model Character {
   @@map("characters")
 }
 
+enum ChantierStatus {
+  PLAN
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Chantier {
+  id          String   @id @default(cuid())
+  name        String   // Nom du chantier
+  startDate   DateTime? @map("start_date") // Date du premier investissement de PA (null si pas commencé)
+  cost        Int      // Coût total en PA
+  spendOnIt   Int      @default(0) // Nombre de PA investis
+  status      ChantierStatus @default(PLAN) // plan, in_progress, completed
+  town        Town     @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId      String   @map("town_id")
+  createdBy   String   @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([name, townId], name: "chantier_name_town_unique")
+  @@map("chantiers")
+}
+
+model Role {
+  id          String          @id @default(cuid())
+  discordId   String          // ID du rôle dans Discord
+  name        String          // Nom du rôle
+  color       String?         // Couleur du rôle (optionnel)
+  guild       Guild           @relation(fields: [guildId], references: [id])
+  guildId     String          @map("guild_id")
+  characters  CharacterRole[]
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@unique([discordId, guildId], name: "role_guild_unique")
+  @@map("roles")
+}
+
 model CharacterRole {
   id          String    @id @default(cuid())
   character   Character @relation(fields: [characterId], references: [id])
@@ -95,27 +131,4 @@ model CharacterRole {
 
   @@unique([characterId, roleId], name: "character_role_unique")
   @@map("character_roles")
-}
-
-enum ChantierStatus {
-  PLAN
-  IN_PROGRESS
-  COMPLETED
-}
-
-model Chantier {
-  id          String   @id @default(cuid())
-  name        String   // Nom du chantier
-  startDate   DateTime? @map("start_date") // Date du premier investissement de PA (null si pas commencé)
-  cost        Int      // Coût total en PA
-  spendOnIt   Int      @default(0) // Nombre de PA investis
-  status      ChantierStatus @default(PLAN) // plan, in_progress, completed
-  guild      Guild   @relation(fields: [guildId], references: [id])
-  guildId    String   @map("guild_id")
-  createdBy   String   @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@unique([name, guildId], name: "chantier_name_guild_unique")
-  @@map("chantiers")
 }
