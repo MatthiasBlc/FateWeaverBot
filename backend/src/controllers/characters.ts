@@ -320,6 +320,14 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Ville non trouvée pour ce personnage");
     }
 
+    // Vérifier si le personnage n'a pas faim (niveau 0 = en bonne santé)
+    if (character.hungerLevel === 0) {
+      throw createHttpError(
+        400,
+        "Tu n'as pas faim, pas besoin de manger"
+      );
+    }
+
     // Vérifier si le personnage est mort
     if (character.hungerLevel >= 4) {
       throw createHttpError(

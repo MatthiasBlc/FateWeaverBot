@@ -57,7 +57,7 @@ export const upsertCity: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Récupère une ville par l'ID de sa guilde
+// Récupère une ville par l'ID Discord de sa guilde
 export const getTownByGuildId: RequestHandler = async (req, res, next) => {
   try {
     const { guildId } = req.params;
@@ -66,8 +66,17 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "Le paramètre guildId est requis");
     }
 
+    // D'abord, trouver la guilde par son ID Discord
+    const guild = await prisma.guild.findUnique({
+      where: { discordGuildId: guildId },
+    });
+
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
+    }
+
     const town = await prisma.town.findUnique({
-      where: { guildId },
+      where: { guildId: guild.id },
       include: {
         guild: true,
         chantiers: {

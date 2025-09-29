@@ -1,9 +1,5 @@
 -------------------------Todo-------------------------
 
-logs des morts
-
-Mettre à jour l'affichage du profil pour montrer l'état de faim
-Créer une commande admin pour gérer les stocks de vivres des villes
 Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
 Créer une commande admin pour gérer les stocks de vivres des villes
 
@@ -50,6 +46,8 @@ Action des Admins:
 
 - donner des PA
 - retirer des PA
+- donner des PFaim
+- retirer des PFaim
 - donner des PV
 - retirer des PV
 - donner des PM
@@ -61,6 +59,24 @@ Action auto :
 
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
+
+#logs génériques à ajouter
+logs des morts
+logs de la création de personnages
+
+#multi ville possible
+Un character est lié à une ville et à un user.
+Il est lié à la guilde par la ville.
+S'il n'y a pas de ville, un ville est créer automatiquement.
+une guilde peut avoir plusieurs villes. Une ville n'a qu'une seule guilde.
+
+Les admins ont une commande pour choisir la ville actuelle. (liste déroulante)
+Les admins ont une commande pour ajouter une ville à la guilde.
+Les admins ont une commande pour suprimer une ville à la guilde (avec une modal de confirmation)
+Toutes les commandes liées à la ville et les characters sont liés à la ville choisie.
+
+Lors de l'interraction d'un User, on vérifie qu'il a bien un character sur la ville actuelle.
+Si ce nest pas le cas, un nouveau character est créer (couple ville / user)
 
 -------------------------Done-------------------------
 @backend
@@ -239,4 +255,10 @@ On va ajouter des Commandes admin pour gérer le stock de vivres. Pour la comman
 Effets visuels avancés dans les embeds
 Ajouter un effet visuel ou embed spécial dans /profil pour refléter l’état de faim du personnage.
 
+empécher de manger si faim ==0
+
+retrait de /foodstock-admin, /foodstock-view est suffisant
+
+Mettre à jour l'affichage du profil pour montrer l'état de faim
+Créer une commande admin pour gérer les stocks de vivres des villes
 -------------------------Notes-------------------------

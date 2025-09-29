@@ -13,7 +13,7 @@ const router = express.Router();
 // Crée ou met à jour une ville (principalement utilisé en interne)
 router.post("/", requireAuthOrInternal, upsertCity);
 
-// Récupère une ville par l'ID de sa guilde
+// Récupère une ville par l'ID Discord de sa guilde
 router.get("/guild/:guildId", requireAuthOrInternal, getTownByGuildId);
 
 // Récupère une ville par son ID
