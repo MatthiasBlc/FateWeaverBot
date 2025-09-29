@@ -9,9 +9,9 @@ router.post("/", CharacterController.upsertCharacter);
 // Récupérer un personnage par son ID
 router.get("/:id", CharacterController.getCharacterById);
 
-// Récupérer un personnage par userId et serverId
+// Récupérer un personnage par userId et guildId
 router.get(
-  "/user/:userId/server/:serverId",
+  "/user/:userId/guild/:guildId",
   CharacterController.getCharacterByDiscordIds
 );
 

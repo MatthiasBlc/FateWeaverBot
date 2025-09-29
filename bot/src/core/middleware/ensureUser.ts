@@ -8,7 +8,7 @@ export async function ensureUserExists(
   interaction: ChatInputCommandInteraction
 ) {
   if (!interaction.guildId || !interaction.member) {
-    throw new Error("Cette commande ne peut être utilisée que dans un serveur");
+    throw new Error("Cette commande ne peut être utilisée que dans une guilde");
   }
 
   const member = interaction.member as GuildMember;
@@ -27,7 +27,7 @@ export async function ensureUserExists(
 
   // Déclarer les variables en dehors du try-catch
   let user: any = null;
-  let server: any = null;
+  let guild: any = null;
   let character: any = null;
 
   try {
@@ -75,39 +75,39 @@ export async function ensureUserExists(
       }
     }
 
-    // 3. Vérifier et créer le serveur si nécessaire
+    // 3. Vérifier et créer la guilde si nécessaire
     try {
-      logger.info(`[ensureUserExists] Vérification du serveur ${guildId}...`);
-      server = await apiService.getOrCreateServer(
+      logger.info(`[ensureUserExists] Vérification de la guilde ${guildId}...`);
+      guild = await apiService.getOrCreateGuild(
         guildId,
         interaction.guild?.name || "Serveur inconnu",
         interaction.guild?.memberCount || 0
       );
       logger.info(
-        `[ensureUserExists] Serveur ${guildId} vérifié: ${
-          server ? `ID: ${server.id}` : "non trouvé"
+        `[ensureUserExists] Guilde ${guildId} vérifiée: ${
+          guild ? `ID: ${guild.id}` : "non trouvée"
         }`
       );
     } catch (error) {
       logger.error(
-        `[ensureUserExists] Échec de vérification serveur ${guildId}:`,
+        `[ensureUserExists] Échec de vérification guilde ${guildId}:`,
         { error: error instanceof Error ? error.message : error }
       );
-      // En développement, on peut continuer sans le serveur
+      // En développement, on peut continuer sans la guilde
       if (process.env.NODE_ENV === "production") {
         throw error;
       }
     }
 
-    // 3.1 Synchroniser les rôles du serveur (optionnel en développement)
+    // 3.1 Synchroniser les rôles de la guilde (optionnel en développement)
     logger.info(
-      `[ensureUserExists] Synchronisation des rôles pour le serveur ${guildId}...`
+      `[ensureUserExists] Synchronisation des rôles pour la guilde ${guildId}...`
     );
 
-    // Si le serveur n'est pas disponible, on peut continuer sans synchronisation des rôles
-    if (!server) {
+    // Si la guilde n'est pas disponible, on peut continuer sans synchronisation des rôles
+    if (!guild) {
       logger.warn(
-        `[ensureUserExists] Serveur ${guildId} non disponible - pas de synchronisation des rôles`
+        `[ensureUserExists] Guilde ${guildId} non disponible - pas de synchronisation des rôles`
       );
     } else {
       const guildRoles = Array.from(
@@ -127,7 +127,7 @@ export async function ensureUserExists(
           rolesToSync.map(async (role) => {
             try {
               const syncedRole = await apiService.upsertRole(
-                server.id,
+                guild.id,
                 role.id,
                 role.name,
                 role.hexColor
@@ -193,7 +193,7 @@ export async function ensureUserExists(
       }
     }
 
-    return { user, server, character };
+    return { user, guild, character };
   } catch (error) {
     logger.error(
       "[ensureUserExists] Erreur lors de la vérification/création de l'utilisateur :",

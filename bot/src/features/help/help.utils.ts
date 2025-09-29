@@ -119,7 +119,7 @@ export function generateDynamicHelpSections(
   if (!isAdmin) {
     sections.push({
       name: "❓ Besoin d'aide supplémentaire ?",
-      value: "Contactez un administrateur du serveur pour toute question ou problème.",
+      value: "Contactez un administrateur de la guilde pour toute question ou problème.",
       inline: false,
     });
   }

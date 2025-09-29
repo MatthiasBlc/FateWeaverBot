@@ -1,4 +1,8 @@
-import { SlashCommandBuilder, PermissionFlagsBits, type CommandInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  type CommandInteraction,
+} from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
@@ -10,7 +14,7 @@ import {
 const chantiersUserCommand: Command = {
   data: new SlashCommandBuilder()
     .setName("chantiers")
-    .setDescription("Gère les chantiers du serveur")
+    .setDescription("Gère les chantiers de la guilde")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("liste")

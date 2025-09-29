@@ -15,7 +15,7 @@ export interface UpdateUserData {
   email?: string;
 }
 
-export interface CreateServerData {
+export interface CreateGuildData {
   discordId: string;
   name: string;
   memberCount: number;
@@ -23,7 +23,7 @@ export interface CreateServerData {
 
 export interface CreateCharacterData {
   userId: string;
-  serverId: string;
+  guildId: string;
   name: string;
   nickname?: string | null;
   roles: string[];

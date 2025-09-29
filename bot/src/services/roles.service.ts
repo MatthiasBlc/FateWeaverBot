@@ -2,7 +2,7 @@ import { httpClient } from "./httpClient";
 import { getErrorMessage } from "./errors";
 
 export async function upsertRole(
-  serverId: string,
+  guildId: string,
   discordRoleId: string,
   name: string,
   color?: string
@@ -12,7 +12,7 @@ export async function upsertRole(
       discordId: discordRoleId,
       name,
       color,
-      serverId,
+      guildId,
     });
     return response.data;
   } catch (error) {

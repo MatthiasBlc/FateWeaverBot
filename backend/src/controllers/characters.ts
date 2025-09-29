@@ -6,7 +6,7 @@ import { toCharacterDto } from "../util/mappers";
 // Interface pour les données de création/mise à jour d'un personnage
 interface CharacterInput {
   userId: string;
-  serverId: string;
+  guildId: string;
   name?: string | null;
   roleIds?: string[];
 }
@@ -14,38 +14,38 @@ interface CharacterInput {
 // Crée ou met à jour un personnage
 export const upsertCharacter: RequestHandler = async (req, res, next) => {
   try {
-    const { userId, serverId, name, roleIds } = req.body as CharacterInput;
+    const { userId, guildId, name, roleIds } = req.body as CharacterInput;
 
-    if (!userId || !serverId) {
-      throw createHttpError(400, "Les champs userId et serverId sont requis");
+    if (!userId || !guildId) {
+      throw createHttpError(400, "Les champs userId et guildId sont requis");
     }
 
-    // Vérifier si l'utilisateur et le serveur existent
-    const [user, server] = await Promise.all([
+    // Vérifier si l'utilisateur et la guilde existent
+    const [user, guild] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.server.findUnique({ where: { id: serverId } }),
+      prisma.guild.findUnique({ where: { id: guildId } }),
     ]);
 
     if (!user) {
       throw createHttpError(404, "Utilisateur non trouvé");
     }
 
-    if (!server) {
-      throw createHttpError(404, "Serveur non trouvé");
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
     }
 
     // Utiliser le nom fourni ou le nom d'utilisateur comme valeur par défaut
     const characterName = name || user.username;
 
-    // Vérifier si un personnage existe déjà pour cet utilisateur et ce serveur
+    // Vérifier si un personnage existe déjà pour cet utilisateur et cette guilde
     const existingCharacter = await prisma.character.findFirst({
       where: {
         userId,
-        serverId,
+        guildId,
       },
       include: {
         user: true,
-        server: true,
+        guild: true,
         characterRoles: {
           include: {
             role: true,
@@ -54,12 +54,12 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       },
     });
 
-    // Récupérer les rôles du serveur qui correspondent aux rôles Discord fournis
-    const serverRoles =
+    // Récupérer les rôles de la guilde qui correspondent aux rôles Discord fournis
+    const guildRoles =
       roleIds && roleIds.length > 0
         ? await prisma.role.findMany({
             where: {
-              serverId,
+              guildId,
               discordId: {
                 in: roleIds,
               },
@@ -83,11 +83,11 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         create: {
           name: characterName,
           userId,
-          serverId,
+          guildId,
         },
         include: {
           user: true,
-          server: true,
+          guild: true,
           characterRoles: {
             include: {
               role: true,
@@ -103,11 +103,11 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       });
 
       // Puis créer les nouvelles associations si des rôles sont fournis
-      if (serverRoles.length > 0) {
+      if (guildRoles.length > 0) {
         // Récupérer les noms des rôles
         const rolesWithNames = await prisma.role.findMany({
           where: {
-            id: { in: serverRoles.map((r) => r.id) },
+            id: { in: guildRoles.map((r) => r.id) },
           },
           select: {
             id: true,
@@ -117,14 +117,8 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
 
         const roleMap = new Map(rolesWithNames.map((r) => [r.id, r.name]));
 
-        // Récupérer le nom d'utilisateur
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { username: true },
-        });
-
         // Préparer les données des rôles avec tous les champs requis
-        const characterRolesData = serverRoles.map((role) => ({
+        const characterRolesData = guildRoles.map((role) => ({
           characterId: character.id,
           roleId: role.id,
           assignedAt: new Date(),
@@ -144,7 +138,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         where: { id: character.id },
         include: {
           user: true,
-          server: true,
+          guild: true,
           characterRoles: {
             include: {
               role: {
@@ -179,7 +173,7 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
       where: { id },
       include: {
         user: true,
-        server: true,
+        guild: true,
         characterRoles: {
           include: {
             role: true,
@@ -207,20 +201,20 @@ export const getCharacterByDiscordIds: RequestHandler = async (
   next
 ) => {
   try {
-    const { userId, serverId } = req.params;
+    const { userId, guildId } = req.params;
 
     const character = await prisma.character.findFirst({
       where: {
         user: {
           discordId: userId,
         },
-        server: {
-          discordGuildId: serverId,
+        guild: {
+          discordGuildId: guildId,
         },
       },
       include: {
         user: true,
-        server: true,
+        guild: true,
         characterRoles: {
           include: {
             role: true,
@@ -239,14 +233,14 @@ export const getCharacterByDiscordIds: RequestHandler = async (
   }
 };
 
-// Récupère tous les personnages d'un serveur
-export const getServerCharacters: RequestHandler = async (req, res, next) => {
+// Récupère tous les personnages d'une guilde
+export const getGuildCharacters: RequestHandler = async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const { guildId } = req.params;
 
     const characters = await prisma.character.findMany({
       where: {
-        serverId,
+        guildId,
       },
       include: {
         user: true,

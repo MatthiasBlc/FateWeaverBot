@@ -16,7 +16,7 @@ export async function isAdmin(
       )
     : false;
 
-  // Vérifier si l'utilisateur est propriétaire du serveur
+  // Vérifier si l'utilisateur est propriétaire de la guilde
   const isOwner = interaction.guild.ownerId === interaction.user.id;
 
   // Vérifier les permissions administrateur Discord

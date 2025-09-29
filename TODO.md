@@ -21,7 +21,7 @@ Les joueurs mangent en mettant un message
 
 # Pouvoir faire manger les copains ?
 
-Rename serveur en guild là ou il faut
+Rename serveur en guild là ou il faut ✅
 Refacto le backend
 
 Actions des charactes :

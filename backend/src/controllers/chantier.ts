@@ -7,7 +7,7 @@ export const createChantier = async (req: Request, res: Response) => {
     const {
       name,
       cost,
-      serverId,
+      guildId,
       discordGuildId,
       createdBy: requestCreatedBy,
     } = req.body;
@@ -24,20 +24,20 @@ export const createChantier = async (req: Request, res: Response) => {
     }
 
     // Si on a un discordGuildId, on doit d'abord récupérer l'ID interne du serveur
-    let internalServerId = serverId;
-    if (discordGuildId && !serverId) {
-      const server = await prisma.server.findUnique({
+    let internalGuildId = guildId;
+    if (discordGuildId && !guildId) {
+      const guild = await prisma.guild.findUnique({
         where: { discordGuildId },
         select: { id: true },
       });
 
-      if (!server) {
-        return res.status(404).json({ error: "Serveur non trouvé" });
+      if (!guild) {
+        return res.status(404).json({ error: "Guilde non trouvée" });
       }
-      internalServerId = server.id;
+      internalGuildId = guild.id;
     }
 
-    if (!internalServerId) {
+    if (!internalGuildId) {
       return res.status(400).json({ error: "ID de serveur manquant" });
     }
 
@@ -45,21 +45,21 @@ export const createChantier = async (req: Request, res: Response) => {
     const existingChantier = await prisma.chantier.findFirst({
       where: {
         name,
-        serverId: internalServerId,
+        guildId: internalGuildId,
       },
     });
 
     if (existingChantier) {
-      return res
-        .status(400)
-        .json({ error: "Un chantier avec ce nom existe déjà sur ce serveur" });
+      return res.status(400).json({
+        error: "Un chantier avec ce nom existe déjà sur cette guilde",
+      });
     }
 
     const chantier = await prisma.chantier.create({
       data: {
         name,
         cost: parseInt(cost, 10),
-        serverId: internalServerId,
+        guildId: internalGuildId,
         createdBy,
         status: "PLAN",
         spendOnIt: 0,
@@ -73,30 +73,30 @@ export const createChantier = async (req: Request, res: Response) => {
   }
 };
 
-export const getChantiersByServer = async (req: Request, res: Response) => {
+export const getChantiersByGuild = async (req: Request, res: Response) => {
   try {
-    const { serverId } = req.params;
+    const { guildId } = req.params;
 
     // Vérifier si c'est un ID Discord (commence par un chiffre et a une longueur de 17 à 19 caractères)
-    const isDiscordId = /^\d{17,19}$/.test(serverId);
+    const isDiscordId = /^\d{17,19}$/.test(guildId);
 
     let whereClause = {};
 
     if (isDiscordId) {
       // Si c'est un ID Discord, on doit d'abord trouver l'ID interne du serveur
-      const server = await prisma.server.findUnique({
-        where: { discordGuildId: serverId },
+      const guild = await prisma.guild.findUnique({
+        where: { discordGuildId: guildId },
         select: { id: true },
       });
 
-      if (!server) {
-        return res.status(404).json({ error: "Serveur non trouvé" });
+      if (!guild) {
+        return res.status(404).json({ error: "Guilde non trouvée" });
       }
 
-      whereClause = { serverId: server.id };
+      whereClause = { guildId: guild.id };
     } else {
       // Sinon, on utilise directement l'ID fourni
-      whereClause = { serverId };
+      whereClause = { guildId };
     }
 
     const chantiers = await prisma.chantier.findMany({
@@ -174,7 +174,7 @@ export const investInChantier = async (req: Request, res: Response) => {
     // Vérifier si le chantier existe
     const chantier = await prisma.chantier.findUnique({
       where: { id: chantierId },
-      include: { server: true },
+      include: { guild: true },
     });
 
     if (!chantier) {

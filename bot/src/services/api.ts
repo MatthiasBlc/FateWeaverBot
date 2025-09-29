@@ -1,7 +1,7 @@
 import { AxiosInstance } from "axios";
 import { Client } from "discord.js";
 import { httpClient } from "./httpClient";
-import { getOrCreateServer as upsertServer } from "./servers.service";
+import { getOrCreateGuild as getOrCreateGuildSvc } from "./guilds.service";
 import {
   getChantiersByServer as fetchChantiersByServer,
   createChantier as createChantierSvc,
@@ -60,24 +60,24 @@ class APIService {
   }
 
   /**
-   * Récupère ou crée un serveur
+   * Récupère ou crée une guilde
    */
-  public async getOrCreateServer(
+  public async getOrCreateGuild(
     discordId: string,
     name: string,
     memberCount: number
   ) {
-    return upsertServer(discordId, name, memberCount);
+    return getOrCreateGuildSvc(discordId, name, memberCount);
   }
   /**
-   * Récupère un serveur par son ID Discord
+   * Récupère une guilde par son ID Discord
    */
-  public async getServerByDiscordId(discordId: string) {
+  public async getGuildByDiscordId(discordId: string) {
     try {
-      const response = await this.api.get(`/servers/discord/${discordId}`);
+      const response = await this.api.get(`/guilds/discord/${discordId}`);
       return response.data;
     } catch (error) {
-      logger.error("Error fetching server by Discord ID:", {
+      logger.error("Error fetching guild by Discord ID:", {
         discordId,
         error:
           error instanceof Error
@@ -96,21 +96,21 @@ class APIService {
    * Crée ou met à jour un rôle
    */
   public async upsertRole(
-    serverId: string,
+    guildId: string,
     discordRoleId: string,
     name: string,
     color?: string
   ) {
-    return upsertRoleSvc(serverId, discordRoleId, name, color);
+    return upsertRoleSvc(guildId, discordRoleId, name, color);
   }
 
   /**
-   * Récupère ou crée un personnage pour un utilisateur dans un serveur
+   * Récupère ou crée un personnage pour un utilisateur dans une guilde
    */
   public async getOrCreateCharacter(
     userId: string,
-    serverId: string,
-    serverName: string,
+    guildId: string,
+    guildName: string,
     characterData: {
       nickname?: string | null;
       roles: string[];
@@ -120,8 +120,8 @@ class APIService {
   ) {
     return getOrCreateCharacterSvc(
       userId,
-      serverId,
-      serverName,
+      guildId,
+      guildName,
       characterData,
       client
     );
@@ -138,10 +138,10 @@ class APIService {
   }
 
   /**
-   * Récupère tous les chantiers d'un serveur
+   * Récupère tous les chantiers d'une guilde
    */
-  public async getChantiersByServer(serverId: string) {
-    return fetchChantiersByServer(serverId);
+  public async getChantiersByServer(guildId: string) {
+    return fetchChantiersByServer(guildId);
   }
 
   /**
@@ -151,7 +151,7 @@ class APIService {
     chantierData: {
       name: string;
       cost: number;
-      serverId: string;
+      guildId: string;
     },
     userId: string
   ) {
@@ -177,13 +177,13 @@ class APIService {
   }
 
   /**
-   * Met à jour le canal de log d'un serveur
+   * Met à jour le canal de log d'une guilde
    */
-  public async updateServerLogChannel(
+  public async updateGuildLogChannel(
     discordId: string,
     logChannelId: string | null
   ) {
-    const response = await this.api.patch(`/servers/${discordId}/log-channel`, {
+    const response = await this.api.patch(`/guilds/${discordId}/log-channel`, {
       logChannelId,
     });
     return response.data;

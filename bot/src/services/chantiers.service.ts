@@ -1,9 +1,9 @@
 import { httpClient } from "./httpClient";
 import { getErrorMessage } from "./errors";
 
-export async function getChantiersByServer(serverId: string) {
+export async function getChantiersByServer(guildId: string) {
   try {
-    const response = await httpClient.get(`/chantiers/server/${serverId}`);
+    const response = await httpClient.get(`/chantiers/guild/${guildId}`);
     return response.data;
   } catch (error) {
     throw new Error(`Failed to get chantiers: ${getErrorMessage(error)}`);
@@ -11,14 +11,14 @@ export async function getChantiersByServer(serverId: string) {
 }
 
 export async function createChantier(
-  chantierData: { name: string; cost: number; serverId: string },
+  chantierData: { name: string; cost: number; guildId: string },
   userId: string
 ) {
   try {
-    const { serverId, ...rest } = chantierData;
+    const { guildId, ...rest } = chantierData;
     const response = await httpClient.post("/chantiers", {
       ...rest,
-      discordGuildId: serverId,
+      discordGuildId: guildId,
       createdBy: userId,
     });
     return response.data;

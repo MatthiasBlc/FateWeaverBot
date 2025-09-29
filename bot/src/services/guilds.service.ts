@@ -2,14 +2,14 @@ import { httpClient } from "./httpClient";
 import axios from "axios";
 import { getErrorMessage } from "./errors";
 
-export async function getOrCreateServer(
+export async function getOrCreateGuild(
   discordId: string,
   name: string,
   memberCount: number
 ) {
   try {
-    // Backend handles upsert on POST /servers
-    const response = await httpClient.post("/servers", {
+    // Backend handles upsert on POST /guilds
+    const response = await httpClient.post("/guilds", {
       discordId,
       name,
       memberCount,
@@ -21,7 +21,7 @@ export async function getOrCreateServer(
       ? error.response?.data?.message || error.message
       : getErrorMessage(error);
     throw new Error(
-      `Erreur lors de la récupération/création du serveur: ${message}`
+      `Erreur lors de la récupération/création de la guild: ${message}`
     );
   }
 }

@@ -2,7 +2,7 @@ import express from "express";
 import {
   upsertRole,
   getRoleByDiscordId,
-  getServerRoles,
+  getGuildRoles,
   deleteRole,
   updateCharacterRoles,
 } from "../controllers/roles";
@@ -15,13 +15,13 @@ router.post("/", requireAuthOrInternal, upsertRole);
 
 // Récupère un rôle par son ID Discord et l'ID du serveur
 router.get(
-  "/discord/:discordId/server/:serverId",
+  "/discord/:discordId/guild/:guildId",
   requireAuthOrInternal,
   getRoleByDiscordId
 );
 
 // Récupère tous les rôles d'un serveur
-router.get("/server/:serverId", requireAuthOrInternal, getServerRoles);
+router.get("/guild/:guildId", requireAuthOrInternal, getGuildRoles);
 
 // Supprime un rôle
 router.delete("/:id", requireAuthOrInternal, deleteRole);

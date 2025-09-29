@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 type CharacterWithRelations = Prisma.CharacterGetPayload<{
   include: {
     user: true;
-    server: true;
+    guild: true;
     characterRoles: {
       include: {
         role: true;
@@ -17,7 +17,7 @@ type TransactionCharacter = {
   id: string;
   name: string | null;
   userId: string;
-  serverId: string;
+  guildId: string;
   createdAt: Date;
   updatedAt: Date;
   user: {
@@ -30,7 +30,7 @@ type TransactionCharacter = {
     createdAt: Date;
     updatedAt: Date;
   };
-  server: {
+  guild: {
     id: string;
     discordGuildId: string;
     name: string;
@@ -65,7 +65,7 @@ export function toCharacterDto(
     id: character.id,
     name: character.name,
     userId: character.userId,
-    serverId: character.serverId,
+    guildId: character.guildId,
     createdAt: character.createdAt,
     updatedAt: character.updatedAt,
     user: {
@@ -76,10 +76,10 @@ export function toCharacterDto(
       globalName: character.user.globalName,
       avatar: character.user.avatar,
     },
-    server: {
-      id: character.server.id,
-      discordId: character.server.discordGuildId,
-      name: character.server.name,
+    guild: {
+      id: character.guild.id,
+      discordId: character.guild.discordGuildId,
+      name: character.guild.name,
     },
   };
 

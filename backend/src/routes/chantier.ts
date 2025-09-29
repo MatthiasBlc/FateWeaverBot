@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuthOrInternal } from "../middleware/auth";
 import {
   createChantier,
-  getChantiersByServer,
+  getChantiersByGuild,
   getChantierById,
   deleteChantier,
   investInChantier,
@@ -14,7 +14,7 @@ const router = Router();
 router.post("/", requireAuthOrInternal, createChantier);
 
 // Récupérer tous les chantiers d'un serveur
-router.get("/server/:serverId", requireAuthOrInternal, getChantiersByServer);
+router.get("/guild/:guildId", requireAuthOrInternal, getChantiersByGuild);
 
 // Récupérer un chantier par son ID
 router.get("/:id", requireAuthOrInternal, getChantierById);

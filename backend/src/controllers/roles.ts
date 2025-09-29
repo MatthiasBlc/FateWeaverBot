@@ -7,7 +7,7 @@ interface RoleInput {
   discordId: string;
   name: string;
   color?: string;
-  serverId: string;
+  guildId: string;
 }
 
 // Crée ou met à jour un rôle
@@ -15,29 +15,29 @@ interface RoleInput {
 // Sinon, un nouveau rôle est créé
 export const upsertRole: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, name, color, serverId } = req.body as RoleInput;
+    const { discordId, name, color, guildId } = req.body as RoleInput;
 
-    if (!discordId || !name || !serverId) {
+    if (!discordId || !name || !guildId) {
       throw createHttpError(
         400,
-        "Les champs discordId, name et serverId sont requis"
+        "Les champs discordId, name et guildId sont requis"
       );
     }
 
-    // Vérifier si le serveur existe
-    const server = await prisma.server.findUnique({
-      where: { id: serverId },
+    // Vérifier si la guilde existe
+    const guild = await prisma.guild.findUnique({
+      where: { id: guildId },
     });
 
-    if (!server) {
-      throw createHttpError(404, "Serveur non trouvé");
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
     }
 
-    // Vérifier si le rôle existe déjà pour ce serveur
+    // Vérifier si le rôle existe déjà pour cette guilde
     const existingRole = await prisma.role.findFirst({
       where: {
         discordId,
-        serverId,
+        guildId,
       },
     });
 
@@ -59,8 +59,8 @@ export const upsertRole: RequestHandler = async (req, res, next) => {
           discordId,
           name,
           color,
-          server: {
-            connect: { id: serverId },
+          guild: {
+            connect: { id: guildId },
           },
         },
       });
@@ -75,19 +75,19 @@ export const upsertRole: RequestHandler = async (req, res, next) => {
 // Récupère un rôle par son ID Discord et l'ID du serveur
 export const getRoleByDiscordId: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, serverId } = req.params;
+    const { discordId, guildId } = req.params;
 
-    if (!discordId || !serverId) {
+    if (!discordId || !guildId) {
       throw createHttpError(
         400,
-        "Les paramètres discordId et serverId sont requis"
+        "Les paramètres discordId et guildId sont requis"
       );
     }
 
     const role = await prisma.role.findFirst({
       where: {
         discordId,
-        serverId,
+        guildId,
       },
     });
 
@@ -102,17 +102,17 @@ export const getRoleByDiscordId: RequestHandler = async (req, res, next) => {
 };
 
 // Récupère tous les rôles d'un serveur
-export const getServerRoles: RequestHandler = async (req, res, next) => {
+export const getGuildRoles: RequestHandler = async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const { guildId } = req.params;
 
-    if (!serverId) {
-      throw createHttpError(400, "Le paramètre serverId est requis");
+    if (!guildId) {
+      throw createHttpError(400, "Le paramètre guildId est requis");
     }
 
     const roles = await prisma.role.findMany({
       where: {
-        serverId,
+        guildId,
       },
       orderBy: {
         name: "asc",
@@ -172,7 +172,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
     // Vérifier que le personnage existe
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      include: { server: true },
+      include: { guild: true },
     });
 
     if (!character) {
@@ -184,7 +184,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
       const roles = await prisma.role.findMany({
         where: {
           id: { in: roleIds },
-          serverId: character.serverId,
+          guildId: character.guildId,
         },
       });
 

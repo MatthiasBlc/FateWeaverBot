@@ -2,7 +2,7 @@ export interface CharacterDto {
   id: string;
   name: string | null;
   userId: string;
-  serverId: string;
+  guildId: string;
   createdAt: Date;
   updatedAt: Date;
   user?: {
@@ -13,7 +13,7 @@ export interface CharacterDto {
     globalName: string | null;
     avatar: string | null;
   };
-  server?: {
+  guild?: {
     id: string;
     discordId: string;
     name: string;

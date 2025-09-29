@@ -2,14 +2,14 @@ import { Client } from "discord.js";
 import { httpClient } from "./httpClient";
 import { getErrorMessage } from "./errors";
 import { getOrCreateUser as getOrCreateUserSvc } from "./users.service";
-import { getOrCreateServer as getOrCreateServerSvc } from "./servers.service";
+import { getOrCreateGuild as getOrCreateGuildSvc } from "./guilds.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
 import { logger } from "./logger";
 
 export async function getOrCreateCharacter(
   userId: string,
-  serverId: string,
-  serverName: string,
+  guildId: string,
+  guildName: string,
   characterData: {
     nickname?: string | null;
     roles: string[];
@@ -27,39 +27,42 @@ export async function getOrCreateCharacter(
 
     const characterName = characterData.nickname || characterData.username;
 
-    let server;
+    // Get the guild from the client first
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+      throw new Error("Guild not found in client cache");
+    }
+
+    // Then handle the database guild
+    let dbGuild;
     try {
-      server = await getOrCreateServerSvc(serverId, serverName, 0);
-    } catch (serverError) {
-      throw new Error("Impossible de vérifier ou créer le serveur");
+      dbGuild = await getOrCreateGuildSvc(guildId, guildName, 0);
+    } catch (guildError) {
+      throw new Error("Impossible de vérifier ou créer la guild");
     }
 
-    if (!server || !server.id) {
-      throw new Error("ID du serveur non valide");
+    if (!dbGuild?.id) {
+      throw new Error("ID de la guild non valide");
     }
 
-    const guild = client.guilds.cache.get(serverId);
-    if (guild) {
-      await Promise.all(
-        characterData.roles.map(async (roleId) => {
-          const role = guild.roles.cache.get(roleId);
-          if (role) {
-            try {
-              await upsertRoleSvc(server.id, role.id, role.name, role.hexColor);
-            } catch (error) {
-              logger.error(
-                `[characters.service] Erreur lors de la synchronisation du rôle ${role.id}:`,
-                { error }
-              );
-            }
+    await Promise.all(
+      characterData.roles.map(async (roleId) => {
+        const role = guild.roles.cache.get(roleId);
+        if (role) {
+          try {
+            await upsertRoleSvc(dbGuild.id, role.id, role.name, role.hexColor);
+          } catch (error) {
+            logger.error(
+              `[characters.service] Erreur lors de la synchronisation du rôle ${role.id}: ${getErrorMessage(error)}`
+            );
           }
-        })
-      );
-    }
+        }
+      })
+    );
 
     const response = await httpClient.post("/characters", {
       userId: user.id,
-      serverId: server.id,
+      guildId: dbGuild.id,
       name: characterName,
       roleIds: characterData.roles,
     });

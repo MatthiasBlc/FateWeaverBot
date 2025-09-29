@@ -23,7 +23,7 @@ const adminHelpCommand: Command = {
 
       const embed = createHelpEmbed({
         title: "📋 Commandes Administrateur",
-        description: "Liste des commandes réservées aux administrateurs du serveur",
+        description: "Liste des commandes réservées aux administrateurs de la guilde",
         color: "#ff0000",
         sections: sections,
         username: interaction.user.username,

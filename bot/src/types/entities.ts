@@ -10,7 +10,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface Server {
+export interface Guild {
   id: string;
   discordId: string;
   name: string;
@@ -22,7 +22,7 @@ export interface Server {
 export interface Character {
   id: string;
   userId: string;
-  serverId: string;
+  guildId: string;
   name: string;
   nickname?: string | null;
   roles: string[];
@@ -33,7 +33,7 @@ export interface Character {
 
 export interface Role {
   id: string;
-  serverId: string;
+  guildId: string;
   discordId: string;
   name: string;
   hexColor: string;

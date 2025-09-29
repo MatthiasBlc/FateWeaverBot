@@ -2,50 +2,50 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
 
-// Interface pour les données de création/mise à jour d'un serveur
-interface ServerInput {
+// Interface pour les données de création/mise à jour d'une guilde
+interface GuildInput {
   discordId: string;
   name: string;
   memberCount?: number;
 }
 
 // Crée ou met à jour un serveur
-export const upsertServer: RequestHandler = async (req, res, next) => {
+export const upsertGuild: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, name, memberCount } = req.body as ServerInput;
+    const { discordId, name, memberCount } = req.body as GuildInput;
 
     if (!discordId || !name) {
       throw createHttpError(400, "Les champs discordId et name sont requis");
     }
 
-    // Vérifier si le serveur existe déjà
-    const existingServer = await prisma.server.findUnique({
+    // Vérifier si la guilde existe déjà
+    const existingGuild = await prisma.guild.findUnique({
       where: { discordGuildId: discordId },
       include: {
         roles: true,
       },
     });
 
-    let server;
+    let guild;
 
-    if (existingServer) {
-      // Mettre à jour le serveur existant
-      server = await prisma.server.update({
+    if (existingGuild) {
+      // Mettre à jour la guilde existante
+      guild = await prisma.guild.update({
         where: { discordGuildId: discordId },
         data: {
           name,
           memberCount:
             memberCount !== undefined
               ? memberCount
-              : existingServer.memberCount,
+              : existingGuild.memberCount,
         },
         include: {
           roles: true,
         },
       });
     } else {
-      // Créer un nouveau serveur
-      server = await prisma.server.create({
+      // Créer une nouvelle guilde
+      guild = await prisma.guild.create({
         data: {
           discordGuildId: discordId,
           name,
@@ -57,14 +57,14 @@ export const upsertServer: RequestHandler = async (req, res, next) => {
       });
     }
 
-    res.status(200).json(server);
+    res.status(200).json(guild);
   } catch (error) {
     next(error);
   }
 };
 
-// Récupère un serveur par son ID Discord
-export const getServerByDiscordId: RequestHandler = async (req, res, next) => {
+// Récupère une guilde par son ID Discord
+export const getGuildByDiscordId: RequestHandler = async (req, res, next) => {
   try {
     const { discordId } = req.params;
 
@@ -72,7 +72,7 @@ export const getServerByDiscordId: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "Le paramètre discordId est requis");
     }
 
-    const server = await prisma.server.findUnique({
+    const guild = await prisma.guild.findUnique({
       where: { discordGuildId: discordId },
       include: {
         roles: {
@@ -83,20 +83,20 @@ export const getServerByDiscordId: RequestHandler = async (req, res, next) => {
       },
     });
 
-    if (!server) {
-      throw createHttpError(404, "Serveur non trouvé");
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
     }
 
-    res.status(200).json(server);
+    res.status(200).json(guild);
   } catch (error) {
     next(error);
   }
 };
 
-// Récupère tous les serveurs
-export const getAllServers: RequestHandler = async (req, res, next) => {
+// Récupère toutes les guildes
+export const getAllGuilds: RequestHandler = async (req, res, next) => {
   try {
-    const servers = await prisma.server.findMany({
+    const guilds = await prisma.guild.findMany({
       include: {
         _count: {
           select: {
@@ -110,14 +110,14 @@ export const getAllServers: RequestHandler = async (req, res, next) => {
       },
     });
 
-    res.status(200).json(servers);
+    res.status(200).json(guilds);
   } catch (error) {
     next(error);
   }
 };
 
-// Met à jour le salon de logs d'un serveur
-export const updateServerLogChannel: RequestHandler = async (req, res, next) => {
+// Met à jour le salon de logs d'une guilde
+export const updateGuildLogChannel: RequestHandler = async (req, res, next) => {
   try {
     const { discordId } = req.params;
     const { logChannelId } = req.body as { logChannelId: string | null };
@@ -126,17 +126,17 @@ export const updateServerLogChannel: RequestHandler = async (req, res, next) => 
       throw createHttpError(400, "Le paramètre discordId est requis");
     }
 
-    // Vérifier si le serveur existe
-    const existingServer = await prisma.server.findUnique({
+    // Vérifier si la guilde existe
+    const existingGuild = await prisma.guild.findUnique({
       where: { discordGuildId: discordId },
     });
 
-    if (!existingServer) {
-      throw createHttpError(404, "Serveur non trouvé");
+    if (!existingGuild) {
+      throw createHttpError(404, "Guilde non trouvée");
     }
 
-    // Mettre à jour le serveur avec le nouveau logChannelId
-    const server = await prisma.server.update({
+    // Mettre à jour la guilde avec le nouveau logChannelId
+    const guild = await prisma.guild.update({
       where: { discordGuildId: discordId },
       data: {
         logChannelId,
@@ -146,36 +146,36 @@ export const updateServerLogChannel: RequestHandler = async (req, res, next) => 
       },
     });
 
-    res.status(200).json(server);
+    res.status(200).json(guild);
   } catch (error) {
     next(error);
   }
 };
 
-// Supprime un serveur et toutes ses données associées
-export const deleteServer: RequestHandler = async (req, res, next) => {
+// Supprime une guilde et toutes ses données associées
+export const deleteGuild: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     if (!id) {
-      throw createHttpError(400, "L'ID du serveur est requis");
+      throw createHttpError(400, "L'ID de la guilde est requis");
     }
 
-    // Vérifier d'abord si le serveur existe
-    const server = await prisma.server.findUnique({
+    // Vérifier d'abord si la guilde existe
+    const guild = await prisma.guild.findUnique({
       where: { id },
       include: {
         roles: true,
       },
     });
 
-    if (!server) {
-      throw createHttpError(404, "Serveur non trouvé");
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
     }
 
     // Supprimer d'abord les personnages et leurs rôles
     const characters = await prisma.character.findMany({
-      where: { serverId: id },
+      where: { guildId: id },
       select: { id: true },
     });
 
@@ -191,13 +191,13 @@ export const deleteServer: RequestHandler = async (req, res, next) => {
       where: { id: { in: characterIds } },
     });
 
-    // Supprimer les rôles du serveur
+    // Supprimer les rôles de la guilde
     await prisma.role.deleteMany({
-      where: { serverId: id },
+      where: { guildId: id },
     });
 
-    // Enfin, supprimer le serveur
-    await prisma.server.delete({
+    // Enfin, supprimer la guilde
+    await prisma.guild.delete({
       where: { id },
     });
 

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import userRoutes from "./routes/users";
-import serverRoutes from "./routes/servers";
+import guildRoutes from "./routes/guilds";
 import characterRoutes from "./routes/characters";
 import roleRoutes from "./routes/roles";
 import actionPointRoutes from "./routes/action-point.routes";
@@ -86,7 +86,7 @@ app.use(
 
 // Routes publiques
 app.use("/api/users", userRoutes);
-app.use("/api/servers", serverRoutes);
+app.use("/api/guilds", guildRoutes);
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/action-points", actionPointRoutes);

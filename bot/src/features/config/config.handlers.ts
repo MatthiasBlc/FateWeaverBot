@@ -12,7 +12,9 @@ import {
 import { apiService } from "../../services/api.js";
 import { logger } from "../../services/logger.js";
 
-export async function handleConfigChannelCommand(interaction: CommandInteraction) {
+export async function handleConfigChannelCommand(
+  interaction: CommandInteraction
+) {
   if (!interaction.guild) {
     return interaction.reply({
       content: "Cette commande ne peut être utilisée que dans un serveur.",
@@ -30,23 +32,27 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
 
   const guild = interaction.guild;
 
-  // Récupérer le serveur actuel pour voir s'il y a déjà un salon configuré
+  // Récupérer la guilde actuelle pour voir s'il y a déjà un salon configuré
   let currentLogChannel = null;
   let currentLogChannelName = null;
   try {
-    const server = await apiService.getServerByDiscordId(guild.id);
-    if (server && server.logChannelId) {
-      currentLogChannel = guild.channels.cache.get(server.logChannelId);
-      currentLogChannelName = currentLogChannel ? currentLogChannel.name : "Salon supprimé";
+    const guildConfig = await apiService.getGuildByDiscordId(guild.id);
+    if (guildConfig && guildConfig.logChannelId) {
+      currentLogChannel = guild.channels.cache.get(guildConfig.logChannelId);
+      currentLogChannelName = currentLogChannel
+        ? currentLogChannel.name
+        : "Salon supprimé";
     }
   } catch (error) {
-    logger.warn("Could not fetch current server configuration:", { error });
+    logger.warn("Could not fetch current guild configuration:", { error });
   }
 
   const textChannels = guild.channels.cache.filter(
     (channel) =>
       channel.type === 0 && // TextChannel
-      channel.permissionsFor(interaction.user)?.has(PermissionFlagsBits.SendMessages)
+      channel
+        .permissionsFor(interaction.user)
+        ?.has(PermissionFlagsBits.SendMessages)
   );
 
   if (textChannels.size === 0) {
@@ -62,7 +68,10 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
   // Construire les options du menu déroulant
   const menuOptions = channelsToShow.map((channel) => ({
     label: channel.name,
-    description: channel.id === currentLogChannel?.id ? `Salon actuel: #${channel.name}` : `Salon: #${channel.name}`,
+    description:
+      channel.id === currentLogChannel?.id
+        ? `Salon actuel: #${channel.name}`
+        : `Salon: #${channel.name}`,
     value: channel.id,
     emoji: channel.id === currentLogChannel?.id ? "✅" : undefined,
   }));
@@ -83,7 +92,8 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
     .addOptions(menuOptions);
 
   // Construire la description de l'embed
-  let embedDescription = "Choisissez le salon dans lequel les logs automatiques seront envoyés.\n\n";
+  let embedDescription =
+    "Choisissez le salon dans lequel les logs automatiques seront envoyés.\n\n";
   embedDescription += "Les logs incluent :\n";
   embedDescription += "• Les investissements dans les chantiers\n";
   embedDescription += "• Les actions des personnages\n";
@@ -91,9 +101,11 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
 
   if (currentLogChannel) {
     embedDescription += `**Salon actuel :** ${currentLogChannel} (ID: ${currentLogChannel.id})\n`;
-    embedDescription += "💡 Sélectionnez un autre salon pour le changer, ou choisissez 'Aucun salon' pour désactiver les logs.";
+    embedDescription +=
+      "💡 Sélectionnez un autre salon pour le changer, ou choisissez 'Aucun salon' pour désactiver les logs.";
   } else {
-    embedDescription += "ℹ️ Aucun salon n'est actuellement configuré pour les logs.";
+    embedDescription +=
+      "ℹ️ Aucun salon n'est actuellement configuré pour les logs.";
   }
 
   const embed = new EmbedBuilder()
@@ -101,7 +113,9 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
     .setTitle("⚙️ Configuration du salon de logs")
     .setDescription(embedDescription);
 
-  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
 
   const response = await interaction.reply({
     embeds: [embed],
@@ -110,16 +124,16 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
   });
 
   try {
-    const selectInteraction = await response.awaitMessageComponent({
+    const selectInteraction = (await response.awaitMessageComponent({
       componentType: ComponentType.StringSelect,
       time: 60000, // 1 minute
-    }) as StringSelectMenuInteraction;
+    })) as StringSelectMenuInteraction;
 
     const selectedChannelId = selectInteraction.values[0];
 
     if (selectedChannelId === "none") {
       // Désactiver les logs
-      await apiService.updateServerLogChannel(guild.id, null);
+      await apiService.updateGuildLogChannel(guild.id, null);
 
       logger.info(`Log channel disabled for guild ${guild.id}`);
 
@@ -129,7 +143,7 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
         .setDescription("L'envoi automatique des logs a été désactivé.")
         .addFields([
           {
-            name: "Serveur",
+            name: "Guilde",
             value: guild.name,
             inline: true,
           },
@@ -152,14 +166,18 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
     }
 
     // Sauvegarder dans la base de données
-    await apiService.updateServerLogChannel(guild.id, selectedChannelId);
+    await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
 
-    logger.info(`Log channel configured for guild ${guild.id}: ${selectedChannelId}`);
+    logger.info(
+      `Log channel configured for guild ${guild.id}: ${selectedChannelId}`
+    );
 
     const successEmbed = new EmbedBuilder()
       .setColor("#00ff00")
       .setTitle("✅ Salon configuré avec succès")
-      .setDescription(`Le salon ${selectedChannel} a été enregistré pour les logs automatiques.`)
+      .setDescription(
+        `Le salon ${selectedChannel} a été enregistré pour les logs automatiques.`
+      )
       .addFields([
         {
           name: "Salon",
@@ -167,7 +185,7 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
           inline: true,
         },
         {
-          name: "Serveur",
+          name: "Guilde",
           value: guild.name,
           inline: true,
         },
@@ -183,7 +201,9 @@ export async function handleConfigChannelCommand(interaction: CommandInteraction
       const timeoutEmbed = new EmbedBuilder()
         .setColor("#ff9900")
         .setTitle("⏰ Temps écoulé")
-        .setDescription("La configuration a été annulée car aucune sélection n'a été faite dans le délai imparti.");
+        .setDescription(
+          "La configuration a été annulée car aucune sélection n'a été faite dans le délai imparti."
+        );
 
       await interaction.editReply({
         embeds: [timeoutEmbed],

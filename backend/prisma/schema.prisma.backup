@@ -33,7 +33,7 @@ model User {
   @@map("users")
 }
 
-model Guild {
+model Server {
   id             String     @id @default(cuid())
   discordGuildId String     @unique @map("discord_guild_id")
   name           String     // Nom de la guilde
@@ -45,7 +45,7 @@ model Guild {
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
-  @@map("guilds")
+  @@map("servers")
 }
 
 model Role {
@@ -53,13 +53,13 @@ model Role {
   discordId   String          // ID du rôle dans Discord
   name        String          // Nom du rôle
   color       String?         // Couleur du rôle (optionnel)
-  guild      Guild          @relation(fields: [guildId], references: [id])
-  guildId    String          @map("guild_id")
+  server      Server          @relation(fields: [serverId], references: [id])
+  serverId    String          @map("server_id")
   characters  CharacterRole[]
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
-  @@unique([discordId, guildId], name: "role_guild_unique")
+  @@unique([discordId, serverId], name: "role_server_unique")
   @@map("roles")
 }
 
@@ -68,15 +68,15 @@ model Character {
   name            String?          // Nom du personnage sur la guilde (peut être null si pas de surnom)
   user            User             @relation(fields: [userId], references: [id])
   userId          String           @map("user_id")
-  guild      Guild           @relation(fields: [guildId], references: [id])
-  guildId    String           @map("guild_id")
+  server          Server           @relation(fields: [serverId], references: [id])
+  serverId        String           @map("server_id")
   characterRoles  CharacterRole[]  // Relation avec les rôles
   paTotal         Int              @default(2) // 0-4
   lastPaUpdate    DateTime         @default(now()) @map("last_pa_update")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
-  @@unique([userId, guildId])
+  @@unique([userId, serverId])
   @@index([userId])
   @@map("characters")
 }
@@ -110,12 +110,12 @@ model Chantier {
   cost        Int      // Coût total en PA
   spendOnIt   Int      @default(0) // Nombre de PA investis
   status      ChantierStatus @default(PLAN) // plan, in_progress, completed
-  guild      Guild   @relation(fields: [guildId], references: [id])
-  guildId    String   @map("guild_id")
+  server      Server   @relation(fields: [serverId], references: [id])
+  serverId    String   @map("server_id")
   createdBy   String   @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@unique([name, guildId], name: "chantier_name_guild_unique")
+  @@unique([name, serverId], name: "chantier_name_server_unique")
   @@map("chantiers")
 }

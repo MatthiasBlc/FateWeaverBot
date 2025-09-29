@@ -4,7 +4,7 @@ export interface Chantier {
   cost: number;
   spendOnIt: number;
   status: "PLAN" | "IN_PROGRESS" | "COMPLETED";
-  serverId: string;
+  guildId: string;
   createdBy: string;
   startDate?: Date | null;
   createdAt: Date;
@@ -14,7 +14,7 @@ export interface Chantier {
 export interface CreateChantierData {
   name: string;
   cost: number;
-  serverId: string;
+  guildId: string;
 }
 
 export interface InvestResult {

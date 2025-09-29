@@ -78,7 +78,7 @@ export async function handleListCommand(interaction: CommandInteraction) {
 
 export async function handleInvestCommand(interaction: CommandInteraction) {
   try {
-    // Récupérer les chantiers du serveur
+    // Récupérer les chantiers de la guilde
     const chantiers: Chantier[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
@@ -226,7 +226,11 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
         // Envoyer un message de log automatique
         const characterName = character.name || interaction.user.username;
         const logMessage = `🏗️ **${characterName}** a investi **${result.pointsInvested} PA** dans **${selectedChantier.name}** (${result.chantier.spendOnIt}/${selectedChantier.cost})`;
-        await sendLogMessage(interaction.guildId!, interaction.client as Client, logMessage);
+        await sendLogMessage(
+          interaction.guildId!,
+          interaction.client as Client,
+          logMessage
+        );
 
         // Mettre à jour le message avec le résultat
         await modalResponse.reply({
@@ -306,7 +310,7 @@ export async function handleAddCommand(interaction: CommandInteraction) {
       {
         name: nom,
         cost: cout,
-        serverId: chatInputInteraction.guildId!,
+        guildId: chatInputInteraction.guildId!,
       },
       interaction.user.id
     );
@@ -333,14 +337,14 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
     const isUserAdmin = await checkAdmin(interaction);
     if (!isUserAdmin) return;
 
-    // Récupérer les chantiers du serveur
+    // Récupérer les chantiers de la guilde
     const chantiers: Chantier[] = await apiService.getChantiersByServer(
       interaction.guildId!
     );
 
     if (chantiers.length === 0) {
       return interaction.reply({
-        content: "❌ Aucun chantier trouvé sur ce serveur.",
+        content: "❌ Aucun chantier trouvé sur cette guilde.",
         flags: ["Ephemeral"],
       });
     }

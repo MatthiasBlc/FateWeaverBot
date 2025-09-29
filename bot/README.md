@@ -32,7 +32,7 @@ src/
 
 - `/ping` - Test de connectivité
 - `/profil` - Affichage du profil utilisateur
-- `/chantiers liste` - Liste des chantiers du serveur
+- `/chantiers liste` - Liste des chantiers de la guilde
 - `/chantiers build` - Investir des points d'action dans un chantier
 - `/chantiers add` - Ajouter un nouveau chantier (admin seulement)
 - `/chantiers delete` - Supprimer un chantier (admin seulement)
