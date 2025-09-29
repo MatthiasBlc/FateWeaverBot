@@ -1,5 +1,11 @@
 -------------------------Todo-------------------------
 
+Commande admin pour gérer le stock de vivres
+
+Effets visuels avancés dans les embeds
+
+logs des morts
+
 Mettre à jour l'affichage du profil pour montrer l'état de faim
 Créer une commande admin pour gérer les stocks de vivres des villes
 Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), sa faim (changement de statut)
@@ -119,5 +125,119 @@ PA est strictement positif et <=4
 Ajouter un log global des actions?
 
 Utiliser une commande admin avec des sous commandes si besoin ?
+
+#guild
+Rename server -> guil pour plus de cohérence discord.
+
+# ville
+
+🏙️ Ville : nouvelle entité
+Ajout d’un modèle Ville
+Champs :
+id
+name
+foodStock (int) : stock de vivres disponibles.
+serverId : FK vers le serveur.
+Chaque serveur a une ville (relation 1:1).
+Les personnages sont liés à leur ville via leur serveur.
+Les chantiers sont désormais liés à une ville
+Ajout d’une FK villeId dans les chantiers.
+À adapter dans les endpoints de création et de lecture.
+les chantiers ne doivent plus être reliés aux serveurs directement mais aux villes.
+Les villes sont la passerelle entre chantier et serveurs
+Création automatique de ville : Quand un serveur est créé via
+upsertServer
+, une ville par défaut est automatiquement créée
+
+Implémenter une nouvelle mécanique de faim dans le jeu Discord basé sur les personnages (characters), en ajoutant :
+un suivi de la faim des personnages,
+une commande utilisateur pour faire manger leur personnage,
+un système de vivres rattaché à une ville,
+des conséquences en cas de repas manqués,
+et une intégration avec le canal de log pour afficher les événements.
+
+📌 Faim : règles et stockage
+Ajout d’un champ hungerLevel dans le modèle Character
+Type : enum numérique avec les états suivants :
+0 - En bonne santé
+1 - Faim
+2 - Affamé (1 repas raté)
+3 - Faim prolongée (2 repas ratés)
+4 - Mort (3 repas ratés)
+
+Ce champ représente l’état actuel de la faim d’un personnage.
+Par défaut : 0.
+Conséquences de la faim (à intégrer dans le système de régénération de PA) :
+Affamé (niveau 2) : ne récupère que 1 PA au lieu de 2.
+Faim prolongée (niveau 3) : nécessite 2 repas pour revenir au niveau 2.
+Mort (niveau 4) : le personnage est considéré comme inactif. Il ne peut plus agir.
+Ajout d’un CRON (ou traitement périodique déclenché par le bot) qui :
+Tous les 2 jours (ou 1 fois par jour si la logique est intégrée au CRON existant),
+Vérifie si un personnage n’a pas mangé (à définir via une date lastMealAt ou autre méthode),
+Incrémente hungerLevel d’un cran,
+Applique les conséquences correspondantes.
+
+#eat
+🍽️ Commande /manger
+Description :
+Commande utilisateur permettant de nourrir son personnage.
+Quand le personnage mange :
+1 vivre est consommé dans la ville.
+Son niveau de faim diminue de 1 (sauf cas particulier).
+Un message est envoyé dans le channel de log configuré :
+🍽️ Le personnage X a mangé.
+Conditions :
+Le personnage ne doit pas être mort (hungerLevel < 4).
+La ville doit avoir au moins 1 unité de vivre.
+Ne consomme pas de PA.
+Cas particuliers :
+Si le personnage est au niveau 3 (faim prolongée), il doit manger 2 fois (donc 2 unités de vivre) pour passer au niveau 2.
+Si le personnage est au niveau 4 (mort), la commande est bloquée (option : prévoir une future mécanique de résurrection).
+
+🔁 Backend à mettre à jour
+Modifications :
+characters :
+Champ hungerLevel (enum int, default 0).
+Optionnel : champ lastMealAt pour tracer le dernier repas (si besoin de logique temporelle fine).
+villes (nouvelle table) :
+Champs : id, name, foodStock, guildId.
+chantiers :
+Ajouter FK villeId.
+Nouveaux endpoints (proposition) :
+POST /api/characters/:characterId/eat
+Vérifie la faim, la ville, le stock.
+Diminue foodStock de la ville.
+Met à jour hungerLevel.
+Retourne l’état du personnage.
+POST /api/villes/:villeId/add-food (facultatif)
+Pour réapprovisionner en vivres (admin ? futur chantier ?).
+
+🧠 Logique à intégrer dans le bot
+Commande utilisateur /manger
+Récupère le personnage et sa ville.
+Appelle l’endpoint /characters/:id/eat.
+Affiche le résultat au joueur.
+Envoie un message dans le channel de log (déjà stocké via logChannelId du Guild).
+Mise à jour du service de régénération de PA :
+Intégrer la logique de faim :
+Si hungerLevel == 2, ne régénère que 1 PA.
+Si hungerLevel >= 3, ne régénère pas du tout.
+(Déjà possible via daily-pa.cron.ts ou à adapter)
+Facultatif : commande admin /ville vivres pour afficher ou modifier le stock de vivres.
+
+✅ Résultat attendu
+Le joueur peut nourrir son personnage (si encore en vie) via /manger.
+Le stock de vivres est décrémenté automatiquement.
+La faim affecte la régénération de PA.
+Si un personnage meurt de faim, il ne peut plus agir (investir, se déplacer, etc.).
+Les actions sont loguées dans le salon configuré pour le serveur.
+
+🧪 Bonus :
+Ajouter un effet visuel ou embed spécial dans /profil pour refléter l’état de faim du personnage.
+Intégrer la faim dans les messages d’investissement (X a investi Y PA → X (Affamé) a investi Y PA).
+
+# eat Ajouts
+
+Système de CRON pour l'augmentation automatique de la faim (tous les 2 jours)
 
 -------------------------Notes-------------------------

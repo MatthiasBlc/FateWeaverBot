@@ -39,6 +39,7 @@ export async function handleProfileCommand(interaction: any) {
         id: character.id,
         name: character.name,
         roles: character.roles || [],
+        hungerLevel: character.hungerLevel || 0,
       },
       actionPoints: {
         points: actionPoints.points,
@@ -92,6 +93,10 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
           .join(", ")
       : "Aucun rôle";
 
+  // Formatage de l'état de faim
+  const hungerText = getHungerLevelText(data.character.hungerLevel);
+  const hungerEmoji = getHungerEmoji(data.character.hungerLevel);
+
   // Ajout des champs d'information
   embed.addFields(
     {
@@ -110,6 +115,11 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
       inline: true,
     },
     {
+      name: "État de faim",
+      value: `${hungerEmoji} ${hungerText}`,
+      inline: true,
+    },
+    {
       name: "Prochaine mise à jour",
       value: formatTimeUntilUpdate(data.timeUntilUpdate),
       inline: true,
@@ -117,4 +127,26 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
   );
 
   return embed;
+}
+
+function getHungerLevelText(level: number): string {
+  switch (level) {
+    case 0: return "En bonne santé";
+    case 1: return "Faim";
+    case 2: return "Affamé";
+    case 3: return "Agonie";
+    case 4: return "Mort";
+    default: return "Inconnu";
+  }
+}
+
+function getHungerEmoji(level: number): string {
+  switch (level) {
+    case 0: return "😊";
+    case 1: return "😕";
+    case 2: return "😰";
+    case 3: return "🤤";
+    case 4: return "💀";
+    default: return "❓";
+  }
 }

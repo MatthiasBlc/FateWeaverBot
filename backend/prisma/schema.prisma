@@ -71,6 +71,7 @@ model Character {
   characterRoles  CharacterRole[]  // Relation avec les rôles
   paTotal         Int              @default(2) // 0-4
   lastPaUpdate    DateTime         @default(now()) @map("last_pa_update")
+  hungerLevel     Int              @default(0) @map("hunger_level") // 0: En bonne santé, 1: Faim, 2: Affamé, 3: Agonie, 4: Mort
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 

@@ -211,6 +211,13 @@ export const investInChantier = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Personnage non trouvé" });
     }
 
+    // Vérifier si le personnage est mort (ne peut plus agir)
+    if (character.hungerLevel >= 4) {
+      return res.status(400).json({
+        error: "Ce personnage est mort et ne peut plus investir dans les chantiers",
+      });
+    }
+
     // Mettre à jour les points du personnage avant de vérifier
     await actionPointService.getAvailablePoints(characterId);
     const updatedCharacter = await prisma.character.findUnique({

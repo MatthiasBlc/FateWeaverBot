@@ -225,7 +225,8 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
 
         // Envoyer un message de log automatique
         const characterName = character.name || interaction.user.username;
-        const logMessage = `🏗️ **${characterName}** a investi **${result.pointsInvested} PA** dans **${selectedChantier.name}** (${result.chantier.spendOnIt}/${selectedChantier.cost})`;
+        const hungerEmoji = getHungerEmoji(character.hungerLevel || 0);
+        const logMessage = `🏗️ **${characterName}** ${hungerEmoji} a investi **${result.pointsInvested} PA** dans **${selectedChantier.name}** (${result.chantier.spendOnIt}/${selectedChantier.cost})`;
         await sendLogMessage(
           interaction.guildId!,
           interaction.client as Client,
@@ -434,5 +435,16 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
         flags: ["Ephemeral"],
       });
     }
+  }
+}
+
+function getHungerEmoji(level: number): string {
+  switch (level) {
+    case 0: return "😊";
+    case 1: return "😕";
+    case 2: return "😰";
+    case 3: return "🤤";
+    case 4: return "💀";
+    default: return "";
   }
 }

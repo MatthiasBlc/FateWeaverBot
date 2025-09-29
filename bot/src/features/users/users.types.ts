@@ -3,6 +3,7 @@ export interface ProfileData {
     id: string;
     name: string;
     roles: Array<{ discordId: string; name: string; color: string }>;
+    hungerLevel: number;
   };
   actionPoints: {
     points: number;

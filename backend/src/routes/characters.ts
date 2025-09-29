@@ -9,6 +9,9 @@ router.post("/", CharacterController.upsertCharacter);
 // Récupérer un personnage par son ID
 router.get("/:id", CharacterController.getCharacterById);
 
+// Permettre à un personnage de manger de la nourriture
+router.post("/:id/eat", CharacterController.eatFood);
+
 // Récupérer un personnage par userId et guildId
 router.get(
   "/user/:userId/guild/:guildId",

@@ -19,6 +19,7 @@ async function updateAllCharactersActionPoints() {
       select: {
         id: true,
         paTotal: true,
+        hungerLevel: true, // Ajout du niveau de faim
         lastPaUpdate: true,
       },
     });
@@ -34,9 +35,21 @@ async function updateAllCharactersActionPoints() {
       );
 
       if (daysSinceLastUpdate > 0) {
-        // Calcul des points à ajouter (maximum 2 par exécution)
-        // On prend le minimum entre 2 et l'espace disponible pour atteindre 4 PA
-        const pointsToAdd = Math.min(2, 4 - character.paTotal);
+        // Calcul des points à ajouter selon l'état de faim
+        let pointsToAdd = 2; // Par défaut, 2 PA
+
+        // Conséquences de la faim sur la régénération de PA
+        if (character.hungerLevel === 2) {
+          // Affamé : ne récupère que 1 PA au lieu de 2
+          pointsToAdd = 1;
+        } else if (character.hungerLevel >= 3) {
+          // Agonie ou mort : ne régénère pas de PA
+          pointsToAdd = 0;
+        }
+
+        // Calcul des points à ajouter (maximum selon l'espace disponible pour atteindre 4 PA)
+        const maxPointsToAdd = 4 - character.paTotal;
+        pointsToAdd = Math.min(pointsToAdd, maxPointsToAdd);
 
         if (pointsToAdd > 0) {
           await prisma.character.update({

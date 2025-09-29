@@ -177,15 +177,10 @@ class APIService {
   }
 
   /**
-   * Met à jour le canal de log d'une guilde
+   * Permet à un personnage de manger
    */
-  public async updateGuildLogChannel(
-    discordId: string,
-    logChannelId: string | null
-  ) {
-    const response = await this.api.patch(`/guilds/${discordId}/log-channel`, {
-      logChannelId,
-    });
+  public async eatFood(characterId: string) {
+    const response = await this.api.post(`/characters/${characterId}/eat`);
     return response.data;
   }
 }

@@ -285,7 +285,119 @@ export const deleteCharacter: RequestHandler = async (req, res, next) => {
       where: { id },
     });
 
-    res.status(204).send();
+    res.status(200).json({ message: "Personnage supprimé avec succès" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Permet à un personnage de manger (consomme 1 vivre de la ville et réduit la faim du personnage)
+export const eatFood: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw createHttpError(400, "L'ID du personnage est requis");
+    }
+
+    // Récupérer le personnage avec sa guilde et sa ville
+    const character = await prisma.character.findUnique({
+      where: { id },
+      include: {
+        guild: {
+          include: {
+            town: true,
+          },
+        },
+      },
+    });
+
+    if (!character) {
+      throw createHttpError(404, "Personnage non trouvé");
+    }
+
+    if (!character.guild?.town) {
+      throw createHttpError(404, "Ville non trouvée pour ce personnage");
+    }
+
+    // Vérifier si le personnage est mort
+    if (character.hungerLevel >= 4) {
+      throw createHttpError(400, "Ce personnage est mort et ne peut plus manger");
+    }
+
+    // Vérifier si la ville a des vivres
+    if (character.guild.town.foodStock <= 0) {
+      throw createHttpError(400, "La ville n'a plus de vivres disponibles");
+    }
+
+    // Calculer combien de vivres consommer selon l'état de faim
+    let foodToConsume = 1;
+    if (character.hungerLevel === 3) {
+      // Faim prolongée nécessite 2 repas pour passer au niveau 2
+      foodToConsume = 2;
+    }
+
+    // Vérifier si la ville a assez de vivres
+    if (character.guild.town.foodStock < foodToConsume) {
+      throw createHttpError(400, `La ville n'a que ${character.guild.town.foodStock} vivres, mais ${foodToConsume} sont nécessaires`);
+    }
+
+    // Calculer le nouveau niveau de faim
+    let newHungerLevel = Math.max(0, character.hungerLevel - 1);
+
+    // Cas spécial : agonie (niveau 3) qui nécessite 2 repas pour passer au niveau 2
+    if (character.hungerLevel === 3 && foodToConsume === 2) {
+      newHungerLevel = 2;
+    }
+
+    // Effectuer la transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      // Mettre à jour le personnage
+      const updatedCharacter = await prisma.character.update({
+        where: { id },
+        data: {
+          hungerLevel: newHungerLevel,
+          updatedAt: new Date(),
+        },
+        include: {
+          user: true,
+          guild: {
+            include: {
+              town: true,
+            },
+          },
+        },
+      });
+
+      // Mettre à jour le stock de vivres de la ville
+      const updatedTown = await prisma.town.update({
+        where: { id: character.guild.town!.id },
+        data: {
+          foodStock: {
+            decrement: foodToConsume,
+          },
+        },
+      });
+
+      return { character: updatedCharacter, town: updatedTown };
+    });
+
+    // Retourner le résultat avec les informations nécessaires pour le logging
+    res.status(200).json({
+      character: {
+        id: result.character.id,
+        name: result.character.name,
+        hungerLevel: result.character.hungerLevel,
+        user: {
+          username: result.character.user.username,
+        },
+      },
+      town: {
+        name: result.town.name,
+        foodStock: result.town.foodStock,
+      },
+      foodConsumed: foodToConsume,
+    });
   } catch (error) {
     next(error);
   }

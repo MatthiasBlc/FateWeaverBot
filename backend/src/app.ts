@@ -15,13 +15,15 @@ import env from "./util/validateEnv";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
+import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
 import chantierRoutes from "./routes/chantier";
 
 const app = express();
 
-// Démarrer le job CRON pour la mise à jour quotidienne des PA
+// Démarrer les jobs CRON
 if (process.env.NODE_ENV !== "test") {
   setupDailyPaJob();
+  setupHungerIncreaseJob();
 }
 
 // Configuration du proxy trust
