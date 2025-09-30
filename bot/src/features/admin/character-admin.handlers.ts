@@ -174,26 +174,44 @@ export async function handleCharacterAdminCommand(
       }
 
       // Créer les boutons d'action
-      const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      const buttons: ButtonBuilder[] = [
+        // Bouton pour modifier les stats de base (PA et faim)
         new ButtonBuilder()
           .setCustomId("character_stats")
           .setLabel("Modifier Stats")
           .setStyle(ButtonStyle.Primary),
+          
+        // Bouton pour les stats avancées (isDead, canReroll, isActive)
         new ButtonBuilder()
-          .setCustomId("character_kill")
-          .setLabel("Tuer Personnage")
-          .setStyle(ButtonStyle.Danger),
+          .setCustomId("character_advanced")
+          .setLabel("Stats Avancées")
+          .setStyle(ButtonStyle.Secondary)
+      ];
+      
+      // Bouton pour tuer le personnage (uniquement si pas déjà mort)
+      if (!selectedCharacter.isDead) {
+        buttons.push(
+          new ButtonBuilder()
+            .setCustomId("character_kill")
+            .setLabel("Tuer Personnage")
+            .setStyle(ButtonStyle.Danger)
+        );
+      }
+      
+      // Bouton pour gérer le reroll (uniquement si canReroll est false)
+      buttons.push(
         new ButtonBuilder()
           .setCustomId("character_reroll")
           .setLabel(
-            `${selectedCharacter.canReroll ? "Révoquer" : "Autoriser"} Reroll`
+            selectedCharacter.canReroll 
+              ? "Interdire Reroll" 
+              : "Autoriser Reroll"
           )
           .setStyle(ButtonStyle.Secondary)
-        // new ButtonBuilder()
-        //   .setCustomId("character_switch")
-        //   .setLabel(`${selectedCharacter.isActive ? "Désactiver" : "Activer"}`)
-        //   .setStyle(ButtonStyle.Success)
+          .setDisabled(selectedCharacter.isDead) // Désactiver si le personnage est mort
       );
+      
+      const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
 
       await selectInteraction.reply({
         content:
@@ -236,6 +254,9 @@ export async function handleCharacterAdminCommand(
       switch (buttonInteraction.customId) {
         case "character_stats":
           await handleStatsUpdate(buttonInteraction, selectedCharacter);
+          break;
+        case "character_advanced":
+          await handleAdvancedStats(buttonInteraction, selectedCharacter);
           break;
         case "character_kill":
           await handleKillCharacter(buttonInteraction, selectedCharacter);
@@ -311,126 +332,62 @@ export async function handleCharacterAdminCommand(
 
 async function handleStatsUpdate(interaction: any, character: Character) {
   try {
-    const modal = createCharacterStatsModal(character);
+    // Créer un ID unique pour cette modale avec l'ID du personnage
+    const modalId = `stats_${character.id}`;
+    
+    const modal = new ModalBuilder()
+      .setCustomId(modalId)
+      .setTitle('Modifier les statistiques du personnage');
+
+    // Champ pour les PA
+    const paInput = new TextInputBuilder()
+      .setCustomId('pa_input')
+      .setLabel('Points d\'Actions (0-4)')
+      .setStyle(TextInputStyle.Short)
+      .setValue(character.paTotal?.toString() || '0')
+      .setRequired(true);
+
+    // Champ pour le niveau de faim
+    const hungerInput = new TextInputBuilder()
+      .setCustomId('hunger_input')
+      .setLabel('Niveau de faim (0-4)')
+      .setStyle(TextInputStyle.Short)
+      .setValue(character.hungerLevel?.toString() || '0')
+      .setRequired(true);
+
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(paInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(hungerInput);
+
+    modal.addComponents(firstActionRow, secondActionRow);
 
     // Afficher la modale
     await interaction.showModal(modal);
-
-    const modalFilter = (i: any) =>
-      i.customId === "character_stats_modal" &&
-      i.user.id === interaction.user.id;
-    const modalInteraction = await interaction.awaitModalSubmit({
-      filter: modalFilter,
-      time: 120000, // 2 minutes au lieu de 5
-    });
-
-    if (!modalInteraction) {
-      await interaction.followUp({
-        content: "❌ Temps écoulé lors de la saisie des statistiques.",
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
-    const paValue = modalInteraction.fields.getTextInputValue("pa_input");
-    const hungerValue =
-      modalInteraction.fields.getTextInputValue("hunger_input");
-    const isDeadValue =
-      modalInteraction.fields.getTextInputValue("is_dead_input");
-    const canRerollValue =
-      modalInteraction.fields.getTextInputValue("can_reroll_input");
-    const isActiveValue =
-      modalInteraction.fields.getTextInputValue("is_active_input");
-
-    const paNumber = parseInt(paValue, 10);
-    const hungerNumber = parseInt(hungerValue, 10);
-    const isDeadBool = isDeadValue.toLowerCase() === "true";
-    const canRerollBool = canRerollValue.toLowerCase() === "true";
-    const isActiveBool = isActiveValue.toLowerCase() === "true";
-
-    // Validation des valeurs
-    const errors = [];
-    if (isNaN(paNumber) || paNumber < 0 || paNumber > 4) {
-      errors.push("Les PA doivent être un nombre entre 0 et 4");
-    }
-    if (isNaN(hungerNumber) || hungerNumber < 0 || hungerNumber > 4) {
-      errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
-    }
-
-    if (errors.length > 0) {
-      await modalInteraction.reply({
-        content: `❌ ${errors.join(", ")}`,
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
-    // Préparer les données de mise à jour
-    const updateData: any = {};
-    if (!isNaN(paNumber)) updateData.paTotal = paNumber;
-    if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
-    if (isDeadValue !== "") updateData.isDead = isDeadBool;
-    if (canRerollValue !== "") updateData.canReroll = canRerollBool;
-    if (isActiveValue !== "") updateData.isActive = isActiveBool;
-
-    // Mettre à jour le personnage
-    const updatedCharacter = (await apiService.updateCharacterStats(
-      character.id,
-      updateData
-    )) as Character;
-
-    // Créer l'embed de confirmation
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle("✅ Personnage Modifié")
-      .setDescription(`**${character.name}** a été modifié avec succès.`)
-      .addFields(
-        {
-          name: "PA",
-          value: `${character.paTotal || 0} → ${paNumber}`,
-          inline: true,
-        },
-        {
-          name: "Faim",
-          value: `${getHungerLevelText(
-            character.hungerLevel || 0
-          )} → ${getHungerLevelText(hungerNumber)}`,
-          inline: true,
-        },
-        {
-          name: "État",
-          value: `${character.isDead ? "💀" : "❤️"} → ${
-            isDeadBool ? "💀" : "❤️"
-          }`,
-          inline: true,
-        }
-      )
-      .setTimestamp();
-
-    await modalInteraction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    
+    // Stocker les informations du personnage pour le gestionnaire de modale
+    interaction.client.modalData = interaction.client.modalData || {};
+    interaction.client.modalData[modalId] = {
+      character,
+      timestamp: Date.now()
+    };
+    
+    // Nettoyer les anciennes entrées après 5 minutes
+    setTimeout(() => {
+      if (interaction.client.modalData[modalId]) {
+        delete interaction.client.modalData[modalId];
+      }
+    }, 5 * 60 * 1000);
+    
   } catch (error) {
-    logger.error("Erreur lors de la modification des stats:", { error });
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === 10062
-    ) {
-      // Unknown interaction
-      logger.warn("Interaction expirée lors de la modification des stats");
-      // L'utilisateur verra probablement l'erreur côté Discord
-      return;
-    } else {
-      // Essayer de répondre si l'interaction n'est pas expirée
+    logger.error("Erreur lors de l'affichage de la modale:", { error });
+    
+    if (!interaction.replied) {
       try {
-        await interaction.followUp({
-          content: "❌ Erreur lors de la modification des statistiques.",
+        await interaction.reply({
+          content: "❌ Une erreur est survenue lors de l'affichage du formulaire.",
           flags: ["Ephemeral"],
         });
-      } catch (followUpError) {
-        logger.error("Impossible de répondre à l'interaction expirée:", {
-          followUpError,
-        });
+      } catch (replyError) {
+        logger.error("Impossible d'envoyer le message d'erreur:", { replyError });
       }
     }
   }
@@ -697,6 +654,146 @@ function createCharacterStatsModal(character: any) {
   return modal;
 }
 
+// Fonction pour gérer les statistiques avancées du personnage
+async function handleAdvancedStats(interaction: any, character: Character) {
+  try {
+    const modal = new ModalBuilder()
+      .setCustomId('character_advanced_modal')
+      .setTitle('Statistiques avancées du personnage');
+
+    // Champ pour l'état de mort
+    const isDeadInput = new TextInputBuilder()
+      .setCustomId('is_dead_input')
+      .setLabel('Personnage mort ? (true/false)')
+      .setStyle(TextInputStyle.Short)
+      .setValue(character.isDead ? 'true' : 'false')
+      .setRequired(true);
+
+    // Champ pour l'état actif
+    const isActiveInput = new TextInputBuilder()
+      .setCustomId('is_active_input')
+      .setLabel('Personnage actif ? (true/false)')
+      .setStyle(TextInputStyle.Short)
+      .setValue(character.isActive ? 'true' : 'false')
+      .setRequired(true);
+
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(isDeadInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput);
+
+    modal.addComponents(firstActionRow, secondActionRow);
+
+    // Afficher la modale
+    await interaction.showModal(modal);
+
+    const modalFilter = (i: any) =>
+      i.customId === "character_advanced_modal" &&
+      i.user.id === interaction.user.id;
+    const modalInteraction = await interaction.awaitModalSubmit({
+      filter: modalFilter,
+      time: 120000, // 2 minutes
+    });
+
+    if (!modalInteraction) {
+      await interaction.followUp({
+        content: "❌ Temps écoulé lors de la saisie des statistiques avancées.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const isDeadValue = modalInteraction.fields.getTextInputValue("is_dead_input");
+    const isActiveValue = modalInteraction.fields.getTextInputValue("is_active_input");
+
+    const isDeadBool = isDeadValue.toLowerCase() === 'true';
+    const isActiveBool = isActiveValue.toLowerCase() === 'true';
+
+    // Validation des valeurs
+    if (isDeadValue.toLowerCase() !== 'true' && isDeadValue.toLowerCase() !== 'false') {
+      await modalInteraction.reply({
+        content: "❌ La valeur pour 'Personnage mort' doit être 'true' ou 'false'.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (isActiveValue.toLowerCase() !== 'true' && isActiveValue.toLowerCase() !== 'false') {
+      await modalInteraction.reply({
+        content: "❌ La valeur pour 'Personnage actif' doit être 'true' ou 'false'.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: any = {
+      isDead: isDeadBool,
+      isActive: isActiveBool
+    };
+
+    // Mettre à jour le personnage
+    try {
+      const updatedCharacter = (await apiService.updateCharacterStats(
+        character.id,
+        updateData
+      )) as Character;
+
+      // Créer l'embed de confirmation
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle("✅ Statistiques avancées mises à jour")
+        .setDescription(`**${character.name}** a été modifié avec succès.`)
+        .addFields(
+          {
+            name: "Statut de mort",
+            value: isDeadBool ? "💀 Mort" : "❤️ Vivant",
+            inline: true,
+          },
+          {
+            name: "Statut d'activité",
+            value: isActiveBool ? "✅ Actif" : "❌ Inactif",
+            inline: true,
+          }
+        )
+        .setTimestamp();
+
+      await modalInteraction.reply({
+        embeds: [embed],
+        components: [
+          new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+              .setCustomId("character_stats_modal_confirm")
+              .setLabel("Confirmer")
+              .setStyle(ButtonStyle.Success)
+          ),
+          new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+              .setCustomId("character_stats_modal_cancel")
+              .setLabel("Annuler")
+              .setStyle(ButtonStyle.Danger)
+          ),
+        ],
+        flags: ["Ephemeral"],
+      });
+    } catch (error) {
+      logger.error("Erreur lors de la mise à jour des statistiques du personnage:", {
+        error,
+      });
+      await interaction.followUp({
+        content: "❌ Une erreur est survenue lors de la mise à jour des statistiques du personnage.",
+        flags: ["Ephemeral"],
+      });
+    }
+  } catch (error) {
+    logger.error("Erreur lors de la gestion de la modale de statistiques:", {
+      error,
+    });
+    await interaction.followUp({
+      content: "❌ Une erreur est survenue lors de l'affichage de la modale.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
 // Fonction supprimée - maintenant dans utils/hunger.ts
 
 /**
@@ -704,64 +801,116 @@ function createCharacterStatsModal(character: any) {
  * Utilisé par le système centralisé de gestion des modals
  */
 export async function handleCharacterStatsModal(interaction: any) {
-  const paValue = interaction.fields.getTextInputValue("pa_input");
-  const hungerValue = interaction.fields.getTextInputValue("hunger_input");
-  const isDeadValue = interaction.fields.getTextInputValue("is_dead_input");
-  const canRerollValue =
-    interaction.fields.getTextInputValue("can_reroll_input");
-  const isActiveValue = interaction.fields.getTextInputValue("is_active_input");
-
-  const paNumber = parseInt(paValue, 10);
-  const hungerNumber = parseInt(hungerValue, 10);
-  const isDeadBool = isDeadValue.toLowerCase() === "true";
-  const canRerollBool = canRerollValue.toLowerCase() === "true";
-  const isActiveBool = isActiveValue.toLowerCase() === "true";
-
-  // Validation des valeurs
-  const errors = [];
-  if (isNaN(paNumber) || paNumber < 0 || paNumber > 4) {
-    errors.push("Les PA doivent être un nombre entre 0 et 4");
-  }
-  if (isNaN(hungerNumber) || hungerNumber < 0 || hungerNumber > 4) {
-    errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
-  }
-
-  if (errors.length > 0) {
-    await interaction.reply({
-      content: `❌ ${errors.join(", ")}`,
-      flags: ["Ephemeral"],
-    });
-    return;
-  }
-
-  // Préparer les données de mise à jour
-  const updateData: any = {};
-  if (!isNaN(paNumber)) updateData.paTotal = paNumber;
-  if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
-  if (isDeadValue !== "") updateData.isDead = isDeadBool;
-  if (canRerollValue !== "") updateData.canReroll = canRerollBool;
-  if (isActiveValue !== "") updateData.isActive = isActiveBool;
-
-  // Récupérer l'ID du personnage depuis l'ID de la modale
-  const characterId = interaction.customId.split("_")[0];
-
   try {
-    logger.info("Tentative de mise à jour des statistiques du personnage", {
-      characterId,
-      updateData,
-      customId: interaction.customId,
-    });
+    // Vérifier si c'est une modale de statistiques (commence par stats_)
+    if (interaction.customId.startsWith('stats_')) {
+      const characterId = interaction.customId.replace('stats_', '');
+      
+      // Récupérer les valeurs des champs
+      const paValue = interaction.fields.getTextInputValue("pa_input");
+      const hungerValue = interaction.fields.getTextInputValue("hunger_input");
+      
+      const paNumber = parseInt(paValue, 10);
+      const hungerNumber = parseInt(hungerValue, 10);
+      
+      // Validation des valeurs
+      const errors = [];
+      if (isNaN(paNumber) || paNumber < 0 || paNumber > 4) {
+        errors.push("Les PA doivent être un nombre entre 0 et 4");
+      }
+      if (isNaN(hungerNumber) || hungerNumber < 0 || hungerNumber > 4) {
+        errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
+      }
+      
+      if (errors.length > 0) {
+        await interaction.reply({
+          content: `❌ ${errors.join(", ")}`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+      
+      // Préparer les données de mise à jour
+      const updateData = {
+        paTotal: paNumber,
+        hungerLevel: hungerNumber
+      };
+      
+      // Mettre à jour le personnage
+      const updatedCharacter = await apiService.updateCharacterStats(
+        characterId,
+        updateData
+      ) as Character;
+      
+      // Créer l'embed de confirmation
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle("✅ Statistiques mises à jour")
+        .setDescription(`**${updatedCharacter.name}** a été modifié avec succès.`)
+        .addFields(
+          {
+            name: "Points d'Actions",
+            value: `${updatedCharacter.paTotal}`,
+            inline: true,
+          },
+          {
+            name: "Niveau de faim",
+            value: `${getHungerLevelText(updatedCharacter.hungerLevel)}`,
+            inline: true,
+          }
+        )
+        .setTimestamp();
+      
+      await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+      return;
+    }
+    
+    // Pour les autres types de modales (gestion avancée)
+    const paValue = interaction.fields.getTextInputValue("pa_input") || "";
+    const hungerValue = interaction.fields.getTextInputValue("hunger_input") || "";
+    const isDeadValue = interaction.fields.getTextInputValue("is_dead_input") || "";
+    const canRerollValue = interaction.fields.getTextInputValue("can_reroll_input") || "";
+    const isActiveValue = interaction.fields.getTextInputValue("is_active_input") || "";
 
-    // Mettre à jour le personnage avec typage explicite
-    const updatedCharacter = (await apiService.updateCharacterStats(
+    const paNumber = paValue !== "" ? parseInt(paValue, 10) : NaN;
+    const hungerNumber = hungerValue !== "" ? parseInt(hungerValue, 10) : NaN;
+    const isDeadBool = isDeadValue.toLowerCase() === "true";
+    const canRerollBool = canRerollValue.toLowerCase() === "true";
+    const isActiveBool = isActiveValue.toLowerCase() === "true";
+
+    // Validation des valeurs
+    const errors = [];
+    if (!isNaN(paNumber) && (paNumber < 0 || paNumber > 4)) {
+      errors.push("Les PA doivent être un nombre entre 0 et 4");
+    }
+    if (!isNaN(hungerNumber) && (hungerNumber < 0 || hungerNumber > 4)) {
+      errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
+    }
+
+    if (errors.length > 0) {
+      await interaction.reply({
+        content: `❌ ${errors.join(", ")}`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: any = {};
+    if (!isNaN(paNumber)) updateData.paTotal = paNumber;
+    if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
+    if (isDeadValue !== "") updateData.isDead = isDeadBool;
+    if (canRerollValue !== "") updateData.canReroll = canRerollBool;
+    if (isActiveValue !== "") updateData.isActive = isActiveBool;
+
+    // Récupérer l'ID du personnage depuis l'ID de la modale
+    const characterId = interaction.customId;
+
+    // Mettre à jour le personnage
+    const updatedCharacter = await apiService.updateCharacterStats(
       characterId,
       updateData
-    )) as Character;
-
-    logger.info("Statistiques du personnage mises à jour avec succès", {
-      characterId,
-      updatedCharacter,
-    });
+    ) as Character;
 
     // Créer l'embed de confirmation
     const embed = new EmbedBuilder()
@@ -771,17 +920,17 @@ export async function handleCharacterStatsModal(interaction: any) {
       .addFields(
         {
           name: "PA",
-          value: `${paNumber}`,
+          value: `${updatedCharacter.paTotal}`,
           inline: true,
         },
         {
           name: "Faim",
-          value: `${getHungerLevelText(hungerNumber)}`,
+          value: `${getHungerLevelText(updatedCharacter.hungerLevel)}`,
           inline: true,
         },
         {
           name: "État",
-          value: `${isDeadBool ? "💀" : "❤️"}`,
+          value: `${updatedCharacter.isDead ? "💀" : "❤️"}`,
           inline: true,
         }
       )
@@ -800,9 +949,9 @@ export async function handleCharacterStatsModal(interaction: any) {
                 name: error.name,
               }
             : error,
-        characterId,
-        updateData,
         customId: interaction.customId,
+        userId: interaction.user.id,
+        guildId: interaction.guildId
       }
     );
 
