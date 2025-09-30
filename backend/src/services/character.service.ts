@@ -35,6 +35,8 @@ export class CharacterService {
       where: {
         userId,
         townId,
+        isActive: true,
+        isDead: false
       },
       include: {
         user: true,
@@ -45,22 +47,22 @@ export class CharacterService {
         },
       },
       orderBy: {
-        createdAt: "desc", // Le personnage le plus récent créé
-      },
+        createdAt: 'desc'
+      }
     });
   }
 
   /**
-   * Get all characters for a user in a town
+   * Get characters eligible for reroll (dead with canReroll = true and isActive = true)
    */
-  async getUserCharacters(
-    userId: string,
-    townId: string
-  ): Promise<CharacterWithDetails[]> {
+  async getRerollableCharacters(userId: string, townId: string): Promise<Character[]> {
     return await prisma.character.findMany({
       where: {
         userId,
         townId,
+        isDead: true,
+        canReroll: true,
+        isActive: true, // Vérification de isActive
       },
       include: {
         user: true,
@@ -76,6 +78,7 @@ export class CharacterService {
 
   /**
    * Create first character for a user in a town
+{{ ... }}
    */
   async createCharacter(data: CreateCharacterData): Promise<Character> {
     return await prisma.character.create({
@@ -108,12 +111,35 @@ export class CharacterService {
           townId,
           isDead: true,
           canReroll: true,
+          isActive: true,
         },
         orderBy: { createdAt: "desc" },
       });
 
       if (!deadCharacter) {
-        throw new Error("No reroll permission found");
+        // Vérifier pourquoi le reroll n'est pas autorisé pour fournir un message d'erreur plus précis
+        const character = await prisma.character.findFirst({
+          where: {
+            userId,
+            townId,
+            isDead: true,
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        if (!character) {
+          throw new Error("Aucun personnage mort trouvé");
+        }
+        
+        if (!character.canReroll) {
+          throw new Error("Le droit de reroll n'a pas été accordé pour ce personnage");
+        }
+        
+        if (!character.isActive) {
+          throw new Error("Le personnage n'est pas actif");
+        }
+        
+        throw new Error("Conditions de reroll non remplies");
       }
 
       // Désactiver tous les personnages actifs de l'utilisateur dans cette ville
@@ -415,22 +441,6 @@ export class CharacterService {
     return character;
   }
 
-  /**
-   * Get dead characters eligible for reroll
-   */
-  async getRerollableCharacters(
-    userId: string,
-    townId: string
-  ): Promise<Character[]> {
-    return await prisma.character.findMany({
-      where: {
-        userId,
-        townId,
-        isDead: true,
-        canReroll: true,
-      },
-    });
-  }
 
   /**
    * Check if user needs to create character (no active character)
