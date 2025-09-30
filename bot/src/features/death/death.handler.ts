@@ -84,10 +84,13 @@ export async function checkAndHandleHungerDeath(
  */
 export async function handlePARegeneration(characterId: string) {
   try {
-    // Régénérer les PA si nécessaire
-    await apiService.updateCharacterStats(characterId, {
-      paTotal: Math.min(4, 4) // For now, just set to max
-    });
+    // Utiliser directement l'API pour récupérer les infos du personnage et gérer la faim correctement
+    // La régénération des PA devrait être gérée côté backend via le cron job quotidien
+    // Cette fonction ne devrait être utilisée que pour des cas spécifiques
+    logger.info("PA regeneration requested", { characterId });
+
+    // Pour l'instant, on ne fait rien ici car la régénération est gérée côté backend
+    // Si besoin de forcer une régénération, utiliser l'API appropriée
   } catch (error) {
     logger.error("Error handling PA regeneration", {
       characterId,

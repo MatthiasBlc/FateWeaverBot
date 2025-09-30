@@ -11,10 +11,11 @@ async function increaseAllCharactersHunger() {
   try {
     console.log("Début de l'augmentation automatique de la faim...");
 
-    // Récupère tous les personnages qui ne sont pas morts (hungerLevel > 0)
+    // Récupère tous les personnages qui ne sont pas morts (hungerLevel > 0 ET isDead = false)
     const characters = await prisma.character.findMany({
       where: {
         hungerLevel: { gt: 0 }, // Seulement ceux qui ne sont pas morts
+        isDead: false, // Exclure explicitement les personnages morts
       },
       select: {
         id: true,

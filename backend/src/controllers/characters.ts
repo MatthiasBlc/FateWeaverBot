@@ -438,6 +438,14 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       );
     }
 
+    // Vérifier si le personnage est mort (champ isDead)
+    if (character.isDead) {
+      throw createHttpError(
+        400,
+        "Ce personnage est mort et ne peut plus manger"
+      );
+    }
+
     // Vérifier si la ville a des foodstock
     if (character.town.foodStock <= 0) {
       throw createHttpError(400, "La ville n'a plus de vivres disponibles");
@@ -671,6 +679,10 @@ export const needsCharacterCreation: RequestHandler = async (req, res, next) => 
 };
 
 // Met à jour les statistiques d'un personnage (PA, faim, etc.)
+// Note: Cette fonction est utilisée par l'admin et permet de modifier tous les champs.
+// Pour maintenir la cohérence métier :
+// - Si isDead = false, alors paTotal et hungerLevel ne devraient pas être à 0
+// - Si isDead = true, alors paTotal devrait être 0 et hungerLevel devrait être 0
 export const updateCharacterStats: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -704,6 +716,22 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     if (isDead !== undefined) updateData.isDead = isDead;
     if (canReroll !== undefined) updateData.canReroll = canReroll;
     if (isActive !== undefined) updateData.isActive = isActive;
+
+    // Maintenir la cohérence métier
+    if (isDead === true) {
+      // Si le personnage est mort, forcer paTotal et hungerLevel à 0
+      updateData.paTotal = 0;
+      updateData.hungerLevel = 0;
+      updateData.lastPaUpdate = new Date();
+    } else if (isDead === false) {
+      // Si le personnage est vivant, s'assurer que paTotal et hungerLevel ne sont pas à 0
+      if (updateData.paTotal === 0 && paTotal === 0) {
+        updateData.paTotal = 2; // Valeur par défaut pour un personnage vivant
+      }
+      if (updateData.hungerLevel === 0 && hungerLevel === 0) {
+        updateData.hungerLevel = 4; // Valeur par défaut pour un personnage vivant
+      }
+    }
 
     // Mettre à jour directement avec Prisma
     const updatedCharacter = await prisma.character.update({

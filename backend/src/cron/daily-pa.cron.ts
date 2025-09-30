@@ -11,10 +11,11 @@ async function updateAllCharactersActionPoints() {
   try {
     console.log("Début de la mise à jour quotidienne des points d'action...");
 
-    // Récupère tous les personnages avec moins de 4 PA
+    // Récupère tous les personnages avec moins de 4 PA ET qui ne sont pas morts
     const characters = await prisma.character.findMany({
       where: {
         paTotal: { lt: 4 }, // Seulement ceux qui ont moins de 4 PA
+        isDead: false, // Exclure les personnages morts
       },
       select: {
         id: true,

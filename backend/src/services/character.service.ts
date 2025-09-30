@@ -9,8 +9,18 @@ export interface CreateCharacterData {
 }
 
 export interface CharacterWithDetails extends Character {
-  user: Pick<User, 'id' | 'discordId' | 'username' | 'discriminator' | 'globalName' | 'avatar' | 'createdAt' | 'updatedAt'>;
-  town: Town & { guild: Pick<Guild, 'id' | 'discordGuildId' | 'name'> };
+  user: Pick<
+    User,
+    | "id"
+    | "discordId"
+    | "username"
+    | "discriminator"
+    | "globalName"
+    | "avatar"
+    | "createdAt"
+    | "updatedAt"
+  >;
+  town: Town & { guild: Pick<Guild, "id" | "discordGuildId" | "name"> };
 }
 
 export class CharacterService {
@@ -35,7 +45,7 @@ export class CharacterService {
         },
       },
       orderBy: {
-        createdAt: 'desc', // Le personnage le plus récent créé
+        createdAt: "desc", // Le personnage le plus récent créé
       },
     });
   }
@@ -136,8 +146,9 @@ export class CharacterService {
       where: { id: characterId },
       data: {
         isDead: true,
-        isActive: false,
         hungerLevel: 0,
+        paTotal: 0, // Les personnages morts n'ont plus de PA
+        lastPaUpdate: new Date(),
       },
     });
   }
@@ -243,8 +254,8 @@ export class CharacterService {
             globalName: true,
             avatar: true,
             createdAt: true,
-            updatedAt: true
-          }
+            updatedAt: true,
+          },
         },
         town: {
           include: {
@@ -252,11 +263,7 @@ export class CharacterService {
           },
         },
       },
-      orderBy: [
-        { isActive: 'desc' },
-        { isDead: 'asc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: [{ isActive: "desc" }, { isDead: "asc" }, { createdAt: "desc" }],
     });
   }
 

@@ -69,6 +69,18 @@ Toutes les commandes liées à la ville et les characters sont liés à la ville
 Lors de l'interraction d'un User, on vérifie qu'il a bien un character sur la ville actuelle.
 Si ce nest pas le cas, un nouveau character est créer (couple ville / user)
 
+admin-help │
+ping │
+help
+chantiers-admin│ 'add, delete' │
+character-admin
+foodstock-admin│ 'add, remove' │
+foodstock │
+manger │
+chantiers │'liste, build' │
+config-channel
+profil'
+
 -------------------------Done-------------------------
 @backend
 Un utilisateur est défini par son discordId et son guildId
@@ -278,5 +290,9 @@ est-ce que foodstock-admin est ephemeral ?
 Inverser échelle hunger (0->4)
 
 Update deploy script
+
+Multi character / villes
+
+Update du système de boutons
 
 -------------------------Notes-------------------------

@@ -96,10 +96,16 @@ export async function handleCharacterAdminCommand(
       const selectInteraction = await interaction.channel?.awaitMessageComponent({
         filter,
         componentType: ComponentType.StringSelect,
-        time: 300000, // 5 minutes
+        time: 60000, // 1 minute au lieu de 5
       });
 
-      if (!selectInteraction) return;
+      if (!selectInteraction) {
+        await interaction.followUp({
+          content: "❌ Temps écoulé lors de la sélection du personnage.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
 
       const selectedCharacterId = selectInteraction.values[0];
       const selectedCharacter = characters.find((c: any) => c.id === selectedCharacterId);
@@ -152,10 +158,16 @@ export async function handleCharacterAdminCommand(
       const buttonInteraction = await selectInteraction.channel?.awaitMessageComponent({
         filter: buttonFilter,
         componentType: ComponentType.Button,
-        time: 300000,
+        time: 60000, // 1 minute au lieu de 5
       });
 
-      if (!buttonInteraction) return;
+      if (!buttonInteraction) {
+        await selectInteraction.followUp({
+          content: "❌ Temps écoulé lors du choix de l'action.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
 
       switch (buttonInteraction.customId) {
         case "character_stats":
@@ -174,11 +186,28 @@ export async function handleCharacterAdminCommand(
 
     } catch (error) {
       logger.error("Erreur lors de la sélection ou action sur le personnage:", { error });
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === 10062) { // Unknown interaction
+          logger.warn("Interaction expirée");
+          return; // Ne pas répondre si l'interaction est déjà expirée
+        }
+        if (error.code === 'InteractionCollectorError') {
+          logger.warn("Timeout d'interaction");
+          if (!interaction.replied) {
+            await interaction.followUp({
+              content: "❌ Temps écoulé. Veuillez relancer la commande.",
+              flags: ["Ephemeral"],
+            }).catch(() => {});
+          }
+          return;
+        }
+      }
+
       if (!interaction.replied) {
         await interaction.followUp({
-          content: "❌ Temps écoulé ou erreur lors de la sélection/modification.",
+          content: "❌ Erreur lors de la sélection/modification du personnage.",
           flags: ["Ephemeral"],
-        });
+        }).catch(() => {});
       }
     }
   } catch (error) {
@@ -209,8 +238,16 @@ async function handleStatsUpdate(interaction: any, character: any) {
   try {
     const modalInteraction = await interaction.awaitModalSubmit({
       filter: modalFilter,
-      time: 300000,
+      time: 120000, // 2 minutes au lieu de 5
     });
+
+    if (!modalInteraction) {
+      await interaction.followUp({
+        content: "❌ Temps écoulé lors de la saisie des statistiques.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
     const paValue = modalInteraction.fields.getTextInputValue("pa_input");
     const hungerValue = modalInteraction.fields.getTextInputValue("hunger_input");
@@ -279,80 +316,118 @@ async function handleStatsUpdate(interaction: any, character: any) {
     await modalInteraction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors de la modification des stats:", { error });
-    await interaction.followUp({
-      content: "❌ Erreur lors de la modification des statistiques.",
-      flags: ["Ephemeral"],
-    });
+    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) { // Unknown interaction
+      logger.warn("Interaction expirée lors de la modification des stats");
+      // L'utilisateur verra probablement l'erreur côté Discord
+    } else {
+      await interaction.followUp({
+        content: "❌ Erreur lors de la modification des statistiques.",
+        flags: ["Ephemeral"],
+      }).catch(() => {}); // Ignore les erreurs si l'interaction est déjà expirée
+    }
   }
 }
 
 async function handleKillCharacter(interaction: any, character: any) {
-  if (character.isDead) {
+  try {
+    if (character.isDead) {
+      await interaction.reply({
+        content: "❌ Ce personnage est déjà mort.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    await apiService.killCharacter(character.id);
+
+    const embed = new EmbedBuilder()
+      .setColor(0xff0000)
+      .setTitle("💀 Personnage Tué")
+      .setDescription(`**${character.name}** a été tué.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+  } catch (error) {
+    logger.error("Erreur lors de la suppression du personnage:", { error });
+    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      return; // Interaction expirée
+    }
     await interaction.reply({
-      content: "❌ Ce personnage est déjà mort.",
+      content: "❌ Erreur lors de la suppression du personnage.",
       flags: ["Ephemeral"],
-    });
-    return;
+    }).catch(() => {});
   }
-
-  await apiService.killCharacter(character.id);
-
-  const embed = new EmbedBuilder()
-    .setColor(0xff0000)
-    .setTitle("💀 Personnage Tué")
-    .setDescription(`**${character.name}** a été tué.`)
-    .setTimestamp();
-
-  await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 }
 
 async function handleRerollPermission(interaction: any, character: any) {
-  if (!character.isDead) {
+  try {
+    if (!character.isDead) {
+      await interaction.reply({
+        content: "❌ Seul un personnage mort peut avoir l'autorisation de reroll.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const newCanReroll = !character.canReroll;
+    await apiService.updateCharacterStats(character.id, { canReroll: newCanReroll });
+
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle(`🔄 Autorisation de Reroll ${newCanReroll ? 'Accordée' : 'Révoquée'}`)
+      .setDescription(`**${character.name}** ${newCanReroll ? 'peut maintenant' : 'ne peut plus'} créer un nouveau personnage.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+  } catch (error) {
+    logger.error("Erreur lors de la gestion du reroll:", { error });
+    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      return; // Interaction expirée
+    }
     await interaction.reply({
-      content: "❌ Seul un personnage mort peut avoir l'autorisation de reroll.",
+      content: "❌ Erreur lors de la gestion du reroll.",
       flags: ["Ephemeral"],
-    });
-    return;
+    }).catch(() => {});
   }
-
-  const newCanReroll = !character.canReroll;
-  await apiService.updateCharacterStats(character.id, { canReroll: newCanReroll });
-
-  const embed = new EmbedBuilder()
-    .setColor(0x00ff00)
-    .setTitle(`🔄 Autorisation de Reroll ${newCanReroll ? 'Accordée' : 'Révoquée'}`)
-    .setDescription(`**${character.name}** ${newCanReroll ? 'peut maintenant' : 'ne peut plus'} créer un nouveau personnage.`)
-    .setTimestamp();
-
-  await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 }
 
 async function handleSwitchActive(interaction: any, character: any, townId: string) {
-  if (character.isDead) {
+  try {
+    if (character.isDead) {
+      await interaction.reply({
+        content: "❌ Un personnage mort ne peut pas être activé.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const newIsActive = !character.isActive;
+
+    if (newIsActive) {
+      // Activer ce personnage (désactivera automatiquement les autres)
+      await apiService.switchActiveCharacter(character.userId, townId, character.id);
+    } else {
+      // Désactiver ce personnage (mais garder au moins un actif)
+      await apiService.updateCharacterStats(character.id, { isActive: false });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle(`⚡ Personnage ${newIsActive ? 'Activé' : 'Désactivé'}`)
+      .setDescription(`**${character.name}** est maintenant ${newIsActive ? 'actif' : 'inactif'}.`)
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+  } catch (error) {
+    logger.error("Erreur lors du changement de statut actif:", { error });
+    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      return; // Interaction expirée
+    }
     await interaction.reply({
-      content: "❌ Un personnage mort ne peut pas être activé.",
+      content: "❌ Erreur lors du changement de statut actif.",
       flags: ["Ephemeral"],
-    });
-    return;
+    }).catch(() => {});
   }
-
-  const newIsActive = !character.isActive;
-
-  if (newIsActive) {
-    // Activer ce personnage (désactivera automatiquement les autres)
-    await apiService.switchActiveCharacter(character.userId, townId, character.id);
-  } else {
-    // Désactiver ce personnage (mais garder au moins un actif)
-    await apiService.updateCharacterStats(character.id, { isActive: false });
-  }
-
-  const embed = new EmbedBuilder()
-    .setColor(0x00ff00)
-    .setTitle(`⚡ Personnage ${newIsActive ? 'Activé' : 'Désactivé'}`)
-    .setDescription(`**${character.name}** est maintenant ${newIsActive ? 'actif' : 'inactif'}.`)
-    .setTimestamp();
-
-  await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 }
 
 function createCharacterStatsModal(character: any) {
@@ -422,3 +497,75 @@ function createCharacterStatsModal(character: any) {
 }
 
 // Fonction supprimée - maintenant dans utils/hunger.ts
+
+/**
+ * Gestionnaire pour les soumissions de modal d'administration de personnages
+ * Utilisé par le système centralisé de gestion des modals
+ */
+export async function handleCharacterStatsModal(interaction: any) {
+  const paValue = interaction.fields.getTextInputValue("pa_input");
+  const hungerValue = interaction.fields.getTextInputValue("hunger_input");
+  const isDeadValue = interaction.fields.getTextInputValue("is_dead_input");
+  const canRerollValue = interaction.fields.getTextInputValue("can_reroll_input");
+  const isActiveValue = interaction.fields.getTextInputValue("is_active_input");
+
+  const paNumber = parseInt(paValue, 10);
+  const hungerNumber = parseInt(hungerValue, 10);
+  const isDeadBool = isDeadValue.toLowerCase() === 'true';
+  const canRerollBool = canRerollValue.toLowerCase() === 'true';
+  const isActiveBool = isActiveValue.toLowerCase() === 'true';
+
+  // Validation des valeurs
+  const errors = [];
+  if (isNaN(paNumber) || paNumber < 0 || paNumber > 4) {
+    errors.push("Les PA doivent être un nombre entre 0 et 4");
+  }
+  if (isNaN(hungerNumber) || hungerNumber < 0 || hungerNumber > 4) {
+    errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
+  }
+
+  if (errors.length > 0) {
+    await interaction.reply({
+      content: `❌ ${errors.join(", ")}`,
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
+
+  // Préparer les données de mise à jour
+  const updateData: any = {};
+  if (!isNaN(paNumber)) updateData.paTotal = paNumber;
+  if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
+  if (isDeadValue !== '') updateData.isDead = isDeadBool;
+  if (canRerollValue !== '') updateData.canReroll = canRerollBool;
+  if (isActiveValue !== '') updateData.isActive = isActiveBool;
+
+  // Mettre à jour le personnage
+  const updatedCharacter = await apiService.updateCharacterStats(interaction.customId.split('_')[0], updateData);
+
+  // Créer l'embed de confirmation
+  const embed = new EmbedBuilder()
+    .setColor(0x00ff00)
+    .setTitle("✅ Personnage Modifié")
+    .setDescription(`**${updatedCharacter.name}** a été modifié avec succès.`)
+    .addFields(
+      {
+        name: "PA",
+        value: `${paNumber}`,
+        inline: true,
+      },
+      {
+        name: "Faim",
+        value: `${getHungerLevelText(hungerNumber)}`,
+        inline: true,
+      },
+      {
+        name: "État",
+        value: `${isDeadBool ? '💀' : '❤️'}`,
+        inline: true,
+      }
+    )
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+}

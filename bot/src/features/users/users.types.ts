@@ -4,10 +4,7 @@ export interface ProfileData {
   character: {
     id: string;
     name: string;
-    roles: Array<{
-      discordId: string;
-      name: string;
-    }>;
+    roles: Array<{ discordId: string; name: string; }>;
     hungerLevel: number;
   };
   actionPoints: {

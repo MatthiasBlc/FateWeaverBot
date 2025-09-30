@@ -44,12 +44,12 @@ export async function handleProfileCommand(interaction: any) {
         // Calculer le temps restant avant la prochaine mise à jour
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
 
-        // Préparer les données pour l'affichage
+        // Préparer les données pour l'affichage avec les rôles récupérés du personnage
         const profileData: ProfileData = {
           character: {
             id: character.id,
             name: character.name,
-            roles: [], // TODO: Récupérer les rôles du personnage si disponibles
+            roles: character.roles || [],
             hungerLevel: character.hungerLevel || 0,
           },
           actionPoints: {
@@ -95,12 +95,12 @@ export async function handleProfileCommand(interaction: any) {
         // Calculer le temps restant avant la prochaine mise à jour
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
 
-        // Préparer les données pour l'affichage
+        // Préparer les données pour l'affichage avec les rôles récupérés du personnage
         const profileData: ProfileData = {
           character: {
             id: character.id,
             name: character.name,
-            roles: [], // TODO: Récupérer les rôles du personnage si disponibles
+            roles: character.roles || [],
             hungerLevel: character.hungerLevel || 0,
           },
           actionPoints: {
@@ -168,14 +168,26 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     })
     .setTimestamp();
 
-  // Formatage des rôles (simplifié pour l'instant)
-  const rolesText = "Aucun rôle"; // TODO: Implémenter si les rôles sont disponibles
+  // Formatage des rôles avec mentions Discord comme dans l'ancienne version
+  const rolesText =
+    data.character.roles && data.character.roles.length > 0
+      ? data.character.roles.map((role) => `<@&${role.discordId}>`).join(", ")
+      : "Aucun rôle";
 
   // Formatage avancé de l'état de faim
   const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
 
+  // Panneau d'attention pour les PA élevés (3 ou 4)
+  const attentionPanel = (data.actionPoints.points >= 3)
+    ? {
+        name: "⚠️ **ATTENTION**",
+        value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
+        inline: false,
+      }
+    : null;
+
   // Ajout des champs d'information
-  embed.addFields(
+  const fields = [
     {
       name: "Nom",
       value: data.character.name || "Non défini",
@@ -188,7 +200,7 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Points d'Action (PA)",
-      value: `${getActionPointsEmoji(data.actionPoints.points)} **${data.actionPoints.points}/4**`,
+      value: `**${data.actionPoints.points || 0}/4**`,
       inline: true,
     },
     {
@@ -200,8 +212,15 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
       name: "Prochaine mise à jour",
       value: formatTimeUntilUpdate(data.timeUntilUpdate),
       inline: true,
-    }
-  );
+    },
+  ];
+
+  // Ajouter le panneau d'attention s'il y en a un
+  if (attentionPanel) {
+    fields.splice(3, 0, attentionPanel);
+  }
+
+  embed.addFields(fields);
 
   return embed;
 }

@@ -5,35 +5,17 @@ import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
 import { Collection } from "@discordjs/collection";
 import { getOrCreateGuild } from './services/guilds.service.js';
+import { buttonHandler } from './utils/button-handler.js';
+import { modalHandler } from './utils/modal-handler.js';
 
 // Handle button interactions
 async function handleButtonInteraction(interaction: any) {
-  const { customId } = interaction;
-
-  logger.info(`Button interaction received: ${customId}`);
-
-  // Handle different button actions
-  if (customId === 'eat_food') {
-    // Defer the update to show loading state
-    await interaction.deferUpdate();
-
-    try {
-      // Import the eat button handler dynamically to avoid circular dependencies
-      const { handleEatButton } = await import('./features/hunger/hunger.handlers.js');
-      await handleEatButton(interaction);
-    } catch (error) {
-      logger.error("Error handling eat button:", { error });
-
-      // Send error message
-      await interaction.editReply({
-        content: "❌ Une erreur est survenue lors de l'action de manger.",
-        embeds: [],
-        components: []
-      });
-    }
-  } else {
+  try {
+    await buttonHandler.handleButton(interaction);
+  } catch (error) {
+    logger.error("Error handling button interaction:", { error });
     await interaction.reply({
-      content: "Bouton non reconnu.",
+      content: "❌ Erreur lors du traitement de l'interaction.",
       flags: ["Ephemeral"],
     });
   }
@@ -41,27 +23,12 @@ async function handleButtonInteraction(interaction: any) {
 
 // Handle modal interactions
 async function handleModalInteraction(interaction: any) {
-  const { customId } = interaction;
-
-  logger.info(`Modal interaction received: ${customId}`);
-
   try {
-    if (customId === 'character_creation_modal') {
-      const { handleCharacterCreation } = await import('./modals/character-modals.js');
-      await handleCharacterCreation(interaction);
-    } else if (customId === 'reroll_modal') {
-      const { handleReroll } = await import('./modals/character-modals.js');
-      await handleReroll(interaction);
-    } else {
-      await interaction.reply({
-        content: "Modal non reconnu.",
-        flags: ["Ephemeral"],
-      });
-    }
+    await modalHandler.handleModal(interaction);
   } catch (error) {
     logger.error("Error handling modal interaction:", { error });
     await interaction.reply({
-      content: "Une erreur est survenue lors du traitement du formulaire.",
+      content: "❌ Erreur lors du traitement du formulaire.",
       flags: ["Ephemeral"],
     });
   }
