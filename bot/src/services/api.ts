@@ -14,15 +14,33 @@ import {
 } from "./users.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
 import { checkCharacterStatus } from "./characters.service";
-import { logger } from "./logger";
 
+// Import des services spécialisés
+import { CharacterAPIService } from "./api/character-api.service";
+import { GuildAPIService } from "./api/guild-api.service";
+import { ChantierAPIService } from "./api/chantier-api.service";
+
+/**
+ * Service API principal - Façade qui maintient l'interface existante
+ * Délègue aux services spécialisés pour séparer les responsabilités
+ */
 class APIService {
   private static instance: APIService;
   private api: AxiosInstance;
 
+  // Services spécialisés
+  private characterAPI: CharacterAPIService;
+  private guildAPI: GuildAPIService;
+  private chantierAPI: ChantierAPIService;
+
   private constructor() {
     // Use shared HTTP client
     this.api = httpClient;
+
+    // Initialize specialized services
+    this.characterAPI = new CharacterAPIService(this.api);
+    this.guildAPI = new GuildAPIService(this.api);
+    this.chantierAPI = new ChantierAPIService(this.api);
   }
 
   public static getInstance(): APIService {
@@ -31,6 +49,8 @@ class APIService {
     }
     return APIService.instance;
   }
+
+  // ========== DÉLÉGATION AUX SERVICES SPÉCIALISÉS ==========
 
   /**
    * Récupère ou crée un utilisateur
@@ -67,29 +87,14 @@ class APIService {
     name: string,
     memberCount: number
   ) {
-    return getOrCreateGuildSvc(discordId, name, memberCount);
+    return this.guildAPI.getOrCreateGuild(discordId, name, memberCount);
   }
+
   /**
    * Récupère une guilde par son ID Discord
    */
   public async getGuildByDiscordId(discordId: string) {
-    try {
-      const response = await this.api.get(`/guilds/discord/${discordId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error fetching guild by Discord ID:", {
-        discordId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.guildAPI.getGuildByDiscordId(discordId);
   }
 
   /**
@@ -108,31 +113,7 @@ class APIService {
    * Récupère le personnage actif d'un utilisateur dans une ville
    */
   public async getActiveCharacter(userId: string, townId: string) {
-    try {
-      // Récupérer tous les personnages de la ville
-      const characters = await this.getTownCharacters(townId);
-
-      // Trouver le personnage actif de l'utilisateur
-      const activeCharacter = characters.find((char: any) =>
-        char.userId === userId && char.isActive
-      );
-
-      return activeCharacter || null;
-    } catch (error) {
-      logger.error("Error fetching active character:", {
-        userId,
-        townId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.getActiveCharacter(userId, townId);
   }
 
   /**
@@ -146,39 +127,14 @@ class APIService {
    * Récupère une ville par l'ID de sa guilde
    */
   public async getTownByGuildId(guildId: string) {
-    try {
-      logger.info("Appel API getTownByGuildId", {
-        guildId,
-        baseURL: this.api.defaults.baseURL,
-      });
-      const response = await this.api.get(`/towns/guild/${guildId}`);
-      logger.info("Réponse API getTownByGuildId réussie", {
-        guildId,
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      logger.error("Erreur API getTownByGuildId", {
-        guildId,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
-      throw error;
-    }
+    return this.guildAPI.getTownByGuildId(guildId);
   }
 
   /**
    * Récupère tous les chantiers d'une guilde
    */
   public async getChantiersByServer(guildId: string) {
-    return fetchChantiersByServer(guildId);
+    return this.chantierAPI.getChantiersByServer(guildId);
   }
 
   /**
@@ -192,14 +148,14 @@ class APIService {
     },
     userId: string
   ) {
-    return createChantierSvc(chantierData, userId);
+    return this.chantierAPI.createChantier(chantierData, userId);
   }
 
   /**
    * Supprime un chantier par son ID
    */
   public async deleteChantier(id: string) {
-    return deleteChantierSvc(id);
+    return this.chantierAPI.deleteChantier(id);
   }
 
   /**
@@ -210,121 +166,42 @@ class APIService {
     chantierId: string,
     points: number
   ) {
-    return investInChantierSvc(characterId, chantierId, points);
+    return this.chantierAPI.investInChantier(characterId, chantierId, points);
   }
 
   /**
    * Récupère les informations des points d'action d'un personnage
    */
   public async getActionPoints(characterId: string) {
-    try {
-      const response = await this.api.get(`/action-points/${characterId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error fetching action points:", {
-        characterId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.getActionPoints(characterId);
   }
 
   /**
    * Permet à un personnage de manger
    */
   public async eatFood(characterId: string) {
-    const response = await this.api.post(`/characters/${characterId}/eat`);
-    return response.data;
+    return this.characterAPI.eatFood(characterId);
   }
 
   /**
    * Récupère tous les personnages d'une guilde
    */
   public async getGuildCharacters(guildId: string) {
-    try {
-      const response = await this.api.get(`/characters/guild/${guildId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error fetching guild characters:", {
-        guildId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.getGuildCharacters(guildId);
   }
 
   /**
    * Met à jour le stock de foodstock d'une ville
    */
   public async updateTownFoodStock(townId: string, foodStock: number) {
-    try {
-      logger.info("Appel API updateTownFoodStock", {
-        townId,
-        foodStock,
-        baseURL: this.api.defaults.baseURL,
-      });
-      const response = await this.api.patch(`/towns/${townId}/food-stock`, {
-        foodStock,
-      });
-      logger.info("Réponse API updateTownFoodStock réussie", {
-        townId,
-        foodStock,
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      logger.error("Erreur API updateTownFoodStock", {
-        townId,
-        foodStock,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
-      throw error;
-    }
+    return this.guildAPI.updateTownFoodStock(townId, foodStock);
   }
 
   /**
    * Récupère tous les personnages d'une ville
    */
   public async getTownCharacters(townId: string) {
-    try {
-      const response = await this.api.get(`/characters/town/${townId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error fetching town characters:", {
-        townId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.getTownCharacters(townId);
   }
 
   /**
@@ -335,69 +212,21 @@ class APIService {
     userId: string;
     townId: string;
   }) {
-    try {
-      const response = await this.api.post('/characters', characterData);
-      return response.data;
-    } catch (error) {
-      logger.error("Error creating character:", {
-        characterData,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.createCharacter(characterData);
   }
 
   /**
    * Tue un personnage
    */
   public async killCharacter(characterId: string) {
-    try {
-      const response = await this.api.post(`/characters/${characterId}/kill`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error killing character:", {
-        characterId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.killCharacter(characterId);
   }
 
   /**
    * Donne l'autorisation de reroll à un personnage
    */
   public async grantRerollPermission(characterId: string) {
-    try {
-      const response = await this.api.post(`/characters/${characterId}/grant-reroll`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error granting reroll permission:", {
-        characterId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.grantRerollPermission(characterId);
   }
 
   /**
@@ -408,100 +237,28 @@ class APIService {
     townId: string;
     name: string;
   }) {
-    try {
-      const response = await this.api.post('/characters/reroll', rerollData);
-      return response.data;
-    } catch (error) {
-      logger.error("Error creating reroll character:", {
-        rerollData,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.createRerollCharacter(rerollData);
   }
 
   /**
    * Change le personnage actif d'un utilisateur
    */
   public async switchActiveCharacter(userId: string, townId: string, characterId: string) {
-    try {
-      const response = await this.api.post(`/characters/switch-active`, {
-        userId,
-        townId,
-        characterId
-      });
-      return response.data;
-    } catch (error) {
-      logger.error("Error switching active character:", {
-        userId,
-        townId,
-        characterId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.switchActiveCharacter(userId, townId, characterId);
   }
 
   /**
    * Récupère les personnages morts éligibles pour reroll
    */
   public async getRerollableCharacters(userId: string, townId: string) {
-    try {
-      const response = await this.api.get(`/characters/rerollable/${userId}/${townId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error fetching rerollable characters:", {
-        userId,
-        townId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.getRerollableCharacters(userId, townId);
   }
 
   /**
    * Vérifie si un utilisateur a besoin de créer un personnage
    */
   public async needsCharacterCreation(userId: string, townId: string) {
-    try {
-      const response = await this.api.get(`/characters/needs-creation/${userId}/${townId}`);
-      return response.data;
-    } catch (error) {
-      logger.error("Error checking character creation need:", {
-        userId,
-        townId,
-        error:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.needsCharacterCreation(userId, townId);
   }
 
   /**
@@ -517,35 +274,9 @@ class APIService {
       isActive?: boolean;
     }
   ) {
-    try {
-      logger.info("Appel API updateCharacterStats", {
-        characterId,
-        stats,
-        baseURL: this.api.defaults.baseURL,
-      });
-      const response = await this.api.patch(`/characters/${characterId}/stats`, stats);
-      logger.info("Réponse API updateCharacterStats réussie", {
-        characterId,
-        stats,
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      logger.error("Erreur API updateCharacterStats", {
-        characterId,
-        stats,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
-      throw error;
-    }
+    return this.characterAPI.updateCharacterStats(characterId, stats);
   }
 }
+
+// Export d'une instance singleton pour maintenir la compatibilité
 export const apiService = APIService.getInstance();

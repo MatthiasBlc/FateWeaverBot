@@ -16,6 +16,46 @@ import { logger } from "../../services/logger";
 import { checkAdmin } from "../../utils/roles";
 import { getHungerLevelText } from "../../utils/hunger";
 
+// Interfaces pour typer les données
+interface Character {
+  id: string;
+  name: string;
+  paTotal: number;
+  hungerLevel: number;
+  isDead: boolean;
+  canReroll: boolean;
+  isActive: boolean;
+  userId: string;
+  townId: string;
+  user?: {
+    id: string;
+    discordId: string;
+    username: string;
+    discriminator: string;
+    globalName: string;
+    avatar: string;
+  };
+  town?: {
+    id: string;
+    name: string;
+    foodStock: number;
+    guildId: string;
+  };
+}
+
+interface Town {
+  id: string;
+  name: string;
+  foodStock: number;
+  guildId: string;
+  guild?: {
+    id: string;
+    discordGuildId: string;
+    name: string;
+  };
+  chantiers?: any[];
+}
+
 export async function handleCharacterAdminCommand(
   interaction: ChatInputCommandInteraction
 ) {
@@ -41,9 +81,9 @@ export async function handleCharacterAdminCommand(
     });
 
     // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = await apiService.getTownByGuildId(interaction.guildId!) as Town | null;
 
-    if (!town) {
+    if (!town || !town.id) {
       logger.warn("Aucune ville trouvée pour le serveur", {
         guildId: interaction.guildId,
       });
@@ -55,7 +95,7 @@ export async function handleCharacterAdminCommand(
     }
 
     // Récupérer tous les personnages de la ville
-    const characters = await apiService.getTownCharacters(town.id);
+    const characters = await apiService.getTownCharacters(town.id) as Character[];
 
     if (!characters || characters.length === 0) {
       await interaction.reply({
@@ -108,7 +148,7 @@ export async function handleCharacterAdminCommand(
       }
 
       const selectedCharacterId = selectInteraction.values[0];
-      const selectedCharacter = characters.find((c: any) => c.id === selectedCharacterId);
+      const selectedCharacter = characters.find((c: Character) => c.id === selectedCharacterId);
 
       if (!selectedCharacter) {
         await selectInteraction.reply({
@@ -227,15 +267,18 @@ export async function handleCharacterAdminCommand(
   }
 }
 
-async function handleStatsUpdate(interaction: any, character: any) {
-  const modal = createCharacterStatsModal(character);
-
-  await interaction.showModal(modal);
-
-  const modalFilter = (i: any) =>
-    i.customId === "character_stats_modal" && i.user.id === interaction.user.id;
-
+async function handleStatsUpdate(interaction: any, character: Character) {
   try {
+    // Déclarer que l'interaction du bouton est traitée
+    await interaction.deferUpdate();
+    
+    const modal = createCharacterStatsModal(character);
+    
+    // Afficher la modale
+    await interaction.showModal(modal);
+    
+    const modalFilter = (i: any) =>
+      i.customId === "character_stats_modal" && i.user.id === interaction.user.id;
     const modalInteraction = await interaction.awaitModalSubmit({
       filter: modalFilter,
       time: 120000, // 2 minutes au lieu de 5
@@ -287,7 +330,7 @@ async function handleStatsUpdate(interaction: any, character: any) {
     if (isActiveValue !== '') updateData.isActive = isActiveBool;
 
     // Mettre à jour le personnage
-    const updatedCharacter = await apiService.updateCharacterStats(character.id, updateData);
+    const updatedCharacter = await apiService.updateCharacterStats(character.id, updateData) as Character;
 
     // Créer l'embed de confirmation
     const embed = new EmbedBuilder()
@@ -541,7 +584,7 @@ export async function handleCharacterStatsModal(interaction: any) {
   if (isActiveValue !== '') updateData.isActive = isActiveBool;
 
   // Mettre à jour le personnage
-  const updatedCharacter = await apiService.updateCharacterStats(interaction.customId.split('_')[0], updateData);
+  const updatedCharacter = await apiService.updateCharacterStats(interaction.customId.split('_')[0], updateData) as Character;
 
   // Créer l'embed de confirmation
   const embed = new EmbedBuilder()
