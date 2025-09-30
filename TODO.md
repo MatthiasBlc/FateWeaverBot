@@ -4,6 +4,28 @@
 
 character admin, bouton tuer uniquement si personnage en vie.
 
+#TS version check
+npm list typescript
+Found existing alias for "npm list". You should use: "npmL"
+discord-bot@1.0.0 /home/bouloc/Repo/FateWeaverBot/bot
+├─┬ @typescript-eslint/eslint-plugin@8.45.0
+│ ├─┬ @typescript-eslint/type-utils@8.45.0
+│ │ └── typescript@5.9.2 deduped
+│ ├─┬ @typescript-eslint/utils@8.45.0
+│ │ └── typescript@5.9.2 deduped
+│ ├─┬ ts-api-utils@2.1.0
+│ │ └── typescript@5.9.2 deduped
+│ └── typescript@5.9.2 deduped
+├─┬ @typescript-eslint/parser@8.45.0
+│ ├─┬ @typescript-eslint/typescript-estree@8.45.0
+│ │ ├─┬ @typescript-eslint/project-service@8.45.0
+│ │ │ └── typescript@5.9.2 deduped
+│ │ ├─┬ @typescript-eslint/tsconfig-utils@8.45.0
+│ │ │ └── typescript@5.9.2 deduped
+│ │ └── typescript@5.9.2 deduped
+│ └── typescript@5.9.2 deduped
+└── typescript@5.9.2
+
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
 -> indiquer le nombre de vivres mangés ?
