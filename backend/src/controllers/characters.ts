@@ -6,6 +6,36 @@ import { CharacterService } from "../services/character.service";
 
 const characterService = new CharacterService();
 
+export const getActiveCharacterByDiscordId: RequestHandler = async (req, res, next) => {
+  try {
+    const { discordId, townId } = req.params;
+    
+    if (!discordId || !townId) {
+      throw createHttpError(400, "Les paramètres discordId et townId sont requis");
+    }
+
+    // Trouver l'utilisateur par son ID Discord
+    const user = await prisma.user.findUnique({
+      where: { discordId },
+    });
+
+    if (!user) {
+      throw createHttpError(404, "Utilisateur non trouvé");
+    }
+
+    // Récupérer le personnage actif
+    const character = await characterService.getActiveCharacter(user.id, townId);
+    
+    if (!character) {
+      throw createHttpError(404, "Aucun personnage actif trouvé pour cet utilisateur dans cette ville");
+    }
+
+    res.status(200).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const upsertCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { userId, townId, name, roleIds } = req.body;

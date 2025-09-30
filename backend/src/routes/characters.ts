@@ -3,6 +3,9 @@ import * as CharacterController from "../controllers/characters";
 
 const router = express.Router();
 
+// Récupérer le personnage actif d'un utilisateur par son ID Discord et l'ID de la ville
+router.get("/active/:discordId/:townId", CharacterController.getActiveCharacterByDiscordId);
+
 // Créer ou mettre à jour un personnage
 router.post("/", CharacterController.upsertCharacter);
 

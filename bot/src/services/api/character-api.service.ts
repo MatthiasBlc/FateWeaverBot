@@ -48,42 +48,23 @@ export class CharacterAPIService extends BaseAPIService {
    */
   public async getActiveCharacter(discordId: string, townId: string): Promise<Character | null> {
     try {
-      // D'abord, récupérer l'utilisateur par son ID Discord
-      const user = await this.get<User>(`/users/discord/${discordId}`);
+      // Utiliser directement l'endpoint qui récupère le personnage actif
+      const response = await this.get<Character>(`/characters/active/${discordId}/${townId}`);
       
-      if (!user || !user.id) {
-        logger.warn("No user found for Discord ID:", { discordId });
+      if (!response) {
+        logger.warn("No active character found for user:", { discordId, townId });
         return null;
       }
-
-      // Ensuite, récupérer les personnages de la ville
-      const characters = await this.getTownCharacters(townId);
-
-      // S'assurer que characters est un tableau
-      if (!Array.isArray(characters)) {
-        throw new Error('Expected an array of characters but received something else');
-      }
-
-      // Trouver le personnage actif de l'utilisateur
-      const activeCharacter = characters.find((char: any) => 
-        char.userId === user.id && char.isActive
-      );
-
-      if (!activeCharacter) {
-        logger.warn("No active character found for user:", { 
-          userId: user.id, 
-          discordId,
-          townId,
-          characters: characters.map((c: any) => ({
-            id: c.id,
-            userId: c.userId,
-            isActive: c.isActive,
-            name: c.name
-          }))
-        });
-      }
-
-      return activeCharacter || null;
+      
+      logger.info(`[getActiveCharacter] Active character found:`, {
+        discordId,
+        townId,
+        characterId: response.id,
+        characterName: response.name,
+        isActive: response.isActive
+      });
+      
+      return response;
     } catch (error) {
       logger.error("Error fetching active character:", {
         discordId,
