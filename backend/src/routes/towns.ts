@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  upsertCity,
+  upsertTown,
   getTownByGuildId,
   getTownById,
   getAllTowns,
@@ -11,7 +11,7 @@ import { requireAuthOrInternal } from "../middleware/auth";
 const router = express.Router();
 
 // Crée ou met à jour une ville (principalement utilisé en interne)
-router.post("/", requireAuthOrInternal, upsertCity);
+router.post("/", requireAuthOrInternal, upsertTown);
 
 // Récupère une ville par l'ID Discord de sa guilde
 router.get("/guild/:guildId", requireAuthOrInternal, getTownByGuildId);

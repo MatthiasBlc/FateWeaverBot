@@ -66,7 +66,7 @@ export class CharacterAPIService extends BaseAPIService {
 
       // Trouver le personnage actif de l'utilisateur
       const activeCharacter = characters.find((char: any) => 
-        char.userId === user.id && char.isActive === true
+        char.userId === user.id && char.isActive
       );
 
       if (!activeCharacter) {

@@ -17,58 +17,7 @@ type CharacterWithRelations = Prisma.CharacterGetPayload<{
   };
 }>;
 
-type TransactionCharacter = {
-  id: string;
-  name: string | null;
-  userId: string;
-  townId: string;
-  paTotal: number;
-  lastPaUpdate: Date;
-  hungerLevel: number;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: string;
-    discordId: string;
-    username: string;
-    discriminator: string;
-    globalName: string | null;
-    avatar: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  town: {
-    id: string;
-    name: string;
-    foodStock: number;
-    guildId: string;
-    createdAt: Date;
-    updatedAt: Date;
-    guild: {
-      id: string;
-      discordGuildId: string;
-      name: string;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-  };
-  characterRoles: Array<{
-    id: string;
-    characterId: string;
-    roleId: string;
-    assignedAt: Date;
-    username: string;
-    roleName: string;
-    createdAt: Date;
-    updatedAt: Date;
-    role: {
-      id: string;
-      discordId: string;
-      name: string;
-      color: string | null;
-    };
-  }>;
-};
+type TransactionCharacter = Prisma.CharacterGetPayload<{ include: { user: true, town: { include: { guild: true } }, characterRoles: { include: { role: true } } } }>;
 
 export function toCharacterDto(
   character: CharacterWithRelations | TransactionCharacter

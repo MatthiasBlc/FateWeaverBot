@@ -48,20 +48,13 @@ export async function checkCharacterStatus(
 
     const townId = guildWithTown.town.id;
 
-    // Vérifier si l'utilisateur a besoin de créer un personnage
-    const needsCreationResponse = await httpClient.get(`/characters/needs-creation/${user.id}/${townId}`)
-      .then(response => response.data)
-      .catch(() => ({ needsCreation: true }));
+    // Récupérer le personnage actif de l'utilisateur (il doit toujours y en avoir un ou aucun)
+    const activeCharacter = await httpClient.get(`/characters/town/${townId}`)
+      .then(response => response.data?.find((char: any) => char.userId === user.id && char.isActive))
+      .catch(() => null);
 
-    const needsCreation = needsCreationResponse.needsCreation;
-
-    // Vérifier si l'utilisateur a AU MOINS un personnage (mort ou vivant)
-    const userCharacters = await httpClient.get(`/characters/town/${townId}`)
-      .then(response => response.data?.filter((char: any) => char.userId === user.id))
-      .catch(() => []);
-
-    if (needsCreation && userCharacters.length === 0) {
-      // L'utilisateur n'a vraiment aucun personnage - afficher le modal de création
+    // CAS 1: Aucun personnage actif -> l'utilisateur doit créer un personnage
+    if (!activeCharacter) {
       return {
         needsCreation: true,
         canReroll: false,
@@ -69,63 +62,35 @@ export async function checkCharacterStatus(
       };
     }
 
-    // Récupérer les personnages rerollables
-    const rerollableCharacters = await httpClient.get(`/characters/rerollable/${user.id}/${townId}`)
-      .then(response => response.data)
-      .catch(() => []);
-
-    // Vérifier si l'utilisateur a un personnage actif (vivant et actif)
-    const activeCharacter = await httpClient.get(`/characters/town/${townId}`)
-      .then(response => response.data?.find((char: any) => char.userId === user.id && char.isActive && !char.isDead))
-      .catch(() => null);
-
-    // Vérifier si l'utilisateur a un personnage mort avec permission de reroll
-    const deadCharacterWithReroll = userCharacters.find((char: any) => char.isDead && char.canReroll);
-
-    // Si l'utilisateur a un personnage mort avec permission de reroll, afficher le modal de reroll
-    if (deadCharacterWithReroll) {
+    // CAS 2: Le personnage actif est mort avec permission de reroll -> modal de reroll
+    if (activeCharacter.isDead && activeCharacter.canReroll) {
       return {
         needsCreation: false,
         canReroll: true,
         hasActiveCharacter: false,
-        character: deadCharacterWithReroll,
-        rerollableCharacters: [deadCharacterWithReroll]
+        character: activeCharacter,
+        rerollableCharacters: [activeCharacter]
       };
     }
 
-    // Vérifier si l'utilisateur a un personnage mort sans permission de reroll
-    const deadCharacter = userCharacters.find((char: any) => char.isDead);
-    if (deadCharacter) {
+    // CAS 3: Le personnage actif est mort sans permission de reroll -> bloqué
+    if (activeCharacter.isDead && !activeCharacter.canReroll) {
       return {
         needsCreation: false,
         canReroll: false,
         hasActiveCharacter: false,
-        character: deadCharacter,
-        rerollableCharacters: []
-      };
-    }
-
-    // Si l'utilisateur a un personnage actif, tout va bien
-    if (activeCharacter) {
-      return {
-        needsCreation: false,
-        canReroll: false,
-        hasActiveCharacter: true,
         character: activeCharacter,
         rerollableCharacters: []
       };
     }
 
-    // Si on arrive ici, l'utilisateur n'a pas de personnage actif ni de personnage mort avec reroll
-    // On vérifie s'il a des personnages rerollables
-    const hasRerollable = rerollableCharacters && rerollableCharacters.length > 0;
-    
+    // CAS 4: Le personnage actif est vivant -> tout va bien
     return {
       needsCreation: false,
-      canReroll: hasRerollable,
-      hasActiveCharacter: false,
-      character: hasRerollable ? rerollableCharacters[0] : null,
-      rerollableCharacters: hasRerollable ? rerollableCharacters : []
+      canReroll: false,
+      hasActiveCharacter: true,
+      character: activeCharacter,
+      rerollableCharacters: []
     };
 
   } catch (error) {

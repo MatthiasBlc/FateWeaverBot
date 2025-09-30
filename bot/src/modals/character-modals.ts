@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 import { apiService } from "../services/api";
 import { logger } from "../services/logger";
+import { Town, Character } from "../types/api-types";
 
 /**
  * Modal pour créer un nouveau personnage
@@ -87,7 +88,7 @@ export async function handleCharacterCreation(
     );
 
     // Get or create town
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as Town;
 
     if (!town) {
       await interaction.reply({
@@ -98,11 +99,11 @@ export async function handleCharacterCreation(
     }
 
     // Create character
-    const character = await apiService.createCharacter({
+    const character = (await apiService.createCharacter({
       name: characterName.trim(),
       userId: user.id,
       townId: town.id,
-    });
+    })) as Character;
 
     logger.info("Character created successfully", {
       characterId: character.id,
@@ -161,7 +162,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     );
 
     // Get town
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as Town;
 
     if (!town) {
       await interaction.reply({
@@ -172,11 +173,11 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     }
 
     // Create reroll character
-    const newCharacter = await apiService.createRerollCharacter({
+    const newCharacter = (await apiService.createRerollCharacter({
       userId: user.id,
       townId: town.id,
       name: newCharacterName.trim(),
-    });
+    })) as Character;
 
     logger.info("Reroll character created successfully", {
       newCharacterId: newCharacter.id,
@@ -248,7 +249,7 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
     // Check if user needs character creation
     const needsCreation = await apiService.needsCharacterCreation(
       user.id,
-      town.id
+      (town as Town).id
     );
 
     if (needsCreation) {
@@ -299,10 +300,10 @@ export async function checkAndPromptReroll(interaction: any) {
     }
 
     // Check if user has rerollable characters
-    const rerollableCharacters = await apiService.getRerollableCharacters(
+    const rerollableCharacters = (await apiService.getRerollableCharacters(
       user.id,
-      town.id
-    );
+      (town as Town).id
+    )) as Character[];
 
     if (rerollableCharacters && rerollableCharacters.length > 0) {
       const modal = createRerollModal();
