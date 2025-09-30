@@ -25,7 +25,9 @@ export function createCharacterCreationModal() {
     .setMinLength(1)
     .setMaxLength(50);
 
-  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    nameInput
+  );
 
   modal.addComponents([firstRow]);
 
@@ -49,7 +51,9 @@ export function createRerollModal() {
     .setMinLength(1)
     .setMaxLength(50);
 
-  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    nameInput
+  );
 
   modal.addComponents([firstRow]);
 
@@ -59,9 +63,13 @@ export function createRerollModal() {
 /**
  * Gère la soumission du modal de création de personnage
  */
-export async function handleCharacterCreation(interaction: ModalSubmitInteraction) {
+export async function handleCharacterCreation(
+  interaction: ModalSubmitInteraction
+) {
   try {
-    const characterName = interaction.fields.getTextInputValue("character_name_input");
+    const characterName = interaction.fields.getTextInputValue(
+      "character_name_input"
+    );
 
     if (!characterName.trim()) {
       await interaction.reply({
@@ -107,20 +115,23 @@ export async function handleCharacterCreation(interaction: ModalSubmitInteractio
       content: `✅ Bienvenue **${character.name}** !\nVotre personnage a été créé avec succès dans **${town.name}**.\n\n**Statistiques initiales :**\n❤️ Vie : Sain\n⚡ PA : 2/4\n\nVous pouvez maintenant utiliser toutes les commandes du bot !`,
       flags: ["Ephemeral"],
     });
-
   } catch (error) {
     logger.error("Error creating character:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : error,
     });
 
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la création de votre personnage. Veuillez réessayer.",
+      content:
+        "❌ Une erreur est survenue lors de la création de votre personnage. Veuillez réessayer.",
       flags: ["Ephemeral"],
     });
   }
@@ -131,7 +142,8 @@ export async function handleCharacterCreation(interaction: ModalSubmitInteractio
  */
 export async function handleReroll(interaction: ModalSubmitInteraction) {
   try {
-    const newCharacterName = interaction.fields.getTextInputValue("reroll_name_input");
+    const newCharacterName =
+      interaction.fields.getTextInputValue("reroll_name_input");
 
     if (!newCharacterName.trim()) {
       await interaction.reply({
@@ -177,26 +189,33 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
       content: `✨ **${newCharacter.name}** est né(e) !\n\nVotre nouveau personnage est maintenant actif.\n\n**Statistiques initiales :**\n❤️ Vie : Sain\n⚡ PA : 2/4\n\nVous pouvez continuer votre aventure !`,
       flags: ["Ephemeral"],
     });
-
   } catch (error) {
     logger.error("Error creating reroll character:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : error,
     });
 
-    if (error instanceof Error && error.message.includes("No reroll permission")) {
+    if (
+      error instanceof Error &&
+      error.message.includes("No reroll permission")
+    ) {
       await interaction.reply({
-        content: "❌ Vous n'avez pas l'autorisation de créer un nouveau personnage. Contactez un administrateur pour obtenir l'autorisation de reroll.",
+        content:
+          "❌ Vous n'avez pas l'autorisation de créer un nouveau personnage. Contactez un administrateur pour obtenir l'autorisation de reroll.",
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.reply({
-        content: "❌ Une erreur est survenue lors de la création de votre nouveau personnage. Veuillez réessayer.",
+        content:
+          "❌ Une erreur est survenue lors de la création de votre nouveau personnage. Veuillez réessayer.",
         flags: ["Ephemeral"],
       });
     }
@@ -227,7 +246,10 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
     }
 
     // Check if user needs character creation
-    const needsCreation = await apiService.needsCharacterCreation(user.id, town.id);
+    const needsCreation = await apiService.needsCharacterCreation(
+      user.id,
+      town.id
+    );
 
     if (needsCreation) {
       const modal = createCharacterCreationModal();
@@ -240,11 +262,14 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
     logger.error("Error checking character creation need:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : error,
     });
     return false;
   }
@@ -274,7 +299,10 @@ export async function checkAndPromptReroll(interaction: any) {
     }
 
     // Check if user has rerollable characters
-    const rerollableCharacters = await apiService.getRerollableCharacters(user.id, town.id);
+    const rerollableCharacters = await apiService.getRerollableCharacters(
+      user.id,
+      town.id
+    );
 
     if (rerollableCharacters && rerollableCharacters.length > 0) {
       const modal = createRerollModal();
@@ -287,11 +315,14 @@ export async function checkAndPromptReroll(interaction: any) {
     logger.error("Error checking reroll eligibility:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : error,
     });
     return false;
   }

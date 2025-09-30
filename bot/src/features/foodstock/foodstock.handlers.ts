@@ -1,17 +1,27 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type GuildMember } from "discord.js";
+import {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  type GuildMember,
+} from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
+import { getActiveCharacterForUser } from "../../utils/character";
+import type { Town } from "../admin/character-admin.handlers";
 
 export async function handleViewFoodStockCommand(interaction: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
 
   try {
-    // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    // Récupérer les informations de la ville
+    const townResponse = await apiService.getTownByGuildId(
+      interaction.guildId!
+    );
 
-    if (!town) {
+    if (!townResponse) {
       await interaction.reply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
         flags: ["Ephemeral"],
@@ -19,13 +29,16 @@ export async function handleViewFoodStockCommand(interaction: any) {
       return;
     }
 
+    // Type assertion since we've already checked townResponse exists
+    const town = townResponse as Town;
+
     // Récupérer le personnage de l'utilisateur
     let character = null;
     let showEatButton = false;
     let characterHungerStatus = "";
 
     try {
-      character = await apiService.getActiveCharacter(user.id, town.id);
+      character = await getActiveCharacterForUser(interaction);
 
       // Déterminer si le bouton doit être affiché et le statut de faim
       if (character) {
@@ -98,17 +111,22 @@ export async function handleViewFoodStockCommand(interaction: any) {
     let components: any[] = [];
     if (showEatButton && town.foodStock > 0) {
       const eatButton = new ButtonBuilder()
-        .setCustomId('eat_food')
-        .setLabel('🍽️ Manger')
+        .setCustomId("eat_food")
+        .setLabel("🍽️ Manger")
         .setStyle(ButtonStyle.Primary);
 
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(eatButton);
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        eatButton
+      );
 
       components = [row];
     }
 
-    await interaction.reply({ embeds: [embed], components, flags: ["Ephemeral"] });
+    await interaction.reply({
+      embeds: [embed],
+      components,
+      flags: ["Ephemeral"],
+    });
   } catch (error: any) {
     logger.error("Erreur lors de la récupération du stock de foodstock:", {
       guildId: interaction.guildId,

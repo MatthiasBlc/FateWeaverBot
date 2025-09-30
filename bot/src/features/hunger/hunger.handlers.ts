@@ -2,13 +2,21 @@ import { EmbedBuilder, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { sendLogMessage } from "../../utils/channels";
-import { getHungerLevelText, getHungerEmoji, getHungerColor } from "../../utils/hunger";
+import {
+  getHungerLevelText,
+  getHungerEmoji,
+  getHungerColor,
+} from "../../utils/hunger";
+import { getActiveCharacterForUser } from "../../utils/character";
 import type { EatResult } from "./hunger.types";
 
 /**
  * Crée un embed pour afficher le résultat d'un repas
  */
-function createEatEmbed(eatResult: EatResult, characterName: string): EmbedBuilder {
+function createEatEmbed(
+  eatResult: EatResult,
+  characterName: string
+): EmbedBuilder {
   const hungerLevelText = getHungerLevelText(eatResult.character.hungerLevel);
   const hungerEmoji = getHungerEmoji(eatResult.character.hungerLevel);
 
@@ -36,30 +44,16 @@ function createEatEmbed(eatResult: EatResult, characterName: string): EmbedBuild
     .setTimestamp();
 }
 
-export async function handleEatCommand(interaction: any) {
+export async function handleEatCommand(interaction: any, character: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
 
-  let character: any = null;
-
   try {
-    // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
-
-    if (!town) {
-      await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
-    // Récupérer le personnage actif de l'utilisateur
-    character = await apiService.getActiveCharacter(user.id, town.id);
-
+    // Le personnage actif est maintenant passé en paramètre par le middleware
     if (!character) {
       await interaction.reply({
-        content: "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+        content:
+          "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
         flags: ["Ephemeral"],
       });
       return;
@@ -136,30 +130,16 @@ export async function handleEatCommand(interaction: any) {
 }
 
 // Fonction pour gérer le bouton de nourriture (pour les interactions de boutons)
-export async function handleEatButton(interaction: any) {
+export async function handleEatButton(interaction: any, character: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
 
-  let character: any = null;
-
   try {
-    // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
-
-    if (!town) {
-      await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        components: [],
-      });
-      return;
-    }
-
-    // Récupérer le personnage actif de l'utilisateur
-    character = await apiService.getActiveCharacter(user.id, town.id);
-
+    // Le personnage actif est maintenant passé en paramètre par le middleware
     if (!character) {
       await interaction.editReply({
-        content: "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+        content:
+          "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
         components: [],
       });
       return;
@@ -174,7 +154,7 @@ export async function handleEatButton(interaction: any) {
     // Modifier la réponse originale avec l'embed et supprimer les boutons
     await interaction.editReply({
       embeds: [embed],
-      components: [] // Supprimer les boutons
+      components: [], // Supprimer les boutons
     });
 
     // Envoyer le message de log
@@ -212,7 +192,7 @@ export async function handleEatButton(interaction: any) {
 
       await interaction.editReply({
         embeds: [embed],
-        components: [] // Supprimer les boutons même en cas d'erreur
+        components: [], // Supprimer les boutons même en cas d'erreur
       });
       return;
     }
@@ -238,7 +218,7 @@ export async function handleEatButton(interaction: any) {
     await interaction.editReply({
       content: errorMessage,
       embeds: [],
-      components: []
+      components: [],
     });
   }
 }

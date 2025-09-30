@@ -17,7 +17,7 @@ import { checkAdmin } from "../../utils/roles";
 import { getHungerLevelText } from "../../utils/hunger";
 
 // Interfaces pour typer les données
-interface Character {
+export interface Character {
   id: string;
   name: string;
   paTotal: number;
@@ -43,7 +43,7 @@ interface Character {
   };
 }
 
-interface Town {
+export interface Town {
   id: string;
   name: string;
   foodStock: number;

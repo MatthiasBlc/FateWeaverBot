@@ -14,9 +14,9 @@ export async function getLogChannel(
 ): Promise<TextChannel | null> {
   try {
     // Récupérer les informations de la guilde depuis la base de données
-    const guild = await apiService.getGuildByDiscordId(guildId);
+    const guild = await apiService.getGuildByDiscordId(guildId) as { logChannelId?: string } | null;
 
-    if (!guild || !guild.logChannelId) {
+    if (!guild || typeof guild !== 'object' || !guild.logChannelId) {
       return null;
     }
 
@@ -27,7 +27,7 @@ export async function getLogChannel(
 
     if (!channel || channel.type !== 0) {
       logger.warn(
-        `Log channel ${guild.logChannelId} not found or not a text channel for guild ${guildId}`
+        `Log channel ${guild?.logChannelId || 'unknown'} not found or not a text channel for guild ${guildId}`
       );
       return null;
     }

@@ -14,9 +14,11 @@ export async function handleProfileCommand(interaction: any) {
 
   try {
     // Récupérer la ville d'abord
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as {
+      id: string;
+    } | null;
 
-    if (!town) {
+    if (!town || typeof town !== "object" || !("id" in town)) {
       await interaction.reply({
         content: "❌ Impossible de trouver la ville pour ce serveur.",
         flags: ["Ephemeral"],
@@ -33,13 +35,41 @@ export async function handleProfileCommand(interaction: any) {
 
     // Essayer de récupérer le personnage actif
     try {
-      const characterStatus = await apiService.checkCharacterStatus(user.id, interaction.guildId!, interaction.client);
+      const characterStatus = (await apiService.checkCharacterStatus(
+        user.id,
+        interaction.guildId!,
+        interaction.client
+      )) as {
+        hasActiveCharacter: boolean;
+        character?: {
+          id: string;
+          name: string;
+          roles?: Array<{ discordId: string; name: string }>;
+          hungerLevel: number;
+          paTotal: number;
+          canReroll: boolean;
+          lastPaUpdate: string;
+        };
+        needsCreation?: boolean;
+        canReroll?: boolean;
+      };
+
+      interface ActionPointsData {
+        points: number;
+        lastUpdated: string;
+      }
+      
+      type ActionPointsResponse = {
+        success: boolean;
+        data: ActionPointsData;
+      };
 
       if (characterStatus.hasActiveCharacter && characterStatus.character) {
         const character = characterStatus.character;
 
         // Récupérer les points d'action du personnage
-        const actionPointsData = await apiService.getActionPoints(character.id);
+        const actionPointsResponse = await apiService.getActionPoints(character.id) as ActionPointsResponse;
+        const actionPointsData = actionPointsResponse.data;
 
         // Calculer le temps restant avant la prochaine mise à jour
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
@@ -54,7 +84,7 @@ export async function handleProfileCommand(interaction: any) {
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
-            lastUpdated: actionPointsData?.lastUpdated || new Date(),
+            lastUpdated: actionPointsData?.lastUpdated ? new Date(actionPointsData.lastUpdated) : new Date(),
           },
           timeUntilUpdate,
           user: {
@@ -80,7 +110,8 @@ export async function handleProfileCommand(interaction: any) {
         return;
       } else if (characterStatus.canReroll) {
         await interaction.reply({
-          content: "⚠️ Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.",
+          content:
+            "⚠️ Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.",
           flags: ["Ephemeral"],
         });
         return;
@@ -90,7 +121,8 @@ export async function handleProfileCommand(interaction: any) {
         const character = characterStatus.character;
 
         // Récupérer les points d'action du personnage
-        const actionPointsData = await apiService.getActionPoints(character.id);
+        const actionPointsResponse = await apiService.getActionPoints(character.id) as ActionPointsResponse;
+        const actionPointsData = actionPointsResponse.data;
 
         // Calculer le temps restant avant la prochaine mise à jour
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
@@ -105,7 +137,7 @@ export async function handleProfileCommand(interaction: any) {
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
-            lastUpdated: actionPointsData?.lastUpdated || new Date(),
+            lastUpdated: actionPointsData?.lastUpdated ? new Date(actionPointsData.lastUpdated) : new Date(),
           },
           timeUntilUpdate,
           user: {
@@ -128,25 +160,26 @@ export async function handleProfileCommand(interaction: any) {
       logger.warn("Erreur lors de la vérification du statut du personnage:", {
         userId: user.id,
         guildId: interaction.guildId,
-        error: error instanceof Error ? error.message : error
+        error: error instanceof Error ? error.message : error,
       });
     }
 
     // Si on arrive ici, c'est qu'il y a un problème avec le statut du personnage
     await interaction.reply({
-      content: "❌ Impossible de déterminer l'état de votre personnage. Veuillez contacter un administrateur.",
+      content:
+        "❌ Impossible de déterminer l'état de votre personnage. Veuillez contacter un administrateur.",
       flags: ["Ephemeral"],
     });
-
   } catch (error) {
     logger.error("Erreur lors de l'exécution de la commande profil:", {
       userId: user.id,
       guildId: interaction.guildId,
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
     });
 
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de l'affichage de votre profil.",
+      content:
+        "❌ Une erreur est survenue lors de l'affichage de votre profil.",
       flags: ["Ephemeral"],
     });
   }
@@ -178,13 +211,14 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
   const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
 
   // Panneau d'attention pour les PA élevés (3 ou 4)
-  const attentionPanel = (data.actionPoints.points >= 3)
-    ? {
-        name: "⚠️ **ATTENTION**",
-        value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
-        inline: false,
-      }
-    : null;
+  const attentionPanel =
+    data.actionPoints.points >= 3
+      ? {
+          name: "⚠️ **ATTENTION**",
+          value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
+          inline: false,
+        }
+      : null;
 
   // Ajout des champs d'information
   const fields = [

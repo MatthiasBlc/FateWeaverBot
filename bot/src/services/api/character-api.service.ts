@@ -1,6 +1,25 @@
 import { AxiosInstance } from "axios";
 import { BaseAPIService } from "./base-api.service";
 import { logger } from "../logger";
+import { EatResult } from "../../features/hunger/hunger.types";
+
+/**
+ * Interface pour les données de personnage retournées par l'API
+ */
+export interface Character {
+  id: string;
+  name: string;
+  userId: string;
+  townId: string;
+  isActive: boolean;
+  isDead: boolean;
+  canReroll: boolean;
+  hungerLevel: number;
+  paTotal: number;
+  lastPaUpdate: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface User {
   id: string;
@@ -27,7 +46,7 @@ export class CharacterAPIService extends BaseAPIService {
    * @param discordId L'ID Discord de l'utilisateur
    * @param townId L'ID de la ville
    */
-  public async getActiveCharacter(discordId: string, townId: string): Promise<any | null> {
+  public async getActiveCharacter(discordId: string, townId: string): Promise<Character | null> {
     try {
       // D'abord, récupérer l'utilisateur par son ID Discord
       const user = await this.get<User>(`/users/discord/${discordId}`);
@@ -89,7 +108,7 @@ export class CharacterAPIService extends BaseAPIService {
   /**
    * Permet à un personnage de manger
    */
-  public async eatFood(characterId: string) {
+  public async eatFood(characterId: string): Promise<EatResult> {
     return this.post(`/characters/${characterId}/eat`);
   }
 

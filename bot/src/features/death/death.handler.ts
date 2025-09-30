@@ -117,16 +117,22 @@ export async function canUserPerformAction(userId: string, guildId: string): Pro
       "0000"
     );
 
-    const town = await apiService.getTownByGuildId(guildId);
+    const town = await apiService.getTownByGuildId(guildId) as { id: string } | null;
 
-    if (!town) {
+    if (!town || typeof town !== 'object' || !('id' in town)) {
+      logger.warn("No town found for guild", { guildId });
       return false;
     }
 
     // Vérifier si l'utilisateur a un personnage actif
-    const rerollableCharacters = await apiService.getRerollableCharacters(user.id, town.id);
+    const rerollableCharacters = await apiService.getRerollableCharacters(userId, town.id) as unknown[] | null;
+    
+    if (!Array.isArray(rerollableCharacters)) {
+      logger.warn("Invalid rerollable characters response", { userId, townId: town.id });
+      return false;
+    }
 
-    return rerollableCharacters && rerollableCharacters.length > 0;
+    return rerollableCharacters.length > 0;
   } catch (error) {
     logger.error("Error checking if user can perform action", {
       userId,

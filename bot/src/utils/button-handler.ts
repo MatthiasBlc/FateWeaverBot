@@ -1,4 +1,5 @@
 import { logger } from "../services/logger.js";
+import { apiService } from "../services/api/index.js";
 
 /**
  * Gestionnaire centralisé des interactions de boutons
@@ -36,7 +37,17 @@ export class ButtonHandler {
 
       try {
         const { handleEatButton } = await import('../features/hunger/hunger.handlers.js');
-        await handleEatButton(interaction);
+        // Get the character for the user
+        const character = await apiService.getActiveCharacter(interaction.user.id, interaction.guildId);
+        if (!character) {
+          await interaction.editReply({
+            content: "❌ Aucun personnage actif trouvé.",
+            embeds: [],
+            components: []
+          });
+          return;
+        }
+        await handleEatButton(interaction, character);
       } catch (error) {
         logger.error("Error handling eat button:", { error });
         await interaction.editReply({
