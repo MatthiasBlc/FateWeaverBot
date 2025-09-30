@@ -42,12 +42,12 @@ export async function handleViewFoodStockCommand(interaction: any) {
 
       // Déterminer si le bouton doit être affiché et le statut de faim
       if (character) {
-        if (character.hungerLevel >= 4) {
-          // Personnage mort (niveau 4 = mort selon backend)
+        if (character.hungerLevel === 0) {
+          // Personnage mort (niveau 0 = mort selon backend)
           showEatButton = false;
           characterHungerStatus = "💀 Mort - ne peut plus manger";
-        } else if (character.hungerLevel === 0) {
-          // Personnage en pleine forme (niveau 0 = bonne santé selon backend)
+        } else if (character.hungerLevel === 4) {
+          // Personnage en pleine forme (niveau 4 = bonne santé selon backend)
           showEatButton = false;
           characterHungerStatus = "😊 En pleine forme";
         } else {
