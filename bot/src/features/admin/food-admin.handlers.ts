@@ -69,71 +69,39 @@ export async function handleRemoveFoodCommand(
       return;
     }
 
+    logger.info("Ville récupérée avec succès", {
+      guildId: interaction.guildId,
+      townId: town.id,
+      townName: town.name,
+      currentFoodStock: town.foodStock,
+    });
+
     // Créer et afficher le modal de retrait
+    logger.info("Création du modal pour le retrait de foodstock");
     const modal = createRemoveFoodModal();
-    await interaction.showModal(modal);
-
-    // Gérer la soumission du modal
-    const modalFilter = (i: ModalSubmitInteraction) =>
-      i.customId === "remove_food_modal" && i.user.id === interaction.user.id;
-
+    
     try {
-      const modalResponse = await interaction.awaitModalSubmit({
-        filter: modalFilter,
-        time: 300000, // 5 minutes pour répondre
-      }) as ModalSubmitInteraction;
-
-      const amount = parseInt(
-        modalResponse.fields.getTextInputValue("amount_input"),
-        10
-      );
-
-      if (isNaN(amount) || amount <= 0) {
-        await modalResponse.reply({
-          content: "❌ Veuillez entrer un nombre valide (supérieur à 0).",
-          ephemeral: true,
-        });
-        return;
-      }
-
-      if (town.foodStock < amount) {
-        await modalResponse.reply({
-          content: `❌ La ville n'a que **${town.foodStock}** foodstock. Vous ne pouvez pas en retirer **${amount}**.`,
-          ephemeral: true,
-        });
-        return;
-      }
-
-      // Mettre à jour le stock de foodstock
-      const updatedTown = await apiService.updateTownFoodStock(
-        town.id,
-        town.foodStock - amount
-      ) as Town;
-
-      // Créer l'embed de confirmation
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle("✅ Foodstock Retiré")
-        .setDescription(`**${amount}** foodstock ont été retirés de la ville **${town.name}**.`)
-        .addFields(
-          { name: "Ancien stock", value: `${town.foodStock}`, inline: true },
-          { name: "Montant retiré", value: `-${amount}`, inline: true },
-          { name: "Nouveau stock", value: `${updatedTown.foodStock}`, inline: true }
-        )
-        .setTimestamp();
-
-      await modalResponse.reply({ embeds: [embed] });
-
+      logger.info("Affichage du modal de retrait à l'utilisateur");
+      await interaction.showModal(modal);
+      
+      // Ne pas attendre la réponse ici, elle sera gérée par le modalHandler
+      await interaction.reply({
+        content: "Veuillez remplir le formulaire qui vient de s'ouvrir.",
+        ephemeral: true
+      });
+      
     } catch (error) {
-      if (error instanceof Error) {
-        logger.error("Erreur lors de la soumission du modal", {
-          error: error.message,
-          stack: error.stack,
+      logger.error("Erreur lors de l'affichage du modal de retrait de foodstock:", {
+        error: error instanceof Error ? error.message : error,
+      });
+      
+      if (!interaction.replied) {
+        await interaction.reply({
+          content: "❌ Une erreur est survenue lors de l'ouverture du formulaire.",
+          ephemeral: true
         });
       }
-      // Ne rien faire si l'utilisateur n'a pas répondu au modal
     }
-
   } catch (error) {
     logger.error("Erreur dans handleRemoveFoodCommand", {
       error: error instanceof Error ? error.message : error,
@@ -143,7 +111,7 @@ export async function handleRemoveFoodCommand(
     
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Une erreur est survenue lors du retrait du foodstock.",
+        content: "❌ Une erreur est survenue lors de la préparation de la commande.",
         ephemeral: true,
       });
     }
@@ -199,96 +167,43 @@ export async function handleAddFoodCommand(
       currentFoodStock: town.foodStock,
     });
 
-    // Créer un modal pour demander la quantité de foodstock à retirer
-    logger.info("Création du modal pour le retrait de foodstock");
-    const modal = createRemoveFoodModal();
-
-    logger.info("Affichage du modal à l'utilisateur");
-    await interaction.showModal(modal);
-
-    // Gérer la soumission du modal
-    const modalFilter = (i: ModalSubmitInteraction) =>
-      i.customId === "remove_food_modal" && i.user.id === interaction.user.id;
-
+    // Créer et afficher le modal d'ajout
+    logger.info("Création du modal pour l'ajout de foodstock");
+    const modal = createFoodModal();
+    
     try {
-      const modalResponse = await interaction.awaitModalSubmit({
-        filter: modalFilter,
-        time: 300000, // 5 minutes pour répondre
-      }) as ModalSubmitInteraction;
-
-      const amount = parseInt(
-        modalResponse.fields.getTextInputValue("amount_input"),
-        10
-      );
-
-      if (isNaN(amount) || amount <= 0) {
-        await modalResponse.reply({
-          content:
-            "❌ Veuillez entrer un nombre valide de foodstock (supérieur à 0).",
-          flags: ["Ephemeral"],
-        });
-        return;
-      }
-
-      if (town.foodStock < amount) {
-        await modalResponse.reply({
-          content: `❌ La ville n'a que **${town.foodStock}** foodstock. Vous ne pouvez pas en retirer **${amount}**.`,
-          flags: ["Ephemeral"],
-        });
-      }
-
-      // Mettre à jour le stock de foodstock
-      const updatedTown = (await apiService.updateTownFoodStock(
-        town.id,
-        town.foodStock + amount
-      )) as Town;
-
-      // Créer l'embed de confirmation
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle("✅ Foodstock Retirés")
-        .setDescription(`**${amount}** foodstock ont été retirés de la ville **${town.name}**.`)
-        .addFields(
-          {
-            name: "Stock précédent",
-            value: `${town.foodStock}`,
-            inline: true,
-          },
-          {
-            name: "Quantité retirée",
-            value: `-${amount}`,
-            inline: true,
-          },
-          {
-            name: "Nouveau stock",
-            value: `${updatedTown.foodStock}`,
-            inline: true,
-          }
-        )
-        .setTimestamp();
-
-      await modalResponse.reply({ embeds: [embed] });
+      logger.info("Affichage du modal d'ajout à l'utilisateur");
+      await interaction.showModal(modal);
+      
+      // Ne pas attendre la réponse ici, elle sera gérée par le modalHandler
+      await interaction.reply({
+        content: "Veuillez remplir le formulaire qui vient de s'ouvrir.",
+        ephemeral: true
+      });
+      
     } catch (error) {
-      logger.error(
-        "Erreur lors de la soumission du modal de retrait de foodstock:",
-        { error }
-      );
+      logger.error("Erreur lors de l'affichage du modal d'ajout de foodstock:", {
+        error: error instanceof Error ? error.message : error,
+      });
+      
       if (!interaction.replied) {
-        await interaction.followUp({
-          content: "❌ Temps écoulé ou erreur lors de la saisie.",
-          flags: ["Ephemeral"],
+        await interaction.reply({
+          content: "❌ Une erreur est survenue lors de l'ouverture du formulaire.",
+          ephemeral: true
         });
       }
     }
   } catch (error) {
-    logger.error("Erreur lors de la préparation du retrait de foodstock:", {
-      error,
+    logger.error("Erreur lors de la préparation de l'ajout de foodstock:", {
+      error: error instanceof Error ? error.message : error,
     });
-    await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la préparation de la commande.",
-      flags: ["Ephemeral"],
-    });
+    
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: "❌ Une erreur est survenue lors de la préparation de la commande.",
+        ephemeral: true
+      });
+    }
   }
 }
 
@@ -307,9 +222,170 @@ function createFoodModal() {
     .setMaxLength(4);
 
   const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
-  modal.addComponents([firstActionRow]);
+  modal.addComponents(firstActionRow);
 
   return modal;
+}
+
+// Gère la soumission du modal d'ajout de foodstock
+export async function handleAddFoodModal(interaction: ModalSubmitInteraction) {
+  try {
+    await interaction.deferReply({ ephemeral: true });
+
+    const amount = parseInt(
+      interaction.fields.getTextInputValue("amount_input"),
+      10
+    );
+
+    logger.info(`Quantité de foodstock à ajouter: ${amount}`);
+
+    if (isNaN(amount) || amount <= 0) {
+      logger.warn("Montant invalide saisi par l'utilisateur", { amount });
+      await interaction.editReply({
+        content: "❌ Veuillez entrer un nombre valide (supérieur à 0)."
+      });
+      return;
+    }
+
+    // Récupérer la ville du serveur
+    const town = await getTownByGuildId(interaction.guildId || '');
+    if (!town) {
+      await interaction.editReply({
+        content: "❌ Aucune ville trouvée pour ce serveur."
+      });
+      return;
+    }
+
+    // Mettre à jour le stock de foodstock
+    logger.info("Mise à jour du stock de foodstock", {
+      townId: town.id,
+      currentStock: town.foodStock,
+      amountToAdd: amount,
+      newStock: town.foodStock + amount
+    });
+    
+    const updatedTown = await apiService.updateTownFoodStock(
+      town.id,
+      town.foodStock + amount
+    ) as Town;
+
+    // Créer l'embed de confirmation
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle("✅ Foodstock Ajoutés")
+      .setDescription(`**${amount}** foodstock ont été ajoutés à la ville **${town.name}**.`)
+      .addFields(
+        { name: "Ancien stock", value: `${town.foodStock}`, inline: true },
+        { name: "Montant ajouté", value: `+${amount}`, inline: true },
+        { name: "Nouveau stock", value: `${updatedTown.foodStock}`, inline: true }
+      )
+      .setTimestamp();
+
+    await interaction.editReply({ 
+      content: "",
+      embeds: [embed],
+      components: []
+    });
+
+  } catch (error) {
+    logger.error("Erreur dans handleAddFoodModal:", { error });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "❌ Une erreur est survenue lors de l'ajout du foodstock.",
+        ephemeral: true
+      });
+    } else if (interaction.deferred) {
+      await interaction.editReply({
+        content: "❌ Une erreur est survenue lors de l'ajout du foodstock."
+      });
+    }
+  }
+}
+
+// Gère la soumission du modal de retrait de foodstock
+export async function handleRemoveFoodModal(interaction: ModalSubmitInteraction) {
+  try {
+    await interaction.deferReply({ ephemeral: true });
+
+    const amount = parseInt(
+      interaction.fields.getTextInputValue("amount_input"),
+      10
+    );
+
+    logger.info(`Quantité de foodstock à retirer: ${amount}`);
+
+    if (isNaN(amount) || amount <= 0) {
+      logger.warn("Montant invalide saisi par l'utilisateur", { amount });
+      await interaction.editReply({
+        content: "❌ Veuillez entrer un nombre valide (supérieur à 0)."
+      });
+      return;
+    }
+
+    // Récupérer la ville du serveur
+    const town = await getTownByGuildId(interaction.guildId || '');
+    if (!town) {
+      await interaction.editReply({
+        content: "❌ Aucune ville trouvée pour ce serveur."
+      });
+      return;
+    }
+
+    if (town.foodStock < amount) {
+      logger.warn("Tentative de retrait d'un montant supérieur au stock disponible", {
+        requested: amount,
+        available: town.foodStock
+      });
+      await interaction.editReply({
+        content: `❌ La ville n'a que **${town.foodStock}** foodstock. Vous ne pouvez pas en retirer **${amount}**.`
+      });
+      return;
+    }
+
+    // Mettre à jour le stock de foodstock
+    logger.info("Mise à jour du stock de foodstock", {
+      townId: town.id,
+      currentStock: town.foodStock,
+      amountToRemove: amount,
+      newStock: town.foodStock - amount
+    });
+    
+    const updatedTown = await apiService.updateTownFoodStock(
+      town.id,
+      town.foodStock - amount
+    ) as Town;
+
+    // Créer l'embed de confirmation
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle("✅ Foodstock Retirés")
+      .setDescription(`**${amount}** foodstock ont été retirés de la ville **${town.name}**.`)
+      .addFields(
+        { name: "Ancien stock", value: `${town.foodStock}`, inline: true },
+        { name: "Montant retiré", value: `-${amount}`, inline: true },
+        { name: "Nouveau stock", value: `${updatedTown.foodStock}`, inline: true }
+      )
+      .setTimestamp();
+
+    await interaction.editReply({ 
+      content: "",
+      embeds: [embed],
+      components: []
+    });
+
+  } catch (error) {
+    logger.error("Erreur dans handleRemoveFoodModal:", { error });
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "❌ Une erreur est survenue lors du retrait du foodstock.",
+        ephemeral: true
+      });
+    } else if (interaction.deferred) {
+      await interaction.editReply({
+        content: "❌ Une erreur est survenue lors du retrait du foodstock."
+      });
+    }
+  }
 }
 
 function getFoodStockColor(stock: number): number {

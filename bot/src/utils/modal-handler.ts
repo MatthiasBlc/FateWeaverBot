@@ -30,6 +30,48 @@ export class ModalHandler {
    * Enregistre les gestionnaires par défaut
    */
   private registerDefaultHandlers() {
+    // Gestionnaire pour les modals d'ajout de foodstock
+    this.registerHandler('food_modal', async (interaction) => {
+      try {
+        const { handleAddFoodModal } = await import('../features/admin/food-admin.handlers.js');
+        await handleAddFoodModal(interaction);
+      } catch (error) {
+        logger.error("Error handling food modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
+            ephemeral: true,
+          });
+        } else if (interaction.deferred) {
+          await interaction.followUp({
+            content: "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
+            ephemeral: true,
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour les modals de retrait de foodstock
+    this.registerHandler('remove_food_modal', async (interaction) => {
+      try {
+        const { handleRemoveFoodModal } = await import('../features/admin/food-admin.handlers.js');
+        await handleRemoveFoodModal(interaction);
+      } catch (error) {
+        logger.error("Error handling remove food modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
+            ephemeral: true,
+          });
+        } else if (interaction.deferred) {
+          await interaction.followUp({
+            content: "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
+            ephemeral: true,
+          });
+        }
+      }
+    });
+    
     // Gestionnaire pour les modals de création de personnage
     this.registerHandler('character_creation_modal', async (interaction) => {
       try {
