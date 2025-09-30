@@ -2,6 +2,7 @@ import express from "express";
 import {
   upsertGuild,
   getGuildByDiscordId,
+  getGuildById,
   getAllGuilds,
   deleteGuild,
   updateGuildLogChannel,
@@ -15,6 +16,9 @@ router.post("/", requireAuthOrInternal, upsertGuild);
 
 // Récupère une guilde par son ID Discord
 router.get("/discord/:discordId", requireAuthOrInternal, getGuildByDiscordId);
+
+// Récupère une guilde par son ID interne
+router.get("/:id", requireAuthOrInternal, getGuildById);
 
 // Met à jour le salon de logs d'une guilde
 router.patch(

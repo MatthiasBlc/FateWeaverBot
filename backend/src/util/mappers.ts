@@ -4,7 +4,11 @@ import { Prisma } from "@prisma/client";
 type CharacterWithRelations = Prisma.CharacterGetPayload<{
   include: {
     user: true;
-    guild: true;
+    town: {
+      include: {
+        guild: true;
+      };
+    };
     characterRoles: {
       include: {
         role: true;
@@ -17,7 +21,7 @@ type TransactionCharacter = {
   id: string;
   name: string | null;
   userId: string;
-  guildId: string;
+  townId: string;
   paTotal: number;
   lastPaUpdate: Date;
   hungerLevel: number;
@@ -33,12 +37,20 @@ type TransactionCharacter = {
     createdAt: Date;
     updatedAt: Date;
   };
-  guild: {
+  town: {
     id: string;
-    discordGuildId: string;
     name: string;
+    foodStock: number;
+    guildId: string;
     createdAt: Date;
     updatedAt: Date;
+    guild: {
+      id: string;
+      discordGuildId: string;
+      name: string;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   };
   characterRoles: Array<{
     id: string;
@@ -68,7 +80,7 @@ export function toCharacterDto(
     id: character.id,
     name: character.name,
     userId: character.userId,
-    guildId: character.guildId,
+    guildId: character.town.guildId,
     createdAt: character.createdAt,
     updatedAt: character.updatedAt,
     paTotal: character.paTotal || 2,
@@ -83,9 +95,9 @@ export function toCharacterDto(
       avatar: character.user.avatar,
     },
     guild: {
-      id: character.guild.id,
-      discordId: character.guild.discordGuildId,
-      name: character.guild.name,
+      id: character.town.guild.id,
+      discordId: character.town.guild.discordGuildId,
+      name: character.town.guild.name,
     },
   };
 

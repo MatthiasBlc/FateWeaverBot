@@ -114,7 +114,11 @@ async function loadCommandsRecursively(dir: string): Promise<any[]> {
         }
       } catch (error) {
         logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
-          error,
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          } : error,
         });
       }
     }
@@ -151,7 +155,11 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
         }
       } catch (error) {
         logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
-          error,
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          } : error,
         });
       }
     }
@@ -193,7 +201,11 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
           }
         } catch (error) {
           logger.error(`      ❌ Erreur lors du chargement de ${entry.name}/${file.name}:`, {
-            error,
+            error: error instanceof Error ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name
+            } : error,
           });
         }
       }

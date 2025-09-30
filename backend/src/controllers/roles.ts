@@ -172,7 +172,13 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
     // Vérifier que le personnage existe
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      include: { guild: true },
+      include: {
+        town: {
+          include: {
+            guild: true,
+          },
+        },
+      },
     });
 
     if (!character) {
@@ -184,7 +190,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
       const roles = await prisma.role.findMany({
         where: {
           id: { in: roleIds },
-          guildId: character.guildId,
+          guildId: character.town.guildId,
         },
       });
 

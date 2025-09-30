@@ -5,6 +5,7 @@ import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
 import { Collection } from "@discordjs/collection";
 import { getOrCreateGuild } from './services/guilds.service.js';
+
 // Handle button interactions
 async function handleButtonInteraction(interaction: any) {
   const { customId } = interaction;
@@ -33,6 +34,34 @@ async function handleButtonInteraction(interaction: any) {
   } else {
     await interaction.reply({
       content: "Bouton non reconnu.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+// Handle modal interactions
+async function handleModalInteraction(interaction: any) {
+  const { customId } = interaction;
+
+  logger.info(`Modal interaction received: ${customId}`);
+
+  try {
+    if (customId === 'character_creation_modal') {
+      const { handleCharacterCreation } = await import('./modals/character-modals.js');
+      await handleCharacterCreation(interaction);
+    } else if (customId === 'reroll_modal') {
+      const { handleReroll } = await import('./modals/character-modals.js');
+      await handleReroll(interaction);
+    } else {
+      await interaction.reply({
+        content: "Modal non reconnu.",
+        flags: ["Ephemeral"],
+      });
+    }
+  } catch (error) {
+    logger.error("Error handling modal interaction:", { error });
+    await interaction.reply({
+      content: "Une erreur est survenue lors du traitement du formulaire.",
       flags: ["Ephemeral"],
     });
   }
@@ -227,6 +256,17 @@ client.on("interactionCreate", async (interaction) => {
       logger.error("Error handling button interaction:", { error });
       await interaction.reply({
         content: "There was an error with the button interaction!",
+        flags: ["Ephemeral"],
+      });
+    }
+  } else if (interaction.isModalSubmit()) {
+    // Handle modal interactions
+    try {
+      await handleModalInteraction(interaction);
+    } catch (error) {
+      logger.error("Error handling modal interaction:", { error });
+      await interaction.reply({
+        content: "There was an error with the modal submission!",
         flags: ["Ephemeral"],
       });
     }

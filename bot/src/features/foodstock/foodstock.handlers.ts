@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
+import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
 
 export async function handleViewFoodStockCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -24,35 +25,29 @@ export async function handleViewFoodStockCommand(interaction: any) {
     let characterHungerStatus = "";
 
     try {
-      character = await apiService.getOrCreateCharacter(
-        user.id,
-        interaction.guildId!,
-        interaction.guild?.name || "Serveur inconnu",
-        {
-          username: user.username,
-          nickname: member.nickname || null,
-          roles: member.roles.cache
-            .filter((role) => role.id !== interaction.guildId)
-            .map((role) => role.id),
-        },
-        interaction.client
-      );
+      character = await apiService.getActiveCharacter(user.id, town.id);
 
       // Déterminer si le bouton doit être affiché et le statut de faim
-      if (character.hungerLevel >= 4) {
-        // Personnage mort
-        showEatButton = false;
-        characterHungerStatus = "💀 Mort - ne peut plus manger";
-      } else if (character.hungerLevel === 0) {
-        // Personnage en pleine forme
-        showEatButton = false;
-        characterHungerStatus = "😊 En pleine forme";
+      if (character) {
+        if (character.hungerLevel >= 4) {
+          // Personnage mort (niveau 4 = mort selon backend)
+          showEatButton = false;
+          characterHungerStatus = "💀 Mort - ne peut plus manger";
+        } else if (character.hungerLevel === 0) {
+          // Personnage en pleine forme (niveau 0 = bonne santé selon backend)
+          showEatButton = false;
+          characterHungerStatus = "😊 En pleine forme";
+        } else {
+          // Personnage a faim (niveaux 1, 2 ou 3)
+          showEatButton = true;
+          const hungerText = getHungerLevelText(character.hungerLevel);
+          const hungerEmoji = getHungerEmoji(character.hungerLevel);
+          characterHungerStatus = `${hungerEmoji} ${hungerText}`;
+        }
       } else {
-        // Personnage a faim (niveau 1, 2 ou 3)
-        showEatButton = true;
-        const hungerText = getHungerLevelText(character.hungerLevel);
-        const hungerEmoji = getHungerEmoji(character.hungerLevel);
-        characterHungerStatus = `${hungerEmoji} ${hungerText}`;
+        // Pas de personnage actif
+        showEatButton = false;
+        characterHungerStatus = "❌ Aucun personnage actif";
       }
     } catch (error) {
       // Si on ne peut pas récupérer le personnage, afficher le bouton par défaut
@@ -158,36 +153,4 @@ function getFoodStockAdvice(stock: number): string {
   return "🌟 Vivres élevées, profitez-en pour faire des réserves !";
 }
 
-function getHungerLevelText(level: number): string {
-  switch (level) {
-    case 0:
-      return "En bonne santé";
-    case 1:
-      return "Faim";
-    case 2:
-      return "Affamé";
-    case 3:
-      return "Agonie";
-    case 4:
-      return "Mort";
-    default:
-      return "Inconnu";
-  }
-}
-
-function getHungerEmoji(level: number): string {
-  switch (level) {
-    case 0:
-      return "😊";
-    case 1:
-      return "🤤";
-    case 2:
-      return "😕";
-    case 3:
-      return "😰";
-    case 4:
-      return "💀";
-    default:
-      return "❓";
-  }
-}
+// Fonctions supprimées - maintenant dans utils/hunger.ts

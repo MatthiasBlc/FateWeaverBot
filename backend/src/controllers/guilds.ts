@@ -47,46 +47,36 @@ export const upsertGuild: RequestHandler = async (req, res, next) => {
     } else {
       // Créer une nouvelle guilde avec sa ville par défaut
       guild = await prisma.$transaction(async (prisma) => {
-        // Créer d'abord la ville (sans relation avec la guilde pour éviter le conflit)
-        const town = await prisma.town.create({
-          data: {
-            name: `${name} City`, // Nom par défaut de la ville
-            foodStock: 100, // Stock initial de vivres
-            guildId: "", // Temporairement vide
-          },
-        });
-
-        // Puis créer la guilde
+        // Créer d'abord la guilde
         const newGuild = await prisma.guild.create({
           data: {
             discordGuildId: discordId,
             name,
             memberCount: memberCount || 0,
           },
-          include: {
-            roles: true,
-            town: true,
-          },
         });
 
-        // Mettre à jour la ville avec la bonne guildId
-        await prisma.town.update({
-          where: { id: town.id },
+        // Puis créer la ville avec la bonne guildId
+        const town = await prisma.town.create({
           data: {
+            name: `${name} City`, // Nom par défaut de la ville
             guildId: newGuild.id,
           },
         });
 
-        // Recharger la guilde avec la ville mise à jour
-        const finalGuild = await prisma.guild.findUnique({
+        // Mettre à jour la guilde pour inclure la ville
+        const updatedGuild = await prisma.guild.update({
           where: { id: newGuild.id },
+          data: {
+            town: { connect: { id: town.id } },
+          },
           include: {
             roles: true,
             town: true,
           },
         });
 
-        return finalGuild;
+        return updatedGuild;
       });
     }
 
@@ -113,6 +103,38 @@ export const getGuildByDiscordId: RequestHandler = async (req, res, next) => {
             name: "asc",
           },
         },
+        town: true,
+      },
+    });
+
+    if (!guild) {
+      throw createHttpError(404, "Guilde non trouvée");
+    }
+
+    res.status(200).json(guild);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Récupère une guilde par son ID interne
+export const getGuildById: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw createHttpError(400, "Le paramètre id est requis");
+    }
+
+    const guild = await prisma.guild.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          orderBy: {
+            name: "asc",
+          },
+        },
+        town: true,
       },
     });
 
@@ -133,10 +155,10 @@ export const getAllGuilds: RequestHandler = async (req, res, next) => {
       include: {
         _count: {
           select: {
-            characters: true,
             roles: true,
           },
         },
+        town: true,
       },
       orderBy: {
         name: "asc",
@@ -208,7 +230,11 @@ export const deleteGuild: RequestHandler = async (req, res, next) => {
 
     // Supprimer d'abord les personnages et leurs rôles
     const characters = await prisma.character.findMany({
-      where: { guildId: id },
+      where: {
+        town: {
+          guildId: id,
+        },
+      },
       select: { id: true },
     });
 

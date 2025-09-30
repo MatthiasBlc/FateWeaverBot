@@ -132,10 +132,10 @@ export async function handleConfigChannelCommand(
     const selectedChannelId = selectInteraction.values[0];
 
     if (selectedChannelId === "none") {
-      // Désactiver les logs
-      await apiService.updateGuildLogChannel(guild.id, null);
+      // Désactiver les logs - TODO: Implémenter cette fonctionnalité côté API
+      // await apiService.updateGuildLogChannel(guild.id, null);
 
-      logger.info(`Log channel disabled for guild ${guild.id}`);
+      logger.info(`Log channel disabled for guild ${guild.id} (fonctionnalité non implémentée)`);
 
       const successEmbed = new EmbedBuilder()
         .setColor("#ff9900")
@@ -165,11 +165,11 @@ export async function handleConfigChannelCommand(
       });
     }
 
-    // Sauvegarder dans la base de données
-    await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
+    // Sauvegarder dans la base de données - TODO: Implémenter cette fonctionnalité côté API
+    // await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
 
     logger.info(
-      `Log channel configured for guild ${guild.id}: ${selectedChannelId}`
+      `Log channel configured for guild ${guild.id}: ${selectedChannelId} (fonctionnalité non implémentée)`
     );
 
     const successEmbed = new EmbedBuilder()

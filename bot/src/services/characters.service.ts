@@ -6,26 +6,31 @@ import { getOrCreateGuild as getOrCreateGuildSvc } from "./guilds.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
 import { logger } from "./logger";
 
-export async function getOrCreateCharacter(
+/**
+ * Résultat de la vérification de personnage
+ */
+export interface CharacterCheckResult {
+  needsCreation: boolean;
+  canReroll: boolean;
+  hasActiveCharacter: boolean;
+  character?: any;
+  rerollableCharacters?: any[];
+}
+
+/**
+ * Vérifie l'état du personnage d'un utilisateur sans créer automatiquement
+ * Cette fonction est utilisée par le middleware ensureCharacter.ts
+ */
+export async function checkCharacterStatus(
   userId: string,
   guildId: string,
-  guildName: string,
-  characterData: {
-    nickname?: string | null;
-    roles: string[];
-    username?: string;
-  },
   client: Client
-) {
+): Promise<CharacterCheckResult> {
   try {
-    const user = await getOrCreateUserSvc(
-      userId,
-      characterData.username || "",
-      "0000"
-    );
-    if (!user) throw new Error("Utilisateur non trouvé");
-
-    const characterName = characterData.nickname || characterData.username;
+    const user = await getOrCreateUserSvc(userId, "", "0000");
+    if (!user) {
+      throw new Error("Utilisateur non trouvé");
+    }
 
     // Get the guild from the client first
     const guild = client.guilds.cache.get(guildId);
@@ -33,46 +38,103 @@ export async function getOrCreateCharacter(
       throw new Error("Guild not found in client cache");
     }
 
-    // Then handle the database guild
-    let dbGuild;
-    try {
-      dbGuild = await getOrCreateGuildSvc(guildId, guildName, 0);
-    } catch (guildError) {
-      throw new Error("Impossible de vérifier ou créer la guild");
+    // Get guild details to get the townId
+    const guildResponse = await httpClient.get(`/guilds/discord/${guildId}`);
+    const guildWithTown = guildResponse.data;
+
+    if (!guildWithTown?.town?.id) {
+      throw new Error("Impossible de trouver la ville associée à cette guilde");
     }
 
-    if (!dbGuild?.id) {
-      throw new Error("ID de la guild non valide");
+    const townId = guildWithTown.town.id;
+
+    // Vérifier si l'utilisateur a besoin de créer un personnage
+    const needsCreationResponse = await httpClient.get(`/characters/needs-creation/${user.id}/${townId}`)
+      .then(response => response.data)
+      .catch(() => ({ needsCreation: true }));
+
+    const needsCreation = needsCreationResponse.needsCreation;
+
+    // Vérifier si l'utilisateur a AU MOINS un personnage (mort ou vivant)
+    const userCharacters = await httpClient.get(`/characters/town/${townId}`)
+      .then(response => response.data?.filter((char: any) => char.userId === user.id))
+      .catch(() => []);
+
+    if (needsCreation && userCharacters.length === 0) {
+      // L'utilisateur n'a vraiment aucun personnage - afficher le modal de création
+      return {
+        needsCreation: true,
+        canReroll: false,
+        hasActiveCharacter: false
+      };
     }
 
-    await Promise.all(
-      characterData.roles.map(async (roleId) => {
-        const role = guild.roles.cache.get(roleId);
-        if (role) {
-          try {
-            await upsertRoleSvc(dbGuild.id, role.id, role.name, role.hexColor);
-          } catch (error) {
-            logger.error(
-              `[characters.service] Erreur lors de la synchronisation du rôle ${role.id}: ${getErrorMessage(error)}`
-            );
-          }
-        }
-      })
-    );
+    // Récupérer les personnages rerollables
+    const rerollableCharacters = await httpClient.get(`/characters/rerollable/${user.id}/${townId}`)
+      .then(response => response.data)
+      .catch(() => []);
 
-    const response = await httpClient.post("/characters", {
-      userId: user.id,
-      guildId: dbGuild.id,
-      name: characterName,
-      roleIds: characterData.roles,
-    });
+    // Vérifier si l'utilisateur a un personnage actif (vivant et actif)
+    const activeCharacter = await httpClient.get(`/characters/town/${townId}`)
+      .then(response => response.data?.find((char: any) => char.userId === user.id && char.isActive && !char.isDead))
+      .catch(() => null);
 
-    return response.data;
+    // Vérifier si l'utilisateur a un personnage mort avec permission de reroll
+    const deadCharacterWithReroll = userCharacters.find((char: any) => char.isDead && char.canReroll);
+
+    // Si l'utilisateur a un personnage mort avec permission de reroll, afficher le modal de reroll
+    if (deadCharacterWithReroll) {
+      return {
+        needsCreation: false,
+        canReroll: true,
+        hasActiveCharacter: false,
+        character: deadCharacterWithReroll,
+        rerollableCharacters: [deadCharacterWithReroll]
+      };
+    }
+
+    // Si l'utilisateur a un personnage actif, tout va bien
+    if (activeCharacter) {
+      return {
+        needsCreation: false,
+        canReroll: false,
+        hasActiveCharacter: true,
+        character: activeCharacter,
+        rerollableCharacters: []
+      };
+    }
+
+    // Si l'utilisateur a un personnage mort SANS permission de reroll, afficher le profil du personnage mort
+    const deadCharacter = userCharacters.find((char: any) => char.isDead && !char.canReroll);
+
+    if (deadCharacter) {
+      return {
+        needsCreation: false,
+        canReroll: false,
+        hasActiveCharacter: false, // C'est un personnage mort, pas actif
+        character: deadCharacter,
+        rerollableCharacters: []
+      };
+    }
+
+    return {
+      needsCreation: false,
+      canReroll: rerollableCharacters && rerollableCharacters.length > 0,
+      hasActiveCharacter: !!activeCharacter,
+      character: activeCharacter,
+      rerollableCharacters
+    };
+
   } catch (error) {
-    throw new Error(
-      `Impossible de récupérer ou créer le personnage: ${getErrorMessage(
-        error
-      )}`
-    );
+    logger.error("Error checking character status:", {
+      userId,
+      guildId,
+      error: error instanceof Error ? error.message : error
+    });
+    throw error;
   }
 }
+
+// NOTE: La fonction getOrCreateCharacter a été supprimée car elle créait automatiquement
+// les personnages et n'est plus utilisée dans le nouveau système de vérification automatique.
+// Cette fonctionnalité est maintenant gérée par le backend via les endpoints appropriés.

@@ -13,7 +13,7 @@ import {
   updateUser as updateUserSvc,
 } from "./users.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
-import { getOrCreateCharacter as getOrCreateCharacterSvc } from "./characters.service";
+import { checkCharacterStatus } from "./characters.service";
 import { logger } from "./logger";
 
 class APIService {
@@ -105,26 +105,41 @@ class APIService {
   }
 
   /**
-   * Récupère ou crée un personnage pour un utilisateur dans une guilde
+   * Récupère le personnage actif d'un utilisateur dans une ville
    */
-  public async getOrCreateCharacter(
-    userId: string,
-    guildId: string,
-    guildName: string,
-    characterData: {
-      nickname?: string | null;
-      roles: string[];
-      username?: string;
-    },
-    client: Client
-  ) {
-    return getOrCreateCharacterSvc(
-      userId,
-      guildId,
-      guildName,
-      characterData,
-      client
-    );
+  public async getActiveCharacter(userId: string, townId: string) {
+    try {
+      // Récupérer tous les personnages de la ville
+      const characters = await this.getTownCharacters(townId);
+
+      // Trouver le personnage actif de l'utilisateur
+      const activeCharacter = characters.find((char: any) =>
+        char.userId === userId && char.isActive
+      );
+
+      return activeCharacter || null;
+    } catch (error) {
+      logger.error("Error fetching active character:", {
+        userId,
+        townId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Vérifie l'état du personnage d'un utilisateur (sans création automatique)
+   */
+  public async checkCharacterStatus(userId: string, guildId: string, client: Client) {
+    return checkCharacterStatus(userId, guildId, client);
   }
 
   /**
@@ -253,47 +268,6 @@ class APIService {
   }
 
   /**
-   * Met à jour les statistiques d'un personnage (PA et Faim)
-   */
-  public async updateCharacterStats(
-    characterId: string,
-    stats: {
-      paTotal?: number;
-      hungerLevel?: number;
-    }
-  ) {
-    try {
-      logger.info("Appel API updateCharacterStats", {
-        characterId,
-        stats,
-        baseURL: this.api.defaults.baseURL,
-      });
-      const response = await this.api.patch(`/characters/${characterId}/stats`, stats);
-      logger.info("Réponse API updateCharacterStats réussie", {
-        characterId,
-        stats,
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      logger.error("Erreur API updateCharacterStats", {
-        characterId,
-        stats,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Met à jour le stock de foodstock d'une ville
    */
   public async updateTownFoodStock(townId: string, foodStock: number) {
@@ -330,22 +304,16 @@ class APIService {
     }
   }
 
-  public async updateGuildLogChannel(
-    discordId: string,
-    logChannelId: string | null
-  ) {
+  /**
+   * Récupère tous les personnages d'une ville
+   */
+  public async getTownCharacters(townId: string) {
     try {
-      const response = await this.api.patch(
-        `/guilds/${discordId}/log-channel`,
-        {
-          logChannelId,
-        }
-      );
+      const response = await this.api.get(`/characters/town/${townId}`);
       return response.data;
     } catch (error) {
-      logger.error("Error updating guild log channel:", {
-        discordId,
-        logChannelId,
+      logger.error("Error fetching town characters:", {
+        townId,
         error:
           error instanceof Error
             ? {
@@ -354,6 +322,227 @@ class APIService {
                 name: error.name,
               }
             : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Crée un nouveau personnage
+   */
+  public async createCharacter(characterData: {
+    name: string;
+    userId: string;
+    townId: string;
+  }) {
+    try {
+      const response = await this.api.post('/characters', characterData);
+      return response.data;
+    } catch (error) {
+      logger.error("Error creating character:", {
+        characterData,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Tue un personnage
+   */
+  public async killCharacter(characterId: string) {
+    try {
+      const response = await this.api.post(`/characters/${characterId}/kill`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error killing character:", {
+        characterId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Donne l'autorisation de reroll à un personnage
+   */
+  public async grantRerollPermission(characterId: string) {
+    try {
+      const response = await this.api.post(`/characters/${characterId}/grant-reroll`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error granting reroll permission:", {
+        characterId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Crée un personnage reroll
+   */
+  public async createRerollCharacter(rerollData: {
+    userId: string;
+    townId: string;
+    name: string;
+  }) {
+    try {
+      const response = await this.api.post('/characters/reroll', rerollData);
+      return response.data;
+    } catch (error) {
+      logger.error("Error creating reroll character:", {
+        rerollData,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Change le personnage actif d'un utilisateur
+   */
+  public async switchActiveCharacter(userId: string, townId: string, characterId: string) {
+    try {
+      const response = await this.api.post(`/characters/switch-active`, {
+        userId,
+        townId,
+        characterId
+      });
+      return response.data;
+    } catch (error) {
+      logger.error("Error switching active character:", {
+        userId,
+        townId,
+        characterId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère les personnages morts éligibles pour reroll
+   */
+  public async getRerollableCharacters(userId: string, townId: string) {
+    try {
+      const response = await this.api.get(`/characters/rerollable/${userId}/${townId}`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error fetching rerollable characters:", {
+        userId,
+        townId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Vérifie si un utilisateur a besoin de créer un personnage
+   */
+  public async needsCharacterCreation(userId: string, townId: string) {
+    try {
+      const response = await this.api.get(`/characters/needs-creation/${userId}/${townId}`);
+      return response.data;
+    } catch (error) {
+      logger.error("Error checking character creation need:", {
+        userId,
+        townId,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Met à jour les statistiques d'un personnage (PA, faim, etc.)
+   */
+  public async updateCharacterStats(
+    characterId: string,
+    stats: {
+      paTotal?: number;
+      hungerLevel?: number;
+      isDead?: boolean;
+      canReroll?: boolean;
+      isActive?: boolean;
+    }
+  ) {
+    try {
+      logger.info("Appel API updateCharacterStats", {
+        characterId,
+        stats,
+        baseURL: this.api.defaults.baseURL,
+      });
+      const response = await this.api.patch(`/characters/${characterId}/stats`, stats);
+      logger.info("Réponse API updateCharacterStats réussie", {
+        characterId,
+        stats,
+        status: response.status,
+        data: response.data,
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error("Erreur API updateCharacterStats", {
+        characterId,
+        stats,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
       });
       throw error;
     }

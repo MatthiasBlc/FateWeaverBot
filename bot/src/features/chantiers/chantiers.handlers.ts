@@ -204,45 +204,30 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
           return;
         }
 
-        // Récupérer le personnage de l'utilisateur
-        const character = await apiService.getOrCreateCharacter(
+        // Récupérer le personnage actif de l'utilisateur (sans création automatique)
+        const user = await apiService.getOrCreateUser(
           interaction.user.id,
-          interaction.guildId!,
-          interaction.guild?.name || "Serveur inconnu",
-          {
-            nickname: interaction.user.username,
-            roles: [],
-          },
-          interaction.client as Client
+          interaction.user.username,
+          interaction.user.discriminator
         );
 
-        // Effectuer l'investissement
-        const result = await apiService.investInChantier(
-          character.id,
-          selectedChantierId,
-          points
-        );
+        const town = await apiService.getTownByGuildId(interaction.guildId!);
 
-        // Envoyer un message de log automatique
-        const characterName = character.name || interaction.user.username;
-        const hungerEmoji = getHungerEmoji(character.hungerLevel || 0);
-        const logMessage = `🏗️ **${characterName}** ${hungerEmoji} a investi **${result.pointsInvested} PA** dans **${selectedChantier.name}** (${result.chantier.spendOnIt}/${selectedChantier.cost})`;
-        await sendLogMessage(
-          interaction.guildId!,
-          interaction.client as Client,
-          logMessage
-        );
+        if (!town) {
+          await modalResponse.reply({
+            content: "❌ Impossible de trouver la ville pour ce serveur.",
+            flags: ["Ephemeral"],
+          });
+          return;
+        }
 
-        // Mettre à jour le message avec le résultat
+        // Pour l'instant, cette fonctionnalité n'est pas encore disponible
+        // Le système de récupération du personnage actif doit être implémenté côté backend
         await modalResponse.reply({
-          content:
-            `✅ Vous avez investi ${result.pointsInvested} PA dans le chantier "${selectedChantier.name}".\n` +
-            `Il vous reste ${result.remainingPoints} PA.` +
-            (result.isCompleted
-              ? "\n\n🎉 Félicitations ! Ce chantier est maintenant terminé !"
-              : ""),
+          content: "❌ Fonctionnalité d'investissement en cours de développement. Veuillez réessayer plus tard.",
           flags: ["Ephemeral"],
         });
+        return;
       } catch (error) {
         logger.error("Erreur lors de la soumission du modal:", { error });
         if (!interaction.replied) {
@@ -435,22 +420,5 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
         flags: ["Ephemeral"],
       });
     }
-  }
-}
-
-function getHungerEmoji(level: number): string {
-  switch (level) {
-    case 0:
-      return "😊";
-    case 1:
-      return "🤤";
-    case 2:
-      return "😕";
-    case 3:
-      return "😰";
-    case 4:
-      return "💀";
-    default:
-      return "";
   }
 }

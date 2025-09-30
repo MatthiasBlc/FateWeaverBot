@@ -2,7 +2,39 @@ import { EmbedBuilder, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { sendLogMessage } from "../../utils/channels";
+import { getHungerLevelText, getHungerEmoji, getHungerColor } from "../../utils/hunger";
 import type { EatResult } from "./hunger.types";
+
+/**
+ * Crée un embed pour afficher le résultat d'un repas
+ */
+function createEatEmbed(eatResult: EatResult, characterName: string): EmbedBuilder {
+  const hungerLevelText = getHungerLevelText(eatResult.character.hungerLevel);
+  const hungerEmoji = getHungerEmoji(eatResult.character.hungerLevel);
+
+  return new EmbedBuilder()
+    .setColor(getHungerColor(eatResult.character.hungerLevel))
+    .setTitle("🍽️ Repas")
+    .setDescription(`${hungerEmoji} **${characterName}** a mangé !`)
+    .addFields(
+      {
+        name: "État de faim",
+        value: hungerLevelText,
+        inline: true,
+      },
+      {
+        name: "Vivres consommés",
+        value: `${eatResult.foodConsumed}`,
+        inline: true,
+      },
+      {
+        name: "Stock restant",
+        value: `${eatResult.town.foodStock}`,
+        inline: true,
+      }
+    )
+    .setTimestamp();
+}
 
 export async function handleEatCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -11,20 +43,27 @@ export async function handleEatCommand(interaction: any) {
   let character: any = null;
 
   try {
-    // Récupérer le personnage
-    character = await apiService.getOrCreateCharacter(
-      user.id,
-      interaction.guildId!,
-      interaction.guild?.name || "Serveur inconnu",
-      {
-        username: user.username,
-        nickname: member.nickname || null,
-        roles: member.roles.cache
-          .filter((role) => role.id !== interaction.guildId)
-          .map((role) => role.id),
-      },
-      interaction.client
-    );
+    // Récupérer la ville du serveur
+    const town = await apiService.getTownByGuildId(interaction.guildId!);
+
+    if (!town) {
+      await interaction.reply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Récupérer le personnage actif de l'utilisateur
+    character = await apiService.getActiveCharacter(user.id, town.id);
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
     // Tenter de faire manger le personnage
     const eatResult = await apiService.eatFood(character.id);
@@ -96,91 +135,7 @@ export async function handleEatCommand(interaction: any) {
   }
 }
 
-function createEatEmbed(
-  eatResult: EatResult,
-  characterName: string
-): EmbedBuilder {
-  const hungerLevelText = getHungerLevelText(eatResult.character.hungerLevel);
-  const hungerEmoji = getHungerEmoji(eatResult.character.hungerLevel);
-
-  const embed = new EmbedBuilder()
-    .setColor(getHungerColor(eatResult.character.hungerLevel))
-    .setTitle("🍽️ Repas")
-    .setDescription(`${hungerEmoji} **${characterName}** a mangé !`)
-    .addFields(
-      {
-        name: "État de faim",
-        value: hungerLevelText,
-        inline: true,
-      },
-      {
-        name: "Vivres consommés",
-        value: `${eatResult.foodConsumed}`,
-        inline: true,
-      },
-      {
-        name: "Stock restant",
-        value: `${eatResult.town.foodStock}`,
-        inline: true,
-      }
-    )
-    .setTimestamp();
-
-  return embed;
-}
-
-function getHungerLevelText(level: number): string {
-  switch (level) {
-    case 0:
-      return "Mort";
-    case 1:
-      return "Agonie";
-    case 2:
-      return "Affamé";
-    case 3:
-      return "Faim";
-    case 4:
-      return "En bonne santé";
-    default:
-      return "Inconnu";
-  }
-}
-
-function getHungerEmoji(level: number): string {
-  switch (level) {
-    case 0:
-      return "💀";
-    case 1:
-      return "😰";
-    case 2:
-      return "😕";
-    case 3:
-      return "🤤";
-    case 4:
-      return "😊";
-    default:
-      return "❓";
-  }
-}
-
-function getHungerColor(level: number): number {
-  switch (level) {
-    case 0:
-      return 0x000000; // Noir
-    case 1:
-      return 0xff4500; // Rouge-orange
-    case 2:
-      return 0xffa500; // Orange
-    case 3:
-      return 0xffff00; // Jaune
-    case 4:
-      return 0x00ff00; // Vert
-    default:
-      return 0x808080; // Gris
-  }
-}
-
-// New function to handle eating from button interactions
+// Fonction pour gérer le bouton de nourriture (pour les interactions de boutons)
 export async function handleEatButton(interaction: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
@@ -188,20 +143,27 @@ export async function handleEatButton(interaction: any) {
   let character: any = null;
 
   try {
-    // Récupérer le personnage
-    character = await apiService.getOrCreateCharacter(
-      user.id,
-      interaction.guildId!,
-      interaction.guild?.name || "Serveur inconnu",
-      {
-        username: user.username,
-        nickname: member.nickname || null,
-        roles: member.roles.cache
-          .filter((role) => role.id !== interaction.guildId)
-          .map((role) => role.id),
-      },
-      interaction.client
-    );
+    // Récupérer la ville du serveur
+    const town = await apiService.getTownByGuildId(interaction.guildId!);
+
+    if (!town) {
+      await interaction.editReply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+        components: [],
+      });
+      return;
+    }
+
+    // Récupérer le personnage actif de l'utilisateur
+    character = await apiService.getActiveCharacter(user.id, town.id);
+
+    if (!character) {
+      await interaction.editReply({
+        content: "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+        components: [],
+      });
+      return;
+    }
 
     // Tenter de faire manger le personnage
     const eatResult = await apiService.eatFood(character.id);

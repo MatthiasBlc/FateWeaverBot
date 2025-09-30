@@ -1,9 +1,12 @@
-import { GuildMember, ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction } from "discord.js";
 import { apiService } from "../../services/api";
 import { isAxiosError } from "axios";
 import { logger } from "../../services/logger";
-import { config } from "../../config/index";
 
+/**
+ * Middleware qui vérifie et crée l'utilisateur et la guilde SANS créer automatiquement de personnage
+ * La création de personnage est maintenant gérée par ensureCharacter
+ */
 export async function ensureUserExists(
   interaction: ChatInputCommandInteraction
 ) {
@@ -11,7 +14,7 @@ export async function ensureUserExists(
     throw new Error("Cette commande ne peut être utilisée que dans une guilde");
   }
 
-  const member = interaction.member as GuildMember;
+  const member = interaction.member as any;
   const guildId = interaction.guildId;
   const userId = member.id;
   const username = member.user.username;
@@ -28,7 +31,6 @@ export async function ensureUserExists(
   // Déclarer les variables en dehors du try-catch
   let user: any = null;
   let guild: any = null;
-  let character: any = null;
 
   try {
     logger.info(
@@ -99,101 +101,10 @@ export async function ensureUserExists(
       }
     }
 
-    // 3.1 Synchroniser les rôles de la guilde (optionnel en développement)
-    logger.info(
-      `[ensureUserExists] Synchronisation des rôles pour la guilde ${guildId}...`
-    );
+    // NOTE: Plus de création automatique de personnage ici !
+    // Cette responsabilité est maintenant déléguée au middleware ensureCharacter
 
-    // Si la guilde n'est pas disponible, on peut continuer sans synchronisation des rôles
-    if (!guild) {
-      logger.warn(
-        `[ensureUserExists] Guilde ${guildId} non disponible - pas de synchronisation des rôles`
-      );
-    } else {
-      const guildRoles = Array.from(
-        interaction.guild?.roles.cache.values() || []
-      );
-
-      // Filtrer pour ne garder que les rôles qui ne sont pas le rôle @everyone
-      const rolesToSync = guildRoles.filter(
-        (role) => role.id !== interaction.guildId
-      );
-
-      // Synchroniser chaque rôle avec la base de données
-      // En développement, on peut rendre cette étape optionnelle si elle échoue
-      let validSyncedRoles: any[] = [];
-      try {
-        const syncedRoles = await Promise.all(
-          rolesToSync.map(async (role) => {
-            try {
-              const syncedRole = await apiService.upsertRole(
-                guild.id,
-                role.id,
-                role.name,
-                role.hexColor
-              );
-              return syncedRole;
-            } catch (error) {
-              logger.warn(
-                `[ensureUserExists] Rôle ${role.id} non synchronisé (mode développement):`,
-                { error: error instanceof Error ? error.message : error }
-              );
-              return null;
-            }
-          })
-        );
-
-        // Filtrer les rôles qui ont été synchronisés avec succès
-        validSyncedRoles = syncedRoles.filter(
-          (role): role is NonNullable<typeof role> => role !== null
-        );
-      } catch (error) {
-        logger.warn(
-          `[ensureUserExists] Échec de synchronisation des rôles (mode développement):`,
-          { error: error instanceof Error ? error.message : error }
-        );
-      }
-
-      logger.info(
-        `[ensureUserExists] ${validSyncedRoles.length}/${rolesToSync.length} rôles synchronisés avec succès`
-      );
-    }
-
-    // 4. Vérifier et créer le personnage si nécessaire
-    logger.info(
-      `[ensureUserExists] Vérification du personnage pour ${userId} sur ${guildId}...`
-    );
-    try {
-      character = await apiService.getOrCreateCharacter(
-        userId,
-        guildId,
-        interaction.guild?.name || "Serveur inconnu",
-        {
-          username: user.username,
-          nickname: member.nickname || null,
-          roles: member.roles.cache
-            .filter((role) => role.id !== interaction.guildId) // Exclure le rôle @everyone
-            .map((role) => role.id),
-        },
-        interaction.client
-      );
-      logger.info(
-        `[ensureUserExists] Personnage vérifié: ${
-          character ? `ID: ${character.id}` : "non trouvé"
-        }`
-      );
-    } catch (error) {
-      logger.error(
-        `[ensureUserExists] Échec de vérification personnage ${userId}:`,
-        { error: error instanceof Error ? error.message : error }
-      );
-      // En développement, on peut continuer sans le personnage
-      if (process.env.NODE_ENV === "production") {
-        throw error;
-      }
-    }
-
-    return { user, guild, character };
+    return { user, guild, character: null }; // character est maintenant géré ailleurs
   } catch (error) {
     logger.error(
       "[ensureUserExists] Erreur lors de la vérification/création de l'utilisateur :",

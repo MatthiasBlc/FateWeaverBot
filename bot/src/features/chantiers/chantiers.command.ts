@@ -5,6 +5,8 @@ import {
 } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
+import { withUser } from "../../core/middleware/ensureUserClean";
+import { withCharacterCheck } from "../../core/middleware/ensureCharacter";
 import {
   handleListCommand,
   handleInvestCommand,
@@ -26,7 +28,7 @@ const chantiersUserCommand: Command = {
         .setDescription("Investir des points dans un chantier")
     ),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  execute: withUser(withCharacterCheck(async (interaction: ChatInputCommandInteraction) => {
     if (!interaction.isChatInputCommand()) return;
 
     const subcommand = interaction.options.getSubcommand();
@@ -44,7 +46,7 @@ const chantiersUserCommand: Command = {
         flags: ["Ephemeral"],
       });
     }
-  },
+  })),
 };
 
 export default chantiersUserCommand;

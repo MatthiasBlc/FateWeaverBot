@@ -25,16 +25,22 @@ async function increaseAllCharactersHunger() {
             username: true,
           },
         },
-        guild: {
-          select: {
-            name: true,
-            discordGuildId: true,
+        town: {
+          include: {
+            guild: {
+              select: {
+                name: true,
+                discordGuildId: true,
+              },
+            },
           },
         },
       },
     });
 
-    console.log(`${characters.length} personnages éligibles à l'augmentation de faim`);
+    console.log(
+      `${characters.length} personnages éligibles à l'augmentation de faim`
+    );
 
     let updatedCount = 0;
     const deaths = [];
@@ -54,27 +60,41 @@ async function increaseAllCharactersHunger() {
 
       updatedCount++;
 
-      // Si le personnage meurt, l'ajouter à la liste
+      // Si le personnage meurt, le marquer comme mort et l'ajouter à la liste
       if (oldLevel > 0 && newLevel === 0) {
+        // Marquer le personnage comme mort
+        await prisma.character.update({
+          where: { id: character.id },
+          data: {
+            isDead: true,
+            isActive: true,
+            updatedAt: new Date(),
+          },
+        });
+
         deaths.push({
           name: character.name || character.user.username,
-          guild: character.guild.name,
+          guild: character.town.guild.name,
         });
       }
     }
 
-    console.log(`Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`);
+    console.log(
+      `Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`
+    );
 
     // Log des décès si il y en a eu
     if (deaths.length > 0) {
       console.log(`💀 ${deaths.length} personnages sont morts de faim:`);
-      deaths.forEach(death => {
+      deaths.forEach((death) => {
         console.log(`  - ${death.name} (${death.guild})`);
       });
     }
-
   } catch (error) {
-    console.error("Erreur lors de l'augmentation automatique de la faim:", error);
+    console.error(
+      "Erreur lors de l'augmentation automatique de la faim:",
+      error
+    );
   }
 }
 
@@ -90,7 +110,9 @@ export function setupHungerIncreaseJob() {
     "Europe/Paris"
   );
 
-  console.log("Job CRON pour l'augmentation automatique de la faim configuré (tous les 2 jours)");
+  console.log(
+    "Job CRON pour l'augmentation automatique de la faim configuré (tous les 2 jours)"
+  );
   return job;
 }
 

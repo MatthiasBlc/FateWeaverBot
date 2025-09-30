@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../../types/command";
-import { withUser } from "../../core/middleware/ensureUser";
+import { withUser } from "../../core/middleware/ensureUserClean";
 import { handleViewFoodStockCommand } from "../../features/foodstock/foodstock.handlers";
 
 const command: Command = {

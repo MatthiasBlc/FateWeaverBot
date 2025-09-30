@@ -36,7 +36,9 @@ export const createChantier = async (req: Request, res: Response) => {
       }
 
       if (!guild.town) {
-        return res.status(404).json({ error: "Aucune ville trouvée pour cette guilde" });
+        return res
+          .status(404)
+          .json({ error: "Aucune ville trouvée pour cette guilde" });
       }
 
       internalTownId = guild.town.id;
@@ -99,7 +101,9 @@ export const getChantiersByGuild = async (req: Request, res: Response) => {
       }
 
       if (!guild.town) {
-        return res.status(404).json({ error: "Aucune ville trouvée pour cette guilde" });
+        return res
+          .status(404)
+          .json({ error: "Aucune ville trouvée pour cette guilde" });
       }
 
       whereClause = { townId: guild.town.id };
@@ -212,9 +216,10 @@ export const investInChantier = async (req: Request, res: Response) => {
     }
 
     // Vérifier si le personnage est mort (ne peut plus agir)
-    if (character.hungerLevel >= 4) {
+    if (character.hungerLevel <= 1 || character.isDead) {
       return res.status(400).json({
-        error: "Ce personnage est mort et ne peut plus investir dans les chantiers",
+        error:
+          "Ce personnage est mort et ne peut plus investir dans les chantiers",
       });
     }
 

@@ -11,4 +11,7 @@ const command: Command = {
   },
 };
 
+// Note: Nous n'appliquons pas withCharacterCheck au ping car c'est une commande de test
+// qui doit fonctionner même sans personnage
+
 export default command;

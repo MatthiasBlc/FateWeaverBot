@@ -2,50 +2,91 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
 import { toCharacterDto } from "../util/mappers";
+import { CharacterService } from "../services/character.service";
 
 // Interface pour les données de création/mise à jour d'un personnage
 interface CharacterInput {
   userId: string;
-  guildId: string;
+  townId: string;
   name?: string | null;
   roleIds?: string[];
 }
 
+// Interface pour les données de création d'un personnage dans une ville
+interface CreateCharacterInput {
+  name: string;
+  userId: string;
+  townId: string;
+}
+
+// Interface pour les données de création d'un personnage reroll
+interface CreateRerollInput {
+  userId: string;
+  townId: string;
+  name: string;
+}
+
+// Interface pour les données de changement de personnage actif
+interface SwitchActiveInput {
+  userId: string;
+  townId: string;
+  characterId: string;
+}
+
+// Interface pour la mise à jour des statistiques
+interface UpdateStatsInput {
+  paTotal?: number;
+  hungerLevel?: number;
+  isDead?: boolean;
+  canReroll?: boolean;
+  isActive?: boolean;
+}
+
+// Créer une instance du service
+const characterService = new CharacterService();
+
 // Crée ou met à jour un personnage
 export const upsertCharacter: RequestHandler = async (req, res, next) => {
   try {
-    const { userId, guildId, name, roleIds } = req.body as CharacterInput;
+    const { userId, townId, name, roleIds } = req.body as CharacterInput;
 
-    if (!userId || !guildId) {
-      throw createHttpError(400, "Les champs userId et guildId sont requis");
+    if (!userId || !townId) {
+      throw createHttpError(400, "Les champs userId et townId sont requis");
     }
 
-    // Vérifier si l'utilisateur et la guilde existent
-    const [user, guild] = await Promise.all([
+    // Vérifier si l'utilisateur et la ville existent
+    const [user, townWithGuild] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.guild.findUnique({ where: { id: guildId } }),
+      prisma.town.findUnique({
+        where: { id: townId },
+        include: { guild: true }
+      }),
     ]);
 
     if (!user) {
       throw createHttpError(404, "Utilisateur non trouvé");
     }
 
-    if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+    if (!townWithGuild) {
+      throw createHttpError(404, "Ville non trouvée");
     }
 
     // Utiliser le nom fourni ou le nom d'utilisateur comme valeur par défaut
     const characterName = name || user.username;
 
-    // Vérifier si un personnage existe déjà pour cet utilisateur et cette guilde
+    // Vérifier si un personnage existe déjà pour cet utilisateur et cette ville
     const existingCharacter = await prisma.character.findFirst({
       where: {
         userId,
-        guildId,
+        townId: townId, // Utiliser townId au lieu de guildId
       },
       include: {
         user: true,
-        guild: true,
+        town: {
+          include: {
+            guild: true,
+          },
+        },
         characterRoles: {
           include: {
             role: true,
@@ -59,7 +100,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       roleIds && roleIds.length > 0
         ? await prisma.role.findMany({
             where: {
-              guildId,
+              guildId: townWithGuild.guild.id,
               discordId: {
                 in: roleIds,
               },
@@ -72,7 +113,37 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
 
     // Mettre à jour ou créer le personnage avec les rôles
     const upsertedCharacter = await prisma.$transaction(async (prisma) => {
-      // 1. Créer ou mettre à jour le personnage
+      // 1. Désactiver tous les autres personnages de l'utilisateur dans cette ville
+      if (existingCharacter) {
+        // Si on met à jour un personnage existant, désactiver tous les autres
+        await prisma.character.updateMany({
+          where: {
+            userId,
+            townId: townId,
+            id: { not: existingCharacter.id }, // Ne pas désactiver le personnage en cours de mise à jour
+            isDead: false, // Ne désactiver que les personnages vivants
+          },
+          data: {
+            isActive: false,
+            updatedAt: new Date(),
+          },
+        });
+      } else {
+        // Si on crée un nouveau personnage, désactiver tous les autres personnages de l'utilisateur
+        await prisma.character.updateMany({
+          where: {
+            userId,
+            townId: townId,
+            isDead: false, // Ne désactiver que les personnages vivants
+          },
+          data: {
+            isActive: false,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      // 2. Créer ou mettre à jour le personnage
       const character = await prisma.character.upsert({
         where: {
           id: existingCharacter?.id ?? "",
@@ -83,11 +154,20 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         create: {
           name: characterName,
           userId,
-          guildId,
+          townId: townId, // Utiliser townId au lieu de guildId
+          hungerLevel: 4, // Valeur par défaut pour la faim
+          paTotal: 2,     // Valeur par défaut pour les points d'action
+          isActive: true,
+          isDead: false,
+          canReroll: false,
         },
         include: {
           user: true,
-          guild: true,
+          town: {
+            include: {
+              guild: true,
+            },
+          },
           characterRoles: {
             include: {
               role: true,
@@ -96,7 +176,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         },
       });
 
-      // 2. Mettre à jour les associations de rôles
+      // 3. Mettre à jour les associations de rôles
       // Supprimer d'abord toutes les associations existantes
       await prisma.characterRole.deleteMany({
         where: { characterId: character.id },
@@ -138,7 +218,11 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         where: { id: character.id },
         include: {
           user: true,
-          guild: true,
+          town: {
+            include: {
+              guild: true,
+            },
+          },
           characterRoles: {
             include: {
               role: {
@@ -153,6 +237,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
           },
         },
       });
+
       return updatedCharacter;
     });
 
@@ -173,7 +258,11 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
       where: { id },
       include: {
         user: true,
-        guild: true,
+        town: {
+          include: {
+            guild: true,
+          },
+        },
         characterRoles: {
           include: {
             role: true,
@@ -208,13 +297,19 @@ export const getCharacterByDiscordIds: RequestHandler = async (
         user: {
           discordId: userId,
         },
-        guild: {
-          discordGuildId: guildId,
+        town: {
+          guild: {
+            discordGuildId: guildId,
+          },
         },
       },
       include: {
         user: true,
-        guild: true,
+        town: {
+          include: {
+            guild: true,
+          },
+        },
         characterRoles: {
           include: {
             role: true,
@@ -240,10 +335,17 @@ export const getGuildCharacters: RequestHandler = async (req, res, next) => {
 
     const characters = await prisma.character.findMany({
       where: {
-        guildId,
+        town: {
+          guildId,
+        },
       },
       include: {
         user: true,
+        town: {
+          include: {
+            guild: true,
+          },
+        },
         characterRoles: {
           include: {
             role: true,
@@ -304,9 +406,9 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     const character = await prisma.character.findUnique({
       where: { id },
       include: {
-        guild: {
+        town: {
           include: {
-            town: true,
+            guild: true,
           },
         },
       },
@@ -316,8 +418,8 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Personnage non trouvé");
     }
 
-    if (!character.guild?.town) {
-      throw createHttpError(404, "Ville non trouvée pour ce personnage");
+    if (!character.town?.guild) {
+      throw createHttpError(404, "Guilde non trouvée pour ce personnage");
     }
 
     // Vérifier si le personnage n'a pas faim (niveau 4 = en bonne santé)
@@ -337,7 +439,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     }
 
     // Vérifier si la ville a des foodstock
-    if (character.guild.town.foodStock <= 0) {
+    if (character.town.foodStock <= 0) {
       throw createHttpError(400, "La ville n'a plus de vivres disponibles");
     }
 
@@ -349,10 +451,10 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     }
 
     // Vérifier si la ville a assez de foodstock
-    if (character.guild.town.foodStock < foodToConsume) {
+    if (character.town.foodStock < foodToConsume) {
       throw createHttpError(
         400,
-        `La ville n'a que ${character.guild.town.foodStock} vivres, mais ${foodToConsume} sont nécessaires`
+        `La ville n'a que ${character.town.foodStock} vivres, mais ${foodToConsume} sont nécessaires`
       );
     }
 
@@ -366,26 +468,31 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Effectuer la transaction
     const result = await prisma.$transaction(async (prisma) => {
-      // Mettre à jour le personnage
-      const updatedCharacter = await prisma.character.update({
+      // Mettre à jour le personnage en utilisant le service qui gère automatiquement la mort
+      const characterService = (await import("../services/character.service")).CharacterService;
+      const service = new characterService();
+
+      await service.updateHunger(id, newHungerLevel);
+
+      const updatedCharacter = await prisma.character.findUnique({
         where: { id },
-        data: {
-          hungerLevel: newHungerLevel,
-          updatedAt: new Date(),
-        },
         include: {
           user: true,
-          guild: {
+          town: {
             include: {
-              town: true,
+              guild: true,
             },
           },
         },
       });
 
+      if (!updatedCharacter) {
+        throw createHttpError(404, "Personnage non trouvé après mise à jour");
+      }
+
       // Mettre à jour le stock de foodstock de la ville
       const updatedTown = await prisma.town.update({
-        where: { id: character.guild.town!.id },
+        where: { id: character.town.id },
         data: {
           foodStock: {
             decrement: foodToConsume,
@@ -417,76 +524,202 @@ export const eatFood: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Met à jour les valeurs PA et Faim d'un personnage
-export const updateCharacterStats: RequestHandler = async (req, res, next) => {
+// ==================== NOUVEAUX ENDPOINTS POUR LE SYSTÈME TOWN-BASED ====================
+
+// Récupère tous les personnages d'une ville
+export const getTownCharacters: RequestHandler = async (req, res, next) => {
+  try {
+    const { townId } = req.params;
+
+    if (!townId) {
+      throw createHttpError(400, "L'ID de la ville est requis");
+    }
+
+    const characters = await characterService.getTownCharacters(townId);
+
+    res.status(200).json(characters);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Créer un nouveau personnage dans une ville
+export const createCharacter: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, userId, townId } = req.body as CreateCharacterInput;
+
+    if (!name || !userId || !townId) {
+      throw createHttpError(400, "Les champs name, userId et townId sont requis");
+    }
+
+    const character = await characterService.createCharacter({
+      name,
+      userId,
+      townId,
+    });
+
+    res.status(201).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Tuer un personnage
+export const killCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { paTotal, hungerLevel } = req.body;
 
     if (!id) {
       throw createHttpError(400, "L'ID du personnage est requis");
     }
 
-    // Vérifier que au moins un champ est fourni
-    if (paTotal === undefined && hungerLevel === undefined) {
-      throw createHttpError(400, "Au moins un des champs paTotal ou hungerLevel doit être fourni");
+    const character = await characterService.killCharacter(id);
+
+    res.status(200).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Donner l'autorisation de reroll à un personnage
+export const grantRerollPermission: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw createHttpError(400, "L'ID du personnage est requis");
     }
 
-    // Valider les valeurs si elles sont fournies
-    if (paTotal !== undefined && (paTotal < 0 || paTotal > 4)) {
-      throw createHttpError(400, "Les PA doivent être entre 0 et 4");
+    const character = await characterService.grantRerollPermission(id);
+
+    res.status(200).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Créer un personnage reroll
+export const createRerollCharacter: RequestHandler = async (req, res, next) => {
+  try {
+    const { userId, townId, name } = req.body as CreateRerollInput;
+
+    if (!userId || !townId || !name) {
+      throw createHttpError(400, "Les champs userId, townId et name sont requis");
     }
 
-    if (hungerLevel !== undefined && (hungerLevel < 0 || hungerLevel > 4)) {
-      throw createHttpError(400, "Le niveau de faim doit être entre 0 et 4");
+    const character = await characterService.createRerollCharacter(
+      userId,
+      townId,
+      name
+    );
+
+    res.status(201).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Changer le personnage actif d'un utilisateur
+export const switchActiveCharacter: RequestHandler = async (req, res, next) => {
+  try {
+    const { userId, townId, characterId } = req.body as SwitchActiveInput;
+
+    if (!userId || !townId || !characterId) {
+      throw createHttpError(400, "Les champs userId, townId et characterId sont requis");
     }
 
-    // Récupérer le personnage actuel
-    const character = await prisma.character.findUnique({
-      where: { id },
-    });
+    const character = await characterService.switchActiveCharacter(userId, townId, characterId);
 
-    if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+    res.status(200).json(character);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Récupérer les personnages morts éligibles pour reroll
+export const getRerollableCharacters: RequestHandler = async (req, res, next) => {
+  try {
+    const { userId, townId } = req.params;
+
+    if (!userId || !townId) {
+      throw createHttpError(400, "Les paramètres userId et townId sont requis");
     }
 
-    // Préparer les données de mise à jour
-    const updateData: {
+    const characters = await characterService.getRerollableCharacters(userId, townId);
+
+    res.status(200).json(characters);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Vérifier si un utilisateur a besoin de créer un personnage
+export const needsCharacterCreation: RequestHandler = async (req, res, next) => {
+  try {
+    const { userId, townId } = req.params;
+
+    if (!userId || !townId) {
+      throw createHttpError(400, "Les paramètres userId et townId sont requis");
+    }
+
+    const needsCreation = await characterService.needsCharacterCreation(userId, townId);
+
+    res.status(200).json({ needsCreation });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Met à jour les statistiques d'un personnage (PA, faim, etc.)
+export const updateCharacterStats: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { paTotal, hungerLevel, isDead, canReroll, isActive } = req.body as UpdateStatsInput;
+
+    if (!id) {
+      throw createHttpError(400, "L'ID du personnage est requis");
+    }
+
+    // Définir le type des données de mise à jour
+    interface CharacterUpdateData {
       updatedAt: Date;
       paTotal?: number;
       lastPaUpdate?: Date;
       hungerLevel?: number;
-    } = {
-      updatedAt: new Date(),
+      isDead?: boolean;
+      canReroll?: boolean;
+      isActive?: boolean;
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: CharacterUpdateData = {
+      updatedAt: new Date()
     };
 
     if (paTotal !== undefined) {
       updateData.paTotal = paTotal;
       updateData.lastPaUpdate = new Date();
     }
+    if (hungerLevel !== undefined) updateData.hungerLevel = hungerLevel;
+    if (isDead !== undefined) updateData.isDead = isDead;
+    if (canReroll !== undefined) updateData.canReroll = canReroll;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
-    if (hungerLevel !== undefined) {
-      updateData.hungerLevel = hungerLevel;
-    }
-
-    // Mettre à jour le personnage
+    // Mettre à jour directement avec Prisma
     const updatedCharacter = await prisma.character.update({
       where: { id },
       data: updateData,
       include: {
         user: true,
-        guild: true,
-        characterRoles: {
+        town: {
           include: {
-            role: true,
+            guild: true,
           },
         },
       },
     });
 
-    // Utiliser le mapper pour transformer la réponse
-    const characterDto = toCharacterDto(updatedCharacter);
-    res.status(200).json(characterDto);
+    res.status(200).json(updatedCharacter);
   } catch (error) {
     next(error);
   }
