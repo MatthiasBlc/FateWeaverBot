@@ -1,5 +1,7 @@
 -------------------------Todo-------------------------
 
+est-ce que foodstock-admin est ephemeral ?
+
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
 -> indiquer le nombre de vivres mangés ?
