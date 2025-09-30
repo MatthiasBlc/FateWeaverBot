@@ -13,11 +13,44 @@ import {
   type ChatInputCommandInteraction,
   Client,
 } from "discord.js";
+
+interface Town {
+  id: string;
+  name: string;
+  foodStock: number;
+}
+
+interface ActiveCharacter {
+  id: string;
+  paTotal: number;
+  name: string;
+}
+
+interface Chantier {
+  id: string;
+  name: string;
+  cost: number;
+  spendOnIt: number;
+  status: 'PLAN' | 'IN_PROGRESS' | 'COMPLETED';
+  townId: string;
+  createdBy: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface InvestResult {
+  success: boolean;
+  chantier: Chantier;
+  pointsInvested: number;
+  remainingPoints: number;
+  isCompleted: boolean;
+}
 import { sendLogMessage } from "../../utils/channels.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { checkAdmin } from "../../utils/roles";
-import type { Chantier } from "./chantiers.types";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils";
 
 export async function handleListCommand(interaction: CommandInteraction) {
@@ -185,56 +218,143 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
       const modalFilter = (i: ModalSubmitInteraction) =>
         i.customId === "invest_modal" && i.user.id === interaction.user.id;
 
+      let modalResponse: ModalSubmitInteraction | undefined;
       try {
-        const modalResponse = await interaction.awaitModalSubmit({
+        // Attendre la soumission du modal sur la même interaction qui l'a affiché
+        modalResponse = await response.awaitModalSubmit({
           filter: modalFilter,
-          time: 300000, // 5 minutes pour répondre
+          time: 120000, // 2 minutes pour répondre
         });
+
+        // Ne pas utiliser deferReply ici pour éviter les conflits
 
         const points = parseInt(
           modalResponse.fields.getTextInputValue("points_input"),
           10
         );
 
-        if (isNaN(points) || points <= 0) {
-          await modalResponse.reply({
-            content: "Veuillez entrer un nombre valide de points d'action.",
-            flags: ["Ephemeral"],
-          });
+        // Validation des points
+        if (isNaN(points)) {
+          await modalResponse.reply({ 
+            content: "❌ Veuillez entrer un nombre valide de points d'action.",
+            ephemeral: true 
+          }).catch(e => 
+            logger.error("Erreur lors de l'envoi du message d'erreur:", e)
+          );
+          return;
+        }
+        
+        if (points <= 0) {
+          await modalResponse.reply({ 
+            content: "❌ Le nombre de points d'action doit être supérieur à zéro.",
+            ephemeral: true
+          }).catch(e => 
+            logger.error("Erreur lors de l'envoi du message d'erreur:", e)
+          );
           return;
         }
 
-        // Récupérer le personnage actif de l'utilisateur (sans création automatique)
-        const user = await apiService.getOrCreateUser(
-          interaction.user.id,
-          interaction.user.username,
-          interaction.user.discriminator
-        );
+          // Récupérer l'utilisateur
+          const user = await apiService.getOrCreateUser(
+            interaction.user.id,
+            interaction.user.username,
+            interaction.user.discriminator
+          );
 
-        const town = await apiService.getTownByGuildId(interaction.guildId!);
+          if (!user) {
+            throw new Error("Impossible de créer ou récupérer l'utilisateur");
+          }
 
-        if (!town) {
-          await modalResponse.reply({
-            content: "❌ Impossible de trouver la ville pour ce serveur.",
-            flags: ["Ephemeral"],
-          });
-          return;
-        }
+          // Récupérer la ville du serveur
+          const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+          const town = townResponse as unknown as Town;
+          
+          if (!town || !town.id) {
+            throw new Error("Ville non trouvée pour cette guilde");
+          }
 
-        // Pour l'instant, cette fonctionnalité n'est pas encore disponible
-        // Le système de récupération du personnage actif doit être implémenté côté backend
-        await modalResponse.reply({
-          content: "❌ Fonctionnalité d'investissement en cours de développement. Veuillez réessayer plus tard.",
-          flags: ["Ephemeral"],
-        });
-        return;
+          // Récupérer le personnage actif de l'utilisateur
+          const activeCharacter = await apiService.getActiveCharacter(
+            interaction.user.id,
+            town.id
+          ) as ActiveCharacter | null;
+
+          if (!activeCharacter) {
+            throw new Error("Aucun personnage actif trouvé");
+          }
+
+          // Vérifier que l'utilisateur a assez de PA
+          if (activeCharacter.paTotal < points) {
+            const errorMsg = `❌ Pas assez de points d'action (${activeCharacter.paTotal}/${points} requis)`;
+            if (modalResponse.deferred || modalResponse.replied) {
+              await modalResponse.editReply({ content: errorMsg });
+            } else {
+              await modalResponse.reply({ content: errorMsg, flags: ["Ephemeral"] });
+            }
+            return;
+          }
+
+          // Appeler l'API pour effectuer l'investissement
+          const result = await apiService.investInChantier(
+            activeCharacter.id,
+            selectedChantierId,
+            points
+          ) as InvestResult;
+
+          let responseMessage = `✅ Vous avez investi ${points} PA dans le chantier "${selectedChantier.name}".`;
+          
+          if (result.isCompleted) {
+            responseMessage += "\n🎉 Félicitations ! Le chantier est maintenant terminé !";
+          } else {
+            const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
+            responseMessage += `\n📊 Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
+          }
+
+          try {
+            if (modalResponse.deferred || modalResponse.replied) {
+              await modalResponse.editReply({ content: responseMessage });
+            } else {
+              await modalResponse.reply({ content: responseMessage, flags: ["Ephemeral"] });
+            }
+          } catch (e) {
+            logger.error("Impossible d'envoyer la réponse de succès:", { error: e });
+          }
       } catch (error) {
         logger.error("Erreur lors de la soumission du modal:", { error });
-        if (!interaction.replied) {
-          await interaction.followUp({
-            content: "Temps écoulé ou erreur lors de la saisie.",
-            flags: ["Ephemeral"],
-          });
+        const errorMessage = error instanceof Error && !error.message.includes('Pas assez de points d\'action') 
+          ? error.message 
+          : 'Une erreur est survenue lors du traitement de votre demande';
+        
+        // Ne pas afficher le message d'erreur pour les erreurs de PA déjà gérées
+        if (error instanceof Error && error.message.includes('Pas assez de points d\'action')) {
+          return;
+        }
+        
+        if (modalResponse) {
+          try {
+            try {
+              if (modalResponse.deferred || modalResponse.replied) {
+                await modalResponse.editReply({ content: `❌ ${errorMessage}. Veuillez réessayer.` });
+              } else {
+                await modalResponse.reply({ content: `❌ ${errorMessage}. Veuillez réessayer.`, flags: ["Ephemeral"] });
+              }
+            } catch (e3) {
+              logger.error("Impossible d'envoyer le message d'erreur:", { error: e3 });
+            }
+          } catch (e) {
+            // Si editReply échoue (pas de defer), tenter un followUp si possible
+            try {
+              await modalResponse.followUp({
+                content: `❌ ${errorMessage}.`,
+                flags: ["Ephemeral"],
+              });
+            } catch (e2) {
+              logger.error("Impossible d'envoyer une réponse de fallback au modal:", { error: e2 });
+            }
+          }
+        } else {
+          // Aucun modalResponse dispo, on journalise uniquement
+          logger.error("Aucun modalResponse disponible pour notifier l'utilisateur de l'erreur");
         }
       }
     } catch (error) {
