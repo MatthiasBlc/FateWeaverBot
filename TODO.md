@@ -2,6 +2,8 @@
 
 /manger plusieurs boutons suivant la situation (jusquà full ? une seule ration?)
 
+character admin, bouton tuer uniquement si personnage en vie.
+
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
 -> indiquer le nombre de vivres mangés ?

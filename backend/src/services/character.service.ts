@@ -100,42 +100,59 @@ export class CharacterService {
     townId: string,
     name: string
   ): Promise<Character> {
-    // Verify user has reroll permission
-    const deadCharacter = await prisma.character.findFirst({
-      where: {
-        userId,
-        townId,
-        isDead: true,
-        canReroll: true,
-      },
-      orderBy: { createdAt: "desc" },
+    return await prisma.$transaction(async (prisma) => {
+      // Verify user has reroll permission and get the dead character in a transaction
+      const deadCharacter = await prisma.character.findFirst({
+        where: {
+          userId,
+          townId,
+          isDead: true,
+          canReroll: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!deadCharacter) {
+        throw new Error("No reroll permission found");
+      }
+
+      // Désactiver tous les personnages actifs de l'utilisateur dans cette ville
+      await prisma.character.updateMany({
+        where: {
+          userId,
+          townId,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+        },
+      });
+
+      // Create new character
+      const newCharacter = await prisma.character.create({
+        data: {
+          name,
+          userId,
+          townId,
+          isActive: true,
+          isDead: false,
+          canReroll: false,
+          hungerLevel: 4,
+          paTotal: 2,
+        },
+      });
+
+      // Revoke reroll permission on the dead character
+      await prisma.character.update({
+        where: { id: deadCharacter.id },
+        data: { 
+          canReroll: false,
+          isActive: false // S'assurer que l'ancien personnage est bien désactivé
+        },
+      });
+
+      return newCharacter;
     });
-
-    if (!deadCharacter) {
-      throw new Error("No reroll permission found");
-    }
-
-    // Create new character
-    const newCharacter = await prisma.character.create({
-      data: {
-        name,
-        userId,
-        townId,
-        isActive: true,
-        isDead: false,
-        canReroll: false,
-        hungerLevel: 4,
-        paTotal: 2,
-      },
-    });
-
-    // Revoke reroll permission
-    await prisma.character.update({
-      where: { id: deadCharacter.id },
-      data: { canReroll: false },
-    });
-
-    return newCharacter;
   }
 
   /**

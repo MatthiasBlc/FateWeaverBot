@@ -93,6 +93,18 @@ export async function checkCharacterStatus(
       };
     }
 
+    // Vérifier si l'utilisateur a un personnage mort sans permission de reroll
+    const deadCharacter = userCharacters.find((char: any) => char.isDead);
+    if (deadCharacter) {
+      return {
+        needsCreation: false,
+        canReroll: false,
+        hasActiveCharacter: false,
+        character: deadCharacter,
+        rerollableCharacters: []
+      };
+    }
+
     // Si l'utilisateur a un personnage actif, tout va bien
     if (activeCharacter) {
       return {
@@ -104,25 +116,16 @@ export async function checkCharacterStatus(
       };
     }
 
-    // Si l'utilisateur a un personnage mort SANS permission de reroll, afficher le profil du personnage mort
-    const deadCharacter = userCharacters.find((char: any) => char.isDead && !char.canReroll);
-
-    if (deadCharacter) {
-      return {
-        needsCreation: false,
-        canReroll: false,
-        hasActiveCharacter: false, // C'est un personnage mort, pas actif
-        character: deadCharacter,
-        rerollableCharacters: []
-      };
-    }
-
+    // Si on arrive ici, l'utilisateur n'a pas de personnage actif ni de personnage mort avec reroll
+    // On vérifie s'il a des personnages rerollables
+    const hasRerollable = rerollableCharacters && rerollableCharacters.length > 0;
+    
     return {
       needsCreation: false,
-      canReroll: rerollableCharacters && rerollableCharacters.length > 0,
-      hasActiveCharacter: !!activeCharacter,
-      character: activeCharacter,
-      rerollableCharacters
+      canReroll: hasRerollable,
+      hasActiveCharacter: false,
+      character: hasRerollable ? rerollableCharacters[0] : null,
+      rerollableCharacters: hasRerollable ? rerollableCharacters : []
     };
 
   } catch (error) {

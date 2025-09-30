@@ -68,10 +68,13 @@ export async function handleCharacterAdminCommand(
     // Vérifier que l'utilisateur est admin
     const isUserAdmin = await checkAdmin(interaction);
     if (!isUserAdmin) {
-      logger.warn("Utilisateur non admin tente d'utiliser la commande character-admin", {
-        userId: interaction.user.id,
-        guildId: interaction.guildId,
-      });
+      logger.warn(
+        "Utilisateur non admin tente d'utiliser la commande character-admin",
+        {
+          userId: interaction.user.id,
+          guildId: interaction.guildId,
+        }
+      );
       return;
     }
 
@@ -81,7 +84,9 @@ export async function handleCharacterAdminCommand(
     });
 
     // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(interaction.guildId!) as Town | null;
+    const town = (await apiService.getTownByGuildId(
+      interaction.guildId!
+    )) as Town | null;
 
     if (!town || !town.id) {
       logger.warn("Aucune ville trouvée pour le serveur", {
@@ -95,7 +100,9 @@ export async function handleCharacterAdminCommand(
     }
 
     // Récupérer tous les personnages de la ville
-    const characters = await apiService.getTownCharacters(town.id) as Character[];
+    const characters = (await apiService.getTownCharacters(
+      town.id
+    )) as Character[];
 
     if (!characters || characters.length === 0) {
       await interaction.reply({
@@ -114,16 +121,21 @@ export async function handleCharacterAdminCommand(
           new StringSelectMenuOptionBuilder()
             .setLabel(`${character.name}`)
             .setDescription(
-              `Actif: ${character.isActive ? '✅' : '❌'} | Mort: ${character.isDead ? '💀' : '❤️'} | Reroll: ${character.canReroll ? '✅' : '❌'}`
+              `Actif: ${character.isActive ? "✅" : "❌"} | Mort: ${
+                character.isDead ? "💀" : "❤️"
+              } | Reroll: ${character.canReroll ? "✅" : "❌"}`
             )
             .setValue(character.id)
         )
       );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
 
     await interaction.reply({
-      content: "👤 **Administration des Personnages**\nSélectionnez un personnage à gérer :",
+      content:
+        "👤 **Administration des Personnages**\nSélectionnez un personnage à gérer :",
       components: [row],
       flags: ["Ephemeral"],
     });
@@ -133,11 +145,12 @@ export async function handleCharacterAdminCommand(
       i.customId === "character_select" && i.user.id === interaction.user.id;
 
     try {
-      const selectInteraction = await interaction.channel?.awaitMessageComponent({
-        filter,
-        componentType: ComponentType.StringSelect,
-        time: 60000, // 1 minute au lieu de 5
-      });
+      const selectInteraction =
+        await interaction.channel?.awaitMessageComponent({
+          filter,
+          componentType: ComponentType.StringSelect,
+          time: 60000, // 1 minute au lieu de 5
+        });
 
       if (!selectInteraction) {
         await interaction.followUp({
@@ -148,7 +161,9 @@ export async function handleCharacterAdminCommand(
       }
 
       const selectedCharacterId = selectInteraction.values[0];
-      const selectedCharacter = characters.find((c: Character) => c.id === selectedCharacterId);
+      const selectedCharacter = characters.find(
+        (c: Character) => c.id === selectedCharacterId
+      );
 
       if (!selectedCharacter) {
         await selectInteraction.reply({
@@ -159,32 +174,36 @@ export async function handleCharacterAdminCommand(
       }
 
       // Créer les boutons d'action
-      const actionRow = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId("character_stats")
-            .setLabel("Modifier Stats")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("character_kill")
-            .setLabel("Tuer Personnage")
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId("character_reroll")
-            .setLabel(`${selectedCharacter.canReroll ? 'Révoquer' : 'Autoriser'} Reroll`)
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("character_switch")
-            .setLabel(`${selectedCharacter.isActive ? 'Désactiver' : 'Activer'}`)
-            .setStyle(ButtonStyle.Success)
-        );
+      const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId("character_stats")
+          .setLabel("Modifier Stats")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("character_kill")
+          .setLabel("Tuer Personnage")
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId("character_reroll")
+          .setLabel(
+            `${selectedCharacter.canReroll ? "Révoquer" : "Autoriser"} Reroll`
+          )
+          .setStyle(ButtonStyle.Secondary)
+        // new ButtonBuilder()
+        //   .setCustomId("character_switch")
+        //   .setLabel(`${selectedCharacter.isActive ? "Désactiver" : "Activer"}`)
+        //   .setStyle(ButtonStyle.Success)
+      );
 
       await selectInteraction.reply({
-        content: `**${selectedCharacter.name}**\n` +
-          `Actif: ${selectedCharacter.isActive ? '✅' : '❌'}\n` +
-          `Mort: ${selectedCharacter.isDead ? '💀' : '❤️'}\n` +
-          `Reroll autorisé: ${selectedCharacter.canReroll ? '✅' : '❌'}\n` +
-          `PA: ${selectedCharacter.paTotal} | Faim: ${getHungerLevelText(selectedCharacter.hungerLevel)}\n\n` +
+        content:
+          `**${selectedCharacter.name}**\n` +
+          `Actif: ${selectedCharacter.isActive ? "✅" : "❌"}\n` +
+          `Mort: ${selectedCharacter.isDead ? "💀" : "❤️"}\n` +
+          `Reroll autorisé: ${selectedCharacter.canReroll ? "✅" : "❌"}\n` +
+          `PA: ${selectedCharacter.paTotal} | Faim: ${getHungerLevelText(
+            selectedCharacter.hungerLevel
+          )}\n\n` +
           `Choisissez une action :`,
         components: [actionRow],
         flags: ["Ephemeral"],
@@ -192,14 +211,19 @@ export async function handleCharacterAdminCommand(
 
       // Gérer les actions sur le personnage
       const buttonFilter = (i: any) =>
-        ["character_stats", "character_kill", "character_reroll", "character_switch"].includes(i.customId) &&
-        i.user.id === interaction.user.id;
+        [
+          "character_stats",
+          "character_kill",
+          "character_reroll",
+          "character_switch",
+        ].includes(i.customId) && i.user.id === interaction.user.id;
 
-      const buttonInteraction = await selectInteraction.channel?.awaitMessageComponent({
-        filter: buttonFilter,
-        componentType: ComponentType.Button,
-        time: 60000, // 1 minute au lieu de 5
-      });
+      const buttonInteraction =
+        await selectInteraction.channel?.awaitMessageComponent({
+          filter: buttonFilter,
+          componentType: ComponentType.Button,
+          time: 60000, // 1 minute au lieu de 5
+        });
 
       if (!buttonInteraction) {
         await selectInteraction.followUp({
@@ -220,48 +244,66 @@ export async function handleCharacterAdminCommand(
           await handleRerollPermission(buttonInteraction, selectedCharacter);
           break;
         case "character_switch":
-          await handleSwitchActive(buttonInteraction, selectedCharacter, town.id);
+          await handleSwitchActive(
+            buttonInteraction,
+            selectedCharacter,
+            town.id
+          );
           break;
       }
-
     } catch (error) {
-      logger.error("Erreur lors de la sélection ou action sur le personnage:", { error });
-      if (error && typeof error === 'object' && 'code' in error) {
-        if (error.code === 10062) { // Unknown interaction
+      logger.error("Erreur lors de la sélection ou action sur le personnage:", {
+        error,
+      });
+      if (error && typeof error === "object" && "code" in error) {
+        if (error.code === 10062) {
+          // Unknown interaction
           logger.warn("Interaction expirée");
           return; // Ne pas répondre si l'interaction est déjà expirée
         }
-        if (error.code === 'InteractionCollectorError') {
+        if (error.code === "InteractionCollectorError") {
           logger.warn("Timeout d'interaction");
           if (!interaction.replied) {
-            await interaction.followUp({
-              content: "❌ Temps écoulé. Veuillez relancer la commande.",
-              flags: ["Ephemeral"],
-            }).catch(() => {});
+            await interaction
+              .followUp({
+                content: "❌ Temps écoulé. Veuillez relancer la commande.",
+                flags: ["Ephemeral"],
+              })
+              .catch(() => {});
           }
           return;
         }
       }
 
       if (!interaction.replied) {
-        await interaction.followUp({
-          content: "❌ Erreur lors de la sélection/modification du personnage.",
-          flags: ["Ephemeral"],
-        }).catch(() => {});
+        await interaction
+          .followUp({
+            content:
+              "❌ Erreur lors de la sélection/modification du personnage.",
+            flags: ["Ephemeral"],
+          })
+          .catch(() => {});
       }
     }
   } catch (error) {
-    logger.error("Erreur lors de la préparation de la commande character-admin:", {
-      guildId: interaction.guildId,
-      userId: interaction.user.id,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
-    });
+    logger.error(
+      "Erreur lors de la préparation de la commande character-admin:",
+      {
+        guildId: interaction.guildId,
+        userId: interaction.user.id,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      }
+    );
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la préparation de la commande.",
+      content:
+        "❌ Une erreur est survenue lors de la préparation de la commande.",
       flags: ["Ephemeral"],
     });
   }
@@ -275,7 +317,8 @@ async function handleStatsUpdate(interaction: any, character: Character) {
     await interaction.showModal(modal);
 
     const modalFilter = (i: any) =>
-      i.customId === "character_stats_modal" && i.user.id === interaction.user.id;
+      i.customId === "character_stats_modal" &&
+      i.user.id === interaction.user.id;
     const modalInteraction = await interaction.awaitModalSubmit({
       filter: modalFilter,
       time: 120000, // 2 minutes au lieu de 5
@@ -290,16 +333,20 @@ async function handleStatsUpdate(interaction: any, character: Character) {
     }
 
     const paValue = modalInteraction.fields.getTextInputValue("pa_input");
-    const hungerValue = modalInteraction.fields.getTextInputValue("hunger_input");
-    const isDeadValue = modalInteraction.fields.getTextInputValue("is_dead_input");
-    const canRerollValue = modalInteraction.fields.getTextInputValue("can_reroll_input");
-    const isActiveValue = modalInteraction.fields.getTextInputValue("is_active_input");
+    const hungerValue =
+      modalInteraction.fields.getTextInputValue("hunger_input");
+    const isDeadValue =
+      modalInteraction.fields.getTextInputValue("is_dead_input");
+    const canRerollValue =
+      modalInteraction.fields.getTextInputValue("can_reroll_input");
+    const isActiveValue =
+      modalInteraction.fields.getTextInputValue("is_active_input");
 
     const paNumber = parseInt(paValue, 10);
     const hungerNumber = parseInt(hungerValue, 10);
-    const isDeadBool = isDeadValue.toLowerCase() === 'true';
-    const canRerollBool = canRerollValue.toLowerCase() === 'true';
-    const isActiveBool = isActiveValue.toLowerCase() === 'true';
+    const isDeadBool = isDeadValue.toLowerCase() === "true";
+    const canRerollBool = canRerollValue.toLowerCase() === "true";
+    const isActiveBool = isActiveValue.toLowerCase() === "true";
 
     // Validation des valeurs
     const errors = [];
@@ -322,12 +369,15 @@ async function handleStatsUpdate(interaction: any, character: Character) {
     const updateData: any = {};
     if (!isNaN(paNumber)) updateData.paTotal = paNumber;
     if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
-    if (isDeadValue !== '') updateData.isDead = isDeadBool;
-    if (canRerollValue !== '') updateData.canReroll = canRerollBool;
-    if (isActiveValue !== '') updateData.isActive = isActiveBool;
+    if (isDeadValue !== "") updateData.isDead = isDeadBool;
+    if (canRerollValue !== "") updateData.canReroll = canRerollBool;
+    if (isActiveValue !== "") updateData.isActive = isActiveBool;
 
     // Mettre à jour le personnage
-    const updatedCharacter = await apiService.updateCharacterStats(character.id, updateData) as Character;
+    const updatedCharacter = (await apiService.updateCharacterStats(
+      character.id,
+      updateData
+    )) as Character;
 
     // Créer l'embed de confirmation
     const embed = new EmbedBuilder()
@@ -342,12 +392,16 @@ async function handleStatsUpdate(interaction: any, character: Character) {
         },
         {
           name: "Faim",
-          value: `${getHungerLevelText(character.hungerLevel || 0)} → ${getHungerLevelText(hungerNumber)}`,
+          value: `${getHungerLevelText(
+            character.hungerLevel || 0
+          )} → ${getHungerLevelText(hungerNumber)}`,
           inline: true,
         },
         {
           name: "État",
-          value: `${character.isDead ? '💀' : '❤️'} → ${isDeadBool ? '💀' : '❤️'}`,
+          value: `${character.isDead ? "💀" : "❤️"} → ${
+            isDeadBool ? "💀" : "❤️"
+          }`,
           inline: true,
         }
       )
@@ -356,7 +410,13 @@ async function handleStatsUpdate(interaction: any, character: Character) {
     await modalInteraction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors de la modification des stats:", { error });
-    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) { // Unknown interaction
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 10062
+    ) {
+      // Unknown interaction
       logger.warn("Interaction expirée lors de la modification des stats");
       // L'utilisateur verra probablement l'erreur côté Discord
       return;
@@ -368,7 +428,9 @@ async function handleStatsUpdate(interaction: any, character: Character) {
           flags: ["Ephemeral"],
         });
       } catch (followUpError) {
-        logger.error("Impossible de répondre à l'interaction expirée:", { followUpError });
+        logger.error("Impossible de répondre à l'interaction expirée:", {
+          followUpError,
+        });
       }
     }
   }
@@ -397,27 +459,33 @@ async function handleKillCharacter(interaction: any, character: any) {
 
     // Envoyer une notification dans le canal de logs
     try {
-      const { sendLogMessage } = await import('../../utils/channels');
+      const { sendLogMessage } = await import("../../utils/channels");
       const guildId = interaction.guildId;
       const client = interaction.client;
-      
+
       if (guildId && client) {
         const logMessage = `💀 **Mort d'un personnage**
-Le personnage **${character.name}** a été tué par un administrateur.
-
-**Joueur:** <@${character.user?.discordId || 'Inconnu'}>
-**Admin:** <@${interaction.user.id}>
+Le personnage **${character.name}**, <@${
+          character.user?.discordId || "Inconnu"
+        }> est mort.
 
 *${new Date().toLocaleString()}*`;
 
         await sendLogMessage(guildId, client, logMessage);
       }
     } catch (logError) {
-      logger.error("Erreur lors de l'envoi du log de mort du personnage:", { error: logError });
+      logger.error("Erreur lors de l'envoi du log de mort du personnage:", {
+        error: logError,
+      });
     }
   } catch (error) {
     logger.error("Erreur lors de la suppression du personnage:", { error });
-    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 10062
+    ) {
       logger.warn("Interaction expirée lors de la suppression du personnage");
       return; // Interaction expirée
     }
@@ -428,7 +496,9 @@ Le personnage **${character.name}** a été tué par un administrateur.
         flags: ["Ephemeral"],
       });
     } catch (replyError) {
-      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+      logger.error("Impossible de répondre à l'interaction expirée:", {
+        replyError,
+      });
     }
   }
 }
@@ -437,25 +507,39 @@ async function handleRerollPermission(interaction: any, character: any) {
   try {
     if (!character.isDead) {
       await interaction.reply({
-        content: "❌ Seul un personnage mort peut avoir l'autorisation de reroll.",
+        content:
+          "❌ Seul un personnage mort peut avoir l'autorisation de reroll.",
         flags: ["Ephemeral"],
       });
       return;
     }
 
     const newCanReroll = !character.canReroll;
-    await apiService.updateCharacterStats(character.id, { canReroll: newCanReroll });
+    await apiService.updateCharacterStats(character.id, {
+      canReroll: newCanReroll,
+    });
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
-      .setTitle(`🔄 Autorisation de Reroll ${newCanReroll ? 'Accordée' : 'Révoquée'}`)
-      .setDescription(`**${character.name}** ${newCanReroll ? 'peut maintenant' : 'ne peut plus'} créer un nouveau personnage.`)
+      .setTitle(
+        `🔄 Autorisation de Reroll ${newCanReroll ? "Accordée" : "Révoquée"}`
+      )
+      .setDescription(
+        `**${character.name}** ${
+          newCanReroll ? "peut maintenant" : "ne peut plus"
+        } créer un nouveau personnage.`
+      )
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors de la gestion du reroll:", { error });
-    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 10062
+    ) {
       logger.warn("Interaction expirée lors de la gestion du reroll");
       return; // Interaction expirée
     }
@@ -466,12 +550,18 @@ async function handleRerollPermission(interaction: any, character: any) {
         flags: ["Ephemeral"],
       });
     } catch (replyError) {
-      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+      logger.error("Impossible de répondre à l'interaction expirée:", {
+        replyError,
+      });
     }
   }
 }
 
-async function handleSwitchActive(interaction: any, character: any, townId: string) {
+async function handleSwitchActive(
+  interaction: any,
+  character: any,
+  townId: string
+) {
   try {
     if (character.isDead) {
       await interaction.reply({
@@ -485,7 +575,11 @@ async function handleSwitchActive(interaction: any, character: any, townId: stri
 
     if (newIsActive) {
       // Activer ce personnage (désactivera automatiquement les autres)
-      await apiService.switchActiveCharacter(character.userId, townId, character.id);
+      await apiService.switchActiveCharacter(
+        character.userId,
+        townId,
+        character.id
+      );
     } else {
       // Désactiver ce personnage (mais garder au moins un actif)
       await apiService.updateCharacterStats(character.id, { isActive: false });
@@ -493,14 +587,23 @@ async function handleSwitchActive(interaction: any, character: any, townId: stri
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
-      .setTitle(`⚡ Personnage ${newIsActive ? 'Activé' : 'Désactivé'}`)
-      .setDescription(`**${character.name}** est maintenant ${newIsActive ? 'actif' : 'inactif'}.`)
+      .setTitle(`⚡ Personnage ${newIsActive ? "Activé" : "Désactivé"}`)
+      .setDescription(
+        `**${character.name}** est maintenant ${
+          newIsActive ? "actif" : "inactif"
+        }.`
+      )
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
     logger.error("Erreur lors du changement de statut actif:", { error });
-    if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 10062
+    ) {
       logger.warn("Interaction expirée lors du changement de statut actif");
       return; // Interaction expirée
     }
@@ -511,7 +614,9 @@ async function handleSwitchActive(interaction: any, character: any, townId: stri
         flags: ["Ephemeral"],
       });
     } catch (replyError) {
-      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+      logger.error("Impossible de répondre à l'interaction expirée:", {
+        replyError,
+      });
     }
   }
 }
@@ -547,7 +652,7 @@ function createCharacterStatsModal(character: any) {
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("true ou false")
-    .setValue(character.isDead ? 'true' : 'false')
+    .setValue(character.isDead ? "true" : "false")
     .setMinLength(1)
     .setMaxLength(5);
 
@@ -557,7 +662,7 @@ function createCharacterStatsModal(character: any) {
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("true ou false")
-    .setValue(character.canReroll ? 'true' : 'false')
+    .setValue(character.canReroll ? "true" : "false")
     .setMinLength(1)
     .setMaxLength(5);
 
@@ -567,15 +672,25 @@ function createCharacterStatsModal(character: any) {
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("true ou false")
-    .setValue(character.isActive ? 'true' : 'false')
+    .setValue(character.isActive ? "true" : "false")
     .setMinLength(1)
     .setMaxLength(5);
 
-  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(paInput);
-  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(hungerInput);
-  const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(isDeadInput);
-  const fourthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(canRerollInput);
-  const fifthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput);
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    paInput
+  );
+  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    hungerInput
+  );
+  const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    isDeadInput
+  );
+  const fourthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    canRerollInput
+  );
+  const fifthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    isActiveInput
+  );
 
   modal.addComponents([firstRow, secondRow, thirdRow, fourthRow, fifthRow]);
 
@@ -592,14 +707,15 @@ export async function handleCharacterStatsModal(interaction: any) {
   const paValue = interaction.fields.getTextInputValue("pa_input");
   const hungerValue = interaction.fields.getTextInputValue("hunger_input");
   const isDeadValue = interaction.fields.getTextInputValue("is_dead_input");
-  const canRerollValue = interaction.fields.getTextInputValue("can_reroll_input");
+  const canRerollValue =
+    interaction.fields.getTextInputValue("can_reroll_input");
   const isActiveValue = interaction.fields.getTextInputValue("is_active_input");
 
   const paNumber = parseInt(paValue, 10);
   const hungerNumber = parseInt(hungerValue, 10);
-  const isDeadBool = isDeadValue.toLowerCase() === 'true';
-  const canRerollBool = canRerollValue.toLowerCase() === 'true';
-  const isActiveBool = isActiveValue.toLowerCase() === 'true';
+  const isDeadBool = isDeadValue.toLowerCase() === "true";
+  const canRerollBool = canRerollValue.toLowerCase() === "true";
+  const isActiveBool = isActiveValue.toLowerCase() === "true";
 
   // Validation des valeurs
   const errors = [];
@@ -622,36 +738,79 @@ export async function handleCharacterStatsModal(interaction: any) {
   const updateData: any = {};
   if (!isNaN(paNumber)) updateData.paTotal = paNumber;
   if (!isNaN(hungerNumber)) updateData.hungerLevel = hungerNumber;
-  if (isDeadValue !== '') updateData.isDead = isDeadBool;
-  if (canRerollValue !== '') updateData.canReroll = canRerollBool;
-  if (isActiveValue !== '') updateData.isActive = isActiveBool;
+  if (isDeadValue !== "") updateData.isDead = isDeadBool;
+  if (canRerollValue !== "") updateData.canReroll = canRerollBool;
+  if (isActiveValue !== "") updateData.isActive = isActiveBool;
 
-  // Mettre à jour le personnage
-  const updatedCharacter = await apiService.updateCharacterStats(interaction.customId.split('_')[0], updateData) as Character;
+  // Récupérer l'ID du personnage depuis l'ID de la modale
+  const characterId = interaction.customId.split("_")[0];
 
-  // Créer l'embed de confirmation
-  const embed = new EmbedBuilder()
-    .setColor(0x00ff00)
-    .setTitle("✅ Personnage Modifié")
-    .setDescription(`**${updatedCharacter.name}** a été modifié avec succès.`)
-    .addFields(
+  try {
+    logger.info("Tentative de mise à jour des statistiques du personnage", {
+      characterId,
+      updateData,
+      customId: interaction.customId,
+    });
+
+    // Mettre à jour le personnage avec typage explicite
+    const updatedCharacter = (await apiService.updateCharacterStats(
+      characterId,
+      updateData
+    )) as Character;
+
+    logger.info("Statistiques du personnage mises à jour avec succès", {
+      characterId,
+      updatedCharacter,
+    });
+
+    // Créer l'embed de confirmation
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle("✅ Personnage Modifié")
+      .setDescription(`**${updatedCharacter.name}** a été modifié avec succès.`)
+      .addFields(
+        {
+          name: "PA",
+          value: `${paNumber}`,
+          inline: true,
+        },
+        {
+          name: "Faim",
+          value: `${getHungerLevelText(hungerNumber)}`,
+          inline: true,
+        },
+        {
+          name: "État",
+          value: `${isDeadBool ? "💀" : "❤️"}`,
+          inline: true,
+        }
+      )
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+  } catch (error) {
+    logger.error(
+      "Erreur lors de la mise à jour des statistiques du personnage:",
       {
-        name: "PA",
-        value: `${paNumber}`,
-        inline: true,
-      },
-      {
-        name: "Faim",
-        value: `${getHungerLevelText(hungerNumber)}`,
-        inline: true,
-      },
-      {
-        name: "État",
-        value: `${isDeadBool ? '💀' : '❤️'}`,
-        inline: true,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+        characterId,
+        updateData,
+        customId: interaction.customId,
       }
-    )
-    .setTimestamp();
+    );
 
-  await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    await interaction.reply({
+      content: `❌ Une erreur est survenue lors de la mise à jour du personnage: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
+  }
 }

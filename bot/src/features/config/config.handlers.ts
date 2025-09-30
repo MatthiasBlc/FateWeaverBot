@@ -12,6 +12,14 @@ import {
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger.js";
 
+interface GuildConfig {
+  id: string;
+  discordGuildId: string;
+  name: string;
+  logChannelId?: string | null;
+  [key: string]: any; // Pour les autres propriétés qui pourraient exister
+}
+
 export async function handleConfigChannelCommand(
   interaction: CommandInteraction
 ) {
@@ -36,7 +44,7 @@ export async function handleConfigChannelCommand(
   let currentLogChannel = null;
   let currentLogChannelName = null;
   try {
-    const guildConfig = await apiService.getGuildByDiscordId(guild.id);
+    const guildConfig = await apiService.getGuildByDiscordId(guild.id) as GuildConfig;
     if (guildConfig && guildConfig.logChannelId) {
       currentLogChannel = guild.channels.cache.get(guildConfig.logChannelId);
       currentLogChannelName = currentLogChannel
@@ -132,10 +140,10 @@ export async function handleConfigChannelCommand(
     const selectedChannelId = selectInteraction.values[0];
 
     if (selectedChannelId === "none") {
-      // Désactiver les logs - TODO: Implémenter cette fonctionnalité côté API
-      // await apiService.updateGuildLogChannel(guild.id, null);
+      // Désactiver les logs
+      await apiService.updateGuildLogChannel(guild.id, null);
 
-      logger.info(`Log channel disabled for guild ${guild.id} (fonctionnalité non implémentée)`);
+      logger.info(`Log channel disabled for guild ${guild.id}`);
 
       const successEmbed = new EmbedBuilder()
         .setColor("#ff9900")
@@ -165,11 +173,11 @@ export async function handleConfigChannelCommand(
       });
     }
 
-    // Sauvegarder dans la base de données - TODO: Implémenter cette fonctionnalité côté API
-    // await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
+    // Sauvegarder dans la base de données
+    await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
 
     logger.info(
-      `Log channel configured for guild ${guild.id}: ${selectedChannelId} (fonctionnalité non implémentée)`
+      `Log channel configured for guild ${guild.id}: ${selectedChannelId}`
     );
 
     const successEmbed = new EmbedBuilder()

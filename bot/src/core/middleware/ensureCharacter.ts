@@ -54,16 +54,27 @@ export async function ensureCharacterAvailability(
       return;
     }
 
-    // Si l'utilisateur a un personnage actif, tout va bien
-    if (characterStatus.hasActiveCharacter) {
+    // Si l'utilisateur a un personnage actif ET qu'il n'est pas mort, tout va bien
+    if (characterStatus.hasActiveCharacter && !characterStatus.character?.isDead) {
       logger.info(
         `[ensureCharacterAvailability] L'utilisateur ${userId} peut effectuer des actions normalement`
       );
       return;
     }
 
+    // Si l'utilisateur a un personnage (mort ou inactif), on autorise l'affichage du profil
+    if (characterStatus.character) {
+      const status = characterStatus.character.isDead ? 'mort' : 'inactif';
+      logger.info(
+        `[ensureCharacterAvailability] L'utilisateur ${userId} a un personnage ${status}`
+      );
+      return;
+    }
+
     // Cas par défaut - ne devrait pas arriver mais pour sécurité
-    logger.warn(`[ensureCharacterAvailability] État du personnage inconnu pour ${userId}`);
+    logger.warn(`[ensureCharacterAvailability] État du personnage inconnu pour ${userId}`, {
+      characterStatus
+    });
     throw new Error("État du personnage non déterminé");
 
   } catch (error) {

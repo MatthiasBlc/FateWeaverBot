@@ -98,6 +98,18 @@ class APIService {
   }
 
   /**
+   * Met à jour le canal de logs d'une guilde
+   * @param discordGuildId L'ID Discord de la guilde
+   * @param logChannelId L'ID du canal de logs (ou null pour désactiver)
+   */
+  public async updateGuildLogChannel(
+    discordGuildId: string,
+    logChannelId: string | null
+  ) {
+    return this.guildAPI.updateGuildLogChannel(discordGuildId, logChannelId);
+  }
+
+  /**
    * Crée ou met à jour un rôle
    */
   public async upsertRole(
