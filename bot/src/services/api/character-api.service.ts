@@ -94,6 +94,38 @@ export class CharacterAPIService extends BaseAPIService {
   }
 
   /**
+   * Récupère un personnage par son ID
+   * @param characterId L'ID du personnage à récupérer
+   */
+  public async getCharacterById(characterId: string): Promise<Character> {
+    try {
+      const response = await this.get<Character>(`/characters/${characterId}`);
+      
+      if (!response) {
+        throw new Error(`Aucun personnage trouvé avec l'ID ${characterId}`);
+      }
+      
+      logger.info(`[getCharacterById] Personnage récupéré:`, {
+        characterId,
+        characterName: response.name,
+        isActive: response.isActive
+      });
+      
+      return response;
+    } catch (error) {
+      logger.error("Erreur lors de la récupération du personnage:", {
+        characterId,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Récupère tous les personnages d'une guilde
    */
   public async getGuildCharacters(guildId: string) {

@@ -122,10 +122,21 @@ class APIService {
   }
 
   /**
-   * Récupère le personnage actif d'un utilisateur dans une ville
+   * Récupère un personnage actif par son ID Discord et l'ID de la ville
    */
-  public async getActiveCharacter(userId: string, townId: string) {
-    return this.characterAPI.getActiveCharacter(userId, townId);
+  public async getActiveCharacter(
+    discordId: string,
+    townId: string
+  ) {
+    return this.characterAPI.getActiveCharacter(discordId, townId);
+  }
+
+  /**
+   * Récupère un personnage par son ID
+   * @param characterId L'ID du personnage à récupérer
+   */
+  public async getCharacterById(characterId: string) {
+    return this.characterAPI.getCharacterById(characterId);
   }
 
   /**

@@ -109,9 +109,10 @@ export async function handleViewFoodStockCommand(interaction: any) {
 
     // Préparer les composants (boutons) si nécessaire
     let components: any[] = [];
-    if (showEatButton && town.foodStock > 0) {
+    if (showEatButton && town.foodStock > 0 && character) {
+      // Inclure l'ID du personnage dans l'ID personnalisé du bouton
       const eatButton = new ButtonBuilder()
-        .setCustomId("eat_food")
+        .setCustomId(`eat_food:${character.id}`)
         .setLabel("🍽️ Manger")
         .setStyle(ButtonStyle.Primary);
 

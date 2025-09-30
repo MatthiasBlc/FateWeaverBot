@@ -32,21 +32,31 @@ export class ButtonHandler {
    */
   private registerDefaultHandlers() {
     // Gestionnaire pour les boutons de nourriture
-    this.registerHandler('eat_food', async (interaction) => {
+    this.registerHandlerByPrefix('eat_food', async (interaction) => {
       await interaction.deferUpdate();
 
       try {
         const { handleEatButton } = await import('../features/hunger/hunger.handlers.js');
-        // Get the character for the user
-        const character = await apiService.getActiveCharacter(interaction.user.id, interaction.guildId);
+        
+        // Extraire l'ID du personnage de l'ID personnalisé du bouton
+        const characterId = interaction.customId.split(':')[1];
+        
+        if (!characterId) {
+          throw new Error("ID du personnage manquant dans l'ID du bouton");
+        }
+        
+        // Récupérer le personnage par son ID
+        const character = await apiService.getCharacterById(characterId);
+        
         if (!character) {
           await interaction.editReply({
-            content: "❌ Aucun personnage actif trouvé.",
+            content: "❌ Personnage introuvable.",
             embeds: [],
             components: []
           });
           return;
         }
+        
         await handleEatButton(interaction, character);
       } catch (error) {
         logger.error("Error handling eat button:", { error });

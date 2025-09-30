@@ -145,6 +145,13 @@ export async function handleEatButton(interaction: any, character: any) {
       return;
     }
 
+    logger.info(`[handleEatButton] Tentative de manger pour le personnage:`, {
+      characterId: character.id,
+      characterName: character.name,
+      hungerLevel: character.hungerLevel,
+      guildId: interaction.guildId,
+    });
+
     // Tenter de faire manger le personnage
     const eatResult = await apiService.eatFood(character.id);
 
