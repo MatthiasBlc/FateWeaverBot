@@ -1,8 +1,12 @@
 -------------------------Todo-------------------------
 
+/manger plusieurs boutons suivant la situation (jusquà full ? une seule ration?)
+
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
 -> indiquer le nombre de vivres mangés ?
+
+lors de la mort d'un personnage écrire la raison
 
 # Pouvoir faire manger les copains ?
 

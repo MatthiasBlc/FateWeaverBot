@@ -386,6 +386,7 @@ async function handleKillCharacter(interaction: any, character: any) {
 
     await apiService.killCharacter(character.id);
 
+    // Créer l'embed pour la réponse à l'utilisateur
     const embed = new EmbedBuilder()
       .setColor(0xff0000)
       .setTitle("💀 Personnage Tué")
@@ -393,6 +394,27 @@ async function handleKillCharacter(interaction: any, character: any) {
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+
+    // Envoyer une notification dans le canal de logs
+    try {
+      const { sendLogMessage } = await import('../../utils/channels');
+      const guildId = interaction.guildId;
+      const client = interaction.client;
+      
+      if (guildId && client) {
+        const logMessage = `💀 **Mort d'un personnage**
+Le personnage **${character.name}** a été tué par un administrateur.
+
+**Joueur:** <@${character.user?.discordId || 'Inconnu'}>
+**Admin:** <@${interaction.user.id}>
+
+*${new Date().toLocaleString()}*`;
+
+        await sendLogMessage(guildId, client, logMessage);
+      }
+    } catch (logError) {
+      logger.error("Erreur lors de l'envoi du log de mort du personnage:", { error: logError });
+    }
   } catch (error) {
     logger.error("Erreur lors de la suppression du personnage:", { error });
     if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {

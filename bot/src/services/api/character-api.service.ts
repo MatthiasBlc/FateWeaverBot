@@ -2,6 +2,17 @@ import { AxiosInstance } from "axios";
 import { BaseAPIService } from "./base-api.service";
 import { logger } from "../logger";
 
+interface User {
+  id: string;
+  discordId: string;
+  username: string;
+  discriminator: string;
+  globalName: string | null;
+  avatar: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Service API spécialisé pour les personnages
  * Gère toutes les opérations liées aux personnages
@@ -13,10 +24,20 @@ export class CharacterAPIService extends BaseAPIService {
 
   /**
    * Récupère le personnage actif d'un utilisateur dans une ville
+   * @param discordId L'ID Discord de l'utilisateur
+   * @param townId L'ID de la ville
    */
-  public async getActiveCharacter(userId: string, townId: string): Promise<any | null> {
+  public async getActiveCharacter(discordId: string, townId: string): Promise<any | null> {
     try {
-      // Récupérer tous les personnages de la ville
+      // D'abord, récupérer l'utilisateur par son ID Discord
+      const user = await this.get<User>(`/users/discord/${discordId}`);
+      
+      if (!user || !user.id) {
+        logger.warn("No user found for Discord ID:", { discordId });
+        return null;
+      }
+
+      // Ensuite, récupérer les personnages de la ville
       const characters = await this.getTownCharacters(townId);
 
       // S'assurer que characters est un tableau
@@ -25,14 +46,28 @@ export class CharacterAPIService extends BaseAPIService {
       }
 
       // Trouver le personnage actif de l'utilisateur
-      const activeCharacter = characters.find((char: any) =>
-        char.userId === userId && char.isActive
+      const activeCharacter = characters.find((char: any) => 
+        char.userId === user.id && char.isActive === true
       );
+
+      if (!activeCharacter) {
+        logger.warn("No active character found for user:", { 
+          userId: user.id, 
+          discordId,
+          townId,
+          characters: characters.map((c: any) => ({
+            id: c.id,
+            userId: c.userId,
+            isActive: c.isActive,
+            name: c.name
+          }))
+        });
+      }
 
       return activeCharacter || null;
     } catch (error) {
       logger.error("Error fetching active character:", {
-        userId,
+        discordId,
         townId,
         error: error instanceof Error ? {
           message: error.message,

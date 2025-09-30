@@ -61,12 +61,9 @@ export class ModalHandler {
     // Gestionnaire pour les modals d'administration de personnages
     this.registerHandler('character_stats_modal', async (interaction) => {
       try {
-        // Pour les modals d'admin, on délègue à la fonction dédiée
-        // On passe l'ID du personnage via les métadonnées du modal ou une autre méthode
-        await interaction.reply({
-          content: "Modal d'administration - fonctionnalité à implémenter.",
-          flags: ["Ephemeral"],
-        });
+        // Importer et appeler le gestionnaire de stats de personnage
+        const { handleCharacterStatsModal } = await import('../features/admin/character-admin.handlers');
+        await handleCharacterStatsModal(interaction);
       } catch (error) {
         logger.error("Error handling character stats modal:", { error });
         if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
@@ -74,7 +71,7 @@ export class ModalHandler {
           return;
         }
         await interaction.reply({
-          content: "❌ Erreur lors de la modification des statistiques.",
+          content: "❌ Erreur lors de la modification des statistiques du personnage: " + (error instanceof Error ? error.message : 'Erreur inconnue'),
           flags: ["Ephemeral"],
         });
       }
