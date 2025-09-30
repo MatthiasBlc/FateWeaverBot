@@ -275,7 +275,7 @@ Il faut que le user voit son status à côté du bouton
 
 est-ce que foodstock-admin est ephemeral ?
 
-Inverser échalle hunger (0->4)
+Inverser échelle hunger (0->4)
 
 Update deploy script
 
