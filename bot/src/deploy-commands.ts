@@ -1,4 +1,4 @@
-import { REST, Routes } from "discord.js";
+import { REST, Routes, ApplicationCommand } from "discord.js";
 import { readdir, stat } from "fs/promises";
 import { join, resolve } from "path";
 import { logger } from "./services/logger";
@@ -16,6 +16,73 @@ const clientId = config.discord.clientId;
 const guildId = config.discord.guildId?.trim();
 const isGuildDeployment = !!guildId;
 const rest = new REST().setToken(config.discord.token);
+
+// --- Helper Functions ---
+
+/**
+ * Nettoie un objet option en ne gardant que les propriétés pertinentes pour la comparaison
+ */
+function cleanOption(option: any): any {
+  if (!option) return option;
+  
+  const cleaned: any = {
+    type: option.type,
+    name: option.name,
+    description: option.description,
+  };
+  
+  // Ajouter les propriétés optionnelles si elles existent
+  if (option.required !== undefined) cleaned.required = option.required;
+  if (option.choices !== undefined) cleaned.choices = option.choices;
+  
+  // Normaliser les options: [] et undefined sont équivalents
+  if (option.options !== undefined && option.options.length > 0) {
+    cleaned.options = option.options.map(cleanOption);
+  }
+  
+  if (option.min_value !== undefined) cleaned.min_value = option.min_value;
+  if (option.max_value !== undefined) cleaned.max_value = option.max_value;
+  if (option.min_length !== undefined) cleaned.min_length = option.min_length;
+  if (option.max_length !== undefined) cleaned.max_length = option.max_length;
+  if (option.autocomplete !== undefined) cleaned.autocomplete = option.autocomplete;
+  if (option.channel_types !== undefined) cleaned.channel_types = option.channel_types;
+  
+  return cleaned;
+}
+
+/**
+ * Compare deux commandes pour déterminer si elles sont identiques
+ */
+function areCommandsEqual(local: any, remote: ApplicationCommand): boolean {
+  // Comparer les propriétés essentielles
+  if (local.name !== remote.name) {
+    return false;
+  }
+  
+  if (local.description !== remote.description) {
+    return false;
+  }
+  
+  // Comparer les options (sous-commandes, paramètres, etc.)
+  // Nettoyer les options pour ne comparer que les propriétés pertinentes
+  const localOptions = (local.options || []).map(cleanOption);
+  const remoteOptions = (remote.options || []).map(cleanOption);
+  
+  const localOptionsStr = JSON.stringify(localOptions);
+  const remoteOptionsStr = JSON.stringify(remoteOptions);
+  
+  if (localOptionsStr !== remoteOptionsStr) {
+    return false;
+  }
+  
+  // Note: On ne compare PAS les permissions par défaut car Discord ne les retourne
+  // pas toujours dans l'API GET, même si elles sont bien appliquées.
+  // Les permissions sont correctement appliquées lors du déploiement via PUT/PATCH.
+  // Si vous modifiez les permissions d'une commande, changez aussi sa description
+  // ou une option pour forcer la mise à jour.
+  
+  return true;
+}
 
 // --- Command Loading Logic ---
 async function loadCommandsRecursively(dir: string): Promise<any[]> {
@@ -143,39 +210,124 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
       isGuildDeployment ? `Mode: Guilde (${guildId})` : "Mode: Global"
     );
 
-    logger.info("🔍 Chargement des fichiers de commandes...");
+    logger.info("🔍 Chargement des fichiers de commandes locales...");
     const commandsPath = resolve(process.cwd(), "src", "commands");
-    const commands = await loadCommandsFromCommands(commandsPath);
+    const localCommands = await loadCommandsFromCommands(commandsPath);
 
     // Load commands from features directory (similar to index.ts logic)
     const featuresPath = resolve(process.cwd(), "src", "features");
     const featureCommands = await loadCommandsFromFeatures(featuresPath);
-    commands.push(...featureCommands);
+    localCommands.push(...featureCommands);
 
-    logger.info(`✅ ${commands.length} commandes chargées avec succès.`);
+    logger.info(`✅ ${localCommands.length} commandes locales chargées.`);
 
-    if (commands.length === 0) {
-      logger.warn("Aucune commande à déployer. Arrêt.");
+    if (localCommands.length === 0) {
+      logger.warn("Aucune commande locale à déployer. Arrêt.");
       process.exit(0);
     }
 
+    // Déterminer la route selon le mode de déploiement
     const route = isGuildDeployment
       ? Routes.applicationGuildCommands(clientId, guildId!)
       : Routes.applicationCommands(clientId);
 
-    logger.info("🗑️  Nettoyage des anciennes commandes sur Discord...");
-    // Using PUT with an empty array is the official way to bulk delete all commands.
-    await rest.put(route, { body: [] });
-    // await rest.put(Routes.applicationCommands(clientId), { body: [] });
-    logger.info("✅ Nettoyage terminé.");
+    // Récupérer les commandes actuellement déployées sur Discord
+    logger.info("📥 Récupération des commandes déjà déployées sur Discord...");
+    const deployedCommands = (await rest.get(route)) as ApplicationCommand[];
+    logger.info(`   -> ${deployedCommands.length} commandes actuellement déployées.`);
 
-    logger.info(
-      `✍️  Enregistrement des ${commands.length} nouvelles commandes...`
+    // Créer des maps pour faciliter la comparaison
+    const localCommandsMap = new Map(
+      localCommands.map((cmd) => [cmd.name, cmd])
     );
-    // We can use a single PUT now that loading is confirmed to be stable.
-    await rest.put(route, { body: commands });
+    const deployedCommandsMap = new Map(
+      deployedCommands.map((cmd) => [cmd.name, cmd])
+    );
 
-    logger.info("--- ✅ Déploiement terminé avec succès ---");
+    // Identifier les commandes à créer, mettre à jour et supprimer
+    const commandsToCreate: any[] = [];
+    const commandsToUpdate: Array<{ id: string; data: any }> = [];
+    const commandsToDelete: string[] = [];
+
+    // Vérifier les commandes locales
+    for (const [name, localCmd] of localCommandsMap) {
+      const deployedCmd = deployedCommandsMap.get(name);
+      
+      if (!deployedCmd) {
+        // Nouvelle commande à créer
+        commandsToCreate.push(localCmd);
+        logger.info(`   ➕ Nouvelle commande détectée: ${name}`);
+      } else if (!areCommandsEqual(localCmd, deployedCmd)) {
+        // Commande existante à mettre à jour
+        commandsToUpdate.push({ id: deployedCmd.id, data: localCmd });
+        logger.info(`   🔄 Commande modifiée détectée: ${name}`);
+      } else {
+        logger.info(`   ✓ Commande inchangée: ${name}`);
+      }
+    }
+
+    // Vérifier les commandes déployées qui n'existent plus localement
+    for (const [name, deployedCmd] of deployedCommandsMap) {
+      if (!localCommandsMap.has(name)) {
+        commandsToDelete.push(deployedCmd.id);
+        logger.info(`   🗑️  Commande à supprimer: ${name}`);
+      }
+    }
+
+    // Afficher le résumé
+    logger.info("\n📊 Résumé des changements:");
+    logger.info(`   - Commandes à créer: ${commandsToCreate.length}`);
+    logger.info(`   - Commandes à mettre à jour: ${commandsToUpdate.length}`);
+    logger.info(`   - Commandes à supprimer: ${commandsToDelete.length}`);
+    logger.info(`   - Commandes inchangées: ${localCommands.length - commandsToCreate.length - commandsToUpdate.length}`);
+
+    const totalChanges = commandsToCreate.length + commandsToUpdate.length + commandsToDelete.length;
+
+    if (totalChanges === 0) {
+      logger.info("✅ Aucun changement détecté. Déploiement non nécessaire.");
+      process.exit(0);
+    }
+
+    logger.info(`\n🚀 Application des ${totalChanges} changements...`);
+
+    // Créer les nouvelles commandes
+    for (const cmd of commandsToCreate) {
+      try {
+        await rest.post(route, { body: cmd });
+        logger.info(`   ✅ Commande créée: ${cmd.name}`);
+      } catch (error) {
+        logger.error(`   ❌ Erreur lors de la création de ${cmd.name}:`, { error });
+      }
+    }
+
+    // Mettre à jour les commandes modifiées
+    for (const { id, data } of commandsToUpdate) {
+      try {
+        const updateRoute = isGuildDeployment
+          ? Routes.applicationGuildCommand(clientId, guildId!, id)
+          : Routes.applicationCommand(clientId, id);
+        await rest.patch(updateRoute, { body: data });
+        logger.info(`   ✅ Commande mise à jour: ${data.name}`);
+      } catch (error) {
+        logger.error(`   ❌ Erreur lors de la mise à jour de ${data.name}:`, { error });
+      }
+    }
+
+    // Supprimer les commandes obsolètes
+    for (const id of commandsToDelete) {
+      try {
+        const deleteRoute = isGuildDeployment
+          ? Routes.applicationGuildCommand(clientId, guildId!, id)
+          : Routes.applicationCommand(clientId, id);
+        await rest.delete(deleteRoute);
+        logger.info(`   ✅ Commande supprimée (ID: ${id})`);
+      } catch (error) {
+        logger.error(`   ❌ Erreur lors de la suppression de la commande ${id}:`, { error });
+      }
+    }
+
+    logger.info("\n--- ✅ Déploiement terminé avec succès ---");
+    logger.info(`💡 Requêtes API économisées grâce au déploiement intelligent!`);
     process.exit(0);
   } catch (error) {
     logger.error(

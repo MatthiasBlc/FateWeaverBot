@@ -11,10 +11,10 @@ async function increaseAllCharactersHunger() {
   try {
     console.log("Début de l'augmentation automatique de la faim...");
 
-    // Récupère tous les personnages qui ne sont pas morts (hungerLevel < 4)
+    // Récupère tous les personnages qui ne sont pas morts (hungerLevel > 0)
     const characters = await prisma.character.findMany({
       where: {
-        hungerLevel: { lt: 4 }, // Seulement ceux qui ne sont pas morts
+        hungerLevel: { gt: 0 }, // Seulement ceux qui ne sont pas morts
       },
       select: {
         id: true,
@@ -41,7 +41,7 @@ async function increaseAllCharactersHunger() {
 
     for (const character of characters) {
       const oldLevel = character.hungerLevel;
-      const newLevel = Math.min(4, oldLevel + 1); // Ne pas dépasser 4 (mort)
+      const newLevel = Math.max(0, oldLevel - 1); // Ne pas descendre en dessous de 0 (mort)
 
       // Mettre à jour le niveau de faim
       await prisma.character.update({
@@ -55,7 +55,7 @@ async function increaseAllCharactersHunger() {
       updatedCount++;
 
       // Si le personnage meurt, l'ajouter à la liste
-      if (oldLevel < 4 && newLevel === 4) {
+      if (oldLevel > 0 && newLevel === 0) {
         deaths.push({
           name: character.name || character.user.username,
           guild: character.guild.name,

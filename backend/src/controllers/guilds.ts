@@ -46,22 +46,47 @@ export const upsertGuild: RequestHandler = async (req, res, next) => {
       });
     } else {
       // Créer une nouvelle guilde avec sa ville par défaut
-      guild = await prisma.guild.create({
-        data: {
-          discordGuildId: discordId,
-          name,
-          memberCount: memberCount || 0,
-          town: {
-            create: {
-              name: `${name} City`, // Nom par défaut de la ville
-              foodStock: 100, // Stock initial de vivres
-            },
+      guild = await prisma.$transaction(async (prisma) => {
+        // Créer d'abord la ville (sans relation avec la guilde pour éviter le conflit)
+        const town = await prisma.town.create({
+          data: {
+            name: `${name} City`, // Nom par défaut de la ville
+            foodStock: 100, // Stock initial de vivres
+            guildId: "", // Temporairement vide
           },
-        },
-        include: {
-          roles: true,
-          town: true,
-        },
+        });
+
+        // Puis créer la guilde
+        const newGuild = await prisma.guild.create({
+          data: {
+            discordGuildId: discordId,
+            name,
+            memberCount: memberCount || 0,
+          },
+          include: {
+            roles: true,
+            town: true,
+          },
+        });
+
+        // Mettre à jour la ville avec la bonne guildId
+        await prisma.town.update({
+          where: { id: town.id },
+          data: {
+            guildId: newGuild.id,
+          },
+        });
+
+        // Recharger la guilde avec la ville mise à jour
+        const finalGuild = await prisma.guild.findUnique({
+          where: { id: newGuild.id },
+          include: {
+            roles: true,
+            town: true,
+          },
+        });
+
+        return finalGuild;
       });
     }
 

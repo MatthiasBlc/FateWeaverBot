@@ -1,7 +1,5 @@
 -------------------------Todo-------------------------
 
-est-ce que foodstock-admin est ephemeral ?
-
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
 -> indiquer le nombre de vivres mangés ?
@@ -274,5 +272,11 @@ Créer une commande admin pour gérer un character : ses PA (ajout ou retrait), 
 Ajouter un bouton manger à la commande foodstock
 Il faut que le bouton ne soit visible que si le character n'a pas "faim ==0 ou qu'il est mort"
 Il faut que le user voit son status à côté du bouton
+
+est-ce que foodstock-admin est ephemeral ?
+
+Inverser échalle hunger (0->4)
+
+Update deploy script
 
 -------------------------Notes-------------------------

@@ -132,15 +132,15 @@ function createEatEmbed(
 function getHungerLevelText(level: number): string {
   switch (level) {
     case 0:
-      return "En bonne santé";
+      return "Mort";
     case 1:
-      return "Faim";
+      return "Agonie";
     case 2:
       return "Affamé";
     case 3:
-      return "Agonie";
+      return "Faim";
     case 4:
-      return "Mort";
+      return "En bonne santé";
     default:
       return "Inconnu";
   }
@@ -149,15 +149,15 @@ function getHungerLevelText(level: number): string {
 function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return "😊";
+      return "💀";
     case 1:
-      return "🤤";
+      return "😰";
     case 2:
       return "😕";
     case 3:
-      return "😰";
+      return "🤤";
     case 4:
-      return "💀";
+      return "😊";
     default:
       return "❓";
   }
@@ -166,15 +166,15 @@ function getHungerEmoji(level: number): string {
 function getHungerColor(level: number): number {
   switch (level) {
     case 0:
-      return 0x00ff00; // Vert
+      return 0x000000; // Noir
     case 1:
-      return 0xffff00; // Jaune
+      return 0xff4500; // Rouge-orange
     case 2:
       return 0xffa500; // Orange
     case 3:
-      return 0xff4500; // Rouge-orange
+      return 0xffff00; // Jaune
     case 4:
-      return 0x000000; // Noir
+      return 0x00ff00; // Vert
     default:
       return 0x808080; // Gris
   }

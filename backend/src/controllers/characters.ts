@@ -285,13 +285,13 @@ export const deleteCharacter: RequestHandler = async (req, res, next) => {
       where: { id },
     });
 
-    res.status(200).json({ message: "Personnage supprimé avec succès" });
+    res.status(204).json({ message: "Personnage supprimé avec succès" });
   } catch (error) {
     next(error);
   }
 };
 
-// Permet à un personnage de manger (consomme 1 vivre de la ville et réduit la faim du personnage)
+// Permet à un personnage de manger (consomme 1 vivre de la ville et améliore la faim du personnage)
 export const eatFood: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -320,8 +320,8 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Ville non trouvée pour ce personnage");
     }
 
-    // Vérifier si le personnage n'a pas faim (niveau 0 = en bonne santé)
-    if (character.hungerLevel === 0) {
+    // Vérifier si le personnage n'a pas faim (niveau 4 = en bonne santé)
+    if (character.hungerLevel >= 4) {
       throw createHttpError(
         400,
         "Tu n'as pas faim, pas besoin de manger"
@@ -329,7 +329,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     }
 
     // Vérifier si le personnage est mort
-    if (character.hungerLevel >= 4) {
+    if (character.hungerLevel <= 0) {
       throw createHttpError(
         400,
         "Ce personnage est mort et ne peut plus manger"
@@ -343,7 +343,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Calculer combien de foodstock consommer selon l'état de faim
     let foodToConsume = 1;
-    if (character.hungerLevel === 3) {
+    if (character.hungerLevel === 1) {
       // Agonie nécessite 2 repas pour passer au niveau 2
       foodToConsume = 2;
     }
@@ -356,11 +356,11 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       );
     }
 
-    // Calculer le nouveau niveau de faim
-    let newHungerLevel = Math.max(0, character.hungerLevel - 1);
+    // Calculer le nouveau niveau de faim (inversé: 0=mort, 4=bonne santé)
+    let newHungerLevel = Math.min(4, character.hungerLevel + 1);
 
-    // Cas spécial : agonie (niveau 3) qui nécessite 2 repas pour passer au niveau 2
-    if (character.hungerLevel === 3 && foodToConsume === 2) {
+    // Cas spécial : agonie (niveau 1) qui nécessite 2 repas pour passer au niveau 2
+    if (character.hungerLevel === 1 && foodToConsume === 2) {
       newHungerLevel = 2;
     }
 

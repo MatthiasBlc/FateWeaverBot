@@ -53,8 +53,69 @@ src/
 
 Le fichier `src/config/index.ts` contient toute la configuration de l'application. Les variables d'environnement sont validées au démarrage.
 
-## Déploiement
+## Déploiement des commandes
+
+### 🚀 Déploiement intelligent (recommandé)
+
+Le bot utilise un système de déploiement intelligent qui ne déploie que les commandes nouvelles ou modifiées :
+
+```bash
+# En local
+npm run deploy
+
+# Avec Docker
+docker compose exec discord-botdev npx tsx src/deploy-commands.ts
+```
+
+**Avantages :**
+- ✅ Évite le rate limiting de l'API Discord
+- ✅ Déploiement rapide (uniquement les changements)
+- ✅ Logs détaillés des modifications
+
+### 📋 Lister les commandes déployées
+
+```bash
+# En local
+npm run list-commands
+
+# Avec Docker
+docker compose exec discord-botdev npx tsx src/list-commands.ts
+```
+
+### ⚠️ Déploiement forcé (si nécessaire)
+
+En cas de problème, vous pouvez forcer un déploiement complet :
+
+```bash
+npm run deploy:force
+```
+
+**⚠️ Attention :** Cette commande supprime et recrée TOUTES les commandes. Utilisez-la uniquement en cas de problème.
+
+### 📖 Documentation complète
+
+Pour plus de détails sur le système de déploiement, consultez [DEPLOY-COMMANDS.md](./DEPLOY-COMMANDS.md).
+
+## Configuration des modes de déploiement
+
+### Mode Guilde (Développement)
+```env
+DISCORD_GUILD_ID=123456789  # ID de votre serveur de test
+```
+- Commandes déployées uniquement sur ce serveur
+- Mise à jour instantanée
+- Idéal pour le développement
+
+### Mode Global (Production)
+```env
+DISCORD_GUILD_ID=  # Laisser vide
+```
+- Commandes déployées sur tous les serveurs
+- Propagation jusqu'à 1 heure
+- Utilisé en production
+
+## Démarrage du bot
 
 1. Build le projet : `npm run build`
-2. Déployez les commandes : `npm run deploy-commands`
+2. Déployez les commandes : `npm run deploy`
 3. Lancez le bot : `npm start`
