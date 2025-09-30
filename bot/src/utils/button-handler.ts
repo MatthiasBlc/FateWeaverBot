@@ -48,20 +48,11 @@ export class ButtonHandler {
     });
 
     // Gestionnaire pour les boutons d'administration de personnages
+    // Ces boutons sont gérés par awaitMessageComponent dans character-admin.handlers.ts
     this.registerHandlerByPrefix('character_', async (interaction) => {
-      try {
-        // Pour les boutons d'admin, on délègue à la commande character-admin
-        await interaction.reply({
-          content: "Cette action doit être effectuée via la commande `/character-admin`.",
-          flags: ["Ephemeral"],
-        });
-      } catch (error) {
-        logger.error("Error handling character admin button:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors du traitement de l'action d'administration.",
-          flags: ["Ephemeral"],
-        });
-      }
+      // Ne rien faire - laisser le système awaitMessageComponent gérer ces boutons
+      logger.info(`Character button ${interaction.customId} - letting awaitMessageComponent handle it`);
+      // Retourner sans rien faire pour indiquer que c'est géré
     });
   }
 
@@ -98,11 +89,9 @@ export class ButtonHandler {
       return true;
     }
 
-    // Aucun gestionnaire trouvé
-    await interaction.reply({
-      content: "Bouton non reconnu.",
-      flags: ["Ephemeral"],
-    });
+    // Aucun gestionnaire trouvé - ne pas répondre automatiquement
+    // Laisser le système appelant gérer cette situation
+    logger.info(`No handler found for button: ${customId}`);
     return false;
   }
 

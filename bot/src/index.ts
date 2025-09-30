@@ -11,7 +11,15 @@ import { modalHandler } from './utils/modal-handler.js';
 // Handle button interactions
 async function handleButtonInteraction(interaction: any) {
   try {
-    await buttonHandler.handleButton(interaction);
+    // Essayer d'abord le système de boutons centralisé
+    const handled = await buttonHandler.handleButton(interaction);
+
+    // Si le système centralisé n'a pas trouvé de gestionnaire,
+    // laisser l'interaction continuer normalement (pour awaitMessageComponent)
+    if (!handled) {
+      logger.info(`Button ${interaction.customId} not handled by central system, letting it continue`);
+      return;
+    }
   } catch (error) {
     logger.error("Error handling button interaction:", { error });
     await interaction.reply({

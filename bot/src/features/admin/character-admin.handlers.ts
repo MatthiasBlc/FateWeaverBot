@@ -269,14 +269,11 @@ export async function handleCharacterAdminCommand(
 
 async function handleStatsUpdate(interaction: any, character: Character) {
   try {
-    // Déclarer que l'interaction du bouton est traitée
-    await interaction.deferUpdate();
-    
     const modal = createCharacterStatsModal(character);
-    
+
     // Afficher la modale
     await interaction.showModal(modal);
-    
+
     const modalFilter = (i: any) =>
       i.customId === "character_stats_modal" && i.user.id === interaction.user.id;
     const modalInteraction = await interaction.awaitModalSubmit({
@@ -362,11 +359,17 @@ async function handleStatsUpdate(interaction: any, character: Character) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 10062) { // Unknown interaction
       logger.warn("Interaction expirée lors de la modification des stats");
       // L'utilisateur verra probablement l'erreur côté Discord
+      return;
     } else {
-      await interaction.followUp({
-        content: "❌ Erreur lors de la modification des statistiques.",
-        flags: ["Ephemeral"],
-      }).catch(() => {}); // Ignore les erreurs si l'interaction est déjà expirée
+      // Essayer de répondre si l'interaction n'est pas expirée
+      try {
+        await interaction.followUp({
+          content: "❌ Erreur lors de la modification des statistiques.",
+          flags: ["Ephemeral"],
+        });
+      } catch (followUpError) {
+        logger.error("Impossible de répondre à l'interaction expirée:", { followUpError });
+      }
     }
   }
 }
@@ -393,12 +396,18 @@ async function handleKillCharacter(interaction: any, character: any) {
   } catch (error) {
     logger.error("Erreur lors de la suppression du personnage:", { error });
     if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      logger.warn("Interaction expirée lors de la suppression du personnage");
       return; // Interaction expirée
     }
-    await interaction.reply({
-      content: "❌ Erreur lors de la suppression du personnage.",
-      flags: ["Ephemeral"],
-    }).catch(() => {});
+    // Essayer de répondre si l'interaction n'est pas expirée
+    try {
+      await interaction.reply({
+        content: "❌ Erreur lors de la suppression du personnage.",
+        flags: ["Ephemeral"],
+      });
+    } catch (replyError) {
+      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+    }
   }
 }
 
@@ -425,12 +434,18 @@ async function handleRerollPermission(interaction: any, character: any) {
   } catch (error) {
     logger.error("Erreur lors de la gestion du reroll:", { error });
     if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      logger.warn("Interaction expirée lors de la gestion du reroll");
       return; // Interaction expirée
     }
-    await interaction.reply({
-      content: "❌ Erreur lors de la gestion du reroll.",
-      flags: ["Ephemeral"],
-    }).catch(() => {});
+    // Essayer de répondre si l'interaction n'est pas expirée
+    try {
+      await interaction.reply({
+        content: "❌ Erreur lors de la gestion du reroll.",
+        flags: ["Ephemeral"],
+      });
+    } catch (replyError) {
+      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+    }
   }
 }
 
@@ -464,12 +479,18 @@ async function handleSwitchActive(interaction: any, character: any, townId: stri
   } catch (error) {
     logger.error("Erreur lors du changement de statut actif:", { error });
     if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
+      logger.warn("Interaction expirée lors du changement de statut actif");
       return; // Interaction expirée
     }
-    await interaction.reply({
-      content: "❌ Erreur lors du changement de statut actif.",
-      flags: ["Ephemeral"],
-    }).catch(() => {});
+    // Essayer de répondre si l'interaction n'est pas expirée
+    try {
+      await interaction.reply({
+        content: "❌ Erreur lors du changement de statut actif.",
+        flags: ["Ephemeral"],
+      });
+    } catch (replyError) {
+      logger.error("Impossible de répondre à l'interaction expirée:", { replyError });
+    }
   }
 }
 
