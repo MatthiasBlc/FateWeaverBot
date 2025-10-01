@@ -32,7 +32,8 @@ export async function handleCharacterAdminCommand(
         }
       );
       await interaction.reply({
-        content: "❌ Vous devez être administrateur pour utiliser cette commande.",
+        content:
+          "❌ Vous devez être administrateur pour utiliser cette commande.",
         flags: ["Ephemeral"],
       });
       return;
@@ -119,20 +120,34 @@ export async function handleCharacterAdminInteraction(interaction: any) {
 
   // Route vers les gestionnaires appropriés selon le type d'interaction
   if (customId === CHARACTER_ADMIN_CUSTOM_IDS.SELECT_MENU) {
-    const { handleCharacterSelect } = await import("./character-admin.interactions");
+    const { handleCharacterSelect } = await import(
+      "./character-admin.interactions"
+    );
     return handleCharacterSelect(interaction);
   }
 
   // Vérifier si c'est un bouton d'action sur un personnage
-  if (customId.includes(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX.replace("_", "_btn_"))) {
-    const { handleCharacterAction } = await import("./character-admin.interactions");
+  if (
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX) ||
+    customId.startsWith(
+      CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX
+    ) ||
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX) ||
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX)
+  ) {
+    const { handleCharacterAction } = await import(
+      "./character-admin.interactions"
+    );
     return handleCharacterAction(interaction);
   }
 
   // Vérifier si c'est une soumission de modale
-  if (customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX) ||
-      customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_MODAL_PREFIX)) {
-    const { handleStatsModalSubmit, handleAdvancedStatsModalSubmit } = await import("./character-admin.interactions");
+  if (
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX) ||
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_MODAL_PREFIX)
+  ) {
+    const { handleStatsModalSubmit, handleAdvancedStatsModalSubmit } =
+      await import("./character-admin.interactions");
 
     if (customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX)) {
       return handleStatsModalSubmit(interaction);

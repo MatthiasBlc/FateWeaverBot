@@ -53,7 +53,38 @@ export async function handleCharacterSelect(
  * Gère les clics sur les boutons d'action des personnages.
  */
 export async function handleCharacterAction(interaction: ButtonInteraction) {
-  const [action, characterId] = interaction.customId.split("_").slice(-2);
+  const id = interaction.customId;
+
+  let characterId: string | null = null;
+  let action: "stats" | "advanced" | "kill" | "reroll" | null = null;
+
+  if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX)) {
+    action = "stats";
+    characterId = id.replace(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX, "");
+  } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX)) {
+    action = "advanced";
+    characterId = id.replace(
+      CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX,
+      ""
+    );
+  } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX)) {
+    action = "kill";
+    characterId = id.replace(CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX, "");
+  } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX)) {
+    action = "reroll";
+    characterId = id.replace(
+      CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX,
+      ""
+    );
+  }
+
+  if (!action || !characterId) {
+    await interaction.reply({
+      content: "❌ Action inconnue.",
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
 
   const characters = await getCharactersFromState(interaction);
   const character = characters.find((c) => c.id === characterId);
@@ -79,11 +110,6 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
     case "reroll":
       await handleToggleRerollButton(interaction, character);
       break;
-    default:
-      await interaction.reply({
-        content: "❌ Action inconnue.",
-        flags: ["Ephemeral"],
-      });
   }
 }
 
@@ -171,8 +197,6 @@ export async function handleAdvancedStatsModalSubmit(
 
   const isDeadValue = interaction.fields.getTextInputValue("is_dead_input");
   const isActiveValue = interaction.fields.getTextInputValue("is_active_input");
-  const canRerollValue =
-    interaction.fields.getTextInputValue("can_reroll_input");
 
   // Validation
   if (!["true", "false"].includes(isDeadValue)) {
@@ -189,18 +213,10 @@ export async function handleAdvancedStatsModalSubmit(
     });
     return;
   }
-  if (!["true", "false"].includes(canRerollValue)) {
-    await interaction.reply({
-      content: "❌ 'Reroll autorisé' doit être 'true' ou 'false'.",
-      flags: ["Ephemeral"],
-    });
-    return;
-  }
 
   const updateData = {
     isDead: isDeadValue === "true",
     isActive: isActiveValue === "true",
-    canReroll: canRerollValue === "true",
   };
 
   try {
@@ -222,11 +238,6 @@ export async function handleAdvancedStatsModalSubmit(
         {
           name: "Actif",
           value: updatedCharacter.isActive ? "✅ Oui" : "❌ Non",
-          inline: true,
-        },
-        {
-          name: "Reroll",
-          value: updatedCharacter.canReroll ? "✅ Oui" : "❌ Non",
           inline: true,
         }
       )

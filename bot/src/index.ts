@@ -4,9 +4,9 @@ import { promises as fs } from "fs";
 import { logger } from "./services/logger.js";
 import { config, validateConfig } from "./config/index.js";
 import { Collection } from "@discordjs/collection";
-import { getOrCreateGuild } from './services/guilds.service.js';
-import { buttonHandler } from './utils/button-handler.js';
-import { modalHandler } from './utils/modal-handler.js';
+import { getOrCreateGuild } from "./services/guilds.service.js";
+import { buttonHandler } from "./utils/button-handler.js";
+import { modalHandler } from "./utils/modal-handler.js";
 
 // Handle button interactions
 async function handleButtonInteraction(interaction: any) {
@@ -17,7 +17,9 @@ async function handleButtonInteraction(interaction: any) {
     // Si le système centralisé n'a pas trouvé de gestionnaire,
     // laisser l'interaction continuer normalement (pour awaitMessageComponent)
     if (!handled) {
-      logger.info(`Button ${interaction.customId} not handled by central system, letting it continue`);
+      logger.info(
+        `Button ${interaction.customId} not handled by central system, letting it continue`
+      );
       return;
     }
   } catch (error) {
@@ -234,6 +236,24 @@ client.on("interactionCreate", async (interaction) => {
         flags: ["Ephemeral"],
       });
     }
+  } else if (interaction.isStringSelectMenu()) {
+    // Handle select menu interactions (character admin refactor)
+    try {
+      const customId = interaction.customId || "";
+      if (customId.startsWith("character_admin_")) {
+        const { handleCharacterAdminInteraction } = await import(
+          "./features/admin/character-admin.handlers"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      }
+      // If not our select, let other handlers manage it silently
+    } catch (error) {
+      logger.error("Error handling select menu interaction:", { error });
+      await interaction.reply({
+        content: "There was an error with the select menu interaction!",
+        flags: ["Ephemeral"],
+      });
+    }
   } else if (interaction.isModalSubmit()) {
     // Handle modal interactions
     try {
@@ -249,20 +269,18 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 // Listen for guild create events (when bot joins a new server)
-client.on('guildCreate', async (guild) => {
+client.on("guildCreate", async (guild) => {
   try {
     logger.info(`Bot joined new guild: ${guild.name} (${guild.id})`);
-    
+
     // Create or update guild in database with automatic town creation
-    await getOrCreateGuild(
-      guild.id,
-      guild.name,
-      guild.memberCount
-    );
-    
+    await getOrCreateGuild(guild.id, guild.name, guild.memberCount);
+
     logger.info(`Successfully set up guild: ${guild.name} (${guild.id})`);
   } catch (error) {
-    logger.error(`Error setting up guild ${guild.name} (${guild.id}):`, { error });
+    logger.error(`Error setting up guild ${guild.name} (${guild.id}):`, {
+      error,
+    });
   }
 });
 

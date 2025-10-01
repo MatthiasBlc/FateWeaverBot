@@ -98,7 +98,7 @@ export function createStatsModal(character: Character) {
     .setCustomId(
       `${CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX}${character.id}`
     )
-    .setTitle("Modifier les stats de base");
+    .setTitle("Modifier les statistiques du personnage");
 
   const paInput = new TextInputBuilder()
     .setCustomId("pa_input")
@@ -130,7 +130,7 @@ export function createAdvancedStatsModal(character: Character) {
     .setCustomId(
       `${CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_MODAL_PREFIX}${character.id}`
     )
-    .setTitle("Modifier les stats avancées");
+    .setTitle("Statistiques avancées du personnage");
 
   const isDeadInput = new TextInputBuilder()
     .setCustomId("is_dead_input")
@@ -146,17 +146,9 @@ export function createAdvancedStatsModal(character: Character) {
     .setValue(character.isActive.toString())
     .setRequired(true);
 
-  const canRerollInput = new TextInputBuilder()
-    .setCustomId("can_reroll_input")
-    .setLabel("Reroll autorisé (true/false)")
-    .setStyle(TextInputStyle.Short)
-    .setValue(character.canReroll.toString())
-    .setRequired(true);
-
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(isDeadInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(canRerollInput)
+    new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput)
   );
 
   return modal;
