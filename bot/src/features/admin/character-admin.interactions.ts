@@ -60,8 +60,13 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
 
   if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX)) {
     action = "stats";
-    characterId = id.replace(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX, "");
-  } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX)) {
+    characterId = id.replace(
+      CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX,
+      ""
+    );
+  } else if (
+    id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX)
+  ) {
     action = "advanced";
     characterId = id.replace(
       CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX,
@@ -70,7 +75,9 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
   } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX)) {
     action = "kill";
     characterId = id.replace(CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX, "");
-  } else if (id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX)) {
+  } else if (
+    id.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX)
+  ) {
     action = "reroll";
     characterId = id.replace(
       CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX,
@@ -124,31 +131,17 @@ export async function handleStatsModalSubmit(
     ""
   );
 
-  // Vérifier que le personnage n'est pas mort avant de traiter la soumission
-  const characters = await getCharactersFromState(interaction);
-  const character = characters.find((c) => c.id === characterId);
-
-  if (!character) {
-    await interaction.reply({
-      content: "❌ Personnage non trouvé.",
-      flags: ["Ephemeral"],
-    });
-    return;
-  }
-
-  if (character.isDead) {
-    await interaction.reply({
-      content: "❌ Impossible de modifier les statistiques d'un personnage mort.",
-      flags: ["Ephemeral"],
-    });
-    return;
-  }
+  // Note: On ne vérifie plus si le personnage est mort car le backend gère automatiquement
+  // la mort quand PV ou faim tombent à 0. Cette vérification était faite avant l'appel API
+  // mais maintenant le backend peut changer l'état du personnage pendant la mise à jour.
 
   const paValue = interaction.fields.getTextInputValue("pa_input");
   const hungerValue = interaction.fields.getTextInputValue("hunger_input");
+  const hpValue = interaction.fields.getTextInputValue("hp_input");
 
   const paNumber = parseInt(paValue, 10);
   const hungerNumber = parseInt(hungerValue, 10);
+  const hpNumber = parseInt(hpValue, 10);
 
   // Validation
   const errors = [];
@@ -157,6 +150,9 @@ export async function handleStatsModalSubmit(
   }
   if (isNaN(hungerNumber) || hungerNumber < 0 || hungerNumber > 4) {
     errors.push("Le niveau de faim doit être un nombre entre 0 et 4");
+  }
+  if (isNaN(hpNumber) || hpNumber < 0 || hpNumber > 5) {
+    errors.push("Les PV doivent être un nombre entre 0 et 5");
   }
 
   if (errors.length > 0) {
@@ -173,13 +169,25 @@ export async function handleStatsModalSubmit(
       {
         paTotal: paNumber,
         hungerLevel: hungerNumber,
+        hp: hpNumber,
       }
     )) as Character;
 
+    // Créer l'embed avec la couleur appropriée selon l'état du personnage
+    const embedColor = updatedCharacter.isDead ? 0xff0000 : 0x00ff00;
+    const embedTitle = updatedCharacter.isDead
+      ? "💀 Personnage décédé"
+      : "✅ Stats mises à jour";
+    const embedDescription = updatedCharacter.isDead
+      ? `**${updatedCharacter.name}** est mort${
+          hpNumber <= 0 ? " (PV à 0)" : " (faim à 0)"
+        }.`
+      : `**${updatedCharacter.name}** a été modifié.`;
+
     const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle("✅ Stats mises à jour")
-      .setDescription(`**${updatedCharacter.name}** a été modifié.`)
+      .setColor(embedColor)
+      .setTitle(embedTitle)
+      .setDescription(embedDescription)
       .addFields(
         {
           name: "Points d'Actions",
@@ -190,11 +198,36 @@ export async function handleStatsModalSubmit(
           name: "Niveau de faim",
           value: getHungerLevelText(updatedCharacter.hungerLevel),
           inline: true,
+        },
+        {
+          name: "Points de vie",
+          value: `${updatedCharacter.hp}`,
+          inline: true,
         }
       )
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+
+    // Log de la mort si le personnage vient de mourir
+    if (updatedCharacter.isDead) {
+      try {
+        const { sendLogMessage } = await import("../../utils/channels");
+        const deathReason = hpNumber <= 0 ? "PV à 0" : "faim à 0";
+        const logMessage = `💀 **Mort d'un personnage **\nLe personnage **${
+          updatedCharacter.name
+        }**, <@${
+          updatedCharacter.user?.discordId || "Inconnu"
+        }> est mort (${deathReason}).\n*${new Date().toLocaleString()}*`;
+        await sendLogMessage(
+          interaction.guildId!,
+          interaction.client,
+          logMessage
+        );
+      } catch (logError) {
+        logger.error("Erreur lors de l'envoi du log de mort:", { logError });
+      }
+    }
   } catch (error) {
     logger.error("Erreur lors de la mise à jour des stats:", { error });
     await interaction.reply({
@@ -323,7 +356,8 @@ async function handleStatsButton(
 ) {
   if (character.isDead) {
     await interaction.reply({
-      content: "❌ Impossible de modifier les statistiques d'un personnage mort.",
+      content:
+        "❌ Impossible de modifier les statistiques d'un personnage mort.",
       flags: ["Ephemeral"],
     });
     return;

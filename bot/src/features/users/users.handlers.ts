@@ -107,6 +107,7 @@ export async function handleProfileCommand(interaction: any) {
             name: character.name,
             roles: character.roles || [],
             hungerLevel: character.hungerLevel || 0,
+            hp: character.hp || 5, // Valeur par défaut temporaire
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -164,6 +165,7 @@ export async function handleProfileCommand(interaction: any) {
             name: character.name,
             roles: character.roles || [],
             hungerLevel: character.hungerLevel || 0,
+            hp: character.hp || 5, // Valeur par défaut temporaire
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -267,6 +269,11 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     {
       name: "Points d'Action (PA)",
       value: `**${data.actionPoints.points || 0}/4**`,
+      inline: true,
+    },
+    {
+      name: "Points de vie (PV)",
+      value: `**${data.character.hp || 5}/5**`,
       inline: true,
     },
     {

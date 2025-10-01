@@ -257,6 +257,18 @@ client.on("interactionCreate", async (interaction) => {
   } else if (interaction.isModalSubmit()) {
     // Handle modal interactions
     try {
+      const customId = interaction.customId || "";
+
+      // Vérifier si c'est une modale d'administration de personnage
+      if (customId.startsWith("character_admin_")) {
+        const { handleCharacterAdminInteraction } = await import(
+          "./features/admin/character-admin.handlers"
+        );
+        await handleCharacterAdminInteraction(interaction);
+        return;
+      }
+
+      // Sinon, gérer les autres modales
       await handleModalInteraction(interaction);
     } catch (error) {
       logger.error("Error handling modal interaction:", { error });

@@ -35,6 +35,7 @@ export function toCharacterDto(
     paTotal: character.paTotal || 2,
     lastPaUpdate: character.lastPaUpdate || character.createdAt,
     hungerLevel: character.hungerLevel || 0,
+    hp: character.hp || 5,
     user: {
       id: character.user.id,
       discordId: character.user.discordId,

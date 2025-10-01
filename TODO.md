@@ -21,13 +21,14 @@ Refacto le backend
 
 Actions des charactes :
 
-- manger
-  - système de faim
-  - que en ville ?
+-✅ manger
+-✅ système de faim
+
+- que en ville ?
 - faire manger
   - que en ville ?
-- faire avancer un chantier
-  - voir commandes chantiers
+    -✅ faire avancer un chantier
+    -✅ voir commandes chantiers
 - lancer un chantier / demander sa création
   - asynchrone ?
 - partir en expédition
@@ -41,10 +42,11 @@ Actions des charactes :
 
 Action des Admins:
 
-- donner des PA
-- retirer des PA
-- donner des PFaim
-- retirer des PFaim
+-✅ donner des PA
+-✅ retirer des PA
+-✅ donner des PFaim
+-✅ retirer des PFaim
+
 - donner des PV
 - retirer des PV
 - donner des PM

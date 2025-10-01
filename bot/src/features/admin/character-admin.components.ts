@@ -124,9 +124,17 @@ export function createStatsModal(character: Character) {
     .setValue(character.hungerLevel.toString())
     .setRequired(true);
 
+  const hpInput = new TextInputBuilder()
+    .setCustomId("hp_input")
+    .setLabel("Points de vie (0-5)")
+    .setStyle(TextInputStyle.Short)
+    .setValue(character.hp.toString())
+    .setRequired(true);
+
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(paInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(hungerInput)
+    new ActionRowBuilder<TextInputBuilder>().addComponents(hungerInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(hpInput)
   );
 
   return modal;
@@ -183,7 +191,7 @@ export function createCharacterDetailsContent(character: Character): string {
     `Reroll autorisé: ${character.canReroll ? "✅" : "❌"}\n` +
     `PA: ${character.paTotal} | Faim: ${getHungerLevelText(
       character.hungerLevel
-    )}\n\n` +
+    )} | PV: ${character.hp}\n\n` +
     `Choisissez une action :`
   );
 }

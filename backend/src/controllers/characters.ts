@@ -1,17 +1,25 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../util/db";
 import { toCharacterDto } from "../util/mappers";
 import { CharacterService } from "../services/character.service";
 
 const characterService = new CharacterService();
 
-export const getActiveCharacterByDiscordId: RequestHandler = async (req, res, next) => {
+export const getActiveCharacterByDiscordId: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { discordId, townId } = req.params;
-    
+
     if (!discordId || !townId) {
-      throw createHttpError(400, "Les paramètres discordId et townId sont requis");
+      throw createHttpError(
+        400,
+        "Les paramètres discordId et townId sont requis"
+      );
     }
 
     // Trouver l'utilisateur par son ID Discord
@@ -24,10 +32,16 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (req, res, ne
     }
 
     // Récupérer le personnage actif
-    const character = await characterService.getActiveCharacter(user.id, townId);
-    
+    const character = await characterService.getActiveCharacter(
+      user.id,
+      townId
+    );
+
     if (!character) {
-      throw createHttpError(404, "Aucun personnage actif trouvé pour cet utilisateur dans cette ville");
+      throw createHttpError(
+        404,
+        "Aucun personnage actif trouvé pour cet utilisateur dans cette ville"
+      );
     }
 
     res.status(200).json(character);
@@ -45,7 +59,10 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    const town = await prisma.town.findUnique({ where: { id: townId }, include: { guild: true } });
+    const town = await prisma.town.findUnique({
+      where: { id: townId },
+      include: { guild: true },
+    });
 
     if (!user) throw createHttpError(404, "Utilisateur non trouvé");
     if (!town) throw createHttpError(404, "Ville non trouvée");
@@ -59,18 +76,23 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
     const guildRoles =
       roleIds && roleIds.length > 0
         ? await prisma.role.findMany({
-          where: {
-            guildId: town.guild.id,
-            discordId: { in: roleIds },
-          },
-          select: { id: true },
-        })
+            where: {
+              guildId: town.guild.id,
+              discordId: { in: roleIds },
+            },
+            select: { id: true },
+          })
         : [];
 
     const upsertedCharacter = await prisma.$transaction(async (tx) => {
       if (existingCharacter) {
         await tx.character.updateMany({
-          where: { userId, townId, id: { not: existingCharacter.id }, isDead: false },
+          where: {
+            userId,
+            townId,
+            id: { not: existingCharacter.id },
+            isDead: false,
+          },
           data: { isActive: false },
         });
       } else {
@@ -95,7 +117,9 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         },
       });
 
-      await tx.characterRole.deleteMany({ where: { characterId: character.id } });
+      await tx.characterRole.deleteMany({
+        where: { characterId: character.id },
+      });
 
       if (guildRoles.length > 0) {
         const rolesWithNames = await tx.role.findMany({
@@ -153,7 +177,11 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getCharacterByDiscordIds: RequestHandler = async (req, res, next) => {
+export const getCharacterByDiscordIds: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { userId, guildId } = req.params;
     const character = await prisma.character.findFirst({
@@ -217,12 +245,17 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     if (!character) throw createHttpError(404, "Personnage non trouvé");
     if (character.isDead) throw createHttpError(400, "Ce personnage est mort");
-    if (character.hungerLevel >= 4) throw createHttpError(400, "Tu n'as pas faim");
-    if (character.town.foodStock <= 0) throw createHttpError(400, "La ville n'a plus de vivres");
+    if (character.hungerLevel >= 4)
+      throw createHttpError(400, "Tu n'as pas faim");
+    if (character.town.foodStock <= 0)
+      throw createHttpError(400, "La ville n'a plus de vivres");
 
     const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
     if (character.town.foodStock < foodToConsume) {
-      throw createHttpError(400, `La ville n'a que ${character.town.foodStock} vivres`);
+      throw createHttpError(
+        400,
+        `La ville n'a que ${character.town.foodStock} vivres`
+      );
     }
 
     const newHungerLevel = Math.min(4, character.hungerLevel + 1);
@@ -273,7 +306,11 @@ export const getTownCharacters: RequestHandler = async (req, res, next) => {
 export const createCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { name, userId, townId } = req.body;
-    const character = await characterService.createCharacter({ name, userId, townId });
+    const character = await characterService.createCharacter({
+      name,
+      userId,
+      townId,
+    });
     res.status(201).json(character);
   } catch (error) {
     next(error);
@@ -303,7 +340,11 @@ export const grantRerollPermission: RequestHandler = async (req, res, next) => {
 export const createRerollCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { userId, townId, name } = req.body;
-    const character = await characterService.createRerollCharacter(userId, townId, name);
+    const character = await characterService.createRerollCharacter(
+      userId,
+      townId,
+      name
+    );
     res.status(201).json(character);
   } catch (error) {
     next(error);
@@ -313,27 +354,45 @@ export const createRerollCharacter: RequestHandler = async (req, res, next) => {
 export const switchActiveCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { userId, townId, characterId } = req.body;
-    const character = await characterService.switchActiveCharacter(userId, townId, characterId);
+    const character = await characterService.switchActiveCharacter(
+      userId,
+      townId,
+      characterId
+    );
     res.status(200).json(character);
   } catch (error) {
     next(error);
   }
 };
 
-export const getRerollableCharacters: RequestHandler = async (req, res, next) => {
+export const getRerollableCharacters: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { userId, townId } = req.params;
-    const characters = await characterService.getRerollableCharacters(userId, townId);
+    const characters = await characterService.getRerollableCharacters(
+      userId,
+      townId
+    );
     res.status(200).json(characters);
   } catch (error) {
     next(error);
   }
 };
 
-export const needsCharacterCreation: RequestHandler = async (req, res, next) => {
+export const needsCharacterCreation: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { userId, townId } = req.params;
-    const needsCreation = await characterService.needsCharacterCreation(userId, townId);
+    const needsCreation = await characterService.needsCharacterCreation(
+      userId,
+      townId
+    );
     res.status(200).json({ needsCreation });
   } catch (error) {
     next(error);
@@ -343,19 +402,30 @@ export const needsCharacterCreation: RequestHandler = async (req, res, next) => 
 export const updateCharacterStats: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { paTotal, hungerLevel, isDead, canReroll, isActive } = req.body;
+    const { paTotal, hungerLevel, hp, isDead, canReroll, isActive } = req.body;
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: Prisma.CharacterUpdateInput = { updatedAt: new Date() };
 
     if (paTotal !== undefined) updateData.paTotal = paTotal;
     if (hungerLevel !== undefined) updateData.hungerLevel = hungerLevel;
+    if (hp !== undefined) updateData.hp = hp;
     if (isDead !== undefined) updateData.isDead = isDead;
     if (canReroll !== undefined) updateData.canReroll = canReroll;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    if (isDead === true) {
+    // Vérifier si le personnage doit mourir (PV = 0 ou Faim = 0)
+    const shouldDie = (hp !== undefined && hp <= 0) || (hungerLevel !== undefined && hungerLevel <= 0);
+
+    if (shouldDie) {
+      updateData.isDead = true;
       updateData.paTotal = 0;
       updateData.hungerLevel = 0;
+      updateData.hp = 0;
+    } else if (isDead === true) {
+      // Cas où isDead est explicitement défini à true
+      updateData.paTotal = 0;
+      updateData.hungerLevel = 0;
+      updateData.hp = 0;
     }
 
     const updatedCharacter = await prisma.character.update({
