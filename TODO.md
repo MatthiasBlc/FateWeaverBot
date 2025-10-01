@@ -1,10 +1,11 @@
 -------------------------Todo-------------------------
 
+Gestion des pénuries ?? Alerte etc ?
+Message quotidien : ajouter stock vivres ?
+
+Créer Nourriture ?
+
 /manger plusieurs boutons suivant la situation (jusquà full ? une seule ration?)
-
-character admin, bouton tuer uniquement si personnage en vie.
-
-Refacto character-admin.handler
 
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
@@ -21,7 +22,7 @@ Refacto le backend
 Actions des charactes :
 
 - manger
-  - systèmed e faim
+  - système de faim
   - que en ville ?
 - faire manger
   - que en ville ?
@@ -302,5 +303,9 @@ Update deploy script
 Multi character / villes
 
 Update du système de boutons
+
+character admin, bouton tuer uniquement si personnage en vie.
+
+Refacto character-admin.handler
 
 -------------------------Notes-------------------------
