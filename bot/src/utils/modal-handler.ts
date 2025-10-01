@@ -100,18 +100,18 @@ export class ModalHandler {
       }
     });
 
-    // Gestionnaire pour les modals d'administration de personnages (nouveau système)
-    this.registerHandler('character_admin_stats_modal_', async (interaction) => {
+    // Gestionnaire pour les modals d'administration de personnages (stats avancées)
+    this.registerHandler('character_admin_advanced_modal_', async (interaction) => {
       try {
-        const { handleStatsModalSubmit } = await import('../features/admin/character-admin.interactions');
-        await handleStatsModalSubmit(interaction);
+        const { handleAdvancedStatsModalSubmit } = await import('../features/admin/character-admin.interactions');
+        await handleAdvancedStatsModalSubmit(interaction);
       } catch (error) {
-        logger.error("Error handling character admin stats modal:", { error });
+        logger.error("Error handling character admin advanced stats modal:", { error });
         if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
           return; // Interaction expirée
         }
         await interaction.reply({
-          content: "❌ Erreur lors de la modification des statistiques du personnage.",
+          content: "❌ Erreur lors de la modification des statistiques avancées du personnage.",
           flags: ["Ephemeral"],
         });
       }

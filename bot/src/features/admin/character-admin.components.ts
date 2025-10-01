@@ -35,7 +35,15 @@ export function createCharacterSelectMenu(characters: Character[]) {
     .addOptions(
       characters.map((char) =>
         new StringSelectMenuOptionBuilder()
-          .setLabel(`${char.name}${char.user?.globalName ? ` - ${char.user.globalName}` : char.user?.username ? ` - ${char.user.username}` : ''}`)
+          .setLabel(
+            `${char.name}${
+              char.user?.globalName
+                ? ` - ${char.user.globalName}`
+                : char.user?.username
+                ? ` - ${char.user.username}`
+                : ""
+            }`
+          )
           .setDescription(
             `Actif: ${char.isActive ? "✅" : "❌"} | Mort: ${
               char.isDead ? "💀" : "❤️"
@@ -60,20 +68,22 @@ export function createCharacterActionButtons(character: Character) {
         `${CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX}${character.id}`
       )
       .setLabel("Modifier Stats")
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(character.isDead), // Désactiver pour les personnages morts
     new ButtonBuilder()
       .setCustomId(
         `${CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX}${character.id}`
       )
       .setLabel("Stats Avancées")
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(false), // Toujours accessible pour gérer l'état (vie/mort/reroll)
     new ButtonBuilder()
       .setCustomId(
         `${CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX}${character.id}`
       )
       .setLabel(character.canReroll ? "Interdire Reroll" : "Autoriser Reroll")
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(character.isDead),
+      .setDisabled(false), // Les admins peuvent gérer le reroll même pour les personnages morts
   ];
 
   if (!character.isDead) {

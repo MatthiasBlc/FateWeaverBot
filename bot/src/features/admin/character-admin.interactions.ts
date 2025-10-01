@@ -124,6 +124,26 @@ export async function handleStatsModalSubmit(
     ""
   );
 
+  // Vérifier que le personnage n'est pas mort avant de traiter la soumission
+  const characters = await getCharactersFromState(interaction);
+  const character = characters.find((c) => c.id === characterId);
+
+  if (!character) {
+    await interaction.reply({
+      content: "❌ Personnage non trouvé.",
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
+
+  if (character.isDead) {
+    await interaction.reply({
+      content: "❌ Impossible de modifier les statistiques d'un personnage mort.",
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
+
   const paValue = interaction.fields.getTextInputValue("pa_input");
   const hungerValue = interaction.fields.getTextInputValue("hunger_input");
 
@@ -301,6 +321,14 @@ async function handleStatsButton(
   interaction: ButtonInteraction,
   character: Character
 ) {
+  if (character.isDead) {
+    await interaction.reply({
+      content: "❌ Impossible de modifier les statistiques d'un personnage mort.",
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
+
   const modal = createStatsModal(character);
   await interaction.showModal(modal);
 }
