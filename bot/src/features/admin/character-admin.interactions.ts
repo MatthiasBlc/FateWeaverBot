@@ -197,6 +197,8 @@ export async function handleAdvancedStatsModalSubmit(
 
   const isDeadValue = interaction.fields.getTextInputValue("is_dead_input");
   const isActiveValue = interaction.fields.getTextInputValue("is_active_input");
+  const canRerollValue =
+    interaction.fields.getTextInputValue("can_reroll_input");
 
   // Validation
   if (!["true", "false"].includes(isDeadValue)) {
@@ -213,10 +215,18 @@ export async function handleAdvancedStatsModalSubmit(
     });
     return;
   }
+  if (!["true", "false"].includes(canRerollValue)) {
+    await interaction.reply({
+      content: "❌ 'Reroll autorisé' doit être 'true' ou 'false'.",
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
 
   const updateData = {
     isDead: isDeadValue === "true",
     isActive: isActiveValue === "true",
+    canReroll: canRerollValue === "true",
   };
 
   try {
@@ -238,6 +248,11 @@ export async function handleAdvancedStatsModalSubmit(
         {
           name: "Actif",
           value: updatedCharacter.isActive ? "✅ Oui" : "❌ Non",
+          inline: true,
+        },
+        {
+          name: "Reroll",
+          value: updatedCharacter.canReroll ? "✅ Oui" : "❌ Non",
           inline: true,
         }
       )
@@ -368,15 +383,6 @@ async function handleToggleRerollButton(
   character: Character
 ) {
   try {
-    if (!character.isDead) {
-      await interaction.reply({
-        content:
-          "❌ Seul un personnage mort peut avoir l'autorisation de reroll.",
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
     const newCanReroll = !character.canReroll;
     await apiService.updateCharacterStats(character.id, {
       canReroll: newCanReroll,

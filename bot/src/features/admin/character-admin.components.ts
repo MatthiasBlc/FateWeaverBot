@@ -146,9 +146,17 @@ export function createAdvancedStatsModal(character: Character) {
     .setValue(character.isActive.toString())
     .setRequired(true);
 
+  const canRerollInput = new TextInputBuilder()
+    .setCustomId("can_reroll_input")
+    .setLabel("Reroll autorisé (true/false)")
+    .setStyle(TextInputStyle.Short)
+    .setValue(character.canReroll.toString())
+    .setRequired(true);
+
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(isDeadInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput)
+    new ActionRowBuilder<TextInputBuilder>().addComponents(isActiveInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(canRerollInput)
   );
 
   return modal;
