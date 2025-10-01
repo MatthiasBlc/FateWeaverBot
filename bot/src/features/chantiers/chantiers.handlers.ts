@@ -319,16 +319,39 @@ export async function handleInvestModalSubmit(
       return;
     }
 
-    const points = parseInt(
+    let points = parseInt(
       interaction.fields.getTextInputValue("points_input"),
       10
     );
+
+    // Validation des points avec gestion des décimales
+    const inputValue = interaction.fields.getTextInputValue("points_input");
+    if (!inputValue || inputValue.trim() === "") {
+      await interaction.reply({
+        content:
+          "❌ Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Vérifier si c'est un nombre décimal
+    if (inputValue.includes('.') || inputValue.includes(',')) {
+      await interaction.reply({
+        content:
+          "❌ Veuillez entrer un nombre entier uniquement (pas de décimales).",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    points = parseInt(inputValue, 10);
 
     // Validation des points
     if (isNaN(points) || points <= 0) {
       await interaction.reply({
         content:
-          "❌ Veuillez entrer un nombre valide de points d'action (supérieur à zéro).",
+          "❌ Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).",
         flags: ["Ephemeral"],
       });
       return;
@@ -411,10 +434,40 @@ export async function handleInvestModalSubmit(
       return;
     }
 
-    // Vérifier que l'utilisateur a assez de PA
-    if (activeCharacter.paTotal < points) {
+    if (activeCharacter.paTotal <= 0) {
       await interaction.reply({
-        content: `❌ Pas assez de points d'action (${activeCharacter.paTotal}/${points} requis)`,
+        content:
+          "❌ Votre personnage n'a plus de points d'action pour investir dans ce chantier.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Calculer les PA restants nécessaires pour terminer le chantier
+    const remainingPAForChantier = chantier.cost - chantier.spendOnIt;
+
+    // Variables pour suivre les ajustements effectués
+    let adjustedForChantierLimit = false;
+    let usedAllAvailablePA = false;
+
+    // Cas spécial : l'utilisateur veut investir plus de PA que nécessaire pour terminer le chantier
+    if (points > remainingPAForChantier) {
+      // Utiliser seulement les PA nécessaires pour terminer le chantier
+      points = remainingPAForChantier;
+      adjustedForChantierLimit = true;
+    }
+
+    // Cas spécial : l'utilisateur n'a pas assez de PA pour investir ce qu'il veut
+    if (activeCharacter.paTotal < points) {
+      // Utiliser tous les PA disponibles
+      points = activeCharacter.paTotal;
+      usedAllAvailablePA = true;
+    }
+
+    // Vérification finale : si après ajustement il n'y a plus de PA à investir
+    if (points <= 0) {
+      await interaction.reply({
+        content: "❌ Vous n'avez pas de points d'action disponibles pour investir dans ce chantier.",
         flags: ["Ephemeral"],
       });
       return;
@@ -429,9 +482,20 @@ export async function handleInvestModalSubmit(
 
     let responseMessage = `✅ Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
 
+    // Ajouter des informations sur les ajustements effectués
+    if (adjustedForChantierLimit) {
+      responseMessage += ` (ajusté aux PA restants nécessaires pour terminer le chantier)`;
+    } else if (usedAllAvailablePA) {
+      responseMessage += ` (tous vos PA disponibles ont été utilisés)`;
+    }
+
     if (result.isCompleted) {
       responseMessage +=
         "\n🎉 Félicitations ! Le chantier est maintenant terminé !";
+
+      // Envoyer un message dans le channel de logs
+      const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
+      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
     } else {
       const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
       responseMessage += `\n📊 Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
