@@ -6,6 +6,7 @@ export interface Character {
   paTotal: number;
   hungerLevel: number;
   hp: number;
+  pm: number;
   isDead: boolean;
   canReroll: boolean;
   isActive: boolean;

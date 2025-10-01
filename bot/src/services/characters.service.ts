@@ -13,8 +13,40 @@ export interface CharacterCheckResult {
   needsCreation: boolean;
   canReroll: boolean;
   hasActiveCharacter: boolean;
-  character?: any;
-  rerollableCharacters?: any[];
+  character?: {
+    id: string;
+    name: string;
+    userId: string;
+    townId: string;
+    isActive: boolean;
+    isDead: boolean;
+    canReroll: boolean;
+    hungerLevel: number;
+    paTotal: number;
+    hp: number;
+    pm: number;
+    roles?: Array<{ discordId: string; name: string }>;
+    lastPaUpdate: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  rerollableCharacters?: Array<{
+    id: string;
+    name: string;
+    userId: string;
+    townId: string;
+    isActive: boolean;
+    isDead: boolean;
+    canReroll: boolean;
+    hungerLevel: number;
+    paTotal: number;
+    hp: number;
+    pm: number;
+    roles?: Array<{ discordId: string; name: string }>;
+    lastPaUpdate: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
 /**

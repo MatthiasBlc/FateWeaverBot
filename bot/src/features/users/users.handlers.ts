@@ -39,24 +39,11 @@ export async function handleProfileCommand(interaction: any) {
 
     // Essayer de récupérer le personnage actif
     try {
-      const characterStatus = (await apiService.checkCharacterStatus(
+      const characterStatus = await apiService.checkCharacterStatus(
         user.id,
         interaction.guildId!,
         interaction.client
-      )) as {
-        hasActiveCharacter: boolean;
-        character?: {
-          id: string;
-          name: string;
-          roles?: Array<{ discordId: string; name: string }>;
-          hungerLevel: number;
-          paTotal: number;
-          canReroll: boolean;
-          lastPaUpdate: string;
-        };
-        needsCreation?: boolean;
-        canReroll?: boolean;
-      };
+      );
 
       interface ActionPointsData {
         points: number;
@@ -73,7 +60,9 @@ export async function handleProfileCommand(interaction: any) {
 
         // Vérifier si le personnage actif est mort et peut reroll
         if (characterStatus.canReroll && character) {
-          console.log(`[BOT /profil] Personnage mort détecté avec permission de reroll: ${character.id}`);
+          console.log(
+            `[BOT /profil] Personnage mort détecté avec permission de reroll: ${character.id}`
+          );
 
           logger.info(
             "Personnage mort actif détecté, ouverture directe de la modale de reroll",
@@ -107,7 +96,8 @@ export async function handleProfileCommand(interaction: any) {
             name: character.name,
             roles: character.roles || [],
             hungerLevel: character.hungerLevel || 0,
-            hp: character.hp || 5, // Valeur par défaut temporaire
+            hp: character.hp || 5,
+            pm: character.pm || 5,
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -143,51 +133,6 @@ export async function handleProfileCommand(interaction: any) {
             "⚠️ Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.",
           flags: ["Ephemeral"],
         });
-        return;
-      } else if (characterStatus.character) {
-        // L'utilisateur a un personnage (mort ou vivant) mais pas de permission de reroll et pas de personnage actif
-        // Afficher le profil du personnage
-        const character = characterStatus.character;
-
-        // Récupérer les points d'action du personnage
-        const actionPointsResponse = (await apiService.getActionPoints(
-          character.id
-        )) as ActionPointsResponse;
-        const actionPointsData = actionPointsResponse.data;
-
-        // Calculer le temps restant avant la prochaine mise à jour
-        const timeUntilUpdate = calculateTimeUntilNextUpdate();
-
-        // Préparer les données pour l'affichage avec les rôles récupérés du personnage
-        const profileData: ProfileData = {
-          character: {
-            id: character.id,
-            name: character.name,
-            roles: character.roles || [],
-            hungerLevel: character.hungerLevel || 0,
-            hp: character.hp || 5, // Valeur par défaut temporaire
-          },
-          actionPoints: {
-            points: actionPointsData?.points || character.paTotal || 0,
-            lastUpdated: actionPointsData?.lastUpdated
-              ? new Date(actionPointsData.lastUpdated)
-              : new Date(),
-          },
-          timeUntilUpdate,
-          user: {
-            id: user.id,
-            username: user.username,
-            displayAvatarURL: user.displayAvatarURL({ size: 128 }),
-          },
-          member: {
-            nickname: member.nickname || null,
-          },
-        };
-
-        // Créer l'embed du profil
-        const embed = createProfileEmbed(profileData);
-
-        await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
         return;
       }
     } catch (error) {
@@ -274,6 +219,11 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     {
       name: "Points de vie (PV)",
       value: `**${data.character.hp || 5}/5**`,
+      inline: true,
+    },
+    {
+      name: "Points mentaux (PM)",
+      value: `**${data.character.pm || 5}/5**`,
       inline: true,
     },
     {

@@ -138,10 +138,12 @@ export async function handleStatsModalSubmit(
   const paValue = interaction.fields.getTextInputValue("pa_input");
   const hungerValue = interaction.fields.getTextInputValue("hunger_input");
   const hpValue = interaction.fields.getTextInputValue("hp_input");
+  const pmValue = interaction.fields.getTextInputValue("pm_input");
 
   const paNumber = parseInt(paValue, 10);
   const hungerNumber = parseInt(hungerValue, 10);
   const hpNumber = parseInt(hpValue, 10);
+  const pmNumber = parseInt(pmValue, 10);
 
   // Validation
   const errors = [];
@@ -153,6 +155,9 @@ export async function handleStatsModalSubmit(
   }
   if (isNaN(hpNumber) || hpNumber < 0 || hpNumber > 5) {
     errors.push("Les PV doivent être un nombre entre 0 et 5");
+  }
+  if (isNaN(pmNumber) || pmNumber < 0 || pmNumber > 5) {
+    errors.push("Les PM doivent être un nombre entre 0 et 5");
   }
 
   if (errors.length > 0) {
@@ -170,6 +175,7 @@ export async function handleStatsModalSubmit(
         paTotal: paNumber,
         hungerLevel: hungerNumber,
         hp: hpNumber,
+        pm: pmNumber,
       }
     )) as Character;
 
@@ -178,10 +184,14 @@ export async function handleStatsModalSubmit(
     const embedTitle = updatedCharacter.isDead
       ? "💀 Personnage décédé"
       : "✅ Stats mises à jour";
+    const deathReason =
+      (hpNumber <= 0 ? "PV à 0" : "") +
+      (pmNumber <= 0 ? (hpNumber <= 0 ? ", " : "") + "PM à 0" : "") +
+      (hungerNumber <= 0
+        ? (hpNumber <= 0 || pmNumber <= 0 ? ", " : "") + "faim à 0"
+        : "");
     const embedDescription = updatedCharacter.isDead
-      ? `**${updatedCharacter.name}** est mort${
-          hpNumber <= 0 ? " (PV à 0)" : " (faim à 0)"
-        }.`
+      ? `**${updatedCharacter.name}** est mort (${deathReason}).`
       : `**${updatedCharacter.name}** a été modifié.`;
 
     const embed = new EmbedBuilder()
@@ -203,6 +213,11 @@ export async function handleStatsModalSubmit(
           name: "Points de vie",
           value: `${updatedCharacter.hp}`,
           inline: true,
+        },
+        {
+          name: "Points mentaux",
+          value: `${updatedCharacter.pm}`,
+          inline: true,
         }
       )
       .setTimestamp();
@@ -213,7 +228,6 @@ export async function handleStatsModalSubmit(
     if (updatedCharacter.isDead) {
       try {
         const { sendLogMessage } = await import("../../utils/channels");
-        const deathReason = hpNumber <= 0 ? "PV à 0" : "faim à 0";
         const logMessage = `💀 **Mort d'un personnage **\nLe personnage **${
           updatedCharacter.name
         }**, <@${

@@ -16,6 +16,9 @@ export interface Character {
   canReroll: boolean;
   hungerLevel: number;
   paTotal: number;
+  hp: number;
+  pm: number;
+  roles?: Array<{ discordId: string; name: string }>;
   lastPaUpdate: string;
   createdAt: string;
   updatedAt: string;
@@ -208,6 +211,8 @@ export class CharacterAPIService extends BaseAPIService {
     stats: {
       paTotal?: number;
       hungerLevel?: number;
+      hp?: number;
+      pm?: number;
       isDead?: boolean;
       canReroll?: boolean;
       isActive?: boolean;

@@ -13,7 +13,10 @@ import {
   updateUser as updateUserSvc,
 } from "./users.service";
 import { upsertRole as upsertRoleSvc } from "./roles.service";
-import { checkCharacterStatus } from "./characters.service";
+import {
+  checkCharacterStatus,
+  type CharacterCheckResult,
+} from "./characters.service";
 
 // Import des services spécialisés
 import { CharacterAPIService } from "./api/character-api.service";
@@ -124,10 +127,7 @@ class APIService {
   /**
    * Récupère un personnage actif par son ID Discord et l'ID de la ville
    */
-  public async getActiveCharacter(
-    discordId: string,
-    townId: string
-  ) {
+  public async getActiveCharacter(discordId: string, townId: string) {
     return this.characterAPI.getActiveCharacter(discordId, townId);
   }
 
@@ -142,7 +142,11 @@ class APIService {
   /**
    * Vérifie l'état du personnage d'un utilisateur (sans création automatique)
    */
-  public async checkCharacterStatus(userId: string, guildId: string, client: Client) {
+  public async checkCharacterStatus(
+    userId: string,
+    guildId: string,
+    client: Client
+  ): Promise<CharacterCheckResult> {
     return checkCharacterStatus(userId, guildId, client);
   }
 
@@ -266,7 +270,11 @@ class APIService {
   /**
    * Change le personnage actif d'un utilisateur
    */
-  public async switchActiveCharacter(userId: string, townId: string, characterId: string) {
+  public async switchActiveCharacter(
+    userId: string,
+    townId: string,
+    characterId: string
+  ) {
     return this.characterAPI.switchActiveCharacter(userId, townId, characterId);
   }
 
@@ -292,6 +300,8 @@ class APIService {
     stats: {
       paTotal?: number;
       hungerLevel?: number;
+      hp?: number;
+      pm?: number;
       isDead?: boolean;
       canReroll?: boolean;
       isActive?: boolean;

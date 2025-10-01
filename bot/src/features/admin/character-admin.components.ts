@@ -131,10 +131,18 @@ export function createStatsModal(character: Character) {
     .setValue(character.hp.toString())
     .setRequired(true);
 
+  const pmInput = new TextInputBuilder()
+    .setCustomId("pm_input")
+    .setLabel("Points mentaux (0-5)")
+    .setStyle(TextInputStyle.Short)
+    .setValue(character.pm.toString())
+    .setRequired(true);
+
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(paInput),
     new ActionRowBuilder<TextInputBuilder>().addComponents(hungerInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(hpInput)
+    new ActionRowBuilder<TextInputBuilder>().addComponents(hpInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(pmInput)
   );
 
   return modal;
@@ -191,7 +199,7 @@ export function createCharacterDetailsContent(character: Character): string {
     `Reroll autorisé: ${character.canReroll ? "✅" : "❌"}\n` +
     `PA: ${character.paTotal} | Faim: ${getHungerLevelText(
       character.hungerLevel
-    )} | PV: ${character.hp}\n\n` +
+    )} | PV: ${character.hp} | PM: ${character.pm}\n\n` +
     `Choisissez une action :`
   );
 }
