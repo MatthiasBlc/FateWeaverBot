@@ -117,19 +117,24 @@ export class ModalHandler {
       }
     });
 
-    this.registerHandler('character_admin_advanced_modal_', async (interaction) => {
+    // Gestionnaire pour les modals d'investissement dans les chantiers
+    this.registerHandler('invest_modal', async (interaction) => {
       try {
-        const { handleAdvancedStatsModalSubmit } = await import('../features/admin/character-admin.interactions');
-        await handleAdvancedStatsModalSubmit(interaction);
+        const { handleInvestModalSubmit } = await import('../features/chantiers/chantiers.handlers.js');
+        await handleInvestModalSubmit(interaction);
       } catch (error) {
-        logger.error("Error handling character admin advanced modal:", { error });
-        if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
-          return; // Interaction expirée
+        logger.error('Error handling invest modal:', { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ Erreur lors du traitement du formulaire d\'investissement.',
+            ephemeral: true,
+          });
+        } else if (interaction.deferred) {
+          await interaction.followUp({
+            content: '❌ Erreur lors du traitement du formulaire d\'investissement.',
+            ephemeral: true,
+          });
         }
-        await interaction.reply({
-          content: "❌ Erreur lors de la modification des statistiques avancées du personnage.",
-          flags: ["Ephemeral"],
-        });
       }
     });
   }

@@ -31,7 +31,7 @@ interface Chantier {
   name: string;
   cost: number;
   spendOnIt: number;
-  status: 'PLAN' | 'IN_PROGRESS' | 'COMPLETED';
+  status: "PLAN" | "IN_PROGRESS" | "COMPLETED";
   townId: string;
   createdBy: string;
   startDate: Date | null;
@@ -188,9 +188,9 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
         return;
       }
 
-      // Demander le nombre de PA à investir
+      // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
       const modal = new ModalBuilder()
-        .setCustomId("invest_modal")
+        .setCustomId(`invest_modal_${selectedChantierId}`)
         .setTitle(`Investir dans ${selectedChantier.name}`);
 
       const pointsInput = new TextInputBuilder()
@@ -214,149 +214,7 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
 
       await response.showModal(modal);
 
-      // Gérer la soumission du modal
-      const modalFilter = (i: ModalSubmitInteraction) =>
-        i.customId === "invest_modal" && i.user.id === interaction.user.id;
-
-      let modalResponse: ModalSubmitInteraction | undefined;
-      try {
-        // Attendre la soumission du modal sur la même interaction qui l'a affiché
-        modalResponse = await response.awaitModalSubmit({
-          filter: modalFilter,
-          time: 120000, // 2 minutes pour répondre
-        });
-
-        // Ne pas utiliser deferReply ici pour éviter les conflits
-
-        const points = parseInt(
-          modalResponse.fields.getTextInputValue("points_input"),
-          10
-        );
-
-        // Validation des points
-        if (isNaN(points)) {
-          await modalResponse.reply({ 
-            content: "❌ Veuillez entrer un nombre valide de points d'action.",
-            ephemeral: true 
-          }).catch(e => 
-            logger.error("Erreur lors de l'envoi du message d'erreur:", e)
-          );
-          return;
-        }
-        
-        if (points <= 0) {
-          await modalResponse.reply({ 
-            content: "❌ Le nombre de points d'action doit être supérieur à zéro.",
-            ephemeral: true
-          }).catch(e => 
-            logger.error("Erreur lors de l'envoi du message d'erreur:", e)
-          );
-          return;
-        }
-
-          // Récupérer l'utilisateur
-          const user = await apiService.getOrCreateUser(
-            interaction.user.id,
-            interaction.user.username,
-            interaction.user.discriminator
-          );
-
-          if (!user) {
-            throw new Error("Impossible de créer ou récupérer l'utilisateur");
-          }
-
-          // Récupérer la ville du serveur
-          const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
-          const town = townResponse as unknown as Town;
-          
-          if (!town || !town.id) {
-            throw new Error("Ville non trouvée pour cette guilde");
-          }
-
-          // Récupérer le personnage actif de l'utilisateur
-          const activeCharacter = await apiService.getActiveCharacter(
-            interaction.user.id,
-            town.id
-          ) as ActiveCharacter | null;
-
-          if (!activeCharacter) {
-            throw new Error("Aucun personnage actif trouvé");
-          }
-
-          // Vérifier que l'utilisateur a assez de PA
-          if (activeCharacter.paTotal < points) {
-            const errorMsg = `❌ Pas assez de points d'action (${activeCharacter.paTotal}/${points} requis)`;
-            if (modalResponse.deferred || modalResponse.replied) {
-              await modalResponse.editReply({ content: errorMsg });
-            } else {
-              await modalResponse.reply({ content: errorMsg, flags: ["Ephemeral"] });
-            }
-            return;
-          }
-
-          // Appeler l'API pour effectuer l'investissement
-          const result = await apiService.investInChantier(
-            activeCharacter.id,
-            selectedChantierId,
-            points
-          ) as InvestResult;
-
-          let responseMessage = `✅ Vous avez investi ${points} PA dans le chantier "${selectedChantier.name}".`;
-          
-          if (result.isCompleted) {
-            responseMessage += "\n🎉 Félicitations ! Le chantier est maintenant terminé !";
-          } else {
-            const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
-            responseMessage += `\n📊 Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
-          }
-
-          try {
-            if (modalResponse.deferred || modalResponse.replied) {
-              await modalResponse.editReply({ content: responseMessage });
-            } else {
-              await modalResponse.reply({ content: responseMessage, flags: ["Ephemeral"] });
-            }
-          } catch (e) {
-            logger.error("Impossible d'envoyer la réponse de succès:", { error: e });
-          }
-      } catch (error) {
-        logger.error("Erreur lors de la soumission du modal:", { error });
-        const errorMessage = error instanceof Error && !error.message.includes('Pas assez de points d\'action') 
-          ? error.message 
-          : 'Une erreur est survenue lors du traitement de votre demande';
-        
-        // Ne pas afficher le message d'erreur pour les erreurs de PA déjà gérées
-        if (error instanceof Error && error.message.includes('Pas assez de points d\'action')) {
-          return;
-        }
-        
-        if (modalResponse) {
-          try {
-            try {
-              if (modalResponse.deferred || modalResponse.replied) {
-                await modalResponse.editReply({ content: `❌ ${errorMessage}. Veuillez réessayer.` });
-              } else {
-                await modalResponse.reply({ content: `❌ ${errorMessage}. Veuillez réessayer.`, flags: ["Ephemeral"] });
-              }
-            } catch (e3) {
-              logger.error("Impossible d'envoyer le message d'erreur:", { error: e3 });
-            }
-          } catch (e) {
-            // Si editReply échoue (pas de defer), tenter un followUp si possible
-            try {
-              await modalResponse.followUp({
-                content: `❌ ${errorMessage}.`,
-                flags: ["Ephemeral"],
-              });
-            } catch (e2) {
-              logger.error("Impossible d'envoyer une réponse de fallback au modal:", { error: e2 });
-            }
-          }
-        } else {
-          // Aucun modalResponse dispo, on journalise uniquement
-          logger.error("Aucun modalResponse disponible pour notifier l'utilisateur de l'erreur");
-        }
-      }
+      // La soumission du modal sera gérée par handleInvestModalSubmit via le système centralisé
     } catch (error) {
       logger.error("Erreur lors de la sélection du chantier:", { error });
       if (!interaction.replied) {
@@ -432,6 +290,186 @@ export async function handleAddCommand(interaction: CommandInteraction) {
     logger.error("Erreur lors de la création du chantier :", { error });
     await interaction.reply({
       content: "Une erreur est survenue lors de la création du chantier.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gère la soumission du modal d'investissement dans les chantiers
+ */
+export async function handleInvestModalSubmit(
+  interaction: ModalSubmitInteraction
+) {
+  try {
+    const customId = interaction.customId;
+    const chantierId = customId.replace("invest_modal_", "");
+
+    // Récupérer le chantier depuis l'API
+    const chantiers = await apiService.getChantiersByServer(
+      interaction.guildId!
+    );
+    const chantier = chantiers.find((c: Chantier) => c.id === chantierId);
+
+    if (!chantier) {
+      await interaction.reply({
+        content: "❌ Chantier non trouvé.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const points = parseInt(
+      interaction.fields.getTextInputValue("points_input"),
+      10
+    );
+
+    // Validation des points
+    if (isNaN(points) || points <= 0) {
+      await interaction.reply({
+        content:
+          "❌ Veuillez entrer un nombre valide de points d'action (supérieur à zéro).",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Récupérer l'utilisateur
+    const user = await apiService.getOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.discriminator
+    );
+
+    if (!user) {
+      throw new Error("Impossible de créer ou récupérer l'utilisateur");
+    }
+
+    // Récupérer la ville du serveur
+    const townResponse = await apiService.getTownByGuildId(
+      interaction.guildId!
+    );
+    const town = townResponse as unknown as Town;
+
+    if (!town || !town.id) {
+      throw new Error("Ville non trouvée pour cette guilde");
+    }
+
+    // Récupérer tous les personnages de la ville et trouver celui de l'utilisateur
+    const townCharacters = (await apiService.getTownCharacters(
+      town.id
+    )) as any[];
+    const userCharacters = townCharacters.filter(
+      (char: any) => char.user?.discordId === interaction.user.id
+    );
+    const activeCharacter = userCharacters.find((char: any) => char.isActive);
+
+    if (!activeCharacter) {
+      // Vérifier si l'utilisateur a besoin de créer un personnage
+      const needsCreation = await apiService.needsCharacterCreation(
+        user.id,
+        town.id
+      );
+
+      if (needsCreation) {
+        // Proposer la création de personnage via le système de modales
+        const { checkAndPromptCharacterCreation } = await import(
+          "../../modals/character-modals.ts"
+        );
+        const modalShown = await checkAndPromptCharacterCreation(interaction);
+
+        if (modalShown) {
+          // Ne pas répondre à l'interaction actuelle, laisser le système de création gérer
+          return;
+        }
+      }
+
+      await interaction.reply({
+        content:
+          "❌ Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande `/create-character` pour créer votre personnage.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Vérifier que le personnage est actif et vivant
+    if (!activeCharacter.isActive) {
+      await interaction.reply({
+        content:
+          "❌ Votre personnage est inactif et ne peut pas investir dans les chantiers.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (activeCharacter.isDead) {
+      await interaction.reply({
+        content:
+          "💀 Un mort ne construit pas de chantier ! Votre personnage est mort et ne peut pas investir.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Vérifier que l'utilisateur a assez de PA
+    if (activeCharacter.paTotal < points) {
+      await interaction.reply({
+        content: `❌ Pas assez de points d'action (${activeCharacter.paTotal}/${points} requis)`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Appeler l'API pour effectuer l'investissement
+    const result = (await apiService.investInChantier(
+      activeCharacter.id,
+      chantierId,
+      points
+    )) as InvestResult;
+
+    let responseMessage = `✅ Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
+
+    if (result.isCompleted) {
+      responseMessage +=
+        "\n🎉 Félicitations ! Le chantier est maintenant terminé !";
+    } else {
+      const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
+      responseMessage += `\n📊 Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
+    }
+
+    await interaction.reply({
+      content: responseMessage,
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur lors du traitement de l'investissement:", { error });
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Aucun personnage actif trouvé")
+    ) {
+      await interaction.reply({
+        content:
+          "❌ Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande `/create-character` pour créer votre personnage.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Pas assez de points d'action")
+    ) {
+      await interaction.reply({
+        content: error.message,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    await interaction.reply({
+      content:
+        "❌ Une erreur est survenue lors du traitement de votre investissement. Veuillez réessayer.",
       flags: ["Ephemeral"],
     });
   }
