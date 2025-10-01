@@ -173,11 +173,14 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     }
 
     // Create reroll character
+    console.log(`[BOT handleReroll] Création du reroll - userId: ${user.id}, townId: ${town.id}, name: ${newCharacterName.trim()}`);
     const newCharacter = (await apiService.createRerollCharacter({
       userId: user.id,
       townId: town.id,
       name: newCharacterName.trim(),
     })) as Character;
+
+    console.log(`[BOT handleReroll] Reroll créé avec succès: ${newCharacter.id}`);
 
     logger.info("Reroll character created successfully", {
       newCharacterId: newCharacter.id,
@@ -191,6 +194,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
       flags: ["Ephemeral"],
     });
   } catch (error) {
+    console.error(`[BOT handleReroll] Erreur lors du reroll:`, error);
     logger.error("Error creating reroll character:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,

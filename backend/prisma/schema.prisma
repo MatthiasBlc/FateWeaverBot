@@ -78,11 +78,12 @@ model Character {
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 
-  @@unique([userId, townId, isActive], name: "one_active_per_user_town") // Un seul personnage actif par user/town
+  // SUPPRIMÉ : @@unique([userId, townId, isActive], name: "one_active_per_user_town") // Un seul personnage actif par user/town
+  // REMPLACÉ PAR : Logique applicative dans les services pour garantir l'unicité
   @@index([userId])
   @@index([townId])
   @@index([userId, townId])
-  @@map("characters")
+  @@index([userId, townId, isActive]) // Index pour les performances, mais pas de contrainte unique
 }
 
 enum ChantierStatus {

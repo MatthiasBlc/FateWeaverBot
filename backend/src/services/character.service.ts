@@ -8,18 +8,27 @@ export interface CreateCharacterData {
   townId: string;
 }
 
-export type CharacterWithDetails = Character & { user: User; town: Town & { guild: Guild } };
+export type CharacterWithDetails = Character & {
+  user: User;
+  town: Town & { guild: Guild };
+};
 
 export class CharacterService {
-  async getActiveCharacter(userId: string, townId: string): Promise<CharacterWithDetails | null> {
+  async getActiveCharacter(
+    userId: string,
+    townId: string
+  ): Promise<CharacterWithDetails | null> {
     return await prisma.character.findFirst({
       where: { userId, townId, isActive: true, isDead: false },
       include: { user: true, town: { include: { guild: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
-  async getRerollableCharacters(userId: string, townId: string): Promise<Character[]> {
+  async getRerollableCharacters(
+    userId: string,
+    townId: string
+  ): Promise<Character[]> {
     return await prisma.character.findMany({
       where: { userId, townId, isDead: true, canReroll: true, isActive: true },
       include: { user: true, town: { include: { guild: true } } },
@@ -50,42 +59,53 @@ export class CharacterService {
     });
   }
 
-  async createRerollCharacter(userId: string, townId: string, name: string): Promise<Character> {
+  async createRerollCharacter(
+    userId: string,
+    townId: string,
+    name: string
+  ): Promise<Character> {
     return await prisma.$transaction(async (prisma) => {
-      // Chercher un personnage mort avec permission de reroll (peu importe isActive)
-      const deadCharacter = await prisma.character.findFirst({
-        where: { userId, townId, isDead: true, canReroll: true },
+      console.log(
+        `[createRerollCharacter] Début - userId: ${userId}, townId: ${townId}, name: ${name}`
+      );
+
+      // LOGIQUE SIMPLE : Trouver le personnage ACTIF actuel (mort ou vivant)
+      // Il y a TOUJOURS un personnage actif par utilisateur par ville
+      const currentActiveCharacter = await prisma.character.findFirst({
+        where: { userId, townId, isActive: true },
       });
 
-      if (!deadCharacter) {
-        throw new Error("No reroll permission");
+      if (!currentActiveCharacter) {
+        throw new Error("No active character found - this should never happen");
       }
 
-      // Désactiver TOUS les personnages de l'utilisateur dans cette ville
-      await prisma.character.updateMany({
-        where: { userId, townId },
-        data: { isActive: false },
-      });
+      console.log(
+        `[createRerollCharacter] Personnage actif actuel: ${currentActiveCharacter.id}, isDead: ${currentActiveCharacter.isDead}, canReroll: ${currentActiveCharacter.canReroll}`
+      );
 
-      // Créer le nouveau personnage actif
-      const newCharacter = await prisma.character.create({
-        data: {
-          name,
-          user: { connect: { id: userId } },
-          town: { connect: { id: townId } },
-          isActive: true,
-          isDead: false,
-          canReroll: false,
-          hungerLevel: 4,
-          paTotal: 2,
-        },
-      });
+      // SOLUTION ULTRA-SIMPLE : Utiliser la fonction createCharacter existante
+      // qui gère déjà correctement la logique de désactivation/création
+      const newCharacterData: CreateCharacterData = {
+        userId,
+        townId,
+        name,
+      };
 
-      // Retirer la permission de reroll du personnage mort
-      await prisma.character.update({
-        where: { id: deadCharacter.id },
-        data: { canReroll: false },
-      });
+      // Créer le nouveau personnage (désactive automatiquement l'ancien)
+      const newCharacter = await this.createCharacter(newCharacterData);
+
+      console.log(`[createRerollCharacter] ✅ Nouveau personnage créé: ${newCharacter.id}`);
+
+      // Nettoyer la permission de reroll si l'ancien personnage était mort
+      if (currentActiveCharacter.isDead && currentActiveCharacter.canReroll) {
+        await prisma.character.update({
+          where: { id: currentActiveCharacter.id },
+          data: { canReroll: false },
+        });
+        console.log(
+          `[createRerollCharacter] Permission de reroll nettoyée: ${currentActiveCharacter.id}`
+        );
+      }
 
       return newCharacter;
     });
@@ -99,12 +119,22 @@ export class CharacterService {
   }
 
   async grantRerollPermission(characterId: string): Promise<Character> {
-    return await prisma.character.update({ where: { id: characterId }, data: { canReroll: true } });
+    return await prisma.character.update({
+      where: { id: characterId },
+      data: { canReroll: true },
+    });
   }
 
-  async switchActiveCharacter(userId: string, townId: string, characterId: string): Promise<Character> {
+  async switchActiveCharacter(
+    userId: string,
+    townId: string,
+    characterId: string
+  ): Promise<Character> {
     return await prisma.$transaction(async (tx) => {
-      await tx.character.updateMany({ where: { userId, townId, isActive: true }, data: { isActive: false } });
+      await tx.character.updateMany({
+        where: { userId, townId, isActive: true },
+        data: { isActive: false },
+      });
       return await tx.character.update({
         where: { id: characterId, userId, townId, isDead: false },
         data: { isActive: true },
@@ -119,7 +149,10 @@ export class CharacterService {
     });
   }
 
-  async needsCharacterCreation(userId: string, townId: string): Promise<boolean> {
+  async needsCharacterCreation(
+    userId: string,
+    townId: string
+  ): Promise<boolean> {
     const activeCharacter = await this.getActiveCharacter(userId, townId);
     return !activeCharacter;
   }

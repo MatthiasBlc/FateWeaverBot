@@ -1,6 +1,10 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
+import {
+  checkAndPromptReroll,
+  createRerollModal,
+} from "../../modals/character-modals";
 import type { ProfileData } from "./users.types";
 import {
   calculateTimeUntilNextUpdate,
@@ -58,7 +62,7 @@ export async function handleProfileCommand(interaction: any) {
         points: number;
         lastUpdated: string;
       }
-      
+
       type ActionPointsResponse = {
         success: boolean;
         data: ActionPointsData;
@@ -67,8 +71,30 @@ export async function handleProfileCommand(interaction: any) {
       if (characterStatus.hasActiveCharacter && characterStatus.character) {
         const character = characterStatus.character;
 
+        // Vérifier si le personnage actif est mort et peut reroll
+        if (characterStatus.canReroll && character) {
+          console.log(`[BOT /profil] Personnage mort détecté avec permission de reroll: ${character.id}`);
+
+          logger.info(
+            "Personnage mort actif détecté, ouverture directe de la modale de reroll",
+            {
+              characterId: character.id,
+              userId: user.id,
+              guildId: interaction.guildId,
+            }
+          );
+
+          // Ouvrir directement la modale de reroll SANS nettoyer d'abord
+          // Le système de reroll se chargera de nettoyer l'ancien personnage
+          const modal = createRerollModal();
+          await interaction.showModal(modal);
+          return;
+        }
+
         // Récupérer les points d'action du personnage
-        const actionPointsResponse = await apiService.getActionPoints(character.id) as ActionPointsResponse;
+        const actionPointsResponse = (await apiService.getActionPoints(
+          character.id
+        )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
 
         // Calculer le temps restant avant la prochaine mise à jour
@@ -84,7 +110,9 @@ export async function handleProfileCommand(interaction: any) {
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
-            lastUpdated: actionPointsData?.lastUpdated ? new Date(actionPointsData.lastUpdated) : new Date(),
+            lastUpdated: actionPointsData?.lastUpdated
+              ? new Date(actionPointsData.lastUpdated)
+              : new Date(),
           },
           timeUntilUpdate,
           user: {
@@ -121,7 +149,9 @@ export async function handleProfileCommand(interaction: any) {
         const character = characterStatus.character;
 
         // Récupérer les points d'action du personnage
-        const actionPointsResponse = await apiService.getActionPoints(character.id) as ActionPointsResponse;
+        const actionPointsResponse = (await apiService.getActionPoints(
+          character.id
+        )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
 
         // Calculer le temps restant avant la prochaine mise à jour
@@ -137,7 +167,9 @@ export async function handleProfileCommand(interaction: any) {
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
-            lastUpdated: actionPointsData?.lastUpdated ? new Date(actionPointsData.lastUpdated) : new Date(),
+            lastUpdated: actionPointsData?.lastUpdated
+              ? new Date(actionPointsData.lastUpdated)
+              : new Date(),
           },
           timeUntilUpdate,
           user: {

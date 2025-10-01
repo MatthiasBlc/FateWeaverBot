@@ -9,7 +9,7 @@ import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
 import { getActiveCharacterForUser } from "../../utils/character";
-import type { Town } from "../admin/character-admin.handlers";
+import type { Town } from "../admin/character-admin.types";
 
 export async function handleViewFoodStockCommand(interaction: any) {
   const member = interaction.member as GuildMember;
