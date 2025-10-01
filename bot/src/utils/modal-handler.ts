@@ -128,7 +128,13 @@ export class ModalHandler {
 
     logger.info(`Modal interaction received: ${customId}`);
 
-    const handler = this.handlers.get(customId);
+    // Essayer d'abord avec l'ID exact
+    let handler = this.handlers.get(customId);
+
+    // Si aucun gestionnaire trouvé et que l'ID commence par 'stats_', essayer avec 'character_stats_modal'
+    if (!handler && customId.startsWith('stats_')) {
+      handler = this.handlers.get('character_stats_modal');
+    }
 
     if (handler) {
       await handler(interaction);
@@ -137,7 +143,7 @@ export class ModalHandler {
 
     // Aucun gestionnaire trouvé
     await interaction.reply({
-      content: "Modal non reconnu.",
+      content: `Modal non reconnu: ${customId}`,
       flags: ["Ephemeral"],
     });
     return false;
