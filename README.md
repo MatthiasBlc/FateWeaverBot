@@ -225,10 +225,6 @@ docker compose -f docker-compose.prod.yml up -d --build
 4. Push la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrez une Pull Request
 
-## 📝 Changelog
-
-Voir [CHANGELOG-DEPLOY.md](./CHANGELOG-DEPLOY.md) pour l'historique des modifications.
-
 ## 📄 Licence
 
 Ce projet est sous licence privée. Voir le fichier LICENSE pour plus de détails.

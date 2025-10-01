@@ -1,11 +1,18 @@
 -------------------------Todo-------------------------
 
 Gestion des pénuries ?? Alerte etc ?
-Message quotidien : ajouter stock vivres ?
+
+Action auto :
+
+- message quotidien "belle journée" ou "journée pluvieuse" etc
+- pouvoir lui donner un message différent la veille
+  Message quotidien : ajouter stock vivres ?
 
 Créer Nourriture ?
 
 /manger plusieurs boutons suivant la situation (jusquà full ? une seule ration?)
+
+Développer les TESTS
 
 #log update
 "🍽️ thorynest a pris un repas, il reste 60 de vivres dans la ville"
@@ -21,14 +28,14 @@ Refacto le backend
 
 Actions des charactes :
 
--✅ manger
--✅ système de faim
+- ✅ manger
+- ✅ système de faim
 
 - que en ville ?
 - faire manger
   - que en ville ?
-    -✅ faire avancer un chantier
-    -✅ voir commandes chantiers
+    - ✅ faire avancer un chantier
+    - ✅ voir commandes chantiers
 - lancer un chantier / demander sa création
   - asynchrone ?
 - partir en expédition
@@ -42,20 +49,18 @@ Actions des charactes :
 
 Action des Admins:
 
--✅ donner des PA
--✅ retirer des PA
--✅ donner des PFaim
--✅ retirer des PFaim
+- ✅ donner des PA
+- ✅ retirer des PA
+- ✅ donner des PFaim
+- ✅ retirer des PFaim
 
-- donner des PV
-- retirer des PV
-- donner des PM
-- retirer des PM
+- ✅ donner des PV
+- ✅ retirer des PV
+- ✅ donner des PM
+- ✅ retirer des PM
 
 - système d'évènements
-
-Action auto :
-
+  Action auto :
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
 

@@ -402,30 +402,35 @@ export const needsCharacterCreation: RequestHandler = async (
 export const updateCharacterStats: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { paTotal, hungerLevel, hp, isDead, canReroll, isActive } = req.body;
+    const { paTotal, hungerLevel, hp, pm, isDead, canReroll, isActive } = req.body;
 
     const updateData: Prisma.CharacterUpdateInput = { updatedAt: new Date() };
 
     if (paTotal !== undefined) updateData.paTotal = paTotal;
     if (hungerLevel !== undefined) updateData.hungerLevel = hungerLevel;
     if (hp !== undefined) updateData.hp = hp;
+    if (pm !== undefined) updateData.pm = pm;
     if (isDead !== undefined) updateData.isDead = isDead;
     if (canReroll !== undefined) updateData.canReroll = canReroll;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    // Vérifier si le personnage doit mourir (PV = 0 ou Faim = 0)
-    const shouldDie = (hp !== undefined && hp <= 0) || (hungerLevel !== undefined && hungerLevel <= 0);
+    // Vérifier si le personnage doit mourir (PV = 0, PM = 0 ou Faim = 0)
+    const shouldDie = (hp !== undefined && hp <= 0) ||
+                     (pm !== undefined && pm <= 0) ||
+                     (hungerLevel !== undefined && hungerLevel <= 0);
 
     if (shouldDie) {
       updateData.isDead = true;
       updateData.paTotal = 0;
       updateData.hungerLevel = 0;
       updateData.hp = 0;
+      updateData.pm = 0;
     } else if (isDead === true) {
       // Cas où isDead est explicitement défini à true
       updateData.paTotal = 0;
       updateData.hungerLevel = 0;
       updateData.hp = 0;
+      updateData.pm = 0;
     }
 
     const updatedCharacter = await prisma.character.update({

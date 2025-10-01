@@ -9,6 +9,7 @@ export interface CharacterDto {
   lastPaUpdate: Date;
   hungerLevel: number;
   hp: number;
+  pm: number;
   user?: {
     id: string;
     discordId: string;

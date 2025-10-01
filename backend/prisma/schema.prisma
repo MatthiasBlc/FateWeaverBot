@@ -73,6 +73,7 @@ model Character {
   lastPaUpdate   DateTime        @default(now()) @map("last_pa_update")
   hungerLevel    Int             @default(4) @map("hunger_level") // 0: Mort, 1: Agonie, 2: Affamé, 3: Faim, 4: En bonne santé
   hp             Int             @default(5) @map("hp") // Points de vie (0-5)
+  pm             Int             @default(5) @map("pm") // Points mentaux (0-5)
   isDead         Boolean         @default(false) @map("is_dead") // Indique si le personnage est mort
   canReroll      Boolean         @default(false) @map("can_reroll") // Autorise la création d'un nouveau personnage
   isActive       Boolean         @default(true) @map("is_active") // Personnage actif pour l'utilisateur dans cette ville

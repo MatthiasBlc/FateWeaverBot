@@ -55,6 +55,7 @@ export class CharacterService {
           hungerLevel: 4,
           paTotal: 2,
           hp: 5, // Points de vie initiaux
+          pm: 5, // Points mentaux initiaux
         },
       });
     });
@@ -115,7 +116,7 @@ export class CharacterService {
   async killCharacter(characterId: string): Promise<Character> {
     return await prisma.character.update({
       where: { id: characterId },
-      data: { isDead: true, hungerLevel: 0, paTotal: 0, hp: 0 },
+      data: { isDead: true, hungerLevel: 0, paTotal: 0, hp: 0, pm: 0 },
     });
   }
 
