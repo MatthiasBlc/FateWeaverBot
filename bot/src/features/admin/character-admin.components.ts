@@ -35,7 +35,7 @@ export function createCharacterSelectMenu(characters: Character[]) {
     .addOptions(
       characters.map((char) =>
         new StringSelectMenuOptionBuilder()
-          .setLabel(char.name)
+          .setLabel(`${char.name}${char.user?.globalName ? ` - ${char.user.globalName}` : char.user?.username ? ` - ${char.user.username}` : ''}`)
           .setDescription(
             `Actif: ${char.isActive ? "✅" : "❌"} | Mort: ${
               char.isDead ? "💀" : "❤️"
