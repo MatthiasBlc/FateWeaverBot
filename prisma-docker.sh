@@ -52,8 +52,8 @@ case "$COMMAND" in
     ;;
 
   all)
-    generate_client
     apply_migrations
+    generate_client
     ;;
 
   *)
