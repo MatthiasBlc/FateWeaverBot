@@ -52,11 +52,56 @@ export async function handleProfileCommand(interaction: any) {
 
       type ActionPointsResponse = {
         success: boolean;
-        data: ActionPointsData;
+        data: ActionPointsData | null;
       };
+
+      // Cas spécial : personnage mort qui ne peut pas reroll mais existe dans characterStatus.character
+      if (characterStatus.character && characterStatus.character.isDead && !characterStatus.character.canReroll) {
+        const character = characterStatus.character;
+        console.log(
+          `[BOT /profil] Personnage mort détecté SANS permission de reroll: ${character.id}`
+        );
+
+        // Calculer le temps restant avant la prochaine mise à jour
+        const timeUntilUpdate = calculateTimeUntilNextUpdate();
+
+        // Préparer les données pour l'affichage d'un personnage mort
+        const profileData: ProfileData = {
+          character: {
+            id: character.id,
+            name: character.name,
+            roles: character.roles || [],
+            hungerLevel: 0, // Personnage mort = faim à 0 (mort)
+            hp: 0, // Personnage mort = 0 PV
+            pm: 0, // Personnage mort = 0 PM
+          },
+          actionPoints: {
+            points: 0, // Personnage mort = 0 PA
+            lastUpdated: new Date(),
+          },
+          timeUntilUpdate,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayAvatarURL: user.displayAvatarURL({ size: 128 }),
+          },
+          member: {
+            nickname: member.nickname || null,
+          },
+        };
+
+        // Créer l'embed du profil avec les valeurs à 0
+        const embed = createProfileEmbed(profileData);
+
+        await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+        return;
+      }
 
       if (characterStatus.hasActiveCharacter && characterStatus.character) {
         const character = characterStatus.character;
+
+        // Calculer le temps restant avant la prochaine mise à jour
+        const timeUntilUpdate = calculateTimeUntilNextUpdate();
 
         // Vérifier si le personnage actif est mort et peut reroll
         if (characterStatus.canReroll && character) {
@@ -85,9 +130,6 @@ export async function handleProfileCommand(interaction: any) {
           character.id
         )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
-
-        // Calculer le temps restant avant la prochaine mise à jour
-        const timeUntilUpdate = calculateTimeUntilNextUpdate();
 
         // Préparer les données pour l'affichage avec les rôles récupérés du personnage
         const profileData: ProfileData = {
@@ -218,12 +260,12 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Points de vie (PV)",
-      value: createPVDisplay(data.character.hp || 5, 5),
+      value: createPVDisplay(data.character.hp, 5),
       inline: true,
     },
     {
       name: "Points mentaux (PM)",
-      value: createHeartDisplay(data.character.pm || 5, 5, '💜', '🖤'),
+      value: createHeartDisplay(data.character.pm, 5, '💜', '🖤'),
       inline: true,
     },
     {
