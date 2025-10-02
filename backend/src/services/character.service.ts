@@ -11,6 +11,20 @@ export interface CreateCharacterData {
 export type CharacterWithDetails = Character & {
   user: User;
   town: Town & { guild: Guild };
+  characterRoles: Array<{
+    id: string;
+    characterId: string;
+    roleId: string;
+    assignedAt: Date;
+    username: string;
+    roleName: string;
+    role: {
+      id: string;
+      discordId: string;
+      name: string;
+      color: string | null;
+    };
+  }>;
 };
 
 export class CharacterService {
@@ -20,7 +34,11 @@ export class CharacterService {
   ): Promise<CharacterWithDetails | null> {
     return await prisma.character.findFirst({
       where: { userId, townId, isActive: true, isDead: false },
-      include: { user: true, town: { include: { guild: true } } },
+      include: {
+        user: true,
+        town: { include: { guild: true } },
+        characterRoles: { include: { role: true } }
+      },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -31,7 +49,11 @@ export class CharacterService {
   ): Promise<Character[]> {
     return await prisma.character.findMany({
       where: { userId, townId, isDead: true, canReroll: true, isActive: true },
-      include: { user: true, town: { include: { guild: true } } },
+      include: { 
+        user: true, 
+        town: { include: { guild: true } },
+        characterRoles: { include: { role: true } }
+      },
     });
   }
 
@@ -75,6 +97,11 @@ export class CharacterService {
       // Il y a TOUJOURS un personnage actif par utilisateur par ville
       const currentActiveCharacter = await prisma.character.findFirst({
         where: { userId, townId, isActive: true },
+        include: {
+          user: true,
+          town: { include: { guild: true } },
+          characterRoles: { include: { role: true } }
+        },
       });
 
       if (!currentActiveCharacter) {
@@ -147,7 +174,11 @@ export class CharacterService {
   async getTownCharacters(townId: string): Promise<CharacterWithDetails[]> {
     return await prisma.character.findMany({
       where: { townId },
-      include: { user: true, town: { include: { guild: true } } },
+      include: { 
+        user: true, 
+        town: { include: { guild: true } },
+        characterRoles: { include: { role: true } }
+      },
     });
   }
 

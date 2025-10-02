@@ -25,6 +25,7 @@ export interface ProfileData {
   };
   member: {
     nickname: string | null;
+    roles: Array<{ id: string; name: string; color: string; }>;
   };
 }
 

@@ -87,6 +87,13 @@ export async function handleProfileCommand(interaction: any) {
           },
           member: {
             nickname: member.nickname || null,
+            roles: member.roles.cache
+              .filter(role => role.name !== '@everyone' && role.name !== 'everyone')
+              .map(role => ({
+                id: role.id,
+                name: role.name,
+                color: role.hexColor,
+              })),
           },
         };
 
@@ -155,6 +162,13 @@ export async function handleProfileCommand(interaction: any) {
           },
           member: {
             nickname: member.nickname || null,
+            roles: member.roles.cache
+              .filter(role => role.name !== '@everyone' && role.name !== 'everyone')
+              .map(role => ({
+                id: role.id,
+                name: role.name,
+                color: role.hexColor,
+              })),
           },
         };
 
@@ -228,6 +242,12 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
       ? data.character.roles.map((role: { discordId: string; name: string }) => `<@&${role.discordId}>`).join(", ")
       : "Aucun rôle";
 
+  // Formatage des rôles Discord de l'utilisateur
+  const discordRolesText =
+    data.member.roles && data.member.roles.length > 0
+      ? data.member.roles.map(role => `<@&${role.id}>`).join(", ")
+      : "Aucun rôle";
+
   // Formatage avancé de l'état de faim
   const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
 
@@ -235,10 +255,10 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
   const attentionPanel =
     data.actionPoints.points >= 3
       ? {
-          name: "⚠️ **ATTENTION**",
-          value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
-          inline: false,
-        }
+        name: "⚠️ **ATTENTION**",
+        value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
+        inline: false,
+      }
       : null;
 
   // Ajout des champs d'information
@@ -250,9 +270,10 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Rôles",
-      value: rolesText,
+      value: discordRolesText,
       inline: true,
     },
+
     {
       name: "Points d'Action (PA)",
       value: `**${data.actionPoints.points || 0}/4**`,
