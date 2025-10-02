@@ -1,5 +1,47 @@
 -------------------------Todo-------------------------
 
+-------------------------Node Discord /update-------------------------
+
+PV 
+
+❤️ ❤️ ❤️ 🖤 🖤 
+❤️‍🩹 🖤 🖤 🖤 🖤 
+💜 💜 💜 🖤 🖤
+Delrya — Hier à 19:02
+Profil : rôle bug 
+@Delrya 
+
+Créer un canal annonces In Game 
+Créer un canal log pour le bot
+Créer canal demande commun 
+Delrya
+ a commencé un fil : Règles. Voir tous les fils. — Hier à 21:50
+Règles
+4 messages ›
+Delrya
+Il y a 4 h
+Delrya — Hier à 21:58
+Ville has 1 foodstock
+Foodstock is foodstock
+Foodstock has many Ville
+Exped is Ville
+
+À création Foodstock exped < Foodstock Ville 
+Après création FE > FV
+
+Fin d'exped : FE → FV 
+Delrya — Hier à 22:22
+@Delrya 
+
+Prévoir 7 messages types x2
+== 2 array de 7, clone array, rm du clone quand utilisé, prendre random dans l'array
+
+
+
+
+-------------------------Todo-------------------------
+
+
 Gestion des pénuries ?? Alerte etc ?
 
 Action auto :
@@ -7,6 +49,11 @@ Action auto :
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
   Message quotidien : ajouter stock vivres ?
+  chantier terminés la veille
+  récap des ressources  vivres etc
+  annonce du départ de l'expédition (préparée la veille) 
+
+sélectionner fil ? 
 
 Créer Nourriture ?
 
@@ -20,7 +67,7 @@ Développer les TESTS
 
 lors de la mort d'un personnage écrire la raison
 
-# Pouvoir faire manger les copains ?
+# Pouvoir faire manger les copains ? ou admin peuvent faire manger un joueur ? 
 
 Refacto les add + remove commands in one and only
 

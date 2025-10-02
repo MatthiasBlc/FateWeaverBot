@@ -218,12 +218,12 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Points de vie (PV)",
-      value: `**${data.character.hp || 5}/5**`,
+      value: createHeartDisplay(data.character.hp || 5, 5),
       inline: true,
     },
     {
       name: "Points mentaux (PM)",
-      value: `**${data.character.pm || 5}/5**`,
+      value: createHeartDisplay(data.character.pm || 5, 5, '💜', '🖤'),
       inline: true,
     },
     {
@@ -338,4 +338,18 @@ function getHungerEmoji(level: number): string {
     default:
       return "❓";
   }
+}
+
+function createHeartDisplay(current: number, max: number, filledEmoji = '❤️', emptyEmoji = '🖤'): string {
+  const hearts = [];
+
+  for (let i = 0; i < max; i++) {
+    if (i < current) {
+      hearts.push(filledEmoji);
+    } else {
+      hearts.push(emptyEmoji);
+    }
+  }
+
+  return hearts.join(' ');
 }
