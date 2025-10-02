@@ -27,3 +27,14 @@ export interface ProfileData {
     nickname: string | null;
   };
 }
+
+// Types pour les points d'action
+export interface ActionPointsData {
+  points: number;
+  lastUpdated: string;
+}
+
+export type ActionPointsResponse = {
+  success: boolean;
+  data: ActionPointsData | null;
+};
