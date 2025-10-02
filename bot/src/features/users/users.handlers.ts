@@ -218,7 +218,7 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
     {
       name: "Points de vie (PV)",
-      value: createHeartDisplay(data.character.hp || 5, 5),
+      value: createPVDisplay(data.character.hp || 5, 5),
       inline: true,
     },
     {
@@ -352,4 +352,21 @@ function createHeartDisplay(current: number, max: number, filledEmoji = '❤️'
   }
 
   return hearts.join(' ');
+}
+
+function createPVDisplay(current: number, max: number): string {
+  // Cas spécial : 1 seul PV restant = cœur pansé
+  if (current === 1) {
+    const hearts = ['❤️‍🩹']; // Cœur avec pansement
+
+    // Ajouter les cœurs vides restants
+    for (let i = 1; i < max; i++) {
+      hearts.push('🖤');
+    }
+
+    return hearts.join(' ');
+  }
+
+  // Cas normal : utiliser la fonction standard
+  return createHeartDisplay(current, max);
 }
