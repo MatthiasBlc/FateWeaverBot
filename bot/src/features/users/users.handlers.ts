@@ -66,7 +66,29 @@ export async function handleProfileCommand(interaction: any) {
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
 
         // Préparer les données pour l'affichage d'un personnage mort
-        const profileData = createDeadCharacterProfileData(character, timeUntilUpdate, user, member);
+        const profileData: ProfileData = {
+          character: {
+            id: character.id,
+            name: character.name,
+            roles: character.roles || [],
+            hungerLevel: character.hungerLevel, // Utilise la valeur du backend (devrait être 0)
+            hp: character.hp, // Utilise la valeur du backend (devrait être 0)
+            pm: character.pm, // Utilise la valeur du backend (devrait être 0)
+          },
+          actionPoints: {
+            points: 0, // Personnage mort = 0 PA (pas stocké en base pour les morts)
+            lastUpdated: new Date(),
+          },
+          timeUntilUpdate,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayAvatarURL: user.displayAvatarURL({ size: 128 }),
+          },
+          member: {
+            nickname: member.nickname || null,
+          },
+        };
 
         // Créer l'embed du profil avec les valeurs à 0
         const embed = createProfileEmbed(profileData);
@@ -110,7 +132,31 @@ export async function handleProfileCommand(interaction: any) {
         const actionPointsData = actionPointsResponse.data;
 
         // Préparer les données pour l'affichage avec les rôles récupérés du personnage
-        const profileData = createAliveCharacterProfileData(character, actionPointsData, timeUntilUpdate, user, member);
+        const profileData: ProfileData = {
+          character: {
+            id: character.id,
+            name: character.name,
+            roles: character.roles || [],
+            hungerLevel: character.hungerLevel || 0,
+            hp: character.hp || 5,
+            pm: character.pm || 5,
+          },
+          actionPoints: {
+            points: actionPointsData?.points || character.paTotal || 0,
+            lastUpdated: actionPointsData?.lastUpdated
+              ? new Date(actionPointsData.lastUpdated)
+              : new Date(),
+          },
+          timeUntilUpdate,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayAvatarURL: user.displayAvatarURL({ size: 128 }),
+          },
+          member: {
+            nickname: member.nickname || null,
+          },
+        };
 
         // Créer l'embed du profil
         const embed = createProfileEmbed(profileData);
@@ -158,71 +204,6 @@ export async function handleProfileCommand(interaction: any) {
       flags: ["Ephemeral"],
     });
   }
-}
-
-function createDeadCharacterProfileData(
-  character: any,
-  timeUntilUpdate: any,
-  user: any,
-  member: any
-): ProfileData {
-  return {
-    character: {
-      id: character.id,
-      name: character.name,
-      roles: character.roles || [],
-      hungerLevel: 0, // Personnage mort = faim à 0 (mort)
-      hp: 0, // Personnage mort = 0 PV
-      pm: 0, // Personnage mort = 0 PM
-    },
-    actionPoints: {
-      points: 0, // Personnage mort = 0 PA
-      lastUpdated: new Date(),
-    },
-    timeUntilUpdate,
-    user: {
-      id: user.id,
-      username: user.username,
-      displayAvatarURL: user.displayAvatarURL({ size: 128 }),
-    },
-    member: {
-      nickname: member.nickname || null,
-    },
-  };
-}
-
-function createAliveCharacterProfileData(
-  character: any,
-  actionPointsData: any,
-  timeUntilUpdate: any,
-  user: any,
-  member: any
-): ProfileData {
-  return {
-    character: {
-      id: character.id,
-      name: character.name,
-      roles: character.roles || [],
-      hungerLevel: character.hungerLevel || 0,
-      hp: character.hp || 5,
-      pm: character.pm || 5,
-    },
-    actionPoints: {
-      points: actionPointsData?.points || character.paTotal || 0,
-      lastUpdated: actionPointsData?.lastUpdated
-        ? new Date(actionPointsData.lastUpdated)
-        : new Date(),
-    },
-    timeUntilUpdate,
-    user: {
-      id: user.id,
-      username: user.username,
-      displayAvatarURL: user.displayAvatarURL({ size: 128 }),
-    },
-    member: {
-      nickname: member.nickname || null,
-    },
-  };
 }
 
 function createProfileEmbed(data: ProfileData): EmbedBuilder {
