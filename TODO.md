@@ -4,23 +4,11 @@
 
 PV 
 
-❤️ ❤️ ❤️ 🖤 🖤 
-❤️‍🩹 🖤 🖤 🖤 🖤 
-💜 💜 💜 🖤 🖤
-Delrya — Hier à 19:02
-Profil : rôle bug 
-@Delrya 
+✅ ❤️ ❤️ ❤️ 🖤 🖤 
+✅ ❤️‍🩹 🖤 🖤 🖤 🖤 
+✅ 💜 💜 💜 🖤 🖤
+✅ Profil : rôle bug 
 
-Créer un canal annonces In Game 
-Créer un canal log pour le bot
-Créer canal demande commun 
-Delrya
- a commencé un fil : Règles. Voir tous les fils. — Hier à 21:50
-Règles
-4 messages ›
-Delrya
-Il y a 4 h
-Delrya — Hier à 21:58
 Ville has 1 foodstock
 Foodstock is foodstock
 Foodstock has many Ville
