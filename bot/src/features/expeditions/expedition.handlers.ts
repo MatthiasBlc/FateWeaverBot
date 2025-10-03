@@ -450,7 +450,7 @@ export async function handleExpeditionInfoCommand(
         },
         {
           name: "👥 Membres",
-          value: currentExpedition.participants?.length.toString() || "0",
+          value: currentExpedition.members?.length.toString() || "0",
           inline: true,
         },
         {
@@ -461,6 +461,23 @@ export async function handleExpeditionInfoCommand(
         { name: " ", value: " ", inline: true }
       )
       .setTimestamp();
+
+    // Add member list if there are members
+    if (currentExpedition.members && currentExpedition.members.length > 0) {
+      const memberList = currentExpedition.members
+        .map(member => {
+          const characterName = member.character?.name || "Inconnu";
+          const discordUsername = member.character?.user?.username || "Inconnu";
+          return `• **${characterName}** - ${discordUsername}`;
+        })
+        .join('\n');
+
+      embed.addFields({
+        name: "📋 Membres inscrits",
+        value: memberList,
+        inline: false,
+      });
+    }
 
     // Add buttons only if expedition is PLANNING and user is a member
     const components = [];
