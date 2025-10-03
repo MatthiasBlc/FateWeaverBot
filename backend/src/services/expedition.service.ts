@@ -1,4 +1,8 @@
-import { PrismaClient, Expedition, ExpeditionMember, ExpeditionStatus } from "@prisma/client";
+import { Prisma, PrismaClient, ExpeditionStatus } from "@prisma/client";
+import type {
+  Expedition,
+  ExpeditionMember,
+} from "@prisma/client";
 import { logger } from "./logger";
 
 const prisma = new PrismaClient();
@@ -17,17 +21,19 @@ export interface ExpeditionWithDetails extends Expedition {
     name: string;
     foodStock: number;
   };
-  members: Array<ExpeditionMember & {
-    character: {
-      id: string;
-      name: string;
-      user: {
+  members: Array<
+    ExpeditionMember & {
+      character: {
         id: string;
-        discordId: string;
-        username: string;
+        name: string;
+        user: {
+          id: string;
+          discordId: string;
+          username: string;
+        };
       };
-    };
-  }>;
+    }
+  >;
   _count?: {
     members: number;
   };
@@ -39,7 +45,7 @@ export class ExpeditionService {
       // Check if town has enough food
       const town = await tx.town.findUnique({
         where: { id: data.townId },
-        select: { id: true, foodStock: true }
+        select: { id: true, foodStock: true },
       });
 
       if (!town) {
@@ -65,17 +71,17 @@ export class ExpeditionService {
         }),
         tx.town.update({
           where: { id: data.townId },
-          data: { foodStock: { decrement: data.foodStock } }
-        })
+          data: { foodStock: { decrement: data.foodStock } },
+        }),
       ]);
 
-      logger.info('expedition_event', {
-        event: 'created',
+      logger.info("expedition_event", {
+        event: "created",
         expeditionId: expedition.id,
         expeditionName: expedition.name,
         townId: data.townId,
         foodStock: data.foodStock,
-        createdBy: data.createdBy
+        createdBy: data.createdBy,
       });
 
       return expedition;
@@ -87,29 +93,33 @@ export class ExpeditionService {
       where: { id },
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true }
+          select: { id: true, name: true, foodStock: true },
         },
         members: {
           include: {
             character: {
               include: {
                 user: {
-                  select: { id: true, discordId: true, username: true }
-                }
-              }
-            }
+                  select: { id: true, discordId: true, username: true },
+                },
+              },
+            },
           },
-          orderBy: { joinedAt: 'asc' }
+          orderBy: { joinedAt: "asc" },
         },
         _count: {
-          select: { members: true }
-        }
-      }
+          select: { members: true },
+        },
+      },
     });
   }
 
-  async getExpeditionsByTown(townId: string, includeReturned: boolean = false): Promise<ExpeditionWithDetails[]> {
-    const whereClause: any = { townId };
+  async getExpeditionsByTown(
+    townId: string,
+    includeReturned: boolean = false
+  ): Promise<ExpeditionWithDetails[]> {
+    const whereClause: { townId: string; status?: { not?: ExpeditionStatus } } =
+      { townId };
     if (!includeReturned) {
       whereClause.status = { not: ExpeditionStatus.RETURNED };
     }
@@ -118,34 +128,37 @@ export class ExpeditionService {
       where: whereClause,
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true }
+          select: { id: true, name: true, foodStock: true },
         },
         members: {
           include: {
             character: {
               include: {
                 user: {
-                  select: { id: true, discordId: true, username: true }
-                }
-              }
-            }
+                  select: { id: true, discordId: true, username: true },
+                },
+              },
+            },
           },
-          orderBy: { joinedAt: 'asc' }
+          orderBy: { joinedAt: "asc" },
         },
         _count: {
-          select: { members: true }
-        }
+          select: { members: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
   }
 
-  async joinExpedition(expeditionId: string, characterId: string): Promise<ExpeditionMember> {
+  async joinExpedition(
+    expeditionId: string,
+    characterId: string
+  ): Promise<ExpeditionMember> {
     return await prisma.$transaction(async (tx) => {
       // Check expedition exists and is in PLANNING status
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true }
+        select: { id: true, status: true },
       });
 
       if (!expedition) {
@@ -153,17 +166,17 @@ export class ExpeditionService {
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error("Cannot join expedition that is not in PLANNING status");
+        throw new Error(
+          "Cannot join expedition that is not in PLANNING status"
+        );
       }
 
       // Check if character is already a member
-      const existingMember = await tx.expeditionMember.findUnique({
+      const existingMember = await tx.expeditionMember.findFirst({
         where: {
-          expeditionId_characterId: {
-            expeditionId,
-            characterId
-          }
-        }
+          expeditionId,
+          characterId,
+        },
       });
 
       if (existingMember) {
@@ -175,50 +188,61 @@ export class ExpeditionService {
         where: {
           characterId,
           expedition: {
-            status: { in: [ExpeditionStatus.PLANNING, ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] }
-          }
+            status: {
+              in: [
+                ExpeditionStatus.PLANNING,
+                ExpeditionStatus.LOCKED,
+                ExpeditionStatus.DEPARTED,
+              ],
+            },
+          },
         },
-        include: { expedition: true }
+        include: { expedition: true },
       });
 
       if (activeExpedition) {
-        throw new Error(`Character is already on expedition: ${activeExpedition.expedition.name}`);
+        throw new Error(
+          `Character is already on expedition: ${activeExpedition.expedition.name}`
+        );
       }
 
       const member = await tx.expeditionMember.create({
         data: {
           expeditionId,
-          characterId
+          characterId,
         },
         include: {
           character: {
             include: {
               user: {
-                select: { id: true, discordId: true, username: true }
-              }
-            }
-          }
-        }
+                select: { id: true, discordId: true, username: true },
+              },
+            },
+          },
+        },
       });
 
-      logger.info('expedition_event', {
-        event: 'character_joined',
+      logger.info("expedition_event", {
+        event: "character_joined",
         expeditionId,
         characterId,
         characterName: member.character.name,
-        joinedBy: member.character.user.discordId
+        joinedBy: member.character.user.discordId,
       });
 
       return member;
     });
   }
 
-  async leaveExpedition(expeditionId: string, characterId: string): Promise<void> {
+  async leaveExpedition(
+    expeditionId: string,
+    characterId: string
+  ): Promise<void> {
     return await prisma.$transaction(async (tx) => {
       // Check expedition exists and is in PLANNING status
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, foodStock: true }
+        select: { id: true, status: true, foodStock: true },
       });
 
       if (!expedition) {
@@ -226,18 +250,18 @@ export class ExpeditionService {
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error("Cannot leave expedition that is not in PLANNING status");
+        throw new Error(
+          "Cannot leave expedition that is not in PLANNING status"
+        );
       }
 
       // Check if character is a member
-      const member = await tx.expeditionMember.findUnique({
+      const member = await tx.expeditionMember.findFirst({
         where: {
-          expeditionId_characterId: {
-            expeditionId,
-            characterId
-          }
+          expeditionId,
+          characterId,
         },
-        include: { character: true }
+        include: { character: true },
       });
 
       if (!member) {
@@ -246,34 +270,38 @@ export class ExpeditionService {
 
       // Remove member
       await tx.expeditionMember.delete({
-        where: { id: member.id }
+        where: { id: member.id },
       });
 
       // If this was the last member and expedition is still PLANNING, terminate it
       const remainingMembers = await tx.expeditionMember.count({
-        where: { expeditionId }
+        where: { expeditionId },
       });
 
       if (remainingMembers === 0) {
         await this.terminateExpedition(tx, expeditionId);
       }
 
-      logger.info('expedition_event', {
-        event: 'character_left',
+      logger.info("expedition_event", {
+        event: "character_left",
         expeditionId,
         characterId,
         characterName: member.character.name,
-        terminated: remainingMembers === 0
+        terminated: remainingMembers === 0,
       });
     });
   }
 
-  async transferFood(expeditionId: string, amount: number, direction: 'to_town' | 'from_town'): Promise<void> {
+  async transferFood(
+    expeditionId: string,
+    amount: number,
+    direction: "to_town" | "from_town"
+  ): Promise<void> {
     return await prisma.$transaction(async (tx) => {
       // Check expedition exists and is in PLANNING status
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, foodStock: true, townId: true }
+        select: { id: true, status: true, foodStock: true, townId: true },
       });
 
       if (!expedition) {
@@ -281,12 +309,14 @@ export class ExpeditionService {
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error("Cannot transfer food for expedition that is not in PLANNING status");
+        throw new Error(
+          "Cannot transfer food for expedition that is not in PLANNING status"
+        );
       }
 
       const town = await tx.town.findUnique({
         where: { id: expedition.townId },
-        select: { id: true, foodStock: true }
+        select: { id: true, foodStock: true },
       });
 
       if (!town) {
@@ -297,7 +327,7 @@ export class ExpeditionService {
         throw new Error("Transfer amount must be positive");
       }
 
-      if (direction === 'from_town') {
+      if (direction === "from_town") {
         // Transfer from town to expedition
         if (town.foodStock < amount) {
           throw new Error("Not enough food in town");
@@ -306,12 +336,12 @@ export class ExpeditionService {
         await Promise.all([
           tx.expedition.update({
             where: { id: expeditionId },
-            data: { foodStock: { increment: amount } }
+            data: { foodStock: { increment: amount } },
           }),
           tx.town.update({
             where: { id: expedition.townId },
-            data: { foodStock: { decrement: amount } }
-          })
+            data: { foodStock: { decrement: amount } },
+          }),
         ]);
       } else {
         // Transfer from expedition to town
@@ -322,22 +352,28 @@ export class ExpeditionService {
         await Promise.all([
           tx.expedition.update({
             where: { id: expeditionId },
-            data: { foodStock: { decrement: amount } }
+            data: { foodStock: { decrement: amount } },
           }),
           tx.town.update({
             where: { id: expedition.townId },
-            data: { foodStock: { increment: amount } }
-          })
+            data: { foodStock: { increment: amount } },
+          }),
         ]);
       }
 
-      logger.info('expedition_event', {
-        event: 'food_transferred',
+      logger.info("expedition_event", {
+        event: "food_transferred",
         expeditionId,
         amount,
         direction,
-        expeditionFoodStock: direction === 'from_town' ? expedition.foodStock + amount : expedition.foodStock - amount,
-        townFoodStock: direction === 'from_town' ? town.foodStock - amount : town.foodStock + amount
+        expeditionFoodStock:
+          direction === "from_town"
+            ? expedition.foodStock + amount
+            : expedition.foodStock - amount,
+        townFoodStock:
+          direction === "from_town"
+            ? town.foodStock - amount
+            : town.foodStock + amount,
       });
     });
   }
@@ -346,7 +382,7 @@ export class ExpeditionService {
     return await prisma.$transaction(async (tx) => {
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, name: true }
+        select: { id: true, status: true, name: true },
       });
 
       if (!expedition) {
@@ -359,7 +395,7 @@ export class ExpeditionService {
 
       // Check if expedition has members
       const memberCount = await tx.expeditionMember.count({
-        where: { expeditionId }
+        where: { expeditionId },
       });
 
       if (memberCount === 0) {
@@ -368,14 +404,14 @@ export class ExpeditionService {
 
       const updatedExpedition = await tx.expedition.update({
         where: { id: expeditionId },
-        data: { status: ExpeditionStatus.LOCKED }
+        data: { status: ExpeditionStatus.LOCKED },
       });
 
-      logger.info('expedition_event', {
-        event: 'locked',
+      logger.info("expedition_event", {
+        event: "locked",
         expeditionId,
         expeditionName: expedition.name,
-        memberCount
+        memberCount,
       });
 
       return updatedExpedition;
@@ -386,7 +422,7 @@ export class ExpeditionService {
     return await prisma.$transaction(async (tx) => {
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, name: true, duration: true }
+        select: { id: true, status: true, name: true, duration: true },
       });
 
       if (!expedition) {
@@ -404,15 +440,15 @@ export class ExpeditionService {
         where: { id: expeditionId },
         data: {
           status: ExpeditionStatus.DEPARTED,
-          returnAt
-        }
+          returnAt,
+        },
       });
 
-      logger.info('expedition_event', {
-        event: 'departed',
+      logger.info("expedition_event", {
+        event: "departed",
         expeditionId,
         expeditionName: expedition.name,
-        returnAt: returnAt.toISOString()
+        returnAt: returnAt.toISOString(),
       });
 
       return updatedExpedition;
@@ -428,8 +464,8 @@ export class ExpeditionService {
           status: true,
           name: true,
           foodStock: true,
-          townId: true
-        }
+          townId: true,
+        },
       });
 
       if (!expedition) {
@@ -443,7 +479,7 @@ export class ExpeditionService {
       // Return food to town and clear expedition food stock
       const town = await tx.town.findUnique({
         where: { id: expedition.townId },
-        select: { id: true, foodStock: true }
+        select: { id: true, foodStock: true },
       });
 
       if (!town) {
@@ -453,65 +489,67 @@ export class ExpeditionService {
       const [, updatedExpedition] = await Promise.all([
         tx.town.update({
           where: { id: expedition.townId },
-          data: { foodStock: { increment: expedition.foodStock } }
+          data: { foodStock: { increment: expedition.foodStock } },
         }),
         tx.expedition.update({
           where: { id: expeditionId },
           data: {
             status: ExpeditionStatus.RETURNED,
             foodStock: 0,
-            returnAt: new Date()
-          }
-        })
+            returnAt: new Date(),
+          },
+        }),
       ]);
 
-      logger.info('expedition_event', {
-        event: 'returned',
+      logger.info("expedition_event", {
+        event: "returned",
         expeditionId,
         expeditionName: expedition.name,
         foodReturned: expedition.foodStock,
-        townFoodStock: town.foodStock + expedition.foodStock
+        townFoodStock: town.foodStock + expedition.foodStock,
       });
 
       return updatedExpedition;
     });
   }
 
-  async getActiveExpeditionsForCharacter(characterId: string): Promise<ExpeditionWithDetails[]> {
+  async getActiveExpeditionsForCharacter(
+    characterId: string
+  ): Promise<ExpeditionWithDetails[]> {
     return await prisma.expedition.findMany({
       where: {
         members: {
-          some: { characterId }
+          some: { characterId },
         },
-        status: { in: [ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] }
+        status: { in: [ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] },
       },
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true }
+          select: { id: true, name: true, foodStock: true },
         },
         members: {
           include: {
             character: {
               include: {
                 user: {
-                  select: { id: true, discordId: true, username: true }
-                }
-              }
-            }
+                  select: { id: true, discordId: true, username: true },
+                },
+              },
+            },
           },
-          orderBy: { joinedAt: 'asc' }
+          orderBy: { joinedAt: "asc" },
         },
         _count: {
-          select: { members: true }
-        }
-      }
+          select: { members: true },
+        },
+      },
     });
   }
 
-  async terminateExpedition(tx: any, expeditionId: string): Promise<void> {
+  async terminateExpedition(tx: Prisma.TransactionClient, expeditionId: string): Promise<void> {
     const expedition = await tx.expedition.findUnique({
       where: { id: expeditionId },
-      select: { id: true, name: true, foodStock: true, townId: true }
+      select: { id: true, name: true, foodStock: true, townId: true },
     });
 
     if (!expedition) {
@@ -522,7 +560,7 @@ export class ExpeditionService {
     if (expedition.foodStock > 0) {
       await tx.town.update({
         where: { id: expedition.townId },
-        data: { foodStock: { increment: expedition.foodStock } }
+        data: { foodStock: { increment: expedition.foodStock } },
       });
     }
 
@@ -533,19 +571,19 @@ export class ExpeditionService {
         data: {
           status: ExpeditionStatus.RETURNED,
           foodStock: 0,
-          returnAt: new Date()
-        }
+          returnAt: new Date(),
+        },
       }),
       tx.expeditionMember.deleteMany({
-        where: { expeditionId }
-      })
+        where: { expeditionId },
+      }),
     ]);
 
-    logger.info('expedition_event', {
-      event: 'terminated',
+    logger.info("expedition_event", {
+      event: "terminated",
       expeditionId,
       expeditionName: expedition.name,
-      foodReturned: expedition.foodStock
+      foodReturned: expedition.foodStock,
     });
   }
 }

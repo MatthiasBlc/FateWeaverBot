@@ -182,11 +182,18 @@ export class CharacterService {
     });
   }
 
-  async needsCharacterCreation(
-    userId: string,
-    townId: string
-  ): Promise<boolean> {
-    const activeCharacter = await this.getActiveCharacter(userId, townId);
+  async needsCharacterCreation(userId: string, townId: string): Promise<boolean> {
+    // Vérifier s'il y a un personnage actif (mort ou vivant)
+    const activeCharacter = await prisma.character.findFirst({
+      where: { userId, townId, isActive: true },
+      include: {
+        user: true,
+        town: { include: { guild: true } },
+        characterRoles: { include: { role: true } }
+      },
+    });
+    
+    // Si l'utilisateur a un personnage actif, il n'a pas besoin d'en créer un nouveau
     return !activeCharacter;
   }
 }
