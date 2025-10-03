@@ -5,7 +5,8 @@ import { logger } from "../services/logger.js";
  */
 export class SelectMenuHandler {
   private static instance: SelectMenuHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> = new Map();
+  private handlers: Map<string, (interaction: any) => Promise<void>> =
+    new Map();
 
   private constructor() {
     this.registerDefaultHandlers();
@@ -21,7 +22,10 @@ export class SelectMenuHandler {
   /**
    * Enregistre un gestionnaire pour une sélection spécifique
    */
-  public registerHandler(selectId: string, handler: (interaction: any) => Promise<void>) {
+  public registerHandler(
+    selectId: string,
+    handler: (interaction: any) => Promise<void>
+  ) {
     this.handlers.set(selectId, handler);
     logger.info(`Registered select menu handler for: ${selectId}`);
   }
@@ -29,7 +33,10 @@ export class SelectMenuHandler {
   /**
    * Enregistre un gestionnaire pour toutes les sélections commençant par un préfixe
    */
-  public registerHandlerByPrefix(prefix: string, handler: (interaction: any) => Promise<void>) {
+  public registerHandlerByPrefix(
+    prefix: string,
+    handler: (interaction: any) => Promise<void>
+  ) {
     this.handlers.set(`prefix:${prefix}`, handler);
     logger.info(`Registered select menu handler for prefix: ${prefix}`);
   }
@@ -39,23 +46,45 @@ export class SelectMenuHandler {
    */
   private registerDefaultHandlers() {
     // Gestionnaire pour les sélections d'administration de personnages
-    this.registerHandlerByPrefix('character_admin_', async (interaction) => {
+    this.registerHandlerByPrefix("character_admin_", async (interaction) => {
       try {
-        const { handleCharacterAdminInteraction } = await import('../features/admin/character-admin.handlers.js');
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
         await handleCharacterAdminInteraction(interaction);
       } catch (error) {
         logger.error("Error handling character admin select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection d'administration.",
+          content:
+            "❌ Erreur lors du traitement de la sélection d'administration.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les sélections d'administration d'expédition
+    this.registerHandler("expedition_admin_select", async (interaction) => {
+      try {
+        const { handleExpeditionAdminSelect } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionAdminSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin select:", { error });
+        await interaction.reply({
+          content:
+            "❌ Erreur lors du traitement de la sélection d'administration d'expédition.",
           flags: ["Ephemeral"],
         });
       }
     });
 
     // Gestionnaire pour les sélections d'expédition
-    this.registerHandler('expedition_join_select', async (interaction) => {
+    this.registerHandler("expedition_join_select", async (interaction) => {
       try {
-        const { handleExpeditionJoinSelect } = await import('../features/expeditions/expedition.handlers.js');
+        const { handleExpeditionJoinSelect } = await import(
+          "../features/expeditions/expedition.handlers.js"
+        );
         await handleExpeditionJoinSelect(interaction);
       } catch (error) {
         logger.error("Error handling expedition join select:", { error });
@@ -81,7 +110,10 @@ export class SelectMenuHandler {
     // Si pas trouvé, chercher par préfixe
     if (!handler) {
       for (const [key, handlerFn] of this.handlers.entries()) {
-        if (key.startsWith('prefix:') && customId.startsWith(key.substring(7))) {
+        if (
+          key.startsWith("prefix:") &&
+          customId.startsWith(key.substring(7))
+        ) {
           handler = handlerFn;
           break;
         }

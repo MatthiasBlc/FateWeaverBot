@@ -518,7 +518,7 @@ export class ExpeditionService {
         members: {
           some: { characterId },
         },
-        status: { in: [ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] },
+        status: { in: [ExpeditionStatus.PLANNING, ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] },
       },
       include: {
         town: {

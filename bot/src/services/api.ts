@@ -307,10 +307,7 @@ class APIService {
   public async createExpedition(
     expeditionData: CreateExpeditionData
   ): Promise<{ data: Expedition }> {
-    return this.expeditions.createExpedition({
-      ...expeditionData,
-      characterId: expeditionData.createdBy, // Map createdBy to characterId
-    });
+    return this.expeditions.createExpedition(expeditionData);
   }
 
   public async getExpeditionById(expeditionId: string) {

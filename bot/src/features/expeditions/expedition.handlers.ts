@@ -163,8 +163,64 @@ export async function handleExpeditionCreationModal(
       foodStock: foodAmount,
       duration: durationDays,
       townId: townResponse.id,
+      characterId: character.id, // Add character ID for auto-joining
       createdBy: interaction.user.id, // Discord user ID
     });
+
+    // Join the creator to the expedition
+    let joinSuccess = false;
+    try {
+      const joinResponse = await apiService.joinExpedition(newExpedition.data.id, character.id);
+      joinSuccess = true;
+      logger.info("Expedition creator auto-joined expedition", {
+        expeditionId: newExpedition.data.id,
+        characterId: character.id,
+        createdBy: interaction.user.id,
+        response: joinResponse
+      });
+    } catch (error) {
+      logger.error("Error auto-joining expedition creator:", { 
+        error,
+        expeditionId: newExpedition.data.id,
+        characterId: character.id,
+        createdBy: interaction.user.id
+      });
+      // Continue anyway, expedition is created
+    }
+
+    // Get updated expedition data with correct member count
+    let memberCount = 0;
+    let expeditionMembers: any[] = [];
+    try {
+      const updatedExpedition = await apiService.getExpeditionById(
+        newExpedition.data.id
+      );
+      memberCount = updatedExpedition?.members?.length || 0;
+      expeditionMembers = updatedExpedition?.members || [];
+      
+      // Log detailed member information
+      logger.info("Expedition members after creation:", {
+        expeditionId: newExpedition.data.id,
+        memberCount,
+        members: expeditionMembers.map(m => ({
+          id: m.id,
+          characterId: m.character?.id,
+          characterName: m.character?.name,
+          userId: m.character?.user?.discordId
+        }))
+      });
+      
+      // If no members but join was successful, set to 1
+      if (memberCount === 0 && joinSuccess) {
+        memberCount = 1;
+      }
+    } catch (error) {
+      logger.error("Error fetching updated expedition data:", { 
+        error,
+        expeditionId: newExpedition.data.id
+      });
+      memberCount = joinSuccess ? 1 : 0; // Set to 1 only if join was successful
+    }
 
     // Create embed
     const embed = new EmbedBuilder()
@@ -179,7 +235,7 @@ export async function handleExpeditionCreationModal(
         },
         { name: "⏱️ Durée", value: `${durationDays} jours`, inline: true },
         { name: "📍 Statut", value: "🔄 PLANIFICATION", inline: true },
-        { name: "👥 Membres", value: "0", inline: true },
+        { name: "👥 Membres", value: memberCount.toString(), inline: true },
         { name: "🏛️ Ville", value: townResponse.name, inline: true },
         { name: " ", value: " ", inline: true }
       )

@@ -38,4 +38,5 @@ export interface CreateExpeditionData {
   foodStock: number;
   duration: number; // in days
   createdBy: string;
+  characterId: string;
 }
