@@ -8,11 +8,10 @@ import {
   type ModalSubmitInteraction,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { apiService } from "../../services/api";
-import { checkCharacterStatus } from "../../services/characters.service";
+import { logger } from "../../services/logger.js";
+import { apiService } from "../../services/api.js";
+import { sendLogMessage } from "../../utils/channels.js";
 import { Expedition } from "../../types/expedition";
-import { Town } from "../../services/towns.service";
-import { logger } from "../../services/logger";
 import {
   getActiveCharacterFromCommand,
   getActiveCharacterFromModal,
@@ -170,20 +169,23 @@ export async function handleExpeditionCreationModal(
     // Join the creator to the expedition
     let joinSuccess = false;
     try {
-      const joinResponse = await apiService.joinExpedition(newExpedition.data.id, character.id);
+      const joinResponse = await apiService.joinExpedition(
+        newExpedition.data.id,
+        character.id
+      );
       joinSuccess = true;
       logger.info("Expedition creator auto-joined expedition", {
         expeditionId: newExpedition.data.id,
         characterId: character.id,
         createdBy: interaction.user.id,
-        response: joinResponse
+        response: joinResponse,
       });
     } catch (error) {
-      logger.error("Error auto-joining expedition creator:", { 
+      logger.error("Error auto-joining expedition creator:", {
         error,
         expeditionId: newExpedition.data.id,
         characterId: character.id,
-        createdBy: interaction.user.id
+        createdBy: interaction.user.id,
       });
       // Continue anyway, expedition is created
     }
@@ -197,27 +199,27 @@ export async function handleExpeditionCreationModal(
       );
       memberCount = updatedExpedition?.members?.length || 0;
       expeditionMembers = updatedExpedition?.members || [];
-      
+
       // Log detailed member information
       logger.info("Expedition members after creation:", {
         expeditionId: newExpedition.data.id,
         memberCount,
-        members: expeditionMembers.map(m => ({
+        members: expeditionMembers.map((m) => ({
           id: m.id,
           characterId: m.character?.id,
           characterName: m.character?.name,
-          userId: m.character?.user?.discordId
-        }))
+          userId: m.character?.user?.discordId,
+        })),
       });
-      
+
       // If no members but join was successful, set to 1
       if (memberCount === 0 && joinSuccess) {
         memberCount = 1;
       }
     } catch (error) {
-      logger.error("Error fetching updated expedition data:", { 
+      logger.error("Error fetching updated expedition data:", {
         error,
-        expeditionId: newExpedition.data.id
+        expeditionId: newExpedition.data.id,
       });
       memberCount = joinSuccess ? 1 : 0; // Set to 1 only if join was successful
     }
@@ -242,13 +244,26 @@ export async function handleExpeditionCreationModal(
       .setTimestamp();
     await interaction.reply({
       embeds: [embed],
+      flags: ["Ephemeral"],
     });
+
+    // Send log message to configured log channel
+    const logMessage = `🏕️ Nouvelle expédition créée : "**${newExpedition.data.name}**" par **${character.name}**\n📦 Stock nourriture : ${foodAmount}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
+    await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
 
     logger.info("Expedition created via Discord", {
       expeditionId: newExpedition.data.id,
       name: newExpedition.data.name,
       createdBy: interaction.user.id,
       guildId: interaction.guildId,
+      characterId: character.id,
+      characterName: character.name,
+      townId: townResponse.id,
+      townName: townResponse.name,
+      foodStock: foodAmount,
+      duration: durationDays,
+      memberCount: memberCount,
+      autoJoinSuccess: joinSuccess,
     });
   } catch (error) {
     logger.error("Error in expedition creation modal:", { error });
@@ -465,12 +480,12 @@ export async function handleExpeditionInfoCommand(
     // Add member list if there are members
     if (currentExpedition.members && currentExpedition.members.length > 0) {
       const memberList = currentExpedition.members
-        .map(member => {
+        .map((member) => {
           const characterName = member.character?.name || "Inconnu";
           const discordUsername = member.character?.user?.username || "Inconnu";
           return `• **${characterName}** - ${discordUsername}`;
         })
-        .join('\n');
+        .join("\n");
 
       embed.addFields({
         name: "📋 Membres inscrits",
