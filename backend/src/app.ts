@@ -16,7 +16,10 @@ import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
 import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
+import { setupExpeditionJobs } from "./cron/expedition.cron";
 import chantierRoutes from "./routes/chantier";
+import expeditionRoutes from "./routes/expedition";
+import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
 
 const app = express();
 
@@ -24,6 +27,7 @@ const app = express();
 if (process.env.NODE_ENV !== "test") {
   setupDailyPaJob();
   setupHungerIncreaseJob();
+  setupExpeditionJobs();
 }
 
 // Configuration du proxy trust
@@ -95,6 +99,10 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/chantiers", chantierRoutes);
+app.use("/api/expeditions", expeditionRoutes);
+
+// Routes admin
+app.use("/api/admin/expeditions", expeditionAdminRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);

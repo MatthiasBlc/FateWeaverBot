@@ -293,6 +293,26 @@ class APIService {
   }
 
   /**
+   * Crée une nouvelle expédition
+   */
+  public async createExpedition(expeditionData: {
+    name: string;
+    foodStock: number;
+    duration: number;
+    townId: string;
+    createdBy: string;
+  }) {
+    return this.api.post("/expeditions", expeditionData);
+  }
+
+  /**
+   * Récupère une expédition par son ID
+   */
+  public async getExpeditionById(expeditionId: string) {
+    return this.api.get(`/expeditions/${expeditionId}`);
+  }
+
+  /**
    * Met à jour les statistiques d'un personnage (PA, faim, etc.)
    */
   public async updateCharacterStats(
@@ -309,7 +329,41 @@ class APIService {
   ) {
     return this.characterAPI.updateCharacterStats(characterId, stats);
   }
-}
 
+  /**
+   * Rejoint une expédition
+   */
+  public async joinExpedition(expeditionId: string, characterId: string) {
+    return this.api.post(`/expeditions/${expeditionId}/join`, { characterId });
+  }
+
+  /**
+   * Quitte une expédition
+   */
+  public async leaveExpedition(expeditionId: string, characterId: string) {
+    return this.api.post(`/expeditions/${expeditionId}/leave`, { characterId });
+  }
+
+  /**
+   * Transfère de la nourriture entre ville et expédition
+   */
+  public async transferExpeditionFood(
+    expeditionId: string,
+    amount: number,
+    direction: "to_town" | "from_town"
+  ) {
+    return this.api.post(`/expeditions/${expeditionId}/transfer`, {
+      amount,
+      direction,
+    });
+  }
+
+  /**
+   * Retour forcé d'une expédition
+   */
+  public async returnExpedition(expeditionId: string) {
+    return this.api.post(`/admin/expeditions/${expeditionId}/force-return`);
+  }
+}
 // Export d'une instance singleton pour maintenir la compatibilité
 export const apiService = APIService.getInstance();
