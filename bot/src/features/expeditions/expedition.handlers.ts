@@ -117,7 +117,7 @@ export async function handleExpeditionCreationModal(
 
     // Validate inputs
     const foodAmount = parseInt(foodStock, 10);
-    const durationHours = parseInt(duration, 10);
+    const durationDays = parseInt(duration, 10);
 
     // Get character ID from modal interaction
     const character = await getActiveCharacterFromModal(interaction);
@@ -137,9 +137,9 @@ export async function handleExpeditionCreationModal(
       return;
     }
 
-    if (isNaN(durationHours) || durationHours <= 0) {
+    if (isNaN(durationDays) || durationDays < 1) {
       await interaction.reply({
-        content: "❌ La durée doit être un nombre d'heures positif.",
+        content: "❌ La durée doit être d'au moins 1 jour.",
         flags: ["Ephemeral"],
       });
       return;
@@ -161,7 +161,7 @@ export async function handleExpeditionCreationModal(
     const newExpedition = await apiService.createExpedition({
       name,
       foodStock: foodAmount,
-      duration: durationHours,
+      duration: durationDays,
       townId: townResponse.id,
       createdBy: interaction.user.id, // Discord user ID
     });
@@ -177,7 +177,7 @@ export async function handleExpeditionCreationModal(
           value: `${foodAmount}`,
           inline: true,
         },
-        { name: "⏱️ Durée", value: `${durationHours}h`, inline: true },
+        { name: "⏱️ Durée", value: `${durationDays} jours`, inline: true },
         { name: "📍 Statut", value: "🔄 PLANIFICATION", inline: true },
         { name: "👥 Membres", value: "0", inline: true },
         { name: "🏛️ Ville", value: townResponse.name, inline: true },
@@ -384,7 +384,7 @@ export async function handleExpeditionInfoCommand(
         },
         {
           name: "⏱️ Durée",
-          value: `${currentExpedition.duration} heures`,
+          value: `${currentExpedition.duration} jours`,
           inline: true,
         },
         {
@@ -449,5 +449,29 @@ function getStatusEmoji(status: string): string {
       return "🏠 REVENUE";
     default:
       return status;
+  }
+}
+
+export async function handleExpeditionLeaveButton(interaction: any) {
+  try {
+    // This would handle expedition leave button
+    await interaction.reply({
+      content: "⚠️ Fonctionnalité de quitter l'expédition - à implémenter",
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Error in expedition leave button:", { error });
+  }
+}
+
+export async function handleExpeditionTransferButton(interaction: any) {
+  try {
+    // This would handle expedition food transfer button
+    await interaction.reply({
+      content: "⚠️ Fonctionnalité de transfert de nourriture - à implémenter",
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Error in expedition transfer button:", { error });
   }
 }

@@ -33,10 +33,10 @@ export function createExpeditionCreationModal() {
 
   const durationInput = new TextInputBuilder()
     .setCustomId("expedition_duration_input")
-    .setLabel("Durée de l'expédition (heures)")
+    .setLabel("Durée de l'expédition (jours)")
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
-    .setPlaceholder("Durée en heures (ex: 24)")
+    .setPlaceholder("Durée en jours (ex: 3, minimum 1)")
     .setMinLength(1)
     .setMaxLength(10);
 

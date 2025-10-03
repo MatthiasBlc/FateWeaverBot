@@ -5,7 +5,8 @@ import { logger } from "../services/logger.js";
  */
 export class ModalHandler {
   private static instance: ModalHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> = new Map();
+  private handlers: Map<string, (interaction: any) => Promise<void>> =
+    new Map();
 
   private constructor() {
     this.registerDefaultHandlers();
@@ -21,7 +22,10 @@ export class ModalHandler {
   /**
    * Enregistre un gestionnaire pour un modal spécifique
    */
-  public registerHandler(modalId: string, handler: (interaction: any) => Promise<void>) {
+  public registerHandler(
+    modalId: string,
+    handler: (interaction: any) => Promise<void>
+  ) {
     this.handlers.set(modalId, handler);
     logger.info(`Registered modal handler for: ${modalId}`);
   }
@@ -31,20 +35,24 @@ export class ModalHandler {
    */
   private registerDefaultHandlers() {
     // Gestionnaire pour les modals d'ajout de foodstock
-    this.registerHandler('food_modal', async (interaction) => {
+    this.registerHandler("food_modal", async (interaction) => {
       try {
-        const { handleAddFoodModal } = await import('../features/admin/food-admin.handlers.js');
+        const { handleAddFoodModal } = await import(
+          "../features/admin/food-admin.handlers.js"
+        );
         await handleAddFoodModal(interaction);
       } catch (error) {
         logger.error("Error handling food modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
+            content:
+              "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
-            content: "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
+            content:
+              "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
             ephemeral: true,
           });
         }
@@ -52,20 +60,24 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de retrait de foodstock
-    this.registerHandler('remove_food_modal', async (interaction) => {
+    this.registerHandler("remove_food_modal", async (interaction) => {
       try {
-        const { handleRemoveFoodModal } = await import('../features/admin/food-admin.handlers.js');
+        const { handleRemoveFoodModal } = await import(
+          "../features/admin/food-admin.handlers.js"
+        );
         await handleRemoveFoodModal(interaction);
       } catch (error) {
         logger.error("Error handling remove food modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
+            content:
+              "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
-            content: "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
+            content:
+              "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
             ephemeral: true,
           });
         }
@@ -73,9 +85,11 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de création de personnage
-    this.registerHandler('character_creation_modal', async (interaction) => {
+    this.registerHandler("character_creation_modal", async (interaction) => {
       try {
-        const { handleCharacterCreation } = await import('../modals/character-modals.js');
+        const { handleCharacterCreation } = await import(
+          "../modals/character-modals.js"
+        );
         await handleCharacterCreation(interaction);
       } catch (error) {
         logger.error("Error handling character creation modal:", { error });
@@ -87,9 +101,9 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de reroll
-    this.registerHandler('reroll_modal', async (interaction) => {
+    this.registerHandler("reroll_modal", async (interaction) => {
       try {
-        const { handleReroll } = await import('../modals/character-modals.js');
+        const { handleReroll } = await import("../modals/character-modals.js");
         await handleReroll(interaction);
       } catch (error) {
         logger.error("Error handling reroll modal:", { error });
@@ -101,37 +115,70 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'administration de personnages (stats avancées)
-    this.registerHandler('character_admin_advanced_modal_', async (interaction) => {
-      try {
-        const { handleAdvancedStatsModalSubmit } = await import('../features/admin/character-admin.interactions');
-        await handleAdvancedStatsModalSubmit(interaction);
-      } catch (error) {
-        logger.error("Error handling character admin advanced stats modal:", { error });
-        if (error && typeof error === 'object' && 'code' in error && error.code === 10062) {
-          return; // Interaction expirée
+    this.registerHandler(
+      "character_admin_advanced_modal_",
+      async (interaction) => {
+        try {
+          const { handleAdvancedStatsModalSubmit } = await import(
+            "../features/admin/character-admin.interactions"
+          );
+          await handleAdvancedStatsModalSubmit(interaction);
+        } catch (error) {
+          logger.error("Error handling character admin advanced stats modal:", {
+            error,
+          });
+          if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === 10062
+          ) {
+            return; // Interaction expirée
+          }
+          await interaction.reply({
+            content:
+              "❌ Erreur lors de la modification des statistiques avancées du personnage.",
+            flags: ["Ephemeral"],
+          });
         }
+      }
+    );
+
+    // Gestionnaire pour les modals de création d'expédition
+    this.registerHandler("expedition_creation_modal", async (interaction) => {
+      try {
+        const { handleExpeditionCreationModal } = await import(
+          "../features/expeditions/expedition.handlers.js"
+        );
+        await handleExpeditionCreationModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition creation modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification des statistiques avancées du personnage.",
+          content: "❌ Erreur lors de la création de l'expédition.",
           flags: ["Ephemeral"],
         });
       }
     });
 
     // Gestionnaire pour les modals d'investissement dans les chantiers
-    this.registerHandler('invest_modal', async (interaction) => {
+    this.registerHandler("invest_modal", async (interaction) => {
       try {
-        const { handleInvestModalSubmit } = await import('../features/chantiers/chantiers.handlers.js');
+        const { handleInvestModalSubmit } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
         await handleInvestModalSubmit(interaction);
       } catch (error) {
-        logger.error('Error handling invest modal:', { error });
+        logger.error("Error handling invest modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: '❌ Erreur lors du traitement du formulaire d\'investissement.',
+            content:
+              "❌ Erreur lors du traitement du formulaire d'investissement.",
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
-            content: '❌ Erreur lors du traitement du formulaire d\'investissement.',
+            content:
+              "❌ Erreur lors du traitement du formulaire d'investissement.",
             ephemeral: true,
           });
         }

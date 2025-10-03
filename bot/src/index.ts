@@ -7,8 +7,7 @@ import { Collection } from "@discordjs/collection";
 import { getOrCreateGuild } from "./services/guilds.service.js";
 import { buttonHandler } from "./utils/button-handler.js";
 import { modalHandler } from "./utils/modal-handler.js";
-
-// Handle button interactions
+import { selectMenuHandler } from "./utils/select-menu-handler.js";
 async function handleButtonInteraction(interaction: any) {
   try {
     // Essayer d'abord le système de boutons centralisé
@@ -237,16 +236,9 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
   } else if (interaction.isStringSelectMenu()) {
-    // Handle select menu interactions (character admin refactor)
+    // Handle select menu interactions
     try {
-      const customId = interaction.customId || "";
-      if (customId.startsWith("character_admin_")) {
-        const { handleCharacterAdminInteraction } = await import(
-          "./features/admin/character-admin.handlers"
-        );
-        await handleCharacterAdminInteraction(interaction);
-      }
-      // If not our select, let other handlers manage it silently
+      await selectMenuHandler.handleSelectMenu(interaction);
     } catch (error) {
       logger.error("Error handling select menu interaction:", { error });
       await interaction.reply({

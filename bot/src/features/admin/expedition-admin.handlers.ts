@@ -177,3 +177,31 @@ function getStatusEmoji(status: string): string {
     default: return status;
   }
 }
+
+export async function handleExpeditionAdminButton(interaction: any) {
+  try {
+    const customId = interaction.customId;
+
+    if (customId.startsWith("expedition_admin_modify_")) {
+      const expeditionId = customId.replace("expedition_admin_modify_", "");
+      await handleExpeditionAdminModify(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_members_")) {
+      const expeditionId = customId.replace("expedition_admin_members_", "");
+      await handleExpeditionAdminMembers(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_return_")) {
+      const expeditionId = customId.replace("expedition_admin_return_", "");
+      await handleExpeditionAdminReturn(interaction, expeditionId);
+    } else {
+      await interaction.reply({
+        content: "⚠️ Action d'administration d'expédition non reconnue",
+        flags: ["Ephemeral"],
+      });
+    }
+  } catch (error) {
+    logger.error("Error in expedition admin button:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'administration de l'expédition",
+      flags: ["Ephemeral"],
+    });
+  }
+}

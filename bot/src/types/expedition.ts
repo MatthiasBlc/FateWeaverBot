@@ -2,7 +2,7 @@ export interface Expedition {
   id: string;
   name: string;
   foodStock: number;
-  duration: number;
+  duration: number; // in days
   townId: string;
   createdBy: string;
   status: string;
@@ -36,6 +36,6 @@ export interface CreateExpeditionData {
   name: string;
   townId: string;
   foodStock: number;
-  duration: number;
+  duration: number; // in days
   createdBy: string;
 }
