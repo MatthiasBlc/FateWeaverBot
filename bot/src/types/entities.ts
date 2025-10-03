@@ -46,3 +46,12 @@ export interface ActionPoints {
   points: number;
   lastUpdated: Date;
 }
+
+export interface Town {
+  id: string;
+  name: string;
+  foodStock: number;
+  guildId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

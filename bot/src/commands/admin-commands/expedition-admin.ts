@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
-import { handleExpeditionAdminCommand } from "../../features/admin/expedition-admin.handlers";
+import { handleExpeditionAdminCommand } from "../../features/admin/expedition-admin.handlers.ts";
 
 // Commande admin pour gérer les expéditions (réservé aux admins)
 const expeditionAdminCommand: Command = {

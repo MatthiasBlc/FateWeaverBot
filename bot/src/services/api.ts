@@ -21,8 +21,11 @@ import {
 // Import des services spécialisés
 import { CharacterAPIService } from "./api/character-api.service";
 import { GuildAPIService } from "./api/guild-api.service";
+import { Expedition, CreateExpeditionData } from "../types/expedition";
 import { ChantierAPIService } from "./api/chantier-api.service";
-
+import { ExpeditionAPIService } from "./api/expedition-api.service";
+import { TownsAPIService } from "./api/towns-api.service";
+import { Town } from "./towns.service";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -32,18 +35,22 @@ class APIService {
   private api: AxiosInstance;
 
   // Services spécialisés
-  private characterAPI: CharacterAPIService;
-  private guildAPI: GuildAPIService;
-  private chantierAPI: ChantierAPIService;
+  public readonly characters: CharacterAPIService;
+  public readonly guilds: GuildAPIService;
+  public readonly chantiers: ChantierAPIService;
+  public readonly expeditions: ExpeditionAPIService;
+  public readonly towns: TownsAPIService;
 
   private constructor() {
     // Use shared HTTP client
     this.api = httpClient;
 
     // Initialize specialized services
-    this.characterAPI = new CharacterAPIService(this.api);
-    this.guildAPI = new GuildAPIService(this.api);
-    this.chantierAPI = new ChantierAPIService(this.api);
+    this.characters = new CharacterAPIService(this.api);
+    this.guilds = new GuildAPIService(this.api);
+    this.chantiers = new ChantierAPIService(this.api);
+    this.expeditions = new ExpeditionAPIService(this.api);
+    this.towns = new TownsAPIService(this.api);
   }
 
   public static getInstance(): APIService {
@@ -90,14 +97,14 @@ class APIService {
     name: string,
     memberCount: number
   ) {
-    return this.guildAPI.getOrCreateGuild(discordId, name, memberCount);
+    return this.guilds.getOrCreateGuild(discordId, name, memberCount);
   }
 
   /**
    * Récupère une guilde par son ID Discord
    */
   public async getGuildByDiscordId(discordId: string) {
-    return this.guildAPI.getGuildByDiscordId(discordId);
+    return this.guilds.getGuildByDiscordId(discordId);
   }
 
   /**
@@ -109,7 +116,7 @@ class APIService {
     discordGuildId: string,
     logChannelId: string | null
   ) {
-    return this.guildAPI.updateGuildLogChannel(discordGuildId, logChannelId);
+    return this.guilds.updateGuildLogChannel(discordGuildId, logChannelId);
   }
 
   /**
@@ -128,7 +135,7 @@ class APIService {
    * Récupère un personnage actif par son ID Discord et l'ID de la ville
    */
   public async getActiveCharacter(discordId: string, townId: string) {
-    return this.characterAPI.getActiveCharacter(discordId, townId);
+    return this.characters.getActiveCharacter(discordId, townId);
   }
 
   /**
@@ -136,7 +143,7 @@ class APIService {
    * @param characterId L'ID du personnage à récupérer
    */
   public async getCharacterById(characterId: string) {
-    return this.characterAPI.getCharacterById(characterId);
+    return this.characters.getCharacterById(characterId);
   }
 
   /**
@@ -153,15 +160,15 @@ class APIService {
   /**
    * Récupère une ville par l'ID de sa guilde
    */
-  public async getTownByGuildId(guildId: string) {
-    return this.guildAPI.getTownByGuildId(guildId);
+  public async getTownByGuildId(guildId: string): Promise<Town | null> {
+    return this.guilds.getTownByGuildId(guildId);
   }
 
   /**
    * Récupère tous les chantiers d'une guilde
    */
   public async getChantiersByServer(guildId: string) {
-    return this.chantierAPI.getChantiersByServer(guildId);
+    return this.chantiers.getChantiersByServer(guildId);
   }
 
   /**
@@ -175,14 +182,14 @@ class APIService {
     },
     userId: string
   ) {
-    return this.chantierAPI.createChantier(chantierData, userId);
+    return this.chantiers.createChantier(chantierData, userId);
   }
 
   /**
    * Supprime un chantier par son ID
    */
   public async deleteChantier(id: string) {
-    return this.chantierAPI.deleteChantier(id);
+    return this.chantiers.deleteChantier(id);
   }
 
   /**
@@ -193,42 +200,39 @@ class APIService {
     chantierId: string,
     points: number
   ) {
-    return this.chantierAPI.investInChantier(characterId, chantierId, points);
+    return this.chantiers.investInChantier(characterId, chantierId, points);
   }
 
-  /**
-   * Récupère les informations des points d'action d'un personnage
-   */
-  public async getActionPoints(characterId: string) {
-    return this.characterAPI.getActionPoints(characterId);
+  public async getActiveExpeditionsForCharacter(characterId: string) {
+    return this.expeditions.getActiveExpeditionsForCharacter(characterId);
   }
 
   /**
    * Permet à un personnage de manger
    */
   public async eatFood(characterId: string) {
-    return this.characterAPI.eatFood(characterId);
+    return this.characters.eatFood(characterId);
   }
 
   /**
    * Récupère tous les personnages d'une guilde
    */
   public async getGuildCharacters(guildId: string) {
-    return this.characterAPI.getGuildCharacters(guildId);
+    return this.characters.getGuildCharacters(guildId);
   }
 
   /**
    * Met à jour le stock de foodstock d'une ville
    */
   public async updateTownFoodStock(townId: string, foodStock: number) {
-    return this.guildAPI.updateTownFoodStock(townId, foodStock);
+    return this.guilds.updateTownFoodStock(townId, foodStock);
   }
 
   /**
    * Récupère tous les personnages d'une ville
    */
   public async getTownCharacters(townId: string) {
-    return this.characterAPI.getTownCharacters(townId);
+    return this.characters.getTownCharacters(townId);
   }
 
   /**
@@ -239,21 +243,21 @@ class APIService {
     userId: string;
     townId: string;
   }) {
-    return this.characterAPI.createCharacter(characterData);
+    return this.characters.createCharacter(characterData);
   }
 
   /**
    * Tue un personnage
    */
   public async killCharacter(characterId: string) {
-    return this.characterAPI.killCharacter(characterId);
+    return this.characters.killCharacter(characterId);
   }
 
   /**
    * Donne l'autorisation de reroll à un personnage
    */
   public async grantRerollPermission(characterId: string) {
-    return this.characterAPI.grantRerollPermission(characterId);
+    return this.characters.grantRerollPermission(characterId);
   }
 
   /**
@@ -264,7 +268,7 @@ class APIService {
     townId: string;
     name: string;
   }) {
-    return this.characterAPI.createRerollCharacter(rerollData);
+    return this.characters.createRerollCharacter(rerollData);
   }
 
   /**
@@ -275,41 +279,42 @@ class APIService {
     townId: string,
     characterId: string
   ) {
-    return this.characterAPI.switchActiveCharacter(userId, townId, characterId);
+    return this.characters.switchActiveCharacter(userId, townId, characterId);
   }
 
   /**
-   * Récupère les personnages morts éligibles pour reroll
+   * Récupère les points d'action d'un personnage
    */
-  public async getRerollableCharacters(userId: string, townId: string) {
-    return this.characterAPI.getRerollableCharacters(userId, townId);
+  public async getActionPoints(characterId: string) {
+    return this.characters.getActionPoints(characterId);
   }
 
   /**
    * Vérifie si un utilisateur a besoin de créer un personnage
    */
   public async needsCharacterCreation(userId: string, townId: string) {
-    return this.characterAPI.needsCharacterCreation(userId, townId);
+    return this.characters.needsCharacterCreation(userId, townId);
   }
 
-  /**
-   * Crée une nouvelle expédition
-   */
-  public async createExpedition(expeditionData: {
-    name: string;
-    foodStock: number;
-    duration: number;
-    townId: string;
-    createdBy: string;
-  }) {
-    return this.api.post("/expeditions", expeditionData);
+  public async getExpeditionsByTown(townId: string) {
+    return this.expeditions.getExpeditionsByTown(townId);
   }
 
-  /**
-   * Récupère une expédition par son ID
-   */
+  public async getAllExpeditions(includeReturned = false) {
+    return this.expeditions.getAllExpeditions(includeReturned);
+  }
+
+  public async createExpedition(
+    expeditionData: CreateExpeditionData
+  ): Promise<{ data: Expedition }> {
+    return this.expeditions.createExpedition({
+      ...expeditionData,
+      characterId: expeditionData.createdBy, // Map createdBy to characterId
+    });
+  }
+
   public async getExpeditionById(expeditionId: string) {
-    return this.api.get(`/expeditions/${expeditionId}`);
+    return this.expeditions.getExpeditionById(expeditionId);
   }
 
   /**
@@ -327,14 +332,14 @@ class APIService {
       isActive?: boolean;
     }
   ) {
-    return this.characterAPI.updateCharacterStats(characterId, stats);
+    return this.characters.updateCharacterStats(characterId, stats);
   }
 
   /**
    * Rejoint une expédition
    */
   public async joinExpedition(expeditionId: string, characterId: string) {
-    return this.api.post(`/expeditions/${expeditionId}/join`, { characterId });
+    return this.expeditions.joinExpedition(expeditionId, characterId);
   }
 
   /**
@@ -362,7 +367,10 @@ class APIService {
    * Retour forcé d'une expédition
    */
   public async returnExpedition(expeditionId: string) {
-    return this.api.post(`/admin/expeditions/${expeditionId}/force-return`);
+    const response = await this.api.post(
+      `/admin/expeditions/${expeditionId}/force-return`
+    );
+    return response.data;
   }
 }
 // Export d'une instance singleton pour maintenir la compatibilité

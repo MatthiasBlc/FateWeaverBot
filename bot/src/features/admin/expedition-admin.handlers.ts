@@ -6,13 +6,14 @@ import {
   StringSelectMenuBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { Expedition } from "../../types/expedition";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
   try {
     // Get all expeditions (including returned ones for admin)
-    const expeditions = await apiService.getExpeditionsByTown("", true);
+    const expeditions = await apiService.getAllExpeditions(true);
 
     if (!expeditions || expeditions.length === 0) {
       await interaction.reply({
@@ -27,9 +28,9 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
       .setCustomId("expedition_admin_select")
       .setPlaceholder("Sélectionnez une expédition à gérer")
       .addOptions(
-        expeditions.map(exp => ({
+        expeditions.map((exp: Expedition) => ({
           label: `${exp.name} (${exp.status})`,
-          description: `Membres: ${exp.members.length}, Stock: ${exp.foodStock}`,
+          description: `Membres: ${exp.members?.length || 0}, Stock: ${exp.foodStock}`,
           value: exp.id,
         }))
       );
@@ -96,8 +97,8 @@ export async function handleExpeditionAdminSelect(interaction: any) {
         { name: "📦 Stock de nourriture", value: `${expedition.foodStock}`, inline: true },
         { name: "⏱️ Durée", value: `${expedition.duration}h`, inline: true },
         { name: "📍 Statut", value: getStatusEmoji(expedition.status), inline: true },
-        { name: "👥 Membres", value: `${expedition.members.length}`, inline: true },
-        { name: "🏛️ Ville", value: expedition.town.name, inline: true },
+        { name: "👥 Membres", value: `${expedition.members?.length || 0}`, inline: true },
+        { name: "🏛️ Ville", value: expedition.town?.name || "Inconnue", inline: true },
         { name: "👤 Créée par", value: `<@${expedition.createdBy}>`, inline: true }
       )
       .setTimestamp();

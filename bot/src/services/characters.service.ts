@@ -79,14 +79,27 @@ export async function checkCharacterStatus(
     }
 
     const townId = guildWithTown.town.id;
-
     // Récupérer le personnage actif de l'utilisateur (il doit toujours y en avoir un ou aucun)
     const activeCharacter = await httpClient.get(`/characters/town/${townId}`)
       .then(response => response.data?.find((char: any) => char.userId === user.id && char.isActive))
       .catch(() => null);
 
+    logger.info("Debug checkCharacterStatus", {
+      userId,
+      guildId,
+      townId,
+      activeCharacter: activeCharacter ? {
+        id: activeCharacter.id,
+        name: activeCharacter.name,
+        isDead: activeCharacter.isDead,
+        isActive: activeCharacter.isActive,
+        canReroll: activeCharacter.canReroll
+      } : null
+    });
+
     // CAS 1: Aucun personnage actif -> l'utilisateur doit créer un personnage
     if (!activeCharacter) {
+      logger.info("CAS 1: Aucun personnage actif");
       return {
         needsCreation: true,
         canReroll: false,
@@ -96,27 +109,30 @@ export async function checkCharacterStatus(
 
     // CAS 2: Le personnage actif est mort avec permission de reroll -> modal de reroll
     if (activeCharacter.isDead && activeCharacter.canReroll) {
+      logger.info("CAS 2: Personnage mort avec permission de reroll");
       return {
         needsCreation: false,
         canReroll: true,
-        hasActiveCharacter: false,
+        hasActiveCharacter: true,
         character: activeCharacter,
         rerollableCharacters: [activeCharacter]
       };
     }
 
-    // CAS 3: Le personnage actif est mort sans permission de reroll -> bloqué
+    // CAS 3: Le personnage actif est mort sans permission de reroll -> afficher la fiche
     if (activeCharacter.isDead && !activeCharacter.canReroll) {
+      logger.info("CAS 3: Personnage mort sans permission de reroll");
       return {
         needsCreation: false,
         canReroll: false,
-        hasActiveCharacter: false,
+        hasActiveCharacter: true,
         character: activeCharacter,
         rerollableCharacters: []
       };
     }
 
     // CAS 4: Le personnage actif est vivant -> tout va bien
+    logger.info("CAS 4: Personnage actif vivant");
     return {
       needsCreation: false,
       canReroll: false,

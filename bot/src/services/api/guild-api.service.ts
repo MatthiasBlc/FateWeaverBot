@@ -1,6 +1,7 @@
 import { AxiosInstance } from "axios";
 import { BaseAPIService } from "./base-api.service";
 import { logger } from "../logger";
+import { Town } from "../towns.service";
 
 export interface GuildUpdateData {
   logChannelId?: string | null;
@@ -38,9 +39,9 @@ export class GuildAPIService extends BaseAPIService {
   /**
    * Récupère une ville par l'ID de sa guilde
    */
-  public async getTownByGuildId(guildId: string) {
+  public async getTownByGuildId(guildId: string): Promise<Town | null> {
     logger.info("Fetching town by guild ID", { guildId });
-    return this.get(`/towns/guild/${guildId}`);
+    return this.get<Town>(`/towns/guild/${guildId}`);
   }
 
   /**
