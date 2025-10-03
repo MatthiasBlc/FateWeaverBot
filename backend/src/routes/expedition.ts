@@ -4,6 +4,8 @@ import {
   createExpedition,
   getExpeditionById,
   getExpeditionsByTown,
+  getActiveExpeditionsForCharacter,
+  getAllExpeditions,
   joinExpedition,
   leaveExpedition,
   transferFood,
@@ -13,6 +15,9 @@ const router = Router();
 
 // Créer une nouvelle expédition
 router.post("/", requireAuthOrInternal, createExpedition);
+
+// Récupérer toutes les expéditions
+router.get("/", requireAuthOrInternal, getAllExpeditions);
 
 // Récupérer une expédition par son ID
 router.get("/:id", requireAuthOrInternal, getExpeditionById);
@@ -25,6 +30,16 @@ router.post("/:id/join", requireAuthOrInternal, joinExpedition);
 
 // Quitter une expédition
 router.post("/:id/leave", requireAuthOrInternal, leaveExpedition);
+
+// Récupérer les expéditions actives d'un personnage
+router.get(
+  "/character/:characterId/active",
+  requireAuthOrInternal,
+  getActiveExpeditionsForCharacter
+);
+
+// Récupérer toutes les expéditions
+router.get("/", requireAuthOrInternal, getAllExpeditions);
 
 // Transférer de la nourriture (ville <-> expédition)
 router.post("/:id/transfer", requireAuthOrInternal, transferFood);

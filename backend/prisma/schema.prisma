@@ -158,7 +158,7 @@ model Expedition {
   townId    String             @map("town_id")
   status    ExpeditionStatus   @default(PLANNING)
   foodStock Int                @default(0) @map("food_stock") // Stock de nourriture emporté
-  duration  Int // Durée en heures
+  duration  Int // Durée en jours
   returnAt  DateTime?          @map("return_at") // Date de retour prévue (null si pas partie)
   createdBy String             @map("created_by") // ID Discord de l'utilisateur qui a créé l'expédition
   members   ExpeditionMember[]

@@ -187,6 +187,36 @@ export const leaveExpedition = async (req: Request, res: Response) => {
   }
 };
 
+export const getActiveExpeditionsForCharacter = async (req: Request, res: Response) => {
+  try {
+    const { characterId } = req.params;
+
+    if (!characterId) {
+      return res.status(400).json({ error: "ID de personnage requis" });
+    }
+
+    const expeditions = await expeditionService.getActiveExpeditionsForCharacter(
+      characterId
+    );
+
+    res.json(expeditions);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des expéditions actives:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+export const getAllExpeditions = async (req: Request, res: Response) => {
+  try {
+    const includeReturned = req.query.includeReturned === 'true';
+    const expeditions = await expeditionService.getAllExpeditions(includeReturned);
+    res.json(expeditions);
+  } catch (error) {
+    console.error('Error getting all expeditions:', error);
+    res.status(500).json({ error: 'Failed to get expeditions' });
+  }
+};
+
 export const transferFood = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

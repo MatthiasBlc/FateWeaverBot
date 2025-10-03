@@ -1,8 +1,5 @@
 import { Prisma, PrismaClient, ExpeditionStatus } from "@prisma/client";
-import type {
-  Expedition,
-  ExpeditionMember,
-} from "@prisma/client";
+import type { Expedition, ExpeditionMember } from "@prisma/client";
 import { logger } from "./logger";
 
 const prisma = new PrismaClient();
@@ -11,7 +8,7 @@ export interface CreateExpeditionData {
   name: string;
   townId: string;
   foodStock: number;
-  duration: number; // in hours
+  duration: number; // in days (minimum 1)
   createdBy: string; // Discord user ID
 }
 
@@ -52,8 +49,8 @@ export class ExpeditionService {
         throw new Error("Town not found");
       }
 
-      if (town.foodStock < data.foodStock) {
-        throw new Error("Not enough food in town");
+      if (data.duration < 1) {
+        throw new Error("Expedition duration must be at least 1 day");
       }
 
       // Create expedition and update town food stock in transaction
@@ -434,7 +431,7 @@ export class ExpeditionService {
       }
 
       const returnAt = new Date();
-      returnAt.setHours(returnAt.getHours() + expedition.duration);
+      returnAt.setHours(returnAt.getHours() + (expedition.duration * 24)); // Convert days to hours
 
       const updatedExpedition = await tx.expedition.update({
         where: { id: expeditionId },
@@ -546,7 +543,44 @@ export class ExpeditionService {
     });
   }
 
-  async terminateExpedition(tx: Prisma.TransactionClient, expeditionId: string): Promise<void> {
+  async getAllExpeditions(
+    includeReturned: boolean = false
+  ): Promise<ExpeditionWithDetails[]> {
+    const whereClause: { status?: { not?: ExpeditionStatus } } = {};
+    if (!includeReturned) {
+      whereClause.status = { not: ExpeditionStatus.RETURNED };
+    }
+
+    return await prisma.expedition.findMany({
+      where: whereClause,
+      include: {
+        town: {
+          select: { id: true, name: true, foodStock: true },
+        },
+        members: {
+          include: {
+            character: {
+              include: {
+                user: {
+                  select: { id: true, discordId: true, username: true },
+                },
+              },
+            },
+          },
+          orderBy: { joinedAt: "asc" },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async terminateExpedition(
+    tx: Prisma.TransactionClient,
+    expeditionId: string
+  ): Promise<void> {
     const expedition = await tx.expedition.findUnique({
       where: { id: expeditionId },
       select: { id: true, name: true, foodStock: true, townId: true },
