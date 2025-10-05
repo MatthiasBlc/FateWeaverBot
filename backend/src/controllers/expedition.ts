@@ -170,7 +170,10 @@ export const leaveExpedition = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { characterId } = req.body;
 
-    if (!req.session.userId) {
+    // Check if this is an internal request
+    const isInternalRequest = req.get("x-internal-request") === "true";
+
+    if (!isInternalRequest && !req.session.userId) {
       return res.status(401).json({ error: "Utilisateur non authentifié" });
     }
 
@@ -178,18 +181,33 @@ export const leaveExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de personnage requis" });
     }
 
-    // Verify the character belongs to the user
-    const character = await prisma.character.findFirst({
-      where: {
-        id: characterId,
-        userId: req.session.userId,
-        isActive: true,
-        isDead: false,
-      },
-    });
+    // For non-internal requests, verify the character belongs to the user
+    if (!isInternalRequest) {
+      const character = await prisma.character.findFirst({
+        where: {
+          id: characterId,
+          userId: req.session.userId,
+          isActive: true,
+          isDead: false,
+        },
+      });
 
-    if (!character) {
-      return res.status(404).json({ error: "Personnage non trouvé ou non autorisé" });
+      if (!character) {
+        return res.status(404).json({ error: "Personnage non trouvé ou non autorisé" });
+      }
+    } else {
+      // For internal requests, just verify the character exists and is active
+      const character = await prisma.character.findFirst({
+        where: {
+          id: characterId,
+          isActive: true,
+          isDead: false,
+        },
+      });
+
+      if (!character) {
+        return res.status(404).json({ error: "Personnage non trouvé" });
+      }
     }
 
     await expeditionService.leaveExpedition(id, characterId);

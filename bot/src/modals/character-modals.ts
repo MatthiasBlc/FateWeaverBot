@@ -304,7 +304,7 @@ export async function checkAndPromptReroll(interaction: any) {
     }
 
     // Check if user has rerollable characters
-    const rerollableCharacters = (await apiService.getRerollableCharacters(
+    const rerollableCharacters = (await apiService.characters.getRerollableCharacters(
       user.id,
       (town as Town).id
     )) as Character[];

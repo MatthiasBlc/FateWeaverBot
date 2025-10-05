@@ -7,7 +7,16 @@ export function calculateTimeUntilNextUpdate(): {
 } {
   const now = new Date();
   const nextUpdate = new Date(now);
-  nextUpdate.setHours(nextUpdate.getHours() + 1, 0, 0, 0); // Prochaine heure pile
+  
+  // Calculer le temps restant jusqu'à minuit (prochaine exécution du cron)
+  if (now.getHours() < 24) {
+    // Avant minuit aujourd'hui
+    nextUpdate.setHours(24, 0, 0, 0);
+  } else {
+    // Après minuit aujourd'hui, aller à demain
+    nextUpdate.setDate(nextUpdate.getDate() + 1);
+    nextUpdate.setHours(0, 0, 0, 0);
+  }
 
   const diffMs = nextUpdate.getTime() - now.getTime();
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
