@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction } from "discord.js";
-import { getActiveCharacterForUser } from "../../utils/character";
+import { getActiveCharacterFromCommand } from "../../utils/character";
 import { logger } from "../../services/logger";
 
 /**
@@ -13,7 +13,7 @@ export function withActiveCharacter(
   return async (interaction: ChatInputCommandInteraction) => {
     try {
       // Récupérer le personnage actif de l'utilisateur
-      const character = await getActiveCharacterForUser(interaction);
+      const character = await getActiveCharacterFromCommand(interaction);
 
       // Ajouter le personnage à l'interaction pour qu'il soit accessible dans le handler
       (interaction as any).activeCharacter = character;

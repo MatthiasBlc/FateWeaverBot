@@ -38,7 +38,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
     let characterHungerStatus = "";
 
     try {
-      character = await getActiveCharacterForUser(interaction);
+      character = await getActiveCharacterForUser(interaction.user.id, interaction.guildId!);
 
       // Déterminer si le bouton doit être affiché et le statut de faim
       if (character) {

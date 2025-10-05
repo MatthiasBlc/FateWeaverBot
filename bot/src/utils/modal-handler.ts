@@ -160,6 +160,22 @@ export class ModalHandler {
       }
     });
 
+    // Gestionnaire pour les modals de modification d'expédition
+    this.registerHandler("expedition_modify_modal", async (interaction) => {
+      try {
+        const { handleExpeditionModifyModal } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionModifyModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition modify modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de l'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les modals d'investissement dans les chantiers
     this.registerHandler("invest_modal", async (interaction) => {
       try {

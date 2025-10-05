@@ -6,6 +6,7 @@ import {
   StringSelectMenuBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
+import { createExpeditionModifyModal } from "../../modals/expedition-modals";
 import { Expedition } from "../../types/expedition";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
@@ -132,14 +133,86 @@ export async function handleExpeditionAdminSelect(interaction: any) {
 
 export async function handleExpeditionAdminModify(interaction: any, expeditionId: string) {
   try {
-    // This would typically show a modal for modifying duration/food stock
-    // For now, just show a placeholder
-    await interaction.reply({
-      content: "⚠️ Modification d'expédition - fonctionnalité à implémenter",
-      flags: ["Ephemeral"],
-    });
+    // Get expedition details
+    const expedition = await apiService.getExpeditionById(expeditionId);
+    if (!expedition) {
+      await interaction.reply({
+        content: "❌ Expédition non trouvée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Show modification modal with current values
+    const modal = createExpeditionModifyModal(expeditionId, expedition.duration, expedition.foodStock);
+    await interaction.showModal(modal);
+
   } catch (error) {
     logger.error("Error in expedition admin modify:", { error });
+    await interaction.reply({
+      content: "❌ Une erreur est survenue lors de l'ouverture du formulaire de modification.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleExpeditionModifyModal(interaction: any) {
+  try {
+    const expeditionId = interaction.customId.split('_')[3]; // Extract expedition ID from modal custom ID (expedition_modify_modal_${expeditionId})
+    const duration = interaction.fields.getTextInputValue("modify_duration_input");
+    const foodStock = interaction.fields.getTextInputValue("modify_food_stock_input");
+
+    // Validate inputs
+    const durationValue = parseInt(duration, 10);
+    const foodStockValue = parseInt(foodStock, 10);
+
+    if (isNaN(durationValue) || durationValue < 1) {
+      await interaction.reply({
+        content: "❌ La durée doit être un nombre positif d'au moins 1 jour.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (isNaN(foodStockValue) || foodStockValue < 0) {
+      await interaction.reply({
+        content: "❌ Le stock de nourriture doit être un nombre positif.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Call API to modify expedition
+    const updatedExpedition = await apiService.modifyExpedition(expeditionId, {
+      duration: durationValue,
+      foodStock: foodStockValue,
+    });
+
+    // Update the original admin interface
+    await interaction.update({
+      content: `✅ Expédition **${updatedExpedition.name}** modifiée avec succès!\n\n📦 Nouveau stock: **${foodStockValue}**\n⏱️ Nouvelle durée: **${durationValue} jours**`,
+      embeds: [],
+      components: [],
+    });
+
+    logger.info("Expedition modified via admin command", {
+      expeditionId,
+      expeditionName: updatedExpedition.name,
+      oldDuration: durationValue,
+      newDuration: durationValue,
+      oldFoodStock: foodStockValue,
+      newFoodStock: foodStockValue,
+      adminUserId: interaction.user.id,
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition modify modal:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de la modification de l'expédition: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
   }
 }
 

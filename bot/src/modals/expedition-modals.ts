@@ -48,3 +48,37 @@ export function createExpeditionCreationModal() {
 
   return modal;
 }
+
+/**
+ * Modal pour modifier une expédition (admin)
+ */
+export function createExpeditionModifyModal(expeditionId: string, currentDuration: number, currentFoodStock: number) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_modify_modal_${expeditionId}`)
+    .setTitle("Modifier l'expédition");
+
+  const durationInput = new TextInputBuilder()
+    .setCustomId("modify_duration_input")
+    .setLabel("Durée (jours)")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder(`Durée actuelle: ${currentDuration} jours`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const foodStockInput = new TextInputBuilder()
+    .setCustomId("modify_food_stock_input")
+    .setLabel("Stock de nourriture")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder(`Stock actuel: ${currentFoodStock}`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
+  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(foodStockInput);
+
+  modal.addComponents([firstRow, secondRow]);
+
+  return modal;
+}

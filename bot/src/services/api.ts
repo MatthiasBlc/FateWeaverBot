@@ -290,6 +290,13 @@ class APIService {
   }
 
   /**
+   * Récupère les personnages morts éligibles pour reroll
+   */
+  public async getRerollableCharacters(userId: string, townId: string) {
+    return this.characters.getRerollableCharacters(userId, townId);
+  }
+
+  /**
    * Vérifie si un utilisateur a besoin de créer un personnage
    */
   public async needsCharacterCreation(userId: string, townId: string) {
@@ -361,12 +368,18 @@ class APIService {
   }
 
   /**
+   * Modifie une expédition (admin)
+   */
+  public async modifyExpedition(expeditionId: string, modifications: { duration?: number; foodStock?: number }) {
+    const response = await this.api.patch(`/admin/expeditions/${expeditionId}`, modifications);
+    return response.data;
+  }
+
+  /**
    * Retour forcé d'une expédition
    */
   public async returnExpedition(expeditionId: string) {
-    const response = await this.api.post(
-      `/admin/expeditions/${expeditionId}/force-return`
-    );
+    const response = await this.api.post(`/admin/expeditions/${expeditionId}/force-return`);
     return response.data;
   }
 }
