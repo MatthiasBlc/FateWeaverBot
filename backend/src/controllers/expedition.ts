@@ -258,7 +258,10 @@ export const transferFood = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { amount, direction } = req.body;
 
-    if (!req.session.userId) {
+    // Check if this is an internal request
+    const isInternalRequest = req.get("x-internal-request") === "true";
+
+    if (!isInternalRequest && !req.session.userId) {
       return res.status(401).json({ error: "Utilisateur non authentifié" });
     }
 

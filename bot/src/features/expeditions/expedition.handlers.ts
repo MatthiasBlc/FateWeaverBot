@@ -16,7 +16,7 @@ import {
   getActiveCharacterFromCommand,
   getActiveCharacterFromModal,
 } from "../../utils/character";
-import { createExpeditionCreationModal, createExpeditionTransferModal } from "../../modals/expedition-modals";
+import { createExpeditionCreationModal, createExpeditionTransferModal, createExpeditionTransferAmountModal } from "../../modals/expedition-modals";
 // Import des services
 import { getTownByGuildId } from "../../services/towns.service";
 
@@ -801,16 +801,34 @@ export async function handleExpeditionTransferButton(interaction: any) {
       return;
     }
 
-    // Show transfer modal
-    const modal = createExpeditionTransferModal(
-      currentExpedition.id,
-      currentExpedition.foodStock,
-      townResponse.foodStock
-    );
+    // Show direction selection menu instead of modal directly
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("expedition_transfer_direction")
+      .setPlaceholder("Sélectionnez la direction du transfert")
+      .addOptions([
+        {
+          label: "Vers la ville",
+          description: `Ajouter de la nourriture à la ville (stock actuel: ${townResponse.foodStock})`,
+          value: "to_town",
+          emoji: "🏛️",
+        },
+        {
+          label: "Vers l'expédition",
+          description: `Ajouter de la nourriture à l'expédition (stock actuel: ${currentExpedition.foodStock})`,
+          value: "from_town",
+          emoji: "⛺",
+        },
+      ]);
 
-    await interaction.showModal(modal);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
-    logger.info("Expedition transfer modal shown", {
+    await interaction.reply({
+      content: "Choisissez la direction du transfert de nourriture :",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
+
+    logger.info("Expedition transfer direction selection shown", {
       expeditionId: currentExpedition.id,
       characterId: character.id,
       characterName: character.name,
@@ -822,6 +840,141 @@ export async function handleExpeditionTransferButton(interaction: any) {
     logger.error("Error in expedition transfer button:", { error });
     await interaction.reply({
       content: `❌ Erreur lors de l'ouverture du transfert de nourriture: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleExpeditionTransferDirectionSelect(interaction: any) {
+  try {
+    logger.info("Expedition transfer direction select handler called", {
+      customId: interaction.customId,
+      values: interaction.values,
+    });
+
+    // Get user's active character
+    let character;
+    try {
+      character = await getActiveCharacterFromCommand(interaction);
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+        await interaction.reply({
+          content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    logger.info("Character found in transfer direction select", {
+      characterId: character.id,
+      characterName: character.name,
+    });
+
+    const selectedDirection = interaction.values[0];
+
+    logger.info("Selected direction", { selectedDirection });
+
+    // Get character's active expeditions
+    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+      character.id
+    );
+
+    if (!activeExpeditions || activeExpeditions.length === 0) {
+      await interaction.reply({
+        content: "❌ Votre personnage ne participe à aucune expédition active.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const currentExpedition = activeExpeditions[0];
+
+    // Double-check that the character is actually a member
+    const isMember = currentExpedition.members?.some(
+      (member) => member.character?.id === character.id
+    );
+
+    logger.info("Expedition membership check", {
+      expeditionId: currentExpedition.id,
+      characterId: character.id,
+      isMember,
+      expeditionStatus: currentExpedition.status,
+    });
+
+    if (!isMember) {
+      await interaction.reply({
+        content: "❌ Votre personnage n'est pas membre de cette expédition.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Check if expedition is still in PLANNING status
+    if (currentExpedition.status !== "PLANNING") {
+      await interaction.reply({
+        content: `❌ Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get town information for validation
+    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    if (!townResponse) {
+      await interaction.reply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Show amount input modal with selected direction
+    const maxAmount = selectedDirection === "to_town"
+      ? currentExpedition.foodStock
+      : townResponse.foodStock;
+
+    logger.info("Creating transfer modal", {
+      expeditionId: currentExpedition.id,
+      selectedDirection,
+      maxAmount,
+      expeditionFoodStock: currentExpedition.foodStock,
+      townFoodStock: townResponse.foodStock,
+    });
+
+    const modal = createExpeditionTransferAmountModal(
+      currentExpedition.id,
+      selectedDirection,
+      maxAmount
+    );
+
+    await interaction.showModal(modal);
+
+    logger.info("Expedition transfer amount modal shown", {
+      expeditionId: currentExpedition.id,
+      characterId: character.id,
+      characterName: character.name,
+      selectedDirection,
+      maxAmount,
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition transfer direction select:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de la sélection de direction: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`,
       flags: ["Ephemeral"],
@@ -858,9 +1011,43 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
 
     // Get form inputs
     const amountValue = interaction.fields.getTextInputValue("transfer_amount_input");
-    const directionValue = interaction.fields.getTextInputValue("transfer_direction_input");
 
-    // Validate inputs
+    // Get direction from modal custom ID (format: expedition_transfer_amount_modal_{expeditionId}_{direction})
+    const modalCustomId = interaction.customId;
+    const parts = modalCustomId.split('_');
+
+    logger.info("Modal parsing debug", {
+      modalCustomId,
+      parts,
+      partsLength: parts.length,
+    });
+
+    // Extract direction from the end of the ID
+    // The direction is either "to_town" or "from_town" (both contain underscores)
+    let directionValue = "";
+    if (modalCustomId.endsWith("_to_town")) {
+      directionValue = "to_town";
+    } else if (modalCustomId.endsWith("_from_town")) {
+      directionValue = "from_town";
+    }
+
+    logger.info("Direction extraction", {
+      modalCustomId,
+      directionValue,
+      endsWith_to_town: modalCustomId.endsWith("_to_town"),
+      endsWith_from_town: modalCustomId.endsWith("_from_town"),
+    });
+
+    // Validate direction
+    if (!["to_town", "from_town"].includes(directionValue)) {
+      await interaction.reply({
+        content: "❌ Direction de transfert invalide.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Validate amount input
     const amount = parseInt(amountValue, 10);
     if (isNaN(amount) || amount <= 0) {
       await interaction.reply({
@@ -870,17 +1057,21 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
       return;
     }
 
-    if (!["to_town", "from_town"].includes(directionValue)) {
-      await interaction.reply({
-        content: "❌ La direction doit être 'to_town' ou 'from_town'.",
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
+    // Get expedition ID from modal custom ID (format: expedition_transfer_amount_modal_{expeditionId}_{direction})
+    const modalPrefix = "expedition_transfer_amount_modal_";
+    const expeditionId = modalCustomId.substring(
+      modalPrefix.length,
+      modalCustomId.lastIndexOf('_' + directionValue)
+    );
 
-    // Get expedition ID from modal custom ID
-    const modalCustomId = interaction.customId;
-    const expeditionId = modalCustomId.replace("expedition_transfer_modal_", "");
+    logger.info("Expedition ID parsing debug", {
+      modalCustomId,
+      modalPrefix,
+      directionValue,
+      lastIndexOf: modalCustomId.lastIndexOf('_' + directionValue),
+      expeditionId,
+      expeditionIdLength: expeditionId.length,
+    });
 
     // Get current expedition data
     const expedition = await apiService.getExpeditionById(expeditionId);

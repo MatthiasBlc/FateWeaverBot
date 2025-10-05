@@ -116,3 +116,27 @@ export function createExpeditionTransferModal(expeditionId: string, currentFoodS
 
   return modal;
 }
+
+/**
+ * Modal pour saisir uniquement le montant de nourriture à transférer (direction déjà choisie)
+ */
+export function createExpeditionTransferAmountModal(expeditionId: string, direction: "to_town" | "from_town", maxAmount: number) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_transfer_amount_modal_${expeditionId}_${direction}`)
+    .setTitle(`Transférer de la nourriture ${direction === "to_town" ? "vers la ville" : "vers l'expédition"}`);
+
+  const amountInput = new TextInputBuilder()
+    .setCustomId("transfer_amount_input")
+    .setLabel("Quantité de nourriture à transférer")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder(`Montant (maximum: ${maxAmount})`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+
+  modal.addComponents([amountRow]);
+
+  return modal;
+}

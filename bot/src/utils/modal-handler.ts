@@ -176,15 +176,15 @@ export class ModalHandler {
       }
     });
 
-    // Gestionnaire pour les modals de transfert d'expédition
-    this.registerHandler("expedition_transfer_modal_", async (interaction) => {
+    // Gestionnaire pour les modals de transfert d'expédition (nouveau format avec direction)
+    this.registerHandler("expedition_transfer_amount_modal_", async (interaction) => {
       try {
         const { handleExpeditionTransferModal } = await import(
           "../features/expeditions/expedition.handlers.js"
         );
         await handleExpeditionTransferModal(interaction);
       } catch (error) {
-        logger.error("Error handling expedition transfer modal:", { error });
+        logger.error("Error handling expedition transfer amount modal:", { error });
         await interaction.reply({
           content: "❌ Erreur lors du transfert de nourriture.",
           flags: ["Ephemeral"],

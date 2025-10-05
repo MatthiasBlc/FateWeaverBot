@@ -94,6 +94,22 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour les sélections de direction de transfert d'expédition
+    this.registerHandler("expedition_transfer_direction", async (interaction) => {
+      try {
+        const { handleExpeditionTransferDirectionSelect } = await import(
+          "../features/expeditions/expedition.handlers.js"
+        );
+        await handleExpeditionTransferDirectionSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition transfer direction select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection de direction de transfert.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**
