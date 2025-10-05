@@ -23,12 +23,25 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
       return;
     }
 
+    // Filter expeditions that have at least one member
+    const expeditionsWithMembers = expeditions.filter(
+      (exp: Expedition) => exp.members && exp.members.length > 0
+    );
+
+    if (expeditionsWithMembers.length === 0) {
+      await interaction.reply({
+        content: "❌ Aucune expédition avec membres trouvée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
     // Create dropdown menu with expeditions
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("expedition_admin_select")
       .setPlaceholder("Sélectionnez une expédition à gérer")
       .addOptions(
-        expeditions.map((exp: Expedition) => ({
+        expeditionsWithMembers.map((exp: Expedition) => ({
           label: `${exp.name} (${exp.status})`,
           description: `Membres: ${exp.members?.length || 0}, Stock: ${exp.foodStock}`,
           value: exp.id,
@@ -40,7 +53,7 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
     const embed = new EmbedBuilder()
       .setColor(0xff9900)
       .setTitle("🛠️ Administration des Expéditions")
-      .setDescription(`**${expeditions.length}** expéditions trouvées`)
+      .setDescription(`**${expeditionsWithMembers.length}** expéditions avec membres trouvées`)
       .setTimestamp();
 
     await interaction.reply({
