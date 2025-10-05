@@ -28,9 +28,9 @@ Système d'expéditions permettant aux personnages de participer à des expédit
 
 #### Bouton "Transférer nourriture" 
 - [x] Créer un modal pour saisir montant et direction (`to_town`/`from_town`)
-- [ ] Implémenter `handleExpeditionTransferButton()` 
-- [ ] Ajouter la logique de transfert via l'API
-- [ ] Mettre à jour l'embed avec les nouveaux stocks
+- [x] Implémenter `handleExpeditionTransferButton()` 
+- [x] Ajouter la logique de transfert via l'API
+- [x] Mettre à jour l'embed avec les nouveaux stocks
 
 ### 2. Fonctionnalités admin manquantes ⚠️ **PRIORITÉ HAUTE**
 

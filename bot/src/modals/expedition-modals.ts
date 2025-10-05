@@ -82,3 +82,37 @@ export function createExpeditionModifyModal(expeditionId: string, currentDuratio
 
   return modal;
 }
+
+/**
+ * Modal pour transférer de la nourriture entre la ville et l'expédition
+ */
+export function createExpeditionTransferModal(expeditionId: string, currentFoodStock: number, townFoodStock: number) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_transfer_modal_${expeditionId}`)
+    .setTitle("Transférer de la nourriture");
+
+  const amountInput = new TextInputBuilder()
+    .setCustomId("transfer_amount_input")
+    .setLabel("Quantité de nourriture à transférer")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder(`Montant (max: ${Math.max(currentFoodStock, townFoodStock)})`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const directionInput = new TextInputBuilder()
+    .setCustomId("transfer_direction_input")
+    .setLabel("Direction (to_town/from_town)")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder("Tapez 'to_town' ou 'from_town'")
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+  const directionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(directionInput);
+
+  modal.addComponents([amountRow, directionRow]);
+
+  return modal;
+}

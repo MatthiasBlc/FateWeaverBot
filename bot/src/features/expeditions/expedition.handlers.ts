@@ -16,7 +16,7 @@ import {
   getActiveCharacterFromCommand,
   getActiveCharacterFromModal,
 } from "../../utils/character";
-import { createExpeditionCreationModal } from "../../modals/expedition-modals";
+import { createExpeditionCreationModal, createExpeditionTransferModal } from "../../modals/expedition-modals";
 // Import des services
 import { getTownByGuildId } from "../../services/towns.service";
 
@@ -729,12 +729,300 @@ export async function handleExpeditionLeaveButton(interaction: any) {
 
 export async function handleExpeditionTransferButton(interaction: any) {
   try {
-    // This would handle expedition food transfer button
-    await interaction.reply({
-      content: "⚠️ Fonctionnalité de transfert de nourriture - à implémenter",
-      flags: ["Ephemeral"],
+    // Get user's active character
+    let character;
+    try {
+      character = await getActiveCharacterFromCommand(interaction);
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+        await interaction.reply({
+          content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture. Utilisez d'abord la commande `/start` pour créer un personnage.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get character's active expeditions
+    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+      character.id
+    );
+
+    if (!activeExpeditions || activeExpeditions.length === 0) {
+      await interaction.reply({
+        content: "❌ Votre personnage ne participe à aucune expédition active.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const currentExpedition = activeExpeditions[0];
+
+    // Double-check that the character is actually a member
+    const isMember = currentExpedition.members?.some(
+      (member) => member.character?.id === character.id
+    );
+
+    if (!isMember) {
+      await interaction.reply({
+        content: "❌ Votre personnage n'est pas membre de cette expédition.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Check if expedition is in PLANNING status (only time you can transfer)
+    if (currentExpedition.status !== "PLANNING") {
+      await interaction.reply({
+        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(' ')[1]}**.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get town information for current food stock
+    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    if (!townResponse) {
+      await interaction.reply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Show transfer modal
+    const modal = createExpeditionTransferModal(
+      currentExpedition.id,
+      currentExpedition.foodStock,
+      townResponse.foodStock
+    );
+
+    await interaction.showModal(modal);
+
+    logger.info("Expedition transfer modal shown", {
+      expeditionId: currentExpedition.id,
+      characterId: character.id,
+      characterName: character.name,
+      expeditionFoodStock: currentExpedition.foodStock,
+      townFoodStock: townResponse.foodStock,
     });
+
   } catch (error) {
     logger.error("Error in expedition transfer button:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de l'ouverture du transfert de nourriture: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleExpeditionTransferModal(interaction: ModalSubmitInteraction) {
+  try {
+    // Get user's active character
+    let character;
+    try {
+      character = await getActiveCharacterFromModal(interaction);
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+        await interaction.reply({
+          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de nourriture.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Aucun personnage actif trouvé.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get form inputs
+    const amountValue = interaction.fields.getTextInputValue("transfer_amount_input");
+    const directionValue = interaction.fields.getTextInputValue("transfer_direction_input");
+
+    // Validate inputs
+    const amount = parseInt(amountValue, 10);
+    if (isNaN(amount) || amount <= 0) {
+      await interaction.reply({
+        content: "❌ Le montant doit être un nombre positif.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (!["to_town", "from_town"].includes(directionValue)) {
+      await interaction.reply({
+        content: "❌ La direction doit être 'to_town' ou 'from_town'.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get expedition ID from modal custom ID
+    const modalCustomId = interaction.customId;
+    const expeditionId = modalCustomId.replace("expedition_transfer_modal_", "");
+
+    // Get current expedition data
+    const expedition = await apiService.getExpeditionById(expeditionId);
+    if (!expedition) {
+      await interaction.reply({
+        content: "❌ Expédition introuvable.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Verify character is a member
+    const isMember = expedition.members?.some(
+      (member) => member.character?.id === character.id
+    );
+    if (!isMember) {
+      await interaction.reply({
+        content: "❌ Votre personnage n'est pas membre de cette expédition.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Check if expedition is still in PLANNING status
+    if (expedition.status !== "PLANNING") {
+      await interaction.reply({
+        content: `❌ Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get town data for validation
+    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    if (!townResponse) {
+      await interaction.reply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Validate transfer based on direction
+    if (directionValue === "to_town") {
+      // Transferring FROM expedition TO town
+      if (amount > expedition.foodStock) {
+        await interaction.reply({
+          content: `❌ L'expédition n'a que ${expedition.foodStock} nourriture. Vous ne pouvez pas en retirer ${amount}.`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+    } else {
+      // Transferring FROM town TO expedition
+      if (amount > townResponse.foodStock) {
+        await interaction.reply({
+          content: `❌ La ville n'a que ${townResponse.foodStock} nourriture. Vous ne pouvez pas en ajouter ${amount} à l'expédition.`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+    }
+
+    // Perform the transfer
+    let transferSuccess = false;
+    try {
+      if (directionValue === "to_town") {
+        // Transfer from expedition to town
+        await apiService.transferExpeditionFood(expeditionId, amount, "to_town");
+      } else {
+        // Transfer from town to expedition
+        await apiService.transferExpeditionFood(expeditionId, amount, "from_town");
+      }
+      transferSuccess = true;
+    } catch (error) {
+      logger.error("Error during food transfer:", { error, expeditionId, characterId: character.id, amount, direction: directionValue });
+      await interaction.reply({
+        content: `❌ Erreur lors du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (transferSuccess) {
+      // Get updated data for response
+      const updatedExpedition = await apiService.getExpeditionById(expeditionId);
+      const updatedTown = await apiService.getTownByGuildId(interaction.guildId!);
+
+      // Create response embed
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle(`✅ Transfert de nourriture réussi`)
+        .setDescription(`Le transfert de **${amount}** nourriture a été effectué avec succès !`)
+        .addFields(
+          {
+            name: "📦 Stock de l'expédition",
+            value: `${updatedExpedition?.foodStock || expedition.foodStock}`,
+            inline: true,
+          },
+          {
+            name: "🏛️ Stock de la ville",
+            value: `${updatedTown?.foodStock || townResponse.foodStock}`,
+            inline: true,
+          },
+          {
+            name: "📍 Direction",
+            value: directionValue === "to_town" ? "Expédition → Ville" : "Ville → Expédition",
+            inline: true,
+          }
+        )
+        .setTimestamp();
+
+      await interaction.reply({
+        embeds: [embed],
+        flags: ["Ephemeral"],
+      });
+
+      // Send log message
+      const directionText = directionValue === "to_town" ? "vers la ville" : "vers l'expédition";
+      const logMessage = `🍖 **${character.name}** a transféré **${amount}** nourriture ${directionText} dans l'expédition "**${expedition.name}**"`;
+      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+
+      logger.info("Expedition food transfer completed", {
+        expeditionId,
+        characterId: character.id,
+        characterName: character.name,
+        amount,
+        direction: directionValue,
+        previousExpeditionStock: expedition.foodStock,
+        previousTownStock: townResponse.foodStock,
+        newExpeditionStock: updatedExpedition?.foodStock,
+        newTownStock: updatedTown?.foodStock,
+      });
+    }
+
+  } catch (error) {
+    logger.error("Error in expedition transfer modal:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors du traitement du transfert: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
   }
 }
