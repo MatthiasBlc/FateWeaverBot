@@ -35,10 +35,10 @@ Système d'expéditions permettant aux personnages de participer à des expédit
 ### 2. Fonctionnalités admin manquantes ⚠️ **PRIORITÉ HAUTE**
 
 #### Modification admin (durée/stock)
-- [ ] Créer un modal pour modification avec champs durée et stock
-- [ ] Implémenter `handleExpeditionAdminModify()`
-- [ ] Ajouter les endpoints backend si nécessaire
-- [ ] Mettre à jour l'embed après modification
+- [x] Créer un modal pour modification avec champs durée et stock
+- [x] Implémenter `handleExpeditionAdminModify()`
+- [x] Ajouter les endpoints backend si nécessaire
+- [x] Mettre à jour l'embed après modification
 
 #### Gestion des membres admin
 - [ ] Créer une interface de sélection de personnage à ajouter/retirer
@@ -48,10 +48,10 @@ Système d'expéditions permettant aux personnages de participer à des expédit
 
 ### 3. Améliorations système ⚠️ **PRIORITÉ MOYENNE**
 
-#### Validation des actions personnage
-- [ ] Ajouter une vérification dans les commandes de ville (chantier, nourriture, etc.)
-- [ ] Retourner une erreur 403 si personnage en expédition active (LOCKED/DEPARTED)
-- [ ] Afficher un message explicatif à l'utilisateur
+#### Validation d'expédition lors de création/rejointure
+- [ ] Ajouter une vérification avant création/rejointure d'expédition
+- [ ] Retourner une erreur si personnage déjà dans une expédition active
+- [ ] Afficher le message d'erreur : "vous êtes déjà dans une expédition **nom de l'expédition**"
 
 #### Tests et qualité
 - [ ] Créer des tests unitaires pour les services
