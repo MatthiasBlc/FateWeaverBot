@@ -576,8 +576,17 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
     } catch (error: any) {
       console.error("Erreur lors de l'utilisation de capacité via bouton:", error);
+
+      // Extraire le message d'erreur détaillé du backend pour les erreurs HTTP
+      let errorMessage = 'Une erreur est survenue';
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       await interaction.editReply({
-        content: `❌ Erreur : ${error.message || 'Une erreur est survenue'}`
+        content: `❌ ${errorMessage}`
       });
     }
   }

@@ -396,9 +396,13 @@ export class CharacterService {
     const capability = characterCapability.capability;
 
     // Vérifier les PA nécessaires
-    if (character.paTotal < capability.costPA) {
+    if (character.paTotal <= 0) {
       throw new Error(
-        `Pas assez de PA (${character.paTotal}/${capability.costPA} requis)`
+        `Vous n'avez plus de PA disponibles. Attendez la prochaine régénération quotidienne pour utiliser vos capacités.`
+      );
+    } else if (character.paTotal < capability.costPA) {
+      throw new Error(
+        `PA insuffisants : vous avez ${character.paTotal} PA mais ${capability.name} nécessite ${capability.costPA} PA.`
       );
     }
 
