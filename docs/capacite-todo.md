@@ -87,6 +87,8 @@
 - [ ] divertir n'est pas fonctionnel
 - [ ] pêcher ne permet pas de choisir 2 PA (pour le lucky)
 - [ ] pếcher ne permet pas d'avoir un objet
+- [ ] Tests des CRON
+- [ ] Refactoriser
 - [x] Nettoyage du code : Suppression de `/use-capacity` (remplacé par boutons profil)
 
 ## Fichiers à modifier/créer
