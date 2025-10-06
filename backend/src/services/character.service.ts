@@ -173,7 +173,11 @@ export class CharacterService {
 
   async getTownCharacters(townId: string): Promise<CharacterWithDetails[]> {
     return await prisma.character.findMany({
-      where: { townId },
+      where: { 
+        townId,
+        isActive: true,
+        isDead: false
+      },
       include: { 
         user: true, 
         town: { include: { guild: true } },

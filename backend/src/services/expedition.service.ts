@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, ExpeditionStatus } from "@prisma/client";
+import { PrismaClient, ExpeditionStatus, Prisma } from "@prisma/client";
 import type { Expedition, ExpeditionMember } from "@prisma/client";
 import { logger } from "./logger";
 
@@ -577,6 +577,65 @@ export class ExpeditionService {
     });
   }
 
+  async addMemberToExpedition(expeditionId: string, characterId: string): Promise<ExpeditionMember> {
+    return await prisma.$transaction(async (tx) => {
+      // Check if expedition exists and is in planning status
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: { id: true, status: true, name: true },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      if (expedition.status !== ExpeditionStatus.PLANNING) {
+        throw new Error("Can only add members to expeditions in PLANNING status");
+      }
+
+      // Check if character exists
+      const character = await tx.character.findUnique({
+        where: { id: characterId },
+        select: { id: true, name: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Check if character is already in expedition
+      const existingMember = await tx.expeditionMember.findUnique({
+        where: {
+          expedition_member_unique: {
+            expeditionId,
+            characterId,
+          },
+        },
+      });
+
+      if (existingMember) {
+        throw new Error("Character is already in this expedition");
+      }
+
+      const member = await tx.expeditionMember.create({
+        data: {
+          expeditionId,
+          characterId,
+        },
+      });
+
+      logger.info("expedition_event", {
+        event: "member_added",
+        expeditionId,
+        expeditionName: expedition.name,
+        characterId,
+        characterName: character.name,
+      });
+
+      return member;
+    });
+  }
+
   async terminateExpedition(
     tx: Prisma.TransactionClient,
     expeditionId: string
@@ -618,6 +677,50 @@ export class ExpeditionService {
       expeditionId,
       expeditionName: expedition.name,
       foodReturned: expedition.foodStock,
+    });
+  }
+
+  async removeMemberFromExpedition(expeditionId: string, characterId: string): Promise<void> {
+    return await prisma.$transaction(async (tx) => {
+      // Check if expedition exists
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: { id: true, status: true, name: true },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      // Check if member exists
+      const member = await tx.expeditionMember.findUnique({
+        where: {
+          expedition_member_unique: {
+            expeditionId,
+            characterId,
+          },
+        },
+      });
+
+      if (!member) {
+        throw new Error("Character is not a member of this expedition");
+      }
+
+      await tx.expeditionMember.delete({
+        where: {
+          expedition_member_unique: {
+            expeditionId,
+            characterId,
+          },
+        },
+      });
+
+      logger.info("expedition_event", {
+        event: "member_removed",
+        expeditionId,
+        expeditionName: expedition.name,
+        characterId,
+      });
     });
   }
 }

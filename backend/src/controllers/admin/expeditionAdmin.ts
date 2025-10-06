@@ -79,7 +79,11 @@ export const modifyExpedition = async (req: Request, res: Response) => {
     }
 
     // Build update data
-    const updateData: any = {};
+    interface ExpeditionUpdateData {
+      duration?: number;
+      foodStock?: number;
+    }
+    const updateData: ExpeditionUpdateData = {};
     if (duration !== undefined) {
       updateData.duration = parseInt(duration, 10);
     }
@@ -170,6 +174,32 @@ export const lockExpedition = async (req: Request, res: Response) => {
   }
 };
 
+export const addMemberToExpedition = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { characterId } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    if (!characterId) {
+      return res.status(400).json({ error: "ID du personnage requis" });
+    }
+
+    const member = await expeditionService.addMemberToExpedition(id, characterId);
+
+    res.json(member);
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du membre à l'expédition:", error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+};
+
 export const departExpedition = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -183,6 +213,31 @@ export const departExpedition = async (req: Request, res: Response) => {
     res.json(expedition);
   } catch (error) {
     console.error("Erreur lors du départ de l'expédition:", error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+};
+
+export const removeMemberFromExpedition = async (req: Request, res: Response) => {
+  try {
+    const { id, characterId } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    if (!characterId) {
+      return res.status(400).json({ error: "ID du personnage requis" });
+    }
+
+    await expeditionService.removeMemberFromExpedition(id, characterId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du membre de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {

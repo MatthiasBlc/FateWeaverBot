@@ -7,14 +7,25 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { createExpeditionModifyModal } from "../../modals/expedition-modals";
+import { ExpeditionAPIService } from "../../services/api/expedition-api.service";
+import { Character } from "../../types/entities";
 import { Expedition } from "../../types/expedition";
 import { apiService } from "../../services/api";
+
+// Type for character with user details from the API
+interface CharacterWithUser extends Character {
+  user: {
+    id: string;
+    username: string;
+  };
+  townId: string;
+}
 import { logger } from "../../services/logger";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
   try {
     // Get all expeditions (including returned ones for admin)
-    const expeditions = await apiService.getAllExpeditions(true);
+    const expeditions = await apiService.getAllExpeditions(true) as Expedition[];
 
     if (!expeditions || expeditions.length === 0) {
       await interaction.reply({
@@ -218,20 +229,212 @@ export async function handleExpeditionModifyModal(interaction: any) {
 
 export async function handleExpeditionAdminMembers(interaction: any, expeditionId: string) {
   try {
-    // This would show member management interface
+    // Get expedition details
+    const expedition = await apiService.getExpeditionById(expeditionId) as Expedition;
+    if (!expedition) {
+      await interaction.reply({
+        content: "❌ Expédition non trouvée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Get all characters in the guild/town for selection
+    const guildId = expedition.townId; // Assuming this is the guild ID or we need to get it differently
+    const characters = await apiService.getTownCharacters(expedition.townId) as CharacterWithUser[];
+
+    if (!characters || characters.length === 0) {
+      await interaction.reply({
+        content: "❌ Aucun personnage trouvé dans cette ville.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Filter characters not already in expedition
+    const availableCharacters = characters.filter(char =>
+      !expedition.members?.some((member: { character: { id: string } }) => member.character.id === char.id)
+    );
+
+    if (availableCharacters.length === 0) {
+      await interaction.reply({
+        content: "❌ Tous les personnages de cette ville sont déjà dans l'expédition.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Create dropdown for adding members
+    const addSelectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_admin_add_member_${expeditionId}`)
+      .setPlaceholder("Sélectionnez un personnage à ajouter")
+      .addOptions(
+        availableCharacters.map(char => ({
+          label: char.name,
+          description: `Utilisateur: ${char.user?.username || 'Inconnu'}`,
+          value: char.id,
+        }))
+      );
+
+    // Create dropdown for removing members (if expedition has members)
+    const components = [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(addSelectMenu)];
+
+    if (expedition.members && expedition.members.length > 0) {
+      const removeSelectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`expedition_admin_remove_member_${expeditionId}`)
+        .setPlaceholder("Sélectionnez un membre à retirer")
+        .addOptions(
+          expedition.members.map(member => ({
+            label: member.character.name,
+            description: `Utilisateur: ${member.character.user?.username || 'Inconnu'}`,
+            value: member.character.id,
+          }))
+        );
+
+      components.push(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(removeSelectMenu));
+    }
+
+    // Create embed with current member list
+    const memberList = expedition.members?.map(member =>
+      `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
+    ).join('\n') || 'Aucun membre';
+
+    const embed = new EmbedBuilder()
+      .setColor(0xff9900)
+      .setTitle(`👥 Gestion des membres - ${expedition.name}`)
+      .setDescription(`**Membres actuels (${expedition.members?.length || 0}):**\n${memberList}`)
+      .addFields(
+        { name: "➕ Ajouter un membre", value: `${availableCharacters.length} personnage(s) disponible(s)`, inline: true },
+        { name: "➖ Retirer un membre", value: (expedition.members?.length || 0) > 0 ? `${expedition.members?.length} membre(s)` : "Aucun membre", inline: true },
+        { name: "📍 Ville", value: expedition.town?.name || "Inconnue", inline: true }
+      )
+      .setTimestamp();
+
     await interaction.reply({
-      content: "⚠️ Gestion des membres - fonctionnalité à implémenter",
+      embeds: [embed],
+      components,
       flags: ["Ephemeral"],
     });
+
   } catch (error) {
     logger.error("Error in expedition admin members:", { error });
+    await interaction.reply({
+      content: "❌ Une erreur est survenue lors de l'affichage de la gestion des membres.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleExpeditionAdminAddMember(interaction: any) {
+  try {
+    const [action, expeditionId] = interaction.customId.split('_').slice(2); // expedition_admin_add_member_${expeditionId}
+    const characterId = interaction.values[0];
+
+    // Get character details to check status
+    const character = await apiService.characters.getCharacterById(characterId);
+    
+    // Vérifier que le personnage est actif et vivant
+    if (!character.isActive) {
+      await interaction.reply({
+        content: "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage n'est pas actif.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+    
+    if (character.isDead) {
+      await interaction.reply({
+        content: "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage est mort.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Add member to expedition
+    await apiService.addMemberToExpedition(expeditionId, characterId);
+
+    // Get updated expedition info
+    const expedition = await apiService.getExpeditionById(expeditionId);
+
+    // Update the message with new member count
+    const memberList = expedition?.members?.map(member =>
+      `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
+    ).join('\n') || 'Aucun membre';
+
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle(`✅ Membre ajouté - ${expedition?.name}`)
+      .setDescription(`**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`)
+      .setTimestamp();
+
+    await interaction.update({
+      embeds: [embed],
+      components: [],
+    });
+
+    logger.info("Member added to expedition via admin", {
+      expeditionId,
+      expeditionName: expedition?.name,
+      characterId,
+      adminUserId: interaction.user.id,
+    });
+
+  } catch (error) {
+    logger.error("Error adding member to expedition:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de l'ajout du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleExpeditionAdminRemoveMember(interaction: any) {
+  try {
+    const [action, expeditionId] = interaction.customId.split('_').slice(2); // expedition_admin_remove_member_${expeditionId}
+    const characterId = interaction.values[0];
+
+    // Remove member from expedition
+    await apiService.removeMemberFromExpedition(expeditionId, characterId);
+
+    // Get updated expedition info
+    const expedition = await apiService.getExpeditionById(expeditionId);
+
+    // Update the message with new member count
+    const memberList = expedition?.members?.map(member =>
+      `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
+    ).join('\n') || 'Aucun membre';
+
+    const embed = new EmbedBuilder()
+      .setColor(0xff0000)
+      .setTitle(`❌ Membre retiré - ${expedition?.name}`)
+      .setDescription(`**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`)
+      .setTimestamp();
+
+    await interaction.update({
+      embeds: [embed],
+      components: [],
+    });
+
+    logger.info("Member removed from expedition via admin", {
+      expeditionId,
+      expeditionName: expedition?.name,
+      characterId,
+      adminUserId: interaction.user.id,
+    });
+
+  } catch (error) {
+    logger.error("Error removing member from expedition:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors du retrait du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      flags: ["Ephemeral"],
+    });
   }
 }
 
 export async function handleExpeditionAdminReturn(interaction: any, expeditionId: string) {
   try {
     // Force return the expedition
-    const expedition = await apiService.returnExpedition(expeditionId);
+    const expedition = await apiService.forceReturnExpedition(expeditionId);
 
     await interaction.update({
       content: `✅ Expédition **${expedition.name}** retournée de force avec succès!`,

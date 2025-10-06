@@ -6,6 +6,8 @@ import {
   forceReturnExpedition,
   lockExpedition,
   departExpedition,
+  addMemberToExpedition,
+  removeMemberFromExpedition,
 } from "../../controllers/admin/expeditionAdmin";
 
 const router = Router();
@@ -24,5 +26,11 @@ router.post("/:id/lock", requireAuthOrInternal, lockExpedition);
 
 // Départ d'une expédition (passage de LOCKED à DEPARTED)
 router.post("/:id/depart", requireAuthOrInternal, departExpedition);
+
+// Ajouter un membre à une expédition
+router.post("/:id/members", requireAuthOrInternal, addMemberToExpedition);
+
+// Retirer un membre d'une expédition
+router.delete("/:id/members/:characterId", requireAuthOrInternal, removeMemberFromExpedition);
 
 export default router;

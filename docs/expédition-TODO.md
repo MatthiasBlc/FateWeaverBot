@@ -41,17 +41,18 @@ Système d'expéditions permettant aux personnages de participer à des expédit
 - [x] Mettre à jour l'embed après modification
 
 #### Gestion des membres admin
-- [ ] Créer une interface de sélection de personnage à ajouter/retirer
-- [ ] Implémenter `handleExpeditionAdminMembers()`
-- [ ] Ajouter les fonctions backend pour gestion forcée des membres
-- [ ] Gérer les permissions et notifications
+- [x] Créer une interface de sélection de personnage à ajouter/retirer
+- [x] Implémenter `handleExpeditionAdminMembers()`
+- [x] Ajouter les fonctions backend pour gestion forcée des membres
+- [x] Gérer les permissions et notifications
+- [x] Filtrer pour n'afficher que les personnages actifs et vivants
 
 ### 3. Améliorations système ⚠️ **PRIORITÉ MOYENNE**
 
 #### Validation d'expédition lors de création/rejointure
-- [ ] Ajouter une vérification avant création/rejointure d'expédition
-- [ ] Retourner une erreur si personnage déjà dans une expédition active
-- [ ] Afficher le message d'erreur : "vous êtes déjà dans une expédition **nom de l'expédition**"
+- [x] Ajouter une vérification avant création/rejointure d'expédition
+- [x] Retourner une erreur si personnage déjà dans une expédition active
+- [x] Afficher le message d'erreur : "vous êtes déjà dans une expédition **nom de l'expédition**"
 
 #### Tests et qualité
 - [ ] Créer des tests unitaires pour les services

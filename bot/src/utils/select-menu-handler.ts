@@ -110,6 +110,38 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour les sélections d'ajout de membres d'expédition admin
+    this.registerHandlerByPrefix("expedition_admin_add_member_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminAddMember } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionAdminAddMember(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin add member select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection d'ajout de membre.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les sélections de retrait de membres d'expédition admin
+    this.registerHandlerByPrefix("expedition_admin_remove_member_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminRemoveMember } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionAdminRemoveMember(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin remove member select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection de retrait de membre.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

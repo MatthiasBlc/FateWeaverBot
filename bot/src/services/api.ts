@@ -376,12 +376,37 @@ class APIService {
   }
 
   /**
-   * Retour forcé d'une expédition
+   * Ajouter un membre à une expédition (admin)
+   */
+  public async addMemberToExpedition(expeditionId: string, characterId: string) {
+    const response = await this.api.post(`/admin/expeditions/${expeditionId}/members`, { characterId });
+    return response.data;
+  }
+
+  /**
+   * Retour d'une expédition (automatique via cron)
    */
   public async returnExpedition(expeditionId: string) {
+    const response = await this.api.post(`/expeditions/${expeditionId}/return`);
+    return response.data;
+  }
+
+  /**
+   * Retour forcé d'une expédition (admin)
+   */
+  public async forceReturnExpedition(expeditionId: string) {
     const response = await this.api.post(`/admin/expeditions/${expeditionId}/force-return`);
     return response.data;
   }
+
+  /**
+   * Retirer un membre d'une expédition (admin)
+   */
+  public async removeMemberFromExpedition(expeditionId: string, characterId: string) {
+    const response = await this.api.delete(`/admin/expeditions/${expeditionId}/members/${characterId}`);
+    return response.data;
+  }
 }
+
 // Export d'une instance singleton pour maintenir la compatibilité
 export const apiService = APIService.getInstance();

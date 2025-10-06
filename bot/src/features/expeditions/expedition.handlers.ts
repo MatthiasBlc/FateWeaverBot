@@ -354,6 +354,18 @@ export async function handleExpeditionJoinCommand(
       return;
     }
 
+    // Check if character is already in an active expedition
+    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(character.id);
+    
+    if (activeExpeditions && activeExpeditions.length > 0) {
+      const activeExpedition = activeExpeditions[0]; // Prend la première expédition active trouvée
+      await interaction.reply({
+        content: `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
     // Get available expeditions (PLANNING status)
     const expeditions = await apiService.getExpeditionsByTown(townResponse.id);
 
