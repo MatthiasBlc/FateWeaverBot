@@ -7,9 +7,10 @@
 - Système de saisons avec cron hebdomadaire fonctionnel
 - Logique de capacités avec effets aléatoires implémentée
 
-**Commandes Discord : 40% terminé**
+**Commandes Discord : 60% terminé**
 - ✅ `/use-capacity` : Complètement fonctionnelle avec toutes les fonctionnalités
-- 🔄 Prochaines étapes : `/profil`, `/character-admin`, `/season-admin`
+- ✅ `/profil` : Section capacités + boutons d'action rapide
+- ⏳ Prochaines étapes : `/character-admin`, `/season-admin`
 
 **Tests : 0% terminé**
 - Tests unitaires et validation à programmer
@@ -38,8 +39,8 @@
   - [x] Gestion spéciale pêche (lucky roll)
 
 - [ ] Mise à jour `/profil` :
-  - [ ] Section "Capacités connues"
-  - [ ] Boutons d'action rapide
+  - [x] Section "Capacités connues"
+  - [x] Boutons d'action rapide
 
 - [ ] Extension `/character-admin` :
   - [ ] Gestion des capacités (ajout/suppression)

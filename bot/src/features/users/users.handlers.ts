@@ -1,4 +1,10 @@
-import { EmbedBuilder, type GuildMember } from "discord.js";
+import {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  type GuildMember
+} from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import {
@@ -11,6 +17,8 @@ import {
   formatTimeUntilUpdate,
   getActionPointsEmoji,
 } from "./users.utils";
+import { getCharacterCapabilities } from "../../services/capability.service";
+import { httpClient } from "../../services/httpClient";
 
 export async function handleProfileCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -74,6 +82,7 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel, // Utilise la valeur du backend (devrait être 0)
             hp: character.hp, // Utilise la valeur du backend (devrait être 0)
             pm: character.pm, // Utilise la valeur du backend (devrait être 0)
+            capabilities: [], // Personnage mort n'a pas de capacités actives
           },
           actionPoints: {
             points: 0, // Personnage mort = 0 PA (pas stocké en base pour les morts)
@@ -98,7 +107,7 @@ export async function handleProfileCommand(interaction: any) {
         };
 
         // Créer l'embed du profil avec les valeurs à 0
-        const embed = createProfileEmbed(profileData);
+        const { embed } = createProfileEmbed(profileData);
 
         await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
         return;
@@ -132,6 +141,9 @@ export async function handleProfileCommand(interaction: any) {
           return;
         }
 
+        // Récupérer les capacités du personnage
+        const capabilities = await getCharacterCapabilities(character.id);
+
         // Récupérer les points d'action du personnage
         const actionPointsResponse = (await apiService.getActionPoints(
           character.id
@@ -147,6 +159,12 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel || 0,
             hp: character.hp || 5,
             pm: character.pm || 5,
+            capabilities: capabilities.map(cap => ({
+              id: cap.id,
+              name: cap.name,
+              description: cap.description,
+              costPA: cap.costPA,
+            })),
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -173,9 +191,9 @@ export async function handleProfileCommand(interaction: any) {
         };
 
         // Créer l'embed du profil
-        const embed = createProfileEmbed(profileData);
+        const { embed, components } = createProfileEmbed(profileData);
 
-        await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+        await interaction.reply({ embeds: [embed], components, flags: ["Ephemeral"] });
         return;
       } else if (characterStatus.needsCreation) {
         await interaction.reply({
@@ -220,7 +238,7 @@ export async function handleProfileCommand(interaction: any) {
   }
 }
 
-function createProfileEmbed(data: ProfileData): EmbedBuilder {
+function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
   const embed = new EmbedBuilder()
     .setColor(getHungerColor(data.character.hungerLevel))
     .setTitle(`📋 Profil de ${data.character.name || "Sans nom"}`)
@@ -301,6 +319,15 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
     },
   ];
 
+  // Ajouter la section capacités si elles existent
+  if (data.character.capabilities && data.character.capabilities.length > 0) {
+    fields.push({
+      name: "🔮 **CAPACITÉS CONNUES**",
+      value: createCapabilitiesDisplay(data.character.capabilities),
+      inline: false,
+    });
+  }
+
   // Ajouter le panneau d'attention s'il y en a un
   if (attentionPanel) {
     fields.splice(3, 0, attentionPanel);
@@ -308,7 +335,20 @@ function createProfileEmbed(data: ProfileData): EmbedBuilder {
 
   embed.addFields(fields);
 
-  return embed;
+  // Créer les composants (boutons d'action rapide) si le personnage a des capacités
+  const components: ActionRowBuilder<ButtonBuilder>[] = [];
+  if (data.character.capabilities && data.character.capabilities.length > 0) {
+    const capabilityButtons = createCapabilityButtons(
+      data.character.capabilities,
+      data.user.id,
+      data.character.id
+    );
+    if (capabilityButtons) {
+      components.push(capabilityButtons);
+    }
+  }
+
+  return { embed, components };
 }
 
 function getHungerLevelText(level: number): string {
@@ -432,4 +472,110 @@ function createPVDisplay(current: number, max: number): string {
 
   // Cas normal : utiliser la fonction standard
   return createHeartDisplay(current, max);
+}
+
+export async function handleProfileButtonInteraction(interaction: any) {
+  if (!interaction.isButton()) return;
+
+  const customId = interaction.customId;
+
+  // Vérifier si c'est un bouton de capacité
+  if (customId.startsWith('use_capability:')) {
+    const [, capabilityId, characterId, userId] = customId.split(':');
+
+    try {
+      // Vérifier que l'utilisateur qui clique est bien le propriétaire du profil
+      if (interaction.user.id !== userId) {
+        await interaction.reply({
+          content: "❌ Vous ne pouvez utiliser que vos propres capacités.",
+          flags: ["Ephemeral"]
+        });
+        return;
+      }
+
+      await interaction.deferReply({ flags: ["Ephemeral"] });
+
+      // Récupérer les détails de la capacité
+      const capabilities = await getCharacterCapabilities(characterId);
+      const selectedCapability = capabilities.find(cap => cap.id === capabilityId);
+
+      if (!selectedCapability) {
+        await interaction.editReply("❌ Capacité non trouvée.");
+        return;
+      }
+
+      // Récupérer le personnage pour vérifier les PA
+      const characterService = new (await import("../../services/api/character-api.service")).CharacterAPIService(httpClient);
+      const character = await characterService.getActiveCharacter(userId, interaction.guildId!);
+
+      if (!character) {
+        await interaction.editReply("❌ Personnage non trouvé.");
+        return;
+      }
+
+      // Vérifier les PA
+      if (character.paTotal < selectedCapability.costPA) {
+        await interaction.editReply(
+          `❌ Vous n'avez pas assez de PA (${character.paTotal}/${selectedCapability.costPA} requis).`
+        );
+        return;
+      }
+
+      // Exécuter la capacité
+      const seasonResponse = await httpClient.get('/seasons/current');
+      const currentSeason = seasonResponse.data;
+      const isSummer = currentSeason?.name?.toLowerCase() === 'summer';
+
+      const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
+        capabilityName: selectedCapability.name,
+        isSummer
+      });
+
+      const result = response.data;
+
+      // Afficher le résultat
+      if (result.publicMessage && interaction.channel) {
+        await interaction.channel.send(result.publicMessage);
+      }
+
+      await interaction.editReply({
+        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${result.message || ''}`
+      });
+
+    } catch (error: any) {
+      console.error("Erreur lors de l'utilisation de capacité via bouton:", error);
+      await interaction.editReply({
+        content: `❌ Erreur : ${error.message || 'Une erreur est survenue'}`
+      });
+    }
+  }
+}
+
+function createCapabilitiesDisplay(capabilities: Array<{ name: string; description?: string; costPA: number; }> | undefined): string {
+  if (!capabilities || capabilities.length === 0) {
+    return "Aucune capacité connue";
+  }
+
+  return capabilities.map(cap =>
+    `🔮 **${cap.name}** (${cap.costPA} PA)${cap.description ? `\n   ${cap.description}` : ''}`
+  ).join('\n');
+}
+
+function createCapabilityButtons(capabilities: Array<{ id: string; name: string; costPA: number; }>, userId: string, characterId: string): ActionRowBuilder<ButtonBuilder> | null {
+  if (!capabilities || capabilities.length === 0) {
+    return null;
+  }
+
+  // Limiter à 4 boutons maximum (limite Discord)
+  const buttonsToShow = capabilities.slice(0, 4);
+
+  const buttons = buttonsToShow.map(cap =>
+    new ButtonBuilder()
+      .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
+      .setLabel(`${cap.name} (${cap.costPA}PA)`)
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('🔮')
+  );
+
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
 }

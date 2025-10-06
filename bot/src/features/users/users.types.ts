@@ -8,6 +8,12 @@ export interface ProfileData {
     hungerLevel: number;
     hp: number;
     pm: number;
+    capabilities?: Array<{  // ← Ajout des capacités
+      id: string;
+      name: string;
+      description?: string;
+      costPA: number;
+    }>;
   };
   actionPoints: {
     points: number;
