@@ -8,4 +8,9 @@ const router = express.Router();
  */
 router.get("/current", SeasonController.getCurrentSeason);
 
+/**
+ * Définit une nouvelle saison
+ */
+router.post("/set", SeasonController.setSeason);
+
 export default router;

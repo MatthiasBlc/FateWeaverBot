@@ -174,6 +174,8 @@ export class ButtonHandler {
 
     // Gestionnaire pour le bouton de changement de saison
     this.registerHandler("next_season", async (interaction) => {
+      logger.info("🎯 Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
+
       try {
         await interaction.deferUpdate();
 
@@ -189,16 +191,34 @@ export class ButtonHandler {
           return;
         }
 
+        logger.info("📊 Saison actuelle récupérée:", { season: currentResponse.data });
+
         const currentSeason = currentResponse.data;
+
+        // Vérifier la structure des données
+        if (!currentSeason || !currentSeason.name) {
+          logger.error("❌ Structure de données invalide:", { received: currentSeason });
+          await interaction.editReply({
+            content: "❌ Format de données de saison invalide.",
+            embeds: [],
+            components: []
+          });
+          return;
+        }
+
         // Déterminer la prochaine saison (cycle été/hiver uniquement)
         const currentSeasonName = currentSeason.name.toLowerCase();
         const nextSeason = currentSeasonName === 'summer' ? 'winter' : 'summer';
+
+        logger.info("🔄 Changement de saison:", { from: currentSeasonName, to: nextSeason });
 
         // Changer la saison
         const response = await httpClient.post('/seasons/set', {
           season: nextSeason,
           adminId: interaction.user.id
         });
+
+        logger.info("✅ Réponse de changement de saison reçue:", { status: response.status, data: response.data });
 
         const result = response.data;
         const embed = {
@@ -227,13 +247,15 @@ export class ButtonHandler {
           components: [] // Retirer les boutons après le changement
         });
 
-        // Log public du changement
-        if (result.publicMessage && interaction.channel && 'send' in interaction.channel) {
-          await interaction.channel.send(result.publicMessage);
-        }
+        // Le message de succès est déjà affiché dans l'embed de réponse
 
       } catch (error: any) {
-        logger.error("Erreur lors du changement de saison:", error);
+        logger.error("❌ Erreur lors du changement de saison:", {
+          error: error.message,
+          stack: error.stack,
+          response: error.response?.data,
+          status: error.response?.status
+        });
         await interaction.editReply({
           content: `❌ Erreur lors du changement de saison : ${error.message || 'Erreur inconnue'}`,
           embeds: [],
@@ -258,7 +280,7 @@ export class ButtonHandler {
   public async handleButton(interaction: any): Promise<boolean> {
     const { customId } = interaction;
 
-    logger.info(`Button interaction received: ${customId}`);
+    logger.info(`🔍 Button interaction received: ${customId} from ${interaction.user.username}`);
 
     // Chercher un gestionnaire exact
     let handler = this.handlers.get(customId);

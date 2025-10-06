@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import { httpClient } from "../../services/httpClient";
@@ -13,7 +13,7 @@ const seasonAdminCommand: Command = {
     if (!interaction.isChatInputCommand()) return;
 
     try {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
 
       // Récupérer la saison actuelle
       const response = await httpClient.get('/seasons/current');
@@ -43,7 +43,7 @@ const seasonAdminCommand: Command = {
             name: "📅 Informations",
             value: [
               `**Nom :** ${formatSeasonName(currentSeason.name)}`,
-              `**Début :** ${new Date(currentSeason.startDate).toLocaleDateString('fr-FR')}`
+              `**Dernière mise à jour :** ${new Date(currentSeason.updatedAt).toLocaleDateString('fr-FR')}`
             ].join('\n'),
             inline: false
           }
