@@ -343,7 +343,8 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     const capabilityButtons = createCapabilityButtons(
       data.character.capabilities,
       data.user.discordId, // Utiliser l'ID Discord au lieu de l'ID interne
-      data.character.id
+      data.character.id,
+      data.actionPoints.points || 0 // Ajouter les PA actuels du personnage
     );
     if (capabilityButtons) {
       components.push(capabilityButtons);
@@ -613,7 +614,12 @@ function createCapabilitiesDisplay(capabilities: Array<{ name: string; descripti
   ).join('\n');
 }
 
-function createCapabilityButtons(capabilities: Array<{ id: string; name: string; costPA: number; }>, userId: string, characterId: string): ActionRowBuilder<ButtonBuilder> | null {
+function createCapabilityButtons(
+  capabilities: Array<{ id: string; name: string; costPA: number; }>,
+  userId: string,
+  characterId: string,
+  currentPA: number
+): ActionRowBuilder<ButtonBuilder> | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
   }
@@ -633,11 +639,22 @@ function createCapabilityButtons(capabilities: Array<{ id: string; name: string;
       }
     };
 
-    return new ButtonBuilder()
+    // Vérifier si le personnage a assez de PA pour cette capacité
+    const hasEnoughPA = currentPA >= cap.costPA;
+    const buttonStyle = hasEnoughPA ? ButtonStyle.Primary : ButtonStyle.Secondary;
+
+    const button = new ButtonBuilder()
       .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
       .setLabel(`${cap.name} (${cap.costPA}PA)`)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(buttonStyle)
       .setEmoji(getEmojiForCapability(cap.name));
+
+    // Désactiver le bouton si pas assez de PA
+    if (!hasEnoughPA) {
+      button.setDisabled(true);
+    }
+
+    return button;
   });
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
