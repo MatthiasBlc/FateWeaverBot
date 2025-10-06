@@ -1,17 +1,17 @@
 # Capacités V1 – ToDo
 
 ## Étape 1 : Base de données
-- [ ] Ajouter les modèles Prisma :
-  - [ ] `Capability` avec les champs requis
-  - [ ] `CharacterCapability` pour la relation many-to-many
-  - [ ] Ajouter `divertCounter` dans `Character`
-  - [ ] Créer la table `Season`
+- [x] Ajouter les modèles Prisma :
+  - [x] `Capability` avec les champs requis
+  - [x] `CharacterCapability` pour la relation many-to-many
+  - [x] Ajouter `divertCounter` dans `Character`
+  - [x] Créer la table `Season`
 
 ## Étape 2 : Backend
-- [ ] Créer les services :
-  - [ ] `capability.service.ts` pour gérer les capacités
-  - [ ] `season.service.ts` pour la gestion des saisons
-  - [ ] Implémenter la logique de random et lucky roll
+- [x] Créer les services :
+  - [x] `capability.service.ts` pour gérer les capacités
+  - [x] `season.service.ts` pour la gestion des saisons
+  - [x] Implémenter la logique de random et lucky roll
   - [ ] Créer le cron hebdomadaire pour le changement de saison
 
 ## Étape 3 : Commandes Discord
@@ -49,10 +49,11 @@
   - [ ] Gestion des erreurs
 
 ## Fichiers à modifier/créer
-- `prisma/schema.prisma` - Modèles de données
-- `backend/src/services/capability.service.ts` - Nouveau
-- `backend/src/services/season.service.ts` - Nouveau
-- `bot/src/commands/use-capacity.ts` - Nouveau
-- `bot/src/commands/season-admin.ts` - Nouveau
-- Mise à jour des commandes existantes
-- Tests unitaires
+- [x] `prisma/schema.prisma` - Modèles de données
+- [x] `backend/src/services/capability.service.ts` - Nouveau
+- [x] `backend/src/services/season.service.ts` - Nouveau
+- [x] `backend/scripts/init-capabilities.ts` - Script d'initialisation
+- [ ] `bot/src/commands/use-capacity.ts` - Nouveau
+- [ ] `bot/src/commands/season-admin.ts` - Nouveau
+- [ ] Mise à jour des commandes existantes
+- [ ] Tests unitaires
