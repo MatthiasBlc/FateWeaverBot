@@ -9,6 +9,55 @@ import {
 } from "./character-admin.components";
 
 /**
+ * Récupère un personnage par son ID depuis la ville du serveur.
+ */
+async function getCharacterById(characterId: string, interaction: any): Promise<Character> {
+  // Récupérer la ville du serveur depuis l'interaction
+  const guildId = interaction.guildId;
+  if (!guildId) {
+    throw new Error("GuildId non trouvé dans l'interaction");
+  }
+
+  const town = (await apiService.getTownByGuildId(guildId)) as Town | null;
+  if (!town || !town.id) {
+    throw new Error("Ville non trouvée pour ce serveur");
+  }
+
+  // Récupérer tous les personnages de la ville
+  const characters = (await apiService.getTownCharacters(town.id)) as Character[];
+  const character = characters.find(c => c.id === characterId);
+
+  if (!character) {
+    throw new Error(`Personnage ${characterId} non trouvé`);
+  }
+
+  return character;
+}
+
+/**
+ * Extrait le characterId depuis les composants du message (boutons).
+ */
+function extractCharacterIdFromMessage(message: any): string | null {
+  if (!message.components) return null;
+
+  for (const actionRow of message.components) {
+    if (actionRow.components) {
+      for (const component of actionRow.components) {
+        if (component.customId && component.customId.includes(':')) {
+          // Les customIds sont au format "prefix:characterId" ou "capability_admin_xxx:characterId"
+          const parts = component.customId.split(':');
+          if (parts.length >= 2) {
+            return parts[1]; // Retourner la deuxième partie comme characterId
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Commande principale pour l'administration des personnages.
  * Affiche un menu de sélection des personnages disponibles.
  */
@@ -141,7 +190,66 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     return handleCharacterAction(interaction);
   }
 
-  // Vérifier si c'est une soumission de modale
+  // Vérifier si c'est un bouton de gestion des capacités
+  if (
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX)
+  ) {
+    // Récupérer le personnage depuis le customId
+    const characterId = customId.replace(CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX, '');
+    const { handleCapabilitiesButton } = await import(
+      "./character-admin.interactions"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleCapabilitiesButton(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton d'ajout de capacités
+  if (customId.startsWith("capability_admin_add:")) {
+    const characterId = customId.replace("capability_admin_add:", '');
+    const { handleAddCapabilities } = await import(
+      "./character-admin.interactions"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleAddCapabilities(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton de suppression de capacités
+  if (customId.startsWith("capability_admin_remove:")) {
+    const characterId = customId.replace("capability_admin_remove:", '');
+    const { handleRemoveCapabilities } = await import(
+      "./character-admin.interactions"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleRemoveCapabilities(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton d'affichage de capacités
+  if (customId.startsWith("capability_admin_view:")) {
+    const characterId = customId.replace("capability_admin_view:", '');
+    const { handleViewCapabilities } = await import(
+      "./character-admin.interactions"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleViewCapabilities(interaction, character);
+  }
+
+  // Vérifier si c'est une sélection de capacités
+  if (customId === "capability_admin_select") {
+    // Pour les sélections, il faut récupérer le characterId depuis le message ou le contexte
+    // Cette logique sera gérée dans la fonction handleCapabilitySelect elle-même
+    const action = interaction.message.content.includes("Ajouter")
+      ? "add"
+      : "remove";
+    const { handleCapabilitySelect } = await import(
+      "./character-admin.interactions"
+    );
+    // Extraire le characterId du customId des boutons présents dans le message
+    const characterId = extractCharacterIdFromMessage(interaction.message);
+    const character = characterId ? await getCharacterById(characterId, interaction) : null;
+    return handleCapabilitySelect(interaction, character, action);
+  }
+
+  // Vérifier si c'est une soumission de modale pour les statistiques
   if (
     customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX) ||
     customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_MODAL_PREFIX)

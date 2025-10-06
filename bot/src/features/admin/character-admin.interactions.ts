@@ -17,7 +17,12 @@ import {
   createAdvancedStatsModal,
   createCharacterDetailsContent,
   createCharacterActionButtons,
+  createCapabilitySelectMenu,
+  createCapabilityActionButtons,
+  type Capability,
 } from "./character-admin.components";
+import { getCharacterCapabilities } from "../../services/capability.service";
+import { httpClient } from "../../services/httpClient";
 
 // --- Interaction Handlers --- //
 
@@ -445,14 +450,14 @@ async function handleKillButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de la suppression du personnage.",
+      content: "❌ Erreur lors de la gestion du reroll.",
       flags: ["Ephemeral"],
     });
   }
 }
 
 /**
- * Gestionnaire pour le bouton "Toggle Reroll".
+ * Gestionnaire pour le bouton "Gérer Capacités".
  */
 async function handleToggleRerollButton(
   interaction: ButtonInteraction,
@@ -489,6 +494,215 @@ async function handleToggleRerollButton(
     }
     await interaction.reply({
       content: "❌ Erreur lors de la gestion du reroll.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour le bouton "Gérer Capacités".
+ */
+export async function handleCapabilitiesButton(
+  interaction: ButtonInteraction,
+  character: Character
+) {
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Récupérer toutes les capacités disponibles
+    const allCapabilitiesResponse = await httpClient.get('/capabilities');
+    const allCapabilities = allCapabilitiesResponse.data || [];
+
+    // Récupérer les capacités actuelles du personnage
+    const currentCapabilities = await getCharacterCapabilities(character.id);
+
+    const selectMenu = createCapabilitySelectMenu(allCapabilities, currentCapabilities);
+    const actionButtons = createCapabilityActionButtons(character.id);
+
+    await interaction.editReply({
+      content: `🔮 **Gestion des capacités de ${character.name}**\nSélectionnez les capacités à ajouter ou retirer :`,
+      components: [selectMenu, actionButtons],
+    });
+  } catch (error) {
+    logger.error("Erreur lors de l'ouverture de la gestion des capacités:", { error });
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 10062
+    ) {
+      return; // Interaction expirée
+    }
+    await interaction.reply({
+      content: "❌ Erreur lors de l'ouverture de la gestion des capacités.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour l'ajout de capacités.
+ */
+export async function handleAddCapabilities(
+  interaction: ButtonInteraction,
+  character: Character
+) {
+  try {
+    const allCapabilitiesResponse = await httpClient.get('/capabilities');
+    const allCapabilities = allCapabilitiesResponse.data || [];
+    const currentCapabilities = await getCharacterCapabilities(character.id);
+
+    const selectMenu = createCapabilitySelectMenu(allCapabilities, currentCapabilities);
+
+    await interaction.reply({
+      content: `➕ **Ajouter des capacités à ${character.name}**\nSélectionnez les capacités à ajouter :`,
+      components: [selectMenu],
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur lors de l'ajout de capacités:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'ajout de capacités.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour la suppression de capacités.
+ */
+export async function handleRemoveCapabilities(
+  interaction: ButtonInteraction,
+  character: Character
+) {
+  try {
+    const currentCapabilities = await getCharacterCapabilities(character.id);
+
+    if (currentCapabilities.length === 0) {
+      await interaction.reply({
+        content: `❌ **${character.name}** n'a aucune capacité à retirer.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const selectMenu = createCapabilitySelectMenu([], currentCapabilities);
+
+    await interaction.reply({
+      content: `➖ **Retirer des capacités de ${character.name}**\nSélectionnez les capacités à retirer :`,
+      components: [selectMenu],
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la suppression de capacités:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de la suppression de capacités.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour afficher les capacités actuelles.
+ */
+export async function handleViewCapabilities(
+  interaction: ButtonInteraction,
+  character: Character
+) {
+  try {
+    const capabilities = await getCharacterCapabilities(character.id);
+
+    if (capabilities.length === 0) {
+      await interaction.reply({
+        content: `🔮 **${character.name}** ne connaît aucune capacité.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const capabilitiesList = capabilities
+      .map(cap => `• **${cap.name}** (${cap.costPA} PA)`)
+      .join('\n');
+
+    const embed = new EmbedBuilder()
+      .setColor(0x0099ff)
+      .setTitle(`🔮 Capacités de ${character.name}`)
+      .setDescription(capabilitiesList)
+      .setFooter({
+        text: `${capabilities.length} capacité${capabilities.length > 1 ? 's' : ''} connue${capabilities.length > 1 ? 's' : ''}`,
+      });
+
+    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+  } catch (error) {
+    logger.error("Erreur lors de l'affichage des capacités:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'affichage des capacités.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour la sélection de capacités dans le menu.
+ */
+export async function handleCapabilitySelect(
+  interaction: StringSelectMenuInteraction,
+  character: Character | null,
+  action: 'add' | 'remove'
+) {
+  try {
+    const selectedCapabilityIds = interaction.values;
+
+    if (selectedCapabilityIds.length === 0) {
+      await interaction.reply({
+        content: "❌ Aucune capacité sélectionnée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Personnage non trouvé.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    const results = [];
+
+    for (const capabilityId of selectedCapabilityIds) {
+      try {
+        if (action === 'add') {
+          await httpClient.post(`/characters/${character.id}/capabilities/add`, {
+            capabilityId: capabilityId,
+          });
+          results.push(`✅ Capacité ajoutée`);
+        } else {
+          await httpClient.delete(`/characters/${character.id}/capabilities/${capabilityId}`);
+          results.push(`✅ Capacité retirée`);
+        }
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.message || error.message || 'Erreur inconnue';
+        results.push(`❌ Erreur: ${errorMessage}`);
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(action === 'add' ? 0x00ff00 : 0xff0000)
+      .setTitle(`${action === 'add' ? '➕' : '➖'} ${action === 'add' ? 'Ajout' : 'Suppression'} de capacités`)
+      .setDescription(results.join('\n'))
+      .setFooter({
+        text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ${action === 'add' ? 'ajoutée' : 'retirée'}${selectedCapabilityIds.length > 1 ? 's' : ''}`,
+      });
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de capacités:`, { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
       flags: ["Ephemeral"],
     });
   }

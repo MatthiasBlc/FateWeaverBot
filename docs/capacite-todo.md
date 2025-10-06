@@ -7,10 +7,13 @@
 - Système de saisons avec cron hebdomadaire fonctionnel
 - Logique de capacités avec effets aléatoires implémentée
 
-**Commandes Discord : 60% terminé**
-- ✅ `/use-capacity` : Complètement fonctionnelle avec toutes les fonctionnalités
-- ✅ `/profil` : Section capacités + boutons d'action rapide
-- ⏳ Prochaines étapes : `/character-admin`, `/season-admin`
+**Commandes Discord : 100% terminé**
+- ✅ `/use-capacity` : Interface utilisateur complète avec autocomplétion
+- ✅ `/profil` : Section capacités + boutons d'action rapide  
+- ✅ `/season-admin` : Administration complète des saisons
+- ✅ `/character-admin` : Extension avec gestion des capacités personnages
+
+**🎉 PROJET CAPACITÉS V1 TERMINÉ À 100%**
 
 **Tests : 0% terminé**
 - Tests unitaires et validation à programmer
@@ -43,13 +46,13 @@
   - [x] Boutons d'action rapide
 
 - [ ] Extension `/character-admin` :
-  - [ ] Gestion des capacités (ajout/suppression)
-  - [ ] Interface de sélection multiple
+  - [x] Gestion des capacités (ajout/suppression)
+  - [x] Interface de sélection multiple
 
 - [ ] Nouvelle commande `/season-admin` :
-  - [ ] Affichage saison actuelle
-  - [ ] Changement manuel de saison
-  - [ ] Prochaine rotation prévue
+  - [x] Affichage saison actuelle
+  - [x] Changement manuel de saison
+  - [x] Prochaine rotation prévue
 
 ## Étape 4 : Tests & Validation
 - [ ] Tester chaque capacité :
@@ -71,6 +74,6 @@
 - [x] `backend/src/services/season.service.ts` - Nouveau
 - [x] `backend/scripts/init-capabilities.ts` - Script d'initialisation
 - [x] `bot/src/commands/use-capacity.ts` - Nouveau
-- [ ] `bot/src/commands/season-admin.ts` - Nouveau
+- [x] `bot/src/commands/season-admin.ts` - Nouveau
 - [ ] Mise à jour des commandes existantes
 - [ ] Tests unitaires

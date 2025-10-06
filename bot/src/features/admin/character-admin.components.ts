@@ -19,6 +19,8 @@ export const CHARACTER_ADMIN_CUSTOM_IDS = {
   ADVANCED_STATS_BUTTON_PREFIX: "character_admin_advanced_btn_",
   KILL_BUTTON_PREFIX: "character_admin_kill_btn_",
   TOGGLE_REROLL_BUTTON_PREFIX: "character_admin_reroll_btn_",
+  CAPABILITIES_BUTTON_PREFIX: "character_admin_capabilities_btn_",
+  CAPABILITIES_MODAL_PREFIX: "character_admin_capabilities_modal_",
   STATS_MODAL_PREFIX: "character_admin_stats_modal_",
   ADVANCED_STATS_MODAL_PREFIX: "character_admin_advanced_modal_",
 };
@@ -96,6 +98,17 @@ export function createCharacterActionButtons(character: Character) {
         .setStyle(ButtonStyle.Danger)
     );
   }
+
+  // Bouton pour gérer les capacités (toujours disponible)
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId(
+        `${CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX}${character.id}`
+      )
+      .setLabel("Gérer Capacités")
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji("🔮")
+  );
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
 }
@@ -201,5 +214,69 @@ export function createCharacterDetailsContent(character: Character): string {
       character.hungerLevel
     )} | PV: ${character.hp} | PM: ${character.pm}\n\n` +
     `Choisissez une action :`
+  );
+}
+
+/**
+ * Interface pour la gestion des capacités d'un personnage.
+ */
+export interface Capability {
+  id: string;
+  name: string;
+  description?: string;
+  costPA: number;
+}
+
+/**
+ * Crée l'interface de sélection multiple des capacités disponibles.
+ */
+export function createCapabilitySelectMenu(
+  availableCapabilities: Capability[],
+  currentCapabilities: Capability[] = []
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  const currentIds = new Set(currentCapabilities.map(cap => cap.id));
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId("capability_admin_select")
+    .setPlaceholder("Sélectionnez les capacités à ajouter/retirer")
+    .setMinValues(0)
+    .setMaxValues(availableCapabilities.length)
+    .addOptions(
+      availableCapabilities.map((capability) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(`${capability.name} (${capability.costPA} PA)`)
+          .setDescription(
+            capability.description
+              ? capability.description.substring(0, 100)
+              : "Aucune description"
+          )
+          .setValue(capability.id)
+          .setDefault(currentIds.has(capability.id))
+      )
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+}
+
+/**
+ * Crée les boutons d'action pour la gestion des capacités.
+ */
+export function createCapabilityActionButtons(characterId: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`capability_admin_add:${characterId}`)
+      .setLabel("Ajouter Capacités")
+      .setStyle(ButtonStyle.Success)
+      .setEmoji("➕"),
+    new ButtonBuilder()
+      .setCustomId(`capability_admin_remove:${characterId}`)
+      .setLabel("Retirer Capacités")
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji("➖"),
+    new ButtonBuilder()
+      .setCustomId(`capability_admin_view:${characterId}`)
+      .setLabel("Voir Capacités")
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji("👁️")
   );
 }
