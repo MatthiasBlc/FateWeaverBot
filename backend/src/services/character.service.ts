@@ -6,6 +6,7 @@ import {
   Guild,
   Capability,
 } from "@prisma/client";
+import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 
 const prisma = new PrismaClient();
 
@@ -484,26 +485,15 @@ export class CharacterService {
     capability: Capability,
     isSummer?: boolean
   ): Promise<CapabilityResult> {
-    // Chasse : été = 2-8 vivres, hiver = 1-4 vivres
-    const foodAmount = isSummer
-      ? Math.floor(Math.random() * 7) + 2  // 2-8
-      : Math.floor(Math.random() * 4) + 1; // 1-4
+    // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
+    const foodAmount = getHuntYield(isSummer ?? true);
 
-    if (foodAmount > 0) {
-      return {
-        success: true,
-        message: `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
-        publicMessage: `🏹 ${character.name} est revenu de la chasse avec ${foodAmount} vivres.`,
-        loot: { foodSupplies: foodAmount },
-      };
-    } else {
-      return {
-        success: false,
-        message: `La chasse n'a rien donné cette fois. Vous avez dépensé ${capability.costPA} PA.`,
-        publicMessage: `🏹 ${character.name} n'a rien trouvé à chasser.`,
-        loot: { foodSupplies: 0 },
-      };
-    }
+    return {
+      success: foodAmount > 0,
+      message: `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
+      publicMessage: `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`,
+      loot: { foodSupplies: foodAmount },
+    };
   }
 
   /**
@@ -520,26 +510,15 @@ export class CharacterService {
     capability: Capability,
     isSummer?: boolean
   ): Promise<CapabilityResult> {
-    // Cueillette : été = 1-3 vivres, hiver = 0-2 vivres
-    const foodAmount = isSummer
-      ? Math.floor(Math.random() * 3) + 1  // 1-3
-      : Math.floor(Math.random() * 3);     // 0-2
+    // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
+    const foodAmount = getGatherYield(isSummer ?? true);
 
-    if (foodAmount > 0) {
-      return {
-        success: true,
-        message: `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
-        publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres.`,
-        loot: { foodSupplies: foodAmount },
-      };
-    } else {
-      return {
-        success: false,
-        message: `La cueillette n'a rien donné cette fois. Vous avez dépensé ${capability.costPA} PA.`,
-        publicMessage: `🌿 ${character.name} n'a rien trouvé à cueillir.`,
-        loot: { foodSupplies: 0 },
-      };
-    }
+    return {
+      success: foodAmount > 0,
+      message: `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
+      publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres.`,
+      loot: { foodSupplies: foodAmount },
+    };
   }
 
   /**

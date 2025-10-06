@@ -17,9 +17,34 @@
 
 **🎉 PROJET CAPACITÉS V1 TERMINÉ À 100%**
 
+## ✅ État d'avancement
+
+**Base de données et Backend : 100% terminé**
+
+- Tous les modèles Prisma et services backend sont opérationnels
+- Système de saisons avec cron hebdomadaire fonctionnel
+- Logique de capacités avec effets aléatoires implémentée
+
+**Commandes Discord : 100% terminé**
+
+- ✅ `/use-capacity` : Interface utilisateur complète avec autocomplétion
+- ✅ `/profil` : Section capacités + boutons d'action rapide
+- ✅ `/season-admin` : Administration complète des saisons
+- ✅ `/character-admin` : Extension avec gestion des capacités personnages
+
 **Tests : 0% terminé**
 
 - Tests unitaires et validation à programmer
+
+## Capacités - Ajustement tirages saisonniers
+
+**État : 0% terminé**
+
+- [ ] Implémenter les nouveaux tirages pondérés pour Chasser et Cueillir
+- [ ] Ajouter les tables fixes de résultats dans un module utilitaire
+- [ ] Utiliser la saison actuelle depuis la table Season (ou variable globale)
+- [ ] Adapter les logs publics pour afficher le résultat obtenu
+- [ ] Ajouter tests unitaires basiques sur la fonction de tirage
 
 ## Étape 1 : Base de données
 

@@ -3,6 +3,7 @@ import {
   Capability as PrismaCapability,
   CapabilityCategory,
 } from "@prisma/client";
+import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -220,16 +221,12 @@ export class CapabilityService {
 
     switch (capabilityName.toLowerCase()) {
       case "chasser":
-        foodGained = isSummer
-          ? Math.floor(Math.random() * 7) + 2 // 2-8 en été
-          : Math.floor(Math.random() * 4) + 1; // 1-4 en hiver
-        message = `🏹 ${character.name} est revenu de la chasse avec ${foodGained} vivres.`;
+        foodGained = getHuntYield(isSummer);
+        message = `🦌 ${character.name} est revenu de la chasse avec ${foodGained} vivres !`;
         break;
 
       case "cueillir":
-        foodGained = isSummer
-          ? Math.floor(Math.random() * 3) + 1 // 1-3 en été
-          : Math.floor(Math.random() * 3); // 0-2 en hiver
+        foodGained = getGatherYield(isSummer);
         message = `🌿 ${character.name} a cueilli ${foodGained} vivres.`;
         break;
 
