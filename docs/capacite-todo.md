@@ -47,11 +47,13 @@
   - [x] Logs publics
   - [x] Autocomplétion des capacités
   - [x] Gestion spéciale pêche (lucky roll)
+  - [x] **Remplacé par boutons dans /profil** (UX supérieure)
 
-- [ ] Mise à jour `/profil` :
+- [x] Mise à jour `/profil` :
 
   - [x] Section "Capacités connues"
-  - [x] Boutons d'action rapide
+  - [x] Boutons d'action rapide avec désactivation intelligente selon PA
+  - [x] Emojis spécifiques par capacité
 
 - [ ] Extension `/character-admin` :
 
@@ -85,6 +87,7 @@
 - [ ] divertir n'est pas fonctionnel
 - [ ] pêcher ne permet pas de choisir 2 PA (pour le lucky)
 - [ ] pếcher ne permet pas d'avoir un objet
+- [x] Nettoyage du code : Suppression de `/use-capacity` (remplacé par boutons profil)
 
 ## Fichiers à modifier/créer
 
@@ -92,7 +95,7 @@
 - [x] `backend/src/services/capability.service.ts` - Nouveau
 - [x] `backend/src/services/season.service.ts` - Nouveau
 - [x] `backend/scripts/init-capabilities.ts` - Script d'initialisation
-- [x] `bot/src/commands/use-capacity.ts` - Nouveau
+- [x] `bot/src/commands/use-capacity.ts` - Supprimé (remplacé par boutons profil)
 - [x] `bot/src/commands/season-admin.ts` - Nouveau
 - [ ] Mise à jour des commandes existantes
 - [ ] Tests unitaires

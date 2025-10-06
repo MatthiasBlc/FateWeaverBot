@@ -1,5 +1,6 @@
 import { logger } from "../services/logger.js";
 import { apiService } from "../services/api/index.js";
+import { httpClient } from "../services/httpClient.js";
 
 /**
  * Gestionnaire centralisé des interactions de boutons
@@ -33,8 +34,17 @@ export class ButtonHandler {
 
   /**
    * Enregistre les gestionnaires par défaut
+   * ⚠️ ATTENTION : Ne pas modifier ou supprimer les gestionnaires existants !
+   * Liste des gestionnaires critiques à préserver :
+   * - expedition_ : boutons d'expédition
+   * - eat_food : boutons de nourriture
+   * - character_admin_ : administration personnages
+   * - capability_admin_ : administration capacités
+   * - use_capability : utilisation capacités utilisateur
+   * - expedition_admin_ : administration expéditions
    */
   private registerDefaultHandlers() {
+    // ================== GESTIONNAIRES CRITIQUES - NE PAS MODIFIER ==================
     // Gestionnaire pour les boutons d'expédition
     this.registerHandlerByPrefix("expedition_", async (interaction) => {
       const customId = interaction.customId;
@@ -161,6 +171,76 @@ export class ButtonHandler {
         });
       }
     });
+
+    // Gestionnaire pour le bouton de changement de saison
+    this.registerHandler("next_season", async (interaction) => {
+      try {
+        await interaction.deferUpdate();
+
+        // Récupérer la saison actuelle pour connaître la suivante
+        const currentResponse = await httpClient.get('/seasons/current');
+
+        if (!currentResponse.data) {
+          await interaction.editReply({
+            content: "❌ Impossible de récupérer la saison actuelle.",
+            embeds: [],
+            components: []
+          });
+          return;
+        }
+
+        const currentSeason = currentResponse.data;
+        // Déterminer la prochaine saison (cycle été/hiver uniquement)
+        const currentSeasonName = currentSeason.name.toLowerCase();
+        const nextSeason = currentSeasonName === 'summer' ? 'winter' : 'summer';
+
+        // Changer la saison
+        const response = await httpClient.post('/seasons/set', {
+          season: nextSeason,
+          adminId: interaction.user.id
+        });
+
+        const result = response.data;
+        const embed = {
+          color: getSeasonColor(result.newSeason),
+          title: "✅ Saison changée avec succès",
+          fields: [
+            {
+              name: "🔄 Changement",
+              value: [
+                `**Ancienne saison :** ${formatSeasonName(result.oldSeason)}`,
+                `**Nouvelle saison :** ${formatSeasonName(result.newSeason)}`,
+                `**Changée par :** ${interaction.user.username}`,
+                `**Date :** ${new Date().toLocaleString('fr-FR')}`
+              ].join('\n'),
+              inline: false
+            }
+          ],
+          footer: {
+            text: "Administration - Changement de saison"
+          },
+          timestamp: new Date().toISOString()
+        };
+
+        await interaction.editReply({
+          embeds: [embed],
+          components: [] // Retirer les boutons après le changement
+        });
+
+        // Log public du changement
+        if (result.publicMessage && interaction.channel && 'send' in interaction.channel) {
+          await interaction.channel.send(result.publicMessage);
+        }
+
+      } catch (error: any) {
+        logger.error("Erreur lors du changement de saison:", error);
+        await interaction.editReply({
+          content: `❌ Erreur lors du changement de saison : ${error.message || 'Erreur inconnue'}`,
+          embeds: [],
+          components: []
+        });
+      }
+    });
   }
   /**
    * Enregistre un gestionnaire pour tous les boutons commençant par un préfixe
@@ -217,3 +297,20 @@ export class ButtonHandler {
 
 // Export d'une instance singleton
 export const buttonHandler = ButtonHandler.getInstance();
+
+// Fonctions utilitaires pour les saisons
+function getSeasonColor(seasonName: string): number {
+  switch (seasonName?.toLowerCase()) {
+    case 'summer': return 0xffa500; // Orange été
+    case 'winter': return 0x87ceeb; // Bleu hiver
+    default: return 0x808080; // Gris par défaut
+  }
+}
+
+function formatSeasonName(seasonName: string): string {
+  switch (seasonName?.toLowerCase()) {
+    case 'summer': return 'Été';
+    case 'winter': return 'Hiver';
+    default: return seasonName || 'Inconnue';
+  }
+}

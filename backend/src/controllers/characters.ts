@@ -403,13 +403,21 @@ export const needsCharacterCreation: RequestHandler = async (
 /**
  * Récupère toutes les capacités d'un personnage
  */
-export const getCharacterCapabilities: RequestHandler = async (req, res, next) => {
+export const getCharacterCapabilities: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id } = req.params;
     const capabilities = await characterService.getCharacterCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
-    next(createHttpError(500, 'Erreur lors de la récupération des capacités', { cause: error }));
+    next(
+      createHttpError(500, "Erreur lors de la récupération des capacités", {
+        cause: error,
+      })
+    );
   }
 };
 
@@ -417,37 +425,68 @@ export const getCharacterCapabilities: RequestHandler = async (req, res, next) =
  * Récupère les capacités disponibles pour un personnage
  * (celles qu'il ne possède pas encore)
  */
-export const getAvailableCapabilities: RequestHandler = async (req, res, next) => {
+export const getAvailableCapabilities: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id } = req.params;
     const capabilities = await characterService.getAvailableCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
-    next(createHttpError(500, 'Erreur lors de la récupération des capacités disponibles', { cause: error }));
+    next(
+      createHttpError(
+        500,
+        "Erreur lors de la récupération des capacités disponibles",
+        { cause: error }
+      )
+    );
   }
 };
 
 /**
  * Ajoute une capacité à un personnage
  */
-export const addCharacterCapability: RequestHandler = async (req, res, next) => {
+export const addCharacterCapability: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id, capabilityId } = req.params;
-    logger.info(`Tentative d'ajout de capacité ${capabilityId} au personnage ${id}`);
-    const capability = await characterService.addCharacterCapability(id, capabilityId);
+    logger.info(
+      `Tentative d'ajout de capacité ${capabilityId} au personnage ${id}`
+    );
+    const capability = await characterService.addCharacterCapability(
+      id,
+      capabilityId
+    );
     res.status(201).json(capability);
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Erreur lors de l'ajout de capacité ${req.params.capabilityId} au personnage ${req.params.id}:`, { error: error.message });
-      if (error.message === 'Personnage non trouvé' || error.message === 'Capacité non trouvée') {
+      logger.error(
+        `Erreur lors de l'ajout de capacité ${req.params.capabilityId} au personnage ${req.params.id}:`,
+        { error: error.message }
+      );
+      if (
+        error.message === "Personnage non trouvé" ||
+        error.message === "Capacité non trouvée"
+      ) {
         next(createHttpError(404, error.message));
-      } else if (error.message === 'Le personnage possède déjà cette capacité') {
+      } else if (
+        error.message === "Le personnage possède déjà cette capacité"
+      ) {
         next(createHttpError(400, error.message));
       } else {
-        next(createHttpError(500, 'Erreur lors de l\'ajout de la capacité', { cause: error }));
+        next(
+          createHttpError(500, "Erreur lors de l'ajout de la capacité", {
+            cause: error,
+          })
+        );
       }
     } else {
-      next(createHttpError(500, 'Une erreur inconnue est survenue'));
+      next(createHttpError(500, "Une erreur inconnue est survenue"));
     }
   }
 };
@@ -455,22 +494,35 @@ export const addCharacterCapability: RequestHandler = async (req, res, next) => 
 /**
  * Retire une capacité d'un personnage
  */
-export const removeCharacterCapability: RequestHandler = async (req, res, next) => {
+export const removeCharacterCapability: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id, capabilityId } = req.params;
     await characterService.removeCharacterCapability(id, capabilityId);
     res.status(204).send();
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'Personnage non trouvé' || error.message === 'Capacité non trouvée') {
+      if (
+        error.message === "Personnage non trouvé" ||
+        error.message === "Capacité non trouvée"
+      ) {
         next(createHttpError(404, error.message));
-      } else if (error.message === 'Le personnage ne possède pas cette capacité') {
+      } else if (
+        error.message === "Le personnage ne possède pas cette capacité"
+      ) {
         next(createHttpError(400, error.message));
       } else {
-        next(createHttpError(500, 'Erreur lors de la suppression de la capacité', { cause: error }));
+        next(
+          createHttpError(500, "Erreur lors de la suppression de la capacité", {
+            cause: error,
+          })
+        );
       }
     } else {
-      next(createHttpError(500, 'Une erreur inconnue est survenue'));
+      next(createHttpError(500, "Une erreur inconnue est survenue"));
     }
   }
 };
@@ -478,7 +530,11 @@ export const removeCharacterCapability: RequestHandler = async (req, res, next) 
 /**
  * Utilise une capacité d'un personnage
  */
-export const useCharacterCapability: RequestHandler = async (req, res, next) => {
+export const useCharacterCapability: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id } = req.params;
     const { capabilityId, capabilityName, isSummer } = req.body;
@@ -490,20 +546,31 @@ export const useCharacterCapability: RequestHandler = async (req, res, next) => 
       throw createHttpError(400, "capabilityId ou capabilityName requis");
     }
 
-    const result = await characterService.useCharacterCapability(id, capabilityIdentifier, isSummer);
+    const result = await characterService.useCharacterCapability(
+      id,
+      capabilityIdentifier,
+      isSummer
+    );
 
     res.status(200).json(result);
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'Personnage non trouvé' || error.message === 'Capacité non trouvée') {
+      if (
+        error.message === "Personnage non trouvé" ||
+        error.message === "Capacité non trouvée"
+      ) {
         next(createHttpError(404, error.message));
-      } else if (error.message.includes('PA')) {
+      } else if (error.message.includes("PA")) {
         next(createHttpError(400, error.message));
       } else {
-        next(createHttpError(500, 'Erreur lors de l\'utilisation de la capacité', { cause: error }));
+        next(
+          createHttpError(500, "Erreur lors de l'utilisation de la capacité", {
+            cause: error,
+          })
+        );
       }
     } else {
-      next(createHttpError(500, 'Une erreur inconnue est survenue'));
+      next(createHttpError(500, "Une erreur inconnue est survenue"));
     }
   }
 };
@@ -511,7 +578,8 @@ export const useCharacterCapability: RequestHandler = async (req, res, next) => 
 export const updateCharacterStats: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { paTotal, hungerLevel, hp, pm, isDead, canReroll, isActive } = req.body;
+    const { paTotal, hungerLevel, hp, pm, isDead, canReroll, isActive } =
+      req.body;
 
     const updateData: Prisma.CharacterUpdateInput = { updatedAt: new Date() };
 
@@ -524,9 +592,10 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Vérifier si le personnage doit mourir (PV = 0, PM = 0 ou Faim = 0)
-    const shouldDie = (hp !== undefined && hp <= 0) ||
-                     (pm !== undefined && pm <= 0) ||
-                     (hungerLevel !== undefined && hungerLevel <= 0);
+    const shouldDie =
+      (hp !== undefined && hp <= 0) ||
+      (pm !== undefined && pm <= 0) ||
+      (hungerLevel !== undefined && hungerLevel <= 0);
 
     if (shouldDie) {
       updateData.isDead = true;
