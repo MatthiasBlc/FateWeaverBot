@@ -17,6 +17,7 @@ import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
 import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
 import { setupExpeditionJobs } from "./cron/expedition.cron";
+import { setupSeasonChangeJob } from "./cron/season-change.cron";
 import chantierRoutes from "./routes/chantier";
 import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
@@ -28,6 +29,7 @@ if (process.env.NODE_ENV !== "test") {
   setupDailyPaJob();
   setupHungerIncreaseJob();
   setupExpeditionJobs();
+  setupSeasonChangeJob();
 }
 
 // Configuration du proxy trust

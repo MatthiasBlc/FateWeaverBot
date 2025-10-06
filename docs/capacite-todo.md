@@ -1,5 +1,19 @@
 # Capacités V1 – ToDo
 
+## ✅ État d'avancement
+
+**Base de données et Backend : 100% terminé**
+- Tous les modèles Prisma et services backend sont opérationnels
+- Système de saisons avec cron hebdomadaire fonctionnel
+- Logique de capacités avec effets aléatoires implémentée
+
+**Commandes Discord : 40% terminé**
+- ✅ `/use-capacity` : Complètement fonctionnelle avec toutes les fonctionnalités
+- 🔄 Prochaines étapes : `/profil`, `/character-admin`, `/season-admin`
+
+**Tests : 0% terminé**
+- Tests unitaires et validation à programmer
+
 ## Étape 1 : Base de données
 - [x] Ajouter les modèles Prisma :
   - [x] `Capability` avec les champs requis
@@ -12,14 +26,16 @@
   - [x] `capability.service.ts` pour gérer les capacités
   - [x] `season.service.ts` pour la gestion des saisons
   - [x] Implémenter la logique de random et lucky roll
-  - [ ] Créer le cron hebdomadaire pour le changement de saison
+  - [x] Créer le cron hebdomadaire pour le changement de saison (`season-change.cron.ts`) et l'intégrer au démarrage du serveur
 
 ## Étape 3 : Commandes Discord
-- [ ] `/use-capacity` :
-  - [ ] Menu déroulant des capacités disponibles
-  - [ ] Validation des conditions (PA, localisation)
-  - [ ] Application des effets
-  - [ ] Logs publics
+- [x] `/use-capacity` :
+  - [x] Menu déroulant des capacités disponibles
+  - [x] Validation des conditions (PA, localisation)
+  - [x] Application des effets
+  - [x] Logs publics
+  - [x] Autocomplétion des capacités
+  - [x] Gestion spéciale pêche (lucky roll)
 
 - [ ] Mise à jour `/profil` :
   - [ ] Section "Capacités connues"
@@ -53,7 +69,7 @@
 - [x] `backend/src/services/capability.service.ts` - Nouveau
 - [x] `backend/src/services/season.service.ts` - Nouveau
 - [x] `backend/scripts/init-capabilities.ts` - Script d'initialisation
-- [ ] `bot/src/commands/use-capacity.ts` - Nouveau
+- [x] `bot/src/commands/use-capacity.ts` - Nouveau
 - [ ] `bot/src/commands/season-admin.ts` - Nouveau
 - [ ] Mise à jour des commandes existantes
 - [ ] Tests unitaires
