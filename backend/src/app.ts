@@ -21,6 +21,7 @@ import { setupSeasonChangeJob } from "./cron/season-change.cron";
 import chantierRoutes from "./routes/chantier";
 import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
+import capabilitiesRoutes from "./routes/capabilities";
 
 const app = express();
 
@@ -102,6 +103,7 @@ app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/chantiers", chantierRoutes);
 app.use("/api/expeditions", expeditionRoutes);
+app.use("/api/capabilities", capabilitiesRoutes);
 
 // Routes admin
 app.use("/api/admin/expeditions", expeditionAdminRoutes);
