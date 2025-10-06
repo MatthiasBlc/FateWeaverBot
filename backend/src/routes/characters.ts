@@ -47,4 +47,12 @@ router.patch("/:id/stats", CharacterController.updateCharacterStats);
 // Permettre à un personnage de manger de la nourriture
 router.post("/:id/eat", CharacterController.eatFood);
 
+// Gestion des capacités du personnage
+router.get("/:id/capabilities", CharacterController.getCharacterCapabilities);
+router.get("/:id/available-capabilities", CharacterController.getAvailableCapabilities);
+// Les routes spécifiques doivent venir avant les routes avec paramètres
+router.post("/:id/capabilities/use", CharacterController.useCharacterCapability);
+router.post("/:id/capabilities/:capabilityId", CharacterController.addCharacterCapability);
+router.delete("/:id/capabilities/:capabilityId", CharacterController.removeCharacterCapability);
+
 export default router;

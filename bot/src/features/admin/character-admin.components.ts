@@ -229,16 +229,26 @@ export interface Capability {
 
 /**
  * Crée l'interface de sélection multiple des capacités disponibles.
+ * @param availableCapabilities Liste des capacités disponibles
+ * @param currentCapabilities Liste des capacités actuelles (pour marquer les sélections)
+ * @param placeholder Texte du placeholder (optionnel)
  */
 export function createCapabilitySelectMenu(
   availableCapabilities: Capability[],
-  currentCapabilities: Capability[] = []
+  currentCapabilities: Capability[] = [],
+  placeholder: string = "Sélectionnez les capacités à ajouter/retirer",
+  characterId?: string
 ): ActionRowBuilder<StringSelectMenuBuilder> {
-  const currentIds = new Set(currentCapabilities.map(cap => cap.id));
+  const currentIds = new Set(currentCapabilities.map((cap) => cap.id));
+
+  // Créer un ID personnalisé qui inclut l'ID du personnage s'il est fourni
+  const customId = characterId 
+    ? `capability_admin_select:${characterId}` 
+    : "capability_admin_select";
 
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId("capability_admin_select")
-    .setPlaceholder("Sélectionnez les capacités à ajouter/retirer")
+    .setCustomId(customId)
+    .setPlaceholder(placeholder)
     .setMinValues(0)
     .setMaxValues(availableCapabilities.length)
     .addOptions(
@@ -255,13 +265,18 @@ export function createCapabilitySelectMenu(
       )
     );
 
-  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
 }
 
 /**
  * Crée les boutons d'action pour la gestion des capacités.
+ * @param characterId L'ID du personnage
  */
-export function createCapabilityActionButtons(characterId: string): ActionRowBuilder<ButtonBuilder> {
+export function createCapabilityActionButtons(
+  characterId: string
+): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`capability_admin_add:${characterId}`)
@@ -272,11 +287,6 @@ export function createCapabilityActionButtons(characterId: string): ActionRowBui
       .setCustomId(`capability_admin_remove:${characterId}`)
       .setLabel("Retirer Capacités")
       .setStyle(ButtonStyle.Danger)
-      .setEmoji("➖"),
-    new ButtonBuilder()
-      .setCustomId(`capability_admin_view:${characterId}`)
-      .setLabel("Voir Capacités")
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji("👁️")
+      .setEmoji("➖")
   );
 }

@@ -22,6 +22,7 @@ import chantierRoutes from "./routes/chantier";
 import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
 import capabilitiesRoutes from "./routes/capabilities";
+import seasonsRoutes from "./routes/seasons";
 
 const app = express();
 
@@ -104,6 +105,7 @@ app.use("/api/towns", townRoutes);
 app.use("/api/chantiers", chantierRoutes);
 app.use("/api/expeditions", expeditionRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
+app.use("/api/seasons", seasonsRoutes);
 
 // Routes admin
 app.use("/api/admin/expeditions", expeditionAdminRoutes);

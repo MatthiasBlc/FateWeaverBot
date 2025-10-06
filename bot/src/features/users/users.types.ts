@@ -26,6 +26,7 @@ export interface ProfileData {
   };
   user: {
     id: string;
+    discordId: string;
     username: string;
     displayAvatarURL: string;
   };

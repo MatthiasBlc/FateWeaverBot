@@ -2,6 +2,7 @@ import {
   type StringSelectMenuInteraction,
   type ButtonInteraction,
   type ModalSubmitInteraction,
+  type StringSelectMenuBuilder,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -501,6 +502,7 @@ async function handleToggleRerollButton(
 
 /**
  * Gestionnaire pour le bouton "Gérer Capacités".
+ * Affiche directement les capacités actuelles du personnage avec les boutons d'action.
  */
 export async function handleCapabilitiesButton(
   interaction: ButtonInteraction,
@@ -509,22 +511,29 @@ export async function handleCapabilitiesButton(
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
 
-    // Récupérer toutes les capacités disponibles
-    const allCapabilitiesResponse = await httpClient.get('/capabilities');
-    const allCapabilities = allCapabilitiesResponse.data || [];
-
     // Récupérer les capacités actuelles du personnage
     const currentCapabilities = await getCharacterCapabilities(character.id);
-
-    const selectMenu = createCapabilitySelectMenu(allCapabilities, currentCapabilities);
+    
+    // Créer la liste des capacités formatée
+    let content = `## 🔮 Capacités de ${character.name}\n`;
+    
+    if (currentCapabilities.length === 0) {
+      content += "*Aucune capacité pour le moment.*\n\n";
+    } else {
+      content += currentCapabilities
+        .map(cap => `• **${cap.name}** (${cap.costPA} PA)${cap.description ? `\n  ${cap.description}` : ''}`)
+        .join('\n') + '\n\n';
+    }
+    
+    // Créer les boutons d'action
     const actionButtons = createCapabilityActionButtons(character.id);
 
     await interaction.editReply({
-      content: `🔮 **Gestion des capacités de ${character.name}**\nSélectionnez les capacités à ajouter ou retirer :`,
-      components: [selectMenu, actionButtons],
+      content,
+      components: [actionButtons],
     });
   } catch (error) {
-    logger.error("Erreur lors de l'ouverture de la gestion des capacités:", { error });
+    logger.error("Erreur lors de l'affichage des capacités:", { error });
     if (
       error &&
       typeof error === "object" &&
@@ -534,7 +543,7 @@ export async function handleCapabilitiesButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de l'ouverture de la gestion des capacités.",
+      content: "❌ Erreur lors de l'affichage des capacités.",
       flags: ["Ephemeral"],
     });
   }
@@ -542,63 +551,107 @@ export async function handleCapabilitiesButton(
 
 /**
  * Gestionnaire pour l'ajout de capacités.
+ * Affiche uniquement les capacités que le personnage ne possède pas encore.
  */
 export async function handleAddCapabilities(
   interaction: ButtonInteraction,
   character: Character
 ) {
   try {
-    const allCapabilitiesResponse = await httpClient.get('/capabilities');
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+    
+    // Récupérer toutes les capacités et celles du personnage
+    const [allCapabilitiesResponse, currentCapabilities] = await Promise.all([
+      httpClient.get('/capabilities'),
+      getCharacterCapabilities(character.id)
+    ]);
+    
     const allCapabilities = allCapabilitiesResponse.data || [];
-    const currentCapabilities = await getCharacterCapabilities(character.id);
+    const currentCapabilityIds = new Set(currentCapabilities.map(c => c.id));
+    
+    // Filtrer pour ne garder que les capacités non possédées
+    const availableCapabilities = allCapabilities.filter(
+      (cap: any) => !currentCapabilityIds.has(cap.id)
+    );
+    
+    if (availableCapabilities.length === 0) {
+      await interaction.editReply({
+        content: `ℹ️ **${character.name}** possède déjà toutes les capacités disponibles.`,
+      });
+      return;
+    }
+    
+    const selectMenu = createCapabilitySelectMenu(
+      availableCapabilities, 
+      [], 
+      'Sélectionnez les capacités à ajouter',
+      character.id
+    );
 
-    const selectMenu = createCapabilitySelectMenu(allCapabilities, currentCapabilities);
-
-    await interaction.reply({
-      content: `➕ **Ajouter des capacités à ${character.name}**\nSélectionnez les capacités à ajouter :`,
+    await interaction.editReply({
+      content: `## ➕ Ajouter des capacités à ${character.name}\nChoisissez dans la liste les capacités à ajouter :`,
       components: [selectMenu],
-      flags: ["Ephemeral"],
     });
   } catch (error) {
-    logger.error("Erreur lors de l'ajout de capacités:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors de l'ajout de capacités.",
-      flags: ["Ephemeral"],
-    });
+    logger.error("Erreur lors de la préparation de l'ajout de capacités:", { error });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.editReply({
+        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+      });
+    }
   }
 }
 
 /**
  * Gestionnaire pour la suppression de capacités.
+ * Affiche uniquement les capacités que le personnage possède déjà.
  */
 export async function handleRemoveCapabilities(
   interaction: ButtonInteraction,
   character: Character
 ) {
   try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+    
+    // Récupérer les capacités actuelles du personnage
     const currentCapabilities = await getCharacterCapabilities(character.id);
 
     if (currentCapabilities.length === 0) {
-      await interaction.reply({
-        content: `❌ **${character.name}** n'a aucune capacité à retirer.`,
-        flags: ["Ephemeral"],
+      await interaction.editReply({
+        content: `ℹ️ **${character.name}** n'a aucune capacité à retirer.`,
       });
       return;
     }
 
-    const selectMenu = createCapabilitySelectMenu([], currentCapabilities);
+    // Créer un menu de sélection avec uniquement les capacités actuelles
+    const selectMenu = createCapabilitySelectMenu(
+      currentCapabilities,
+      [],
+      'Sélectionnez les capacités à retirer',
+      character.id
+    );
 
-    await interaction.reply({
-      content: `➖ **Retirer des capacités de ${character.name}**\nSélectionnez les capacités à retirer :`,
+    await interaction.editReply({
+      content: `## ➖ Retirer des capacités de ${character.name}\nSélectionnez les capacités à retirer :`,
       components: [selectMenu],
-      flags: ["Ephemeral"],
     });
   } catch (error) {
-    logger.error("Erreur lors de la suppression de capacités:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors de la suppression de capacités.",
-      flags: ["Ephemeral"],
-    });
+    logger.error("Erreur lors de la préparation de la suppression de capacités:", { error });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.editReply({
+        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+      });
+    }
   }
 }
 
@@ -675,10 +728,20 @@ export async function handleCapabilitySelect(
 
     for (const capabilityId of selectedCapabilityIds) {
       try {
+        // Vérifier que la capacité existe avant de l'ajouter
         if (action === 'add') {
-          await httpClient.post(`/characters/${character.id}/capabilities/add`, {
-            capabilityId: capabilityId,
-          });
+          const capabilitiesResponse = await httpClient.get('/capabilities');
+          const allCapabilities = capabilitiesResponse.data || [];
+          const capabilityExists = allCapabilities.some((cap: any) => cap.id === capabilityId);
+
+          if (!capabilityExists) {
+            results.push(`❌ Capacité non trouvée: ${capabilityId}`);
+            continue;
+          }
+        }
+
+        if (action === 'add') {
+          await httpClient.post(`/characters/${character.id}/capabilities/${capabilityId}`);
           results.push(`✅ Capacité ajoutée`);
         } else {
           await httpClient.delete(`/characters/${character.id}/capabilities/${capabilityId}`);

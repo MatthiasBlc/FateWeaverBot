@@ -22,6 +22,16 @@ export interface Character {
   lastPaUpdate: string;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    id: string;
+    discordId: string;
+    username: string;
+    discriminator: string;
+    globalName: string | null;
+    avatar: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 interface User {

@@ -91,6 +91,7 @@ export async function handleProfileCommand(interaction: any) {
           timeUntilUpdate,
           user: {
             id: user.id,
+            discordId: user.id, // L'ID Discord est le même que l'ID utilisateur dans Discord.js
             username: user.username,
             displayAvatarURL: user.displayAvatarURL({ size: 128 }),
           },
@@ -175,6 +176,7 @@ export async function handleProfileCommand(interaction: any) {
           timeUntilUpdate,
           user: {
             id: user.id,
+            discordId: user.id, // L'ID Discord est le même que l'ID utilisateur dans Discord.js
             username: user.username,
             displayAvatarURL: user.displayAvatarURL({ size: 128 }),
           },
@@ -340,7 +342,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
   if (data.character.capabilities && data.character.capabilities.length > 0) {
     const capabilityButtons = createCapabilityButtons(
       data.character.capabilities,
-      data.user.id,
+      data.user.discordId, // Utiliser l'ID Discord au lieu de l'ID interne
       data.character.id
     );
     if (capabilityButtons) {
@@ -483,9 +485,21 @@ export async function handleProfileButtonInteraction(interaction: any) {
   if (customId.startsWith('use_capability:')) {
     const [, capabilityId, characterId, userId] = customId.split(':');
 
+    console.log('DEBUG: Bouton capacité cliqué:', {
+      customId,
+      capabilityId,
+      characterId,
+      userId,
+      currentUserId: interaction.user.id
+    });
+
     try {
       // Vérifier que l'utilisateur qui clique est bien le propriétaire du profil
       if (interaction.user.id !== userId) {
+        console.log('DEBUG: Échec vérification propriétaire:', {
+          expected: userId,
+          actual: interaction.user.id
+        });
         await interaction.reply({
           content: "❌ Vous ne pouvez utiliser que vos propres capacités.",
           flags: ["Ephemeral"]
@@ -506,10 +520,28 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Récupérer le personnage pour vérifier les PA
       const characterService = new (await import("../../services/api/character-api.service")).CharacterAPIService(httpClient);
-      const character = await characterService.getActiveCharacter(userId, interaction.guildId!);
+      const character = await characterService.getCharacterById(characterId);
 
       if (!character) {
         await interaction.editReply("❌ Personnage non trouvé.");
+        return;
+      }
+
+      // Vérifier que le personnage appartient à l'utilisateur
+      if (!character.user || character.user.discordId !== userId) {
+        console.log('DEBUG: Échec vérification propriétaire personnage:', {
+          characterUserId: character.userId,
+          characterDiscordId: character.user?.discordId,
+          expectedUserId: userId,
+          actualUserId: interaction.user.id
+        });
+        await interaction.editReply("❌ Vous ne pouvez utiliser que vos propres capacités.");
+        return;
+      }
+
+      // Vérifier que le personnage n'est pas mort
+      if (character.isDead) {
+        await interaction.editReply("❌ Vous ne pouvez pas utiliser de capacités avec un personnage mort.");
         return;
       }
 
@@ -527,7 +559,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
       const isSummer = currentSeason?.name?.toLowerCase() === 'summer';
 
       const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-        capabilityName: selectedCapability.name,
+        capabilityId: capabilityId,
         isSummer
       });
 
@@ -556,8 +588,19 @@ function createCapabilitiesDisplay(capabilities: Array<{ name: string; descripti
     return "Aucune capacité connue";
   }
 
+  // Déterminer l'emoji selon le nom de la capacité
+  const getEmojiForCapability = (name: string): string => {
+    switch (name.toLowerCase()) {
+      case 'chasser': return '🏹';
+      case 'cueillir': return '🌿';
+      case 'pêcher': return '🎣';
+      case 'divertir': return '🎭';
+      default: return '🔮';
+    }
+  };
+
   return capabilities.map(cap =>
-    `🔮 **${cap.name}** (${cap.costPA} PA)${cap.description ? `\n   ${cap.description}` : ''}`
+    `${getEmojiForCapability(cap.name)} **${cap.name}** (${cap.costPA} PA)${cap.description ? `\n   ${cap.description}` : ''}`
   ).join('\n');
 }
 
@@ -569,13 +612,24 @@ function createCapabilityButtons(capabilities: Array<{ id: string; name: string;
   // Limiter à 4 boutons maximum (limite Discord)
   const buttonsToShow = capabilities.slice(0, 4);
 
-  const buttons = buttonsToShow.map(cap =>
-    new ButtonBuilder()
+  const buttons = buttonsToShow.map(cap => {
+    // Déterminer l'emoji selon le nom de la capacité
+    const getEmojiForCapability = (name: string): string => {
+      switch (name.toLowerCase()) {
+        case 'chasser': return '🏹';
+        case 'cueillir': return '🌿';
+        case 'pêcher': return '🎣';
+        case 'divertir': return '🎭';
+        default: return '🔮';
+      }
+    };
+
+    return new ButtonBuilder()
       .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
       .setLabel(`${cap.name} (${cap.costPA}PA)`)
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('🔮')
-  );
+      .setEmoji(getEmojiForCapability(cap.name));
+  });
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
 }

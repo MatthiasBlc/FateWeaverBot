@@ -234,18 +234,55 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   }
 
   // Vérifier si c'est une sélection de capacités
-  if (customId === "capability_admin_select") {
-    // Pour les sélections, il faut récupérer le characterId depuis le message ou le contexte
-    // Cette logique sera gérée dans la fonction handleCapabilitySelect elle-même
-    const action = interaction.message.content.includes("Ajouter")
-      ? "add"
-      : "remove";
+  if (customId.startsWith("capability_admin_select")) {
     const { handleCapabilitySelect } = await import(
       "./character-admin.interactions"
     );
-    // Extraire le characterId du customId des boutons présents dans le message
-    const characterId = extractCharacterIdFromMessage(interaction.message);
-    const character = characterId ? await getCharacterById(characterId, interaction) : null;
+    
+    // Extraire l'ID du personnage depuis le customId (format: capability_admin_select:characterId)
+    let characterId = null;
+    if (customId.includes(':')) {
+      characterId = customId.split(':')[1];
+    }
+    
+    // Si on n'a pas trouvé l'ID dans le customId, essayer de le récupérer depuis le message
+    if (!characterId) {
+      characterId = extractCharacterIdFromMessage(interaction.message);
+      
+      // Si toujours pas trouvé, essayer depuis l'interaction du message
+      if (!characterId && interaction.message.interaction) {
+        const buttonId = interaction.message.interaction.customId;
+        if (buttonId) {
+          if (buttonId.startsWith('capability_admin_add:')) {
+            characterId = buttonId.replace('capability_admin_add:', '');
+          } else if (buttonId.startsWith('capability_admin_remove:')) {
+            characterId = buttonId.replace('capability_admin_remove:', '');
+          }
+        }
+      }
+    }
+    
+    if (!characterId) {
+      return interaction.reply({
+        content: "❌ Impossible de déterminer le personnage cible.",
+        flags: ["Ephemeral"],
+      });
+    }
+    
+    // Déterminer si c'est une action d'ajout ou de suppression
+    let action: 'add' | 'remove';
+    const messageContent = interaction.message.content || '';
+    
+    if (messageContent.includes("Ajouter") || messageContent.includes("ajouter")) {
+      action = 'add';
+    } else if (messageContent.includes("Retirer") || messageContent.includes("retirer")) {
+      action = 'remove';
+    } else {
+      // Par défaut, on considère que c'est un ajout
+      action = 'add';
+    }
+    
+    const character = await getCharacterById(characterId, interaction);
     return handleCapabilitySelect(interaction, character, action);
   }
 

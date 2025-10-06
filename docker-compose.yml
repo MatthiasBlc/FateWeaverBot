@@ -72,7 +72,7 @@ services:
       retries: 3
       start_period: 20s
     logging: *default-logging
-    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run dev"
 
   discord-botdev:
     build:

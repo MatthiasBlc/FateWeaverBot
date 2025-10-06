@@ -17,7 +17,14 @@ export interface Capability {
 export async function getCharacterCapabilities(characterId: string): Promise<Capability[]> {
   try {
     const response = await httpClient.get(`/characters/${characterId}/capabilities`);
-    return response.data || [];
+    // Extraire les propriétés de l'objet capability imbriqué
+    return (response.data || []).map((item: any) => ({
+      id: item.capability?.id || item.id,
+      name: item.capability?.name || item.name,
+      description: item.capability?.description || item.description,
+      costPA: item.capability?.costPA || item.costPA,
+      cooldown: item.capability?.cooldown || item.cooldown || 0,
+    }));
   } catch (error) {
     console.error('Error fetching character capabilities:', error);
     return [];

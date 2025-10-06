@@ -62,6 +62,28 @@ export class SelectMenuHandler {
       }
     });
 
+    // Gestionnaire pour les sélections de capacités (avec ou sans ID de personnage)
+    this.registerHandlerByPrefix("capability_admin_select", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling capability select:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du traitement de la sélection de capacité.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors du traitement de la sélection de capacité.",
+          });
+        }
+      }
+    });
+
     // Gestionnaire pour les sélections d'administration d'expédition
     this.registerHandler("expedition_admin_select", async (interaction) => {
       try {
