@@ -30,7 +30,7 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
         : {},
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true }
+          select: { id: true, name: true }
         },
         members: {
           include: {
@@ -66,7 +66,7 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
 export const modifyExpedition = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { duration, foodStock } = req.body;
+    const { duration } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: "ID d'expédition requis" });
@@ -81,14 +81,10 @@ export const modifyExpedition = async (req: Request, res: Response) => {
     // Build update data
     interface ExpeditionUpdateData {
       duration?: number;
-      foodStock?: number;
     }
     const updateData: ExpeditionUpdateData = {};
     if (duration !== undefined) {
       updateData.duration = parseInt(duration, 10);
-    }
-    if (foodStock !== undefined) {
-      updateData.foodStock = parseInt(foodStock, 10);
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -101,7 +97,7 @@ export const modifyExpedition = async (req: Request, res: Response) => {
       data: updateData,
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true }
+          select: { id: true, name: true }
         },
         members: {
           include: {

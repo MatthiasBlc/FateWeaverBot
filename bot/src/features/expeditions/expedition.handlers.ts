@@ -182,14 +182,29 @@ export async function handleExpeditionCreationModal(
     }
 
     // Create expedition
+    console.log("DEBUG: Envoi de la requête de création d'expédition:", {
+      name,
+      initialResources: [
+        { resourceTypeName: "Vivres", quantity: foodAmount }
+      ],
+      duration: durationDays,
+      townId: townResponse.id,
+      characterId: character.id,
+      createdBy: interaction.user.id,
+    });
+
     const newExpedition = await apiService.createExpedition({
       name,
-      foodStock: foodAmount,
+      initialResources: [
+        { resourceTypeName: "Vivres", quantity: foodAmount }
+      ],
       duration: durationDays,
       townId: townResponse.id,
       characterId: character.id, // Add character ID for auto-joining
       createdBy: interaction.user.id, // Discord user ID
     });
+
+    console.log("DEBUG: Réponse de création d'expédition reçue:", newExpedition);
 
     // Join the creator to the expedition
     let joinSuccess = false;
@@ -388,9 +403,7 @@ export async function handleExpeditionJoinCommand(
       .addOptions(
         availableExpeditions.map((exp: Expedition) => ({
           label: exp.name,
-          description: `Stock: ${exp.foodStock}, Membres: ${
-            exp.members?.length || 0
-          }`,
+          description: `Durée: ${exp.duration}j, Membres: 0`, // Plus d'accès à foodStock et members
           value: exp.id,
         }))
       );

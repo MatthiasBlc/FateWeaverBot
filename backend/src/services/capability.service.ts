@@ -215,6 +215,15 @@ export class CapabilityService {
       throw new Error("Pas assez de points d'action");
     }
 
+    // Récupérer le type de ressource "Vivres"
+    const vivresType = await this.prisma.resourceType.findFirst({
+      where: { name: "Vivres" },
+    });
+
+    if (!vivresType) {
+      throw new Error("Type de ressource 'Vivres' non trouvé");
+    }
+
     // Calculer la récolte en fonction de la capacité et de la saison
     let foodGained = 0;
     let message = "";
@@ -247,7 +256,7 @@ export class CapabilityService {
         throw new Error("Capacité de récolte non reconnue");
     }
 
-    // Mettre à jour les PA et le stock de nourriture
+    // Mettre à jour les PA et ajouter les ressources à la ville
     await this.prisma.$transaction([
       this.prisma.character.update({
         where: { id: characterId },
@@ -255,9 +264,24 @@ export class CapabilityService {
           paTotal: { decrement: capability.costPA * (luckyRoll ? 2 : 1) },
         },
       }),
-      this.prisma.town.update({
-        where: { id: character.townId },
-        data: { foodStock: { increment: foodGained } },
+      // Ajouter les vivres au stock de la ville
+      this.prisma.resourceStock.upsert({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType: "CITY",
+            locationId: character.townId,
+            resourceTypeId: vivresType.id,
+          },
+        },
+        update: {
+          quantity: { increment: foodGained },
+        },
+        create: {
+          locationType: "CITY",
+          locationId: character.townId,
+          resourceTypeId: vivresType.id,
+          quantity: foodGained,
+        },
       }),
     ]);
 

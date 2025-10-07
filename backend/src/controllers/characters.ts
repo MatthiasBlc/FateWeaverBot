@@ -248,14 +248,32 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     if (character.isDead) throw createHttpError(400, "Ce personnage est mort");
     if (character.hungerLevel >= 4)
       throw createHttpError(400, "Tu n'as pas faim");
-    if (character.town.foodStock <= 0)
-      throw createHttpError(400, "La ville n'a plus de vivres");
 
     const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
-    if (character.town.foodStock < foodToConsume) {
+
+    // Récupérer le stock de vivres de la ville
+    const vivresType = await prisma.resourceType.findFirst({
+      where: { name: "Vivres" }
+    });
+
+    if (!vivresType) {
+      throw createHttpError(500, "Type de ressource 'Vivres' non trouvé");
+    }
+
+    const townStock = await prisma.resourceStock.findUnique({
+      where: {
+        locationType_locationId_resourceTypeId: {
+          locationType: "CITY",
+          locationId: character.townId,
+          resourceTypeId: vivresType.id
+        }
+      }
+    });
+
+    if (!townStock || townStock.quantity < foodToConsume) {
       throw createHttpError(
         400,
-        `La ville n'a que ${character.town.foodStock} vivres`
+        `La ville n'a que ${townStock?.quantity || 0} vivres`
       );
     }
 
@@ -268,12 +286,35 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         include: { user: true },
       });
 
-      const updatedTown = await tx.town.update({
-        where: { id: character.townId },
-        data: { foodStock: { decrement: foodToConsume } },
+      // Retirer les vivres du stock de la ville
+      await tx.resourceStock.update({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType: "CITY",
+            locationId: character.townId,
+            resourceTypeId: vivresType.id
+          }
+        },
+        data: {
+          quantity: { decrement: foodToConsume }
+        }
       });
 
-      return { character: updatedCharacter, town: updatedTown };
+      // Récupérer le stock mis à jour pour la réponse
+      const updatedTownStock = await tx.resourceStock.findUnique({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType: "CITY",
+            locationId: character.townId,
+            resourceTypeId: vivresType.id
+          }
+        }
+      });
+
+      return {
+        character: updatedCharacter,
+        townStock: updatedTownStock?.quantity || 0
+      };
     });
 
     res.status(200).json({
@@ -284,8 +325,8 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         user: { username: result.character.user.username },
       },
       town: {
-        name: result.town.name,
-        foodStock: result.town.foodStock,
+        name: character.town.name,
+        foodStock: result.townStock,
       },
       foodConsumed: foodToConsume,
     });

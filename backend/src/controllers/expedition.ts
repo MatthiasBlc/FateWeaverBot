@@ -8,12 +8,23 @@ export const createExpedition = async (req: Request, res: Response) => {
   try {
     const {
       name,
-      foodStock,
+      initialResources,  // ✅ Changer de initialVivres à initialResources
       duration,
       townId,
       discordGuildId,
       createdBy: requestCreatedBy,
     } = req.body;
+
+    console.log("DEBUG: Requête de création d'expédition reçue:", {
+      name,
+      initialResources,
+      duration,
+      townId,
+      discordGuildId,
+      requestCreatedBy,
+      body: JSON.stringify(req.body),
+      headers: req.headers['x-internal-request']
+    });
 
     const createdBy =
       req.get("x-internal-request") === "true"
@@ -42,19 +53,41 @@ export const createExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de ville manquant" });
     }
 
-    if (!name || !foodStock || !duration) {
-      return res.status(400).json({ error: "Nom, stock de nourriture et durée requis" });
+    console.log("DEBUG: Paramètres après traitement:", {
+      name,
+      initialResources,
+      duration,
+      internalTownId,
+      createdBy
+    });
+
+    if (!name || !initialResources || !duration) {
+      console.log("DEBUG: Paramètres manquants détectés");
+      return res.status(400).json({ error: "Nom, ressources initiales et durée requis" });
     }
 
     const expedition = await expeditionService.createExpedition({
       name,
       townId: internalTownId,
-      foodStock: parseInt(foodStock, 10),
+      initialResources: initialResources,  // ✅ Utiliser directement initialResources
       duration: parseInt(duration, 10),
       createdBy,
     });
 
-    res.status(201).json(expedition);
+    // Nettoyer l'objet expedition pour éviter les références circulaires
+    const safeExpedition = {
+      id: expedition.id,
+      name: expedition.name,
+      status: expedition.status,
+      duration: expedition.duration,
+      townId: expedition.townId,
+      createdBy: expedition.createdBy,
+      createdAt: expedition.createdAt,
+      updatedAt: expedition.updatedAt,
+      // Ne pas inclure les références circulaires comme town, members, etc.
+    };
+
+    res.status(201).json(safeExpedition);
   } catch (error) {
     console.error("Erreur lors de la création de l'expédition:", error);
     if (error instanceof Error) {
@@ -253,10 +286,30 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
   }
 };
 
-export const transferFood = async (req: Request, res: Response) => {
+export const getExpeditionResources = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { amount, direction } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    const resources = await expeditionService.getExpeditionResources(id);
+    res.json(resources);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des ressources:", error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+};
+
+export const transferExpeditionResource = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { resourceType, amount, direction } = req.body;
 
     // Check if this is an internal request
     const isInternalRequest = req.get("x-internal-request") === "true";
@@ -265,23 +318,24 @@ export const transferFood = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Utilisateur non authentifié" });
     }
 
-    if (!amount || !direction) {
-      return res.status(400).json({ error: "Montant et direction requis" });
+    if (!resourceType || !amount || !direction) {
+      return res.status(400).json({ error: "Type de ressource, montant et direction requis" });
     }
 
     if (!["to_town", "from_town"].includes(direction)) {
       return res.status(400).json({ error: "Direction invalide (to_town ou from_town)" });
     }
 
-    await expeditionService.transferFood(
+    await expeditionService.transferResource(
       id,
+      resourceType,
       parseInt(amount, 10),
       direction as "to_town" | "from_town"
     );
 
     res.status(204).send();
   } catch (error) {
-    console.error("Erreur lors du transfert de nourriture:", error);
+    console.error("Erreur lors du transfert de ressources:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {

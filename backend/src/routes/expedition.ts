@@ -8,7 +8,7 @@ import {
   getAllExpeditions,
   joinExpedition,
   leaveExpedition,
-  transferFood,
+  transferExpeditionResource,
 } from "../controllers/expedition";
 
 const router = Router();
@@ -41,7 +41,7 @@ router.get(
 // Récupérer toutes les expéditions
 router.get("/", requireAuthOrInternal, getAllExpeditions);
 
-// Transférer de la nourriture (ville <-> expédition)
-router.post("/:id/transfer", requireAuthOrInternal, transferFood);
+// Transférer des ressources (ville <-> expédition)
+router.post("/:id/transfer", requireAuthOrInternal, transferExpeditionResource);
 
 export default router;

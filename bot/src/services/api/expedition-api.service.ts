@@ -43,6 +43,23 @@ export class ExpeditionAPIService {
     this.api = api;
   }
 
+  /**
+   * Nettoie un objet Expedition pour éviter les références circulaires
+   */
+  private cleanExpeditionObject(expedition: Expedition): Expedition {
+    return {
+      id: expedition.id,
+      name: expedition.name,
+      status: expedition.status,
+      duration: expedition.duration,
+      townId: expedition.townId,
+      createdBy: expedition.createdBy,
+      createdAt: expedition.createdAt,
+      updatedAt: expedition.updatedAt,
+      foodStock: expedition.foodStock || 0, // Ajouter pour compatibilité
+    };
+  }
+
   async getActiveExpeditionsForCharacter(characterId: string): Promise<Expedition[]> {
     try {
       const response = await this.api.get<Expedition[]>(`${this.basePath}/character/${characterId}/active`);
@@ -77,13 +94,17 @@ export class ExpeditionAPIService {
   async createExpedition(data: {
     name: string;
     townId: string;
-    foodStock: number;
+    initialResources: { resourceTypeName: string; quantity: number }[];
     duration: number;
     characterId: string;
   }): Promise<{ data: Expedition }> {
     try {
       const response = await this.api.post<Expedition>(this.basePath, data);
-      return { data: response.data };
+
+      // Nettoyer l'objet expedition pour éviter les références circulaires
+      const cleanExpedition = this.cleanExpeditionObject(response.data);
+
+      return { data: cleanExpedition };
     } catch (error) {
       logger.error('Error creating expedition:', error);
       throw error;

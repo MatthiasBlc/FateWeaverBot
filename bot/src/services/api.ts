@@ -406,6 +406,48 @@ class APIService {
     const response = await this.api.delete(`/admin/expeditions/${expeditionId}/members/${characterId}`);
     return response.data;
   }
+
+  /**
+   * Récupère les ressources d'un lieu (ville ou expédition)
+   */
+  public async getResources(locationType: string, locationId: string) {
+    const response = await this.api.get(`/resources/${locationType}/${locationId}`);
+    return response.data;
+  }
+
+  /**
+   * Ajoute des ressources à un lieu
+   */
+  public async addResource(locationType: string, locationId: string, resourceTypeId: number, quantity: number) {
+    const response = await this.api.post(`/resources/${locationType}/${locationId}/${resourceTypeId}`, { quantity });
+    return response.data;
+  }
+
+  /**
+   * Met à jour la quantité d'une ressource
+   */
+  public async updateResource(locationType: string, locationId: string, resourceTypeId: number, quantity: number) {
+    const response = await this.api.put(`/resources/${locationType}/${locationId}/${resourceTypeId}`, { quantity });
+    return response.data;
+  }
+
+  /**
+   * Transfère des ressources entre deux lieux
+   */
+  public async transferResource(
+    fromLocationType: string,
+    fromLocationId: string,
+    toLocationType: string,
+    toLocationId: string,
+    resourceTypeId: number,
+    quantity: number
+  ) {
+    const response = await this.api.post(
+      `/resources/${fromLocationType}/${fromLocationId}/${toLocationType}/${toLocationId}/${resourceTypeId}/transfer`,
+      { quantity }
+    );
+    return response.data;
+  }
 }
 
 // Export d'une instance singleton pour maintenir la compatibilité

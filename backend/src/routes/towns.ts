@@ -4,7 +4,7 @@ import {
   getTownByGuildId,
   getTownById,
   getAllTowns,
-  updateTownFoodStock,
+  updateTownFoodStock as updateTownVivresStock,
 } from "../controllers/towns";
 import { requireAuthOrInternal } from "../middleware/auth";
 
@@ -19,8 +19,8 @@ router.get("/guild/:guildId", requireAuthOrInternal, getTownByGuildId);
 // Récupère une ville par son ID
 router.get("/:id", requireAuthOrInternal, getTownById);
 
-// Met à jour le stock de foodstock d'une ville
-router.patch("/:id/food-stock", requireAuthOrInternal, updateTownFoodStock);
+// Met à jour le stock de vivres d'une ville
+router.patch("/:id/vivres-stock", requireAuthOrInternal, updateTownVivresStock);
 
 // Récupère toutes les villes
 router.get("/", requireAuthOrInternal, getAllTowns);

@@ -454,14 +454,31 @@ export class CharacterService {
 
       // Ajouter les ressources générées au stock de la ville
       if (result.loot && result.loot.foodSupplies && result.loot.foodSupplies > 0) {
-        await tx.town.update({
-          where: { id: character.townId },
-          data: {
-            foodStock: {
-              increment: result.loot.foodSupplies
-            }
-          },
+        // Récupérer le type de ressource "Vivres"
+        const vivresType = await tx.resourceType.findFirst({
+          where: { name: "Vivres" }
         });
+
+        if (vivresType) {
+          await tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: character.townId,
+                resourceTypeId: vivresType.id
+              }
+            },
+            update: {
+              quantity: { increment: result.loot.foodSupplies }
+            },
+            create: {
+              locationType: "CITY",
+              locationId: character.townId,
+              resourceTypeId: vivresType.id,
+              quantity: result.loot.foodSupplies
+            }
+          });
+        }
       }
 
       return characterUpdate;

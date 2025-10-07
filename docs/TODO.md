@@ -51,6 +51,7 @@ Le principe “une semaine IRL sur deux” → top pour la cadence.
 Il faudra une table ou un paramètre global Season (enum : SUMMER | WINTER).
 Cron hebdomadaire à prévoir pour basculer la saison.
 
+gestion des saisons par VILLE et non pas globale !!!!!
 -------------------------Todo-------------------------
 
 Gestion des pénuries ?? Alerte etc ?

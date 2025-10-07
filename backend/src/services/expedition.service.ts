@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export interface CreateExpeditionData {
   name: string;
   townId: string;
-  foodStock: number;
+  initialResources: { resourceTypeName: string; quantity: number }[]; // Remplacement de foodStock par ressources génériques
   duration: number; // in days (minimum 1)
   createdBy: string; // Discord user ID
 }
@@ -16,7 +16,6 @@ export interface ExpeditionWithDetails extends Expedition {
   town: {
     id: string;
     name: string;
-    foodStock: number;
   };
   members: Array<
     ExpeditionMember & {
@@ -37,12 +36,208 @@ export interface ExpeditionWithDetails extends Expedition {
 }
 
 export class ExpeditionService {
+  /**
+   * Récupère les ressources d'une expédition
+   */
+  async getExpeditionResources(expeditionId: string) {
+    return await prisma.resourceStock.findMany({
+      where: {
+        locationType: "EXPEDITION",
+        locationId: expeditionId,
+      },
+      include: {
+        resourceType: true,
+      },
+    });
+  }
+
+  /**
+   * Ajoute des ressources à une expédition
+   */
+  async addResourceToExpedition(
+    expeditionId: string,
+    resourceTypeName: string,
+    quantity: number
+  ): Promise<void> {
+    const resourceType = await prisma.resourceType.findFirst({
+      where: { name: resourceTypeName },
+    });
+
+    if (!resourceType) {
+      throw new Error(`Resource type "${resourceTypeName}" not found`);
+    }
+
+    await prisma.resourceStock.upsert({
+      where: {
+        locationType_locationId_resourceTypeId: {
+          locationType: "EXPEDITION",
+          locationId: expeditionId,
+          resourceTypeId: resourceType.id,
+        },
+      },
+      update: {
+        quantity: { increment: quantity },
+      },
+      create: {
+        locationType: "EXPEDITION",
+        locationId: expeditionId,
+        resourceTypeId: resourceType.id,
+        quantity,
+      },
+    });
+  }
+
+  /**
+   * Transfert des ressources entre ville et expédition
+   */
+  async transferResource(
+    expeditionId: string,
+    resourceTypeName: string,
+    amount: number,
+    direction: "to_town" | "from_town"
+  ): Promise<void> {
+    return await prisma.$transaction(async (tx) => {
+      // Check expedition exists and is in PLANNING status
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: { id: true, status: true, townId: true },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      if (expedition.status !== ExpeditionStatus.PLANNING) {
+        throw new Error(
+          "Cannot transfer resources for expedition that is not in PLANNING status"
+        );
+      }
+
+      if (amount <= 0) {
+        throw new Error("Transfer amount must be positive");
+      }
+
+      const resourceType = await tx.resourceType.findFirst({
+        where: { name: resourceTypeName },
+      });
+
+      if (!resourceType) {
+        throw new Error(`Resource type "${resourceTypeName}" not found`);
+      }
+
+      if (direction === "from_town") {
+        // Transfer from town to expedition
+        const townStock = await tx.resourceStock.findUnique({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "CITY",
+              locationId: expedition.townId,
+              resourceTypeId: resourceType.id,
+            },
+          },
+        });
+
+        if (!townStock || townStock.quantity < amount) {
+          throw new Error(`Not enough ${resourceTypeName} in town`);
+        }
+
+        await Promise.all([
+          tx.resourceStock.update({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: expedition.townId,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            data: {
+              quantity: { decrement: amount },
+            },
+          }),
+          tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "EXPEDITION",
+                locationId: expeditionId,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            update: {
+              quantity: { increment: amount },
+            },
+            create: {
+              locationType: "EXPEDITION",
+              locationId: expeditionId,
+              resourceTypeId: resourceType.id,
+              quantity: amount,
+            },
+          }),
+        ]);
+      } else {
+        // Transfer from expedition to town
+        const expeditionStock = await tx.resourceStock.findUnique({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "EXPEDITION",
+              locationId: expeditionId,
+              resourceTypeId: resourceType.id,
+            },
+          },
+        });
+
+        if (!expeditionStock || expeditionStock.quantity < amount) {
+          throw new Error(`Not enough ${resourceTypeName} in expedition`);
+        }
+
+        await Promise.all([
+          tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: expedition.townId,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            update: {
+              quantity: { increment: amount },
+            },
+            create: {
+              locationType: "CITY",
+              locationId: expedition.townId,
+              resourceTypeId: resourceType.id,
+              quantity: amount,
+            },
+          }),
+          tx.resourceStock.update({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "EXPEDITION",
+                locationId: expeditionId,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            data: {
+              quantity: { decrement: amount },
+            },
+          }),
+        ]);
+      }
+
+      logger.info("expedition_event", {
+        event: "resource_transferred",
+        expeditionId,
+        resourceTypeName,
+        amount,
+        direction,
+      });
+    });
+  }
   async createExpedition(data: CreateExpeditionData): Promise<Expedition> {
     return await prisma.$transaction(async (tx) => {
-      // Check if town has enough food
+      // Check if town exists
       const town = await tx.town.findUnique({
         where: { id: data.townId },
-        select: { id: true, foodStock: true },
+        select: { id: true, name: true },
       });
 
       if (!town) {
@@ -53,44 +248,125 @@ export class ExpeditionService {
         throw new Error("Expedition duration must be at least 1 day");
       }
 
-      // Create expedition and update town food stock in transaction
-      const [expedition] = await Promise.all([
-        tx.expedition.create({
-          data: {
-            name: data.name,
-            townId: data.townId,
-            foodStock: data.foodStock,
-            duration: data.duration,
-            createdBy: data.createdBy,
-            status: ExpeditionStatus.PLANNING,
-            returnAt: null,
+      // Validate initial resources and check if town has enough
+      for (const resource of data.initialResources) {
+        if (resource.quantity <= 0) {
+          throw new Error(
+            `Resource quantity must be positive for ${resource.resourceTypeName}`
+          );
+        }
+
+        const resourceType = await tx.resourceType.findFirst({
+          where: { name: resource.resourceTypeName },
+        });
+
+        if (!resourceType) {
+          throw new Error(
+            `Resource type "${resource.resourceTypeName}" not found`
+          );
+        }
+
+        // Check if town has enough of this resource
+        const townStock = await tx.resourceStock.findUnique({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "CITY",
+              locationId: data.townId,
+              resourceTypeId: resourceType.id,
+            },
           },
-        }),
-        tx.town.update({
-          where: { id: data.townId },
-          data: { foodStock: { decrement: data.foodStock } },
-        }),
-      ]);
+        });
+
+        if (!townStock || townStock.quantity < resource.quantity) {
+          throw new Error(`Not enough ${resource.resourceTypeName} in town`);
+        }
+      }
+
+      // Create expedition
+      const expedition = await tx.expedition.create({
+        data: {
+          name: data.name,
+          townId: data.townId,
+          duration: data.duration,
+          createdBy: data.createdBy,
+          status: ExpeditionStatus.PLANNING,
+          returnAt: null,
+        },
+      });
+
+      // Transfer resources from town to expedition
+      for (const resource of data.initialResources) {
+        const resourceType = await tx.resourceType.findFirst({
+          where: { name: resource.resourceTypeName },
+        });
+
+        if (resourceType) {
+          // Remove from town
+          await tx.resourceStock.update({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: data.townId,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            data: {
+              quantity: { decrement: resource.quantity },
+            },
+          });
+
+          // Add to expedition
+          await tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "EXPEDITION",
+                locationId: expedition.id,
+                resourceTypeId: resourceType.id,
+              },
+            },
+            update: {
+              quantity: { increment: resource.quantity },
+            },
+            create: {
+              locationType: "EXPEDITION",
+              locationId: expedition.id,
+              resourceTypeId: resourceType.id,
+              quantity: resource.quantity,
+            },
+          });
+        }
+      }
 
       logger.info("expedition_event", {
         event: "created",
         expeditionId: expedition.id,
         expeditionName: expedition.name,
         townId: data.townId,
-        foodStock: data.foodStock,
+        initialResources: data.initialResources,
         createdBy: data.createdBy,
       });
 
-      return expedition;
+      // Return a clean expedition object without circular references
+      return {
+        id: expedition.id,
+        name: expedition.name,
+        status: expedition.status,
+        duration: expedition.duration,
+        townId: expedition.townId,
+        createdBy: expedition.createdBy,
+        createdAt: expedition.createdAt,
+        updatedAt: expedition.updatedAt,
+        returnAt: expedition.returnAt,
+      };
     });
   }
 
   async getExpeditionById(id: string): Promise<ExpeditionWithDetails | null> {
-    return await prisma.expedition.findUnique({
+    const expedition = await prisma.expedition.findUnique({
       where: { id },
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true },
+          select: { id: true, name: true },
         },
         members: {
           include: {
@@ -109,6 +385,24 @@ export class ExpeditionService {
         },
       },
     });
+
+    if (!expedition) return null;
+
+    // Return a clean expedition object without circular references
+    return {
+      id: expedition.id,
+      name: expedition.name,
+      status: expedition.status,
+      duration: expedition.duration,
+      townId: expedition.townId,
+      createdBy: expedition.createdBy,
+      createdAt: expedition.createdAt,
+      updatedAt: expedition.updatedAt,
+      returnAt: expedition.returnAt,
+      town: expedition.town,
+      members: expedition.members,
+      _count: expedition._count,
+    };
   }
 
   async getExpeditionsByTown(
@@ -125,7 +419,7 @@ export class ExpeditionService {
       where: whereClause,
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true },
+          select: { id: true, name: true },
         },
         members: {
           include: {
@@ -239,7 +533,7 @@ export class ExpeditionService {
       // Check expedition exists and is in PLANNING status
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, foodStock: true },
+        select: { id: true, status: true },
       });
 
       if (!expedition) {
@@ -285,92 +579,6 @@ export class ExpeditionService {
         characterId,
         characterName: member.character.name,
         terminated: remainingMembers === 0,
-      });
-    });
-  }
-
-  async transferFood(
-    expeditionId: string,
-    amount: number,
-    direction: "to_town" | "from_town"
-  ): Promise<void> {
-    return await prisma.$transaction(async (tx) => {
-      // Check expedition exists and is in PLANNING status
-      const expedition = await tx.expedition.findUnique({
-        where: { id: expeditionId },
-        select: { id: true, status: true, foodStock: true, townId: true },
-      });
-
-      if (!expedition) {
-        throw new Error("Expedition not found");
-      }
-
-      if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error(
-          "Cannot transfer food for expedition that is not in PLANNING status"
-        );
-      }
-
-      const town = await tx.town.findUnique({
-        where: { id: expedition.townId },
-        select: { id: true, foodStock: true },
-      });
-
-      if (!town) {
-        throw new Error("Town not found");
-      }
-
-      if (amount <= 0) {
-        throw new Error("Transfer amount must be positive");
-      }
-
-      if (direction === "from_town") {
-        // Transfer from town to expedition
-        if (town.foodStock < amount) {
-          throw new Error("Not enough food in town");
-        }
-
-        await Promise.all([
-          tx.expedition.update({
-            where: { id: expeditionId },
-            data: { foodStock: { increment: amount } },
-          }),
-          tx.town.update({
-            where: { id: expedition.townId },
-            data: { foodStock: { decrement: amount } },
-          }),
-        ]);
-      } else {
-        // Transfer from expedition to town
-        if (expedition.foodStock < amount) {
-          throw new Error("Not enough food in expedition");
-        }
-
-        await Promise.all([
-          tx.expedition.update({
-            where: { id: expeditionId },
-            data: { foodStock: { decrement: amount } },
-          }),
-          tx.town.update({
-            where: { id: expedition.townId },
-            data: { foodStock: { increment: amount } },
-          }),
-        ]);
-      }
-
-      logger.info("expedition_event", {
-        event: "food_transferred",
-        expeditionId,
-        amount,
-        direction,
-        expeditionFoodStock:
-          direction === "from_town"
-            ? expedition.foodStock + amount
-            : expedition.foodStock - amount,
-        townFoodStock:
-          direction === "from_town"
-            ? town.foodStock - amount
-            : town.foodStock + amount,
       });
     });
   }
@@ -431,7 +639,7 @@ export class ExpeditionService {
       }
 
       const returnAt = new Date();
-      returnAt.setHours(returnAt.getHours() + (expedition.duration * 24)); // Convert days to hours
+      returnAt.setHours(returnAt.getHours() + expedition.duration * 24); // Convert days to hours
 
       const updatedExpedition = await tx.expedition.update({
         where: { id: expeditionId },
@@ -460,7 +668,7 @@ export class ExpeditionService {
           id: true,
           status: true,
           name: true,
-          foodStock: true,
+
           townId: true,
         },
       });
@@ -476,7 +684,7 @@ export class ExpeditionService {
       // Return food to town and clear expedition food stock
       const town = await tx.town.findUnique({
         where: { id: expedition.townId },
-        select: { id: true, foodStock: true },
+        select: { id: true },
       });
 
       if (!town) {
@@ -484,15 +692,12 @@ export class ExpeditionService {
       }
 
       const [, updatedExpedition] = await Promise.all([
-        tx.town.update({
-          where: { id: expedition.townId },
-          data: { foodStock: { increment: expedition.foodStock } },
-        }),
+        // Town food stock is now handled via ResourceStock, so no update needed here
+        Promise.resolve(),
         tx.expedition.update({
           where: { id: expeditionId },
           data: {
             status: ExpeditionStatus.RETURNED,
-            foodStock: 0,
             returnAt: new Date(),
           },
         }),
@@ -502,8 +707,8 @@ export class ExpeditionService {
         event: "returned",
         expeditionId,
         expeditionName: expedition.name,
-        foodReturned: expedition.foodStock,
-        townFoodStock: town.foodStock + expedition.foodStock,
+        foodReturned: 0,
+        townFoodStock: 0,
       });
 
       return updatedExpedition;
@@ -518,11 +723,17 @@ export class ExpeditionService {
         members: {
           some: { characterId },
         },
-        status: { in: [ExpeditionStatus.PLANNING, ExpeditionStatus.LOCKED, ExpeditionStatus.DEPARTED] },
+        status: {
+          in: [
+            ExpeditionStatus.PLANNING,
+            ExpeditionStatus.LOCKED,
+            ExpeditionStatus.DEPARTED,
+          ],
+        },
       },
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true },
+          select: { id: true, name: true },
         },
         members: {
           include: {
@@ -555,7 +766,7 @@ export class ExpeditionService {
       where: whereClause,
       include: {
         town: {
-          select: { id: true, name: true, foodStock: true },
+          select: { id: true, name: true },
         },
         members: {
           include: {
@@ -577,7 +788,10 @@ export class ExpeditionService {
     });
   }
 
-  async addMemberToExpedition(expeditionId: string, characterId: string): Promise<ExpeditionMember> {
+  async addMemberToExpedition(
+    expeditionId: string,
+    characterId: string
+  ): Promise<ExpeditionMember> {
     return await prisma.$transaction(async (tx) => {
       // Check if expedition exists and is in planning status
       const expedition = await tx.expedition.findUnique({
@@ -590,7 +804,9 @@ export class ExpeditionService {
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error("Can only add members to expeditions in PLANNING status");
+        throw new Error(
+          "Can only add members to expeditions in PLANNING status"
+        );
       }
 
       // Check if character exists
@@ -642,20 +858,50 @@ export class ExpeditionService {
   ): Promise<void> {
     const expedition = await tx.expedition.findUnique({
       where: { id: expeditionId },
-      select: { id: true, name: true, foodStock: true, townId: true },
+      select: { id: true, name: true, townId: true },
     });
 
     if (!expedition) {
       return; // Already terminated or doesn't exist
     }
 
-    // Return food to town
-    if (expedition.foodStock > 0) {
-      await tx.town.update({
-        where: { id: expedition.townId },
-        data: { foodStock: { increment: expedition.foodStock } },
+    // Return all resources to town
+    const expeditionResources = await tx.resourceStock.findMany({
+      where: {
+        locationType: "EXPEDITION",
+        locationId: expeditionId,
+      },
+    });
+
+    for (const resource of expeditionResources) {
+      // Add to town
+      await tx.resourceStock.upsert({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType: "CITY",
+            locationId: expedition.townId,
+            resourceTypeId: resource.resourceTypeId,
+          },
+        },
+        update: {
+          quantity: { increment: resource.quantity },
+        },
+        create: {
+          locationType: "CITY",
+          locationId: expedition.townId,
+          resourceTypeId: resource.resourceTypeId,
+          quantity: resource.quantity,
+        },
       });
     }
+
+    // Remove all expedition resources
+    await tx.resourceStock.deleteMany({
+      where: {
+        locationType: "EXPEDITION",
+        locationId: expeditionId,
+      },
+    });
 
     // Mark as returned and clear members
     await Promise.all([
@@ -663,7 +909,6 @@ export class ExpeditionService {
         where: { id: expeditionId },
         data: {
           status: ExpeditionStatus.RETURNED,
-          foodStock: 0,
           returnAt: new Date(),
         },
       }),
@@ -676,11 +921,14 @@ export class ExpeditionService {
       event: "terminated",
       expeditionId,
       expeditionName: expedition.name,
-      foodReturned: expedition.foodStock,
+      resourcesReturned: expeditionResources.length,
     });
   }
 
-  async removeMemberFromExpedition(expeditionId: string, characterId: string): Promise<void> {
+  async removeMemberFromExpedition(
+    expeditionId: string,
+    characterId: string
+  ): Promise<void> {
     return await prisma.$transaction(async (tx) => {
       // Check if expedition exists
       const expedition = await tx.expedition.findUnique({
