@@ -12,4 +12,7 @@ export interface EatResult {
     foodStock: number;
   };
   foodConsumed: number;
+  // Nouveaux champs pour gérer la consommation depuis ville ou expédition
+  stockSource?: "CITY" | "EXPEDITION";
+  expeditionName?: string;
 }

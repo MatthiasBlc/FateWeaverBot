@@ -38,7 +38,10 @@ export async function handleViewFoodStockCommand(interaction: any) {
     let characterHungerStatus = "";
 
     try {
-      character = await getActiveCharacterForUser(interaction.user.id, interaction.guildId!);
+      character = await getActiveCharacterForUser(
+        interaction.user.id,
+        interaction.guildId!
+      );
 
       // Déterminer si le bouton doit être affiché et le statut de faim
       if (character) {
@@ -113,7 +116,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
       // Inclure l'ID du personnage dans l'ID personnalisé du bouton
       const eatButton = new ButtonBuilder()
         .setCustomId(`eat_food:${character.id}`)
-        .setLabel("🍽️ Manger")
+        .setLabel("Manger 🍞(1)")
         .setStyle(ButtonStyle.Primary);
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

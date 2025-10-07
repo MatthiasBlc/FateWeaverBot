@@ -584,22 +584,22 @@ export async function handleStockAdminAddModal(
 
     // Vérifier si la ressource existe déjà dans la ville
     if (selectedResource) {
-      // Ressource existe : mettre à jour la quantité existante (retrait)
+      // Ressource existe : mettre à jour la quantité existante (ajout)
       await apiService.updateResource(
         "CITY",
         town.id,
         resourceTypeId,
-        selectedResource.quantity - amount
+        selectedResource.quantity + amount
       );
 
-      // Créer l'embed de confirmation pour retrait de ressource existante
+      // Créer l'embed de confirmation pour ajout de ressource existante
       const embed = new EmbedBuilder()
-        .setColor(0xffa500)
+        .setColor(0x00ff00)
         .setTitle(
-          `➖ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`
+          `➕ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Ajoutés`
         )
         .setDescription(
-          `**${amount}** unités de ${selectedResourceType.name} ont été retirées de la ville **${town.name}**.`
+          `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
         )
         .addFields(
           {
@@ -607,10 +607,10 @@ export async function handleStockAdminAddModal(
             value: `${selectedResource.quantity}`,
             inline: true,
           },
-          { name: "Montant retiré", value: `-${amount}`, inline: true },
+          { name: "Montant ajouté", value: `+${amount}`, inline: true },
           {
             name: "Nouveau stock",
-            value: `${selectedResource.quantity - amount}`,
+            value: `${selectedResource.quantity + amount}`,
             inline: true,
           }
         )
@@ -620,7 +620,7 @@ export async function handleStockAdminAddModal(
         embeds: [embed],
       });
 
-      logger.info("Resource removed successfully via stock admin (existing)", {
+      logger.info("Resource added successfully via stock admin (existing)", {
         guildId: interaction.guildId,
         townId: town.id,
         townName: town.name,
@@ -628,25 +628,66 @@ export async function handleStockAdminAddModal(
         resourceTypeName: selectedResourceType.name,
         amount,
         previousStock: selectedResource.quantity,
-        newStock: selectedResource.quantity - amount,
+        newStock: selectedResource.quantity + amount,
         userId: interaction.user.id,
       });
     } else {
-      // Ressource n'existe pas : erreur car on ne peut pas retirer une ressource qui n'existe pas
+      // Ressource n'existe pas : la créer avec la nouvelle quantité
+      await apiService.updateResource(
+        "CITY",
+        town.id,
+        resourceTypeId,
+        amount
+      );
+
+      // Créer l'embed de confirmation pour création de nouvelle ressource
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle(
+          `➕ ${selectedResourceType.emoji} ${selectedResourceType.name} Ajoutés`
+        )
+        .setDescription(
+          `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
+        )
+        .addFields(
+          {
+            name: "Ancien stock",
+            value: "0",
+            inline: true,
+          },
+          { name: "Montant ajouté", value: `+${amount}`, inline: true },
+          {
+            name: "Nouveau stock",
+            value: `${amount}`,
+            inline: true,
+          }
+        )
+        .setTimestamp();
+
       await interaction.editReply({
-        content: "❌ Impossible de retirer une ressource qui n'existe pas dans la ville.",
+        embeds: [embed],
       });
-      return;
+
+      logger.info("Resource added successfully via stock admin (new)", {
+        guildId: interaction.guildId,
+        townId: town.id,
+        townName: town.name,
+        resourceTypeId,
+        resourceTypeName: selectedResourceType.name,
+        amount,
+        newStock: amount,
+        userId: interaction.user.id,
+      });
     }
   } catch (error) {
-    logger.error("Error in stock admin remove modal:", {
+    logger.error("Error in stock admin add modal:", {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,
       guildId: interaction.guildId,
       userId: interaction.user.id,
     });
     await interaction.editReply({
-      content: `❌ Erreur lors du retrait de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      content: `❌ Erreur lors de l'ajout de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
     });
   }
 }
@@ -717,8 +758,16 @@ export async function handleStockAdminRemoveModal(
       return;
     }
 
-    // Vérifier si la ressource existe déjà dans la ville
+    // Vérifier si la ressource existe déjà dans la ville et si on a assez de stock
     if (selectedResource) {
+      // Vérifier que la quantité demandée ne dépasse pas le stock disponible
+      if (amount > selectedResource.quantity) {
+        await interaction.editReply({
+          content: `❌ Quantité insuffisante. Stock disponible: **${selectedResource.quantity}** unités de ${selectedResourceType.name}.`,
+        });
+        return;
+      }
+
       // Ressource existe : mettre à jour la quantité existante (retrait)
       await apiService.updateResource(
         "CITY",

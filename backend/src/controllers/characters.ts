@@ -239,9 +239,18 @@ export const deleteCharacter: RequestHandler = async (req, res, next) => {
 export const eatFood: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Récupérer le personnage avec ses informations d'expédition
     const character = await prisma.character.findUnique({
       where: { id },
-      include: { town: true },
+      include: {
+        town: true,
+        expeditionMembers: {
+          include: {
+            expedition: true
+          }
+        }
+      },
     });
 
     if (!character) throw createHttpError(404, "Personnage non trouvé");
@@ -251,7 +260,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
 
-    // Récupérer le stock de vivres de la ville
+    // Récupérer le type de ressource "Vivres"
     const vivresType = await prisma.resourceType.findFirst({
       where: { name: "Vivres" }
     });
@@ -260,20 +269,43 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       throw createHttpError(500, "Type de ressource 'Vivres' non trouvé");
     }
 
-    const townStock = await prisma.resourceStock.findUnique({
+    // Déterminer la source des vivres selon la logique demandée
+    let locationType: "CITY" | "EXPEDITION";
+    let locationId: string;
+    let stockName: string;
+
+    // Vérifier si le personnage est en expédition
+    const activeExpedition = character.expeditionMembers.find(
+      em => em.expedition.status === "DEPARTED"
+    );
+
+    if (activeExpedition) {
+      // Personnage en expédition DEPARTED → consommer de l'expédition
+      locationType = "EXPEDITION";
+      locationId = activeExpedition.expeditionId;
+      stockName = `expédition "${activeExpedition.expedition.name}"`;
+    } else {
+      // Personnage en ville ou expédition LOCKED → consommer de la ville
+      locationType = "CITY";
+      locationId = character.townId;
+      stockName = `ville "${character.town.name}"`;
+    }
+
+    // Récupérer le stock approprié
+    const foodStock = await prisma.resourceStock.findUnique({
       where: {
         locationType_locationId_resourceTypeId: {
-          locationType: "CITY",
-          locationId: character.townId,
+          locationType,
+          locationId,
           resourceTypeId: vivresType.id
         }
       }
     });
 
-    if (!townStock || townStock.quantity < foodToConsume) {
+    if (!foodStock || foodStock.quantity < foodToConsume) {
       throw createHttpError(
         400,
-        `La ville n'a que ${townStock?.quantity || 0} vivres`
+        `${stockName} n'a que ${foodStock?.quantity || 0} vivres`
       );
     }
 
@@ -286,12 +318,12 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         include: { user: true },
       });
 
-      // Retirer les vivres du stock de la ville
+      // Retirer les vivres du stock approprié (ville ou expédition)
       await tx.resourceStock.update({
         where: {
           locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
+            locationType,
+            locationId,
             resourceTypeId: vivresType.id
           }
         },
@@ -301,11 +333,11 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       });
 
       // Récupérer le stock mis à jour pour la réponse
-      const updatedTownStock = await tx.resourceStock.findUnique({
+      const updatedStock = await tx.resourceStock.findUnique({
         where: {
           locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
+            locationType,
+            locationId,
             resourceTypeId: vivresType.id
           }
         }
@@ -313,7 +345,8 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
       return {
         character: updatedCharacter,
-        townStock: updatedTownStock?.quantity || 0
+        stockQuantity: updatedStock?.quantity || 0,
+        stockName
       };
     });
 
@@ -326,7 +359,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       },
       town: {
         name: character.town.name,
-        foodStock: result.townStock,
+        foodStock: result.stockQuantity,
       },
       foodConsumed: foodToConsume,
     });

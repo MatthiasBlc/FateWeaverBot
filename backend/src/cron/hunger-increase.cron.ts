@@ -15,7 +15,9 @@ async function increaseAllCharactersHunger() {
       },
     });
 
-    console.log(`${characters.length} personnages éligibles à l'augmentation de faim`);
+    console.log(
+      `${characters.length} personnages éligibles à l'augmentation de faim`
+    );
 
     let updatedCount = 0;
     const deaths = [];
@@ -43,7 +45,9 @@ async function increaseAllCharactersHunger() {
       }
     }
 
-    console.log(`Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`);
+    console.log(
+      `Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`
+    );
 
     if (deaths.length > 0) {
       console.log(`💀 ${deaths.length} personnages sont morts de faim:`);
@@ -52,13 +56,23 @@ async function increaseAllCharactersHunger() {
       });
     }
   } catch (error) {
-    console.error("Erreur lors de l'augmentation automatique de la faim:", error);
+    console.error(
+      "Erreur lors de l'augmentation automatique de la faim:",
+      error
+    );
   }
 }
 
 export function setupHungerIncreaseJob() {
-  const job = new CronJob("0 0 */2 * *", increaseAllCharactersHunger, null, true, "Europe/Paris");
-  console.log("Job CRON pour l'augmentation de la faim configuré");
+  // Décrément quotidien à minuit (comme les PA)
+  const job = new CronJob(
+    "0 0 0 * * *",
+    increaseAllCharactersHunger,
+    null,
+    true,
+    "Europe/Paris"
+  );
+  console.log("Job CRON pour l'augmentation de la faim configuré (quotidien à minuit)");
   return job;
 }
 

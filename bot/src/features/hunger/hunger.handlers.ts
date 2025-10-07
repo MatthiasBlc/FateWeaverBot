@@ -20,6 +20,11 @@ function createEatEmbed(
   const hungerLevelText = getHungerLevelText(eatResult.character.hungerLevel);
   const hungerEmoji = getHungerEmoji(eatResult.character.hungerLevel);
 
+  // Déterminer le nom du lieu selon la source du stock
+  const stockSourceName = eatResult.stockSource === "EXPEDITION"
+    ? `expédition "${eatResult.expeditionName}"`
+    : "ville";
+
   return new EmbedBuilder()
     .setColor(getHungerColor(eatResult.character.hungerLevel))
     .setTitle("🍽️ Repas")
@@ -37,7 +42,7 @@ function createEatEmbed(
       },
       {
         name: "Stock restant",
-        value: `${eatResult.town.foodStock}`,
+        value: `${eatResult.town.foodStock} (dans ${stockSourceName})`,
         inline: true,
       }
     )
@@ -68,13 +73,17 @@ export async function handleEatCommand(interaction: any, character: any) {
     // Envoyer la réponse à l'utilisateur
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 
-    // Envoyer le message de log
+    // Envoyer le message de log avec la bonne source de stock
+    const stockSource = eatResult.stockSource === "EXPEDITION"
+      ? `expédition "${eatResult.expeditionName}"`
+      : "ville";
+
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
       `🍽️ **${character.name || user.username}** a pris un repas, il reste **${
         eatResult.town.foodStock
-      }** de vivres dans la ville`
+      }** de vivres dans ${stockSource}`
     );
   } catch (error: any) {
     logger.warn("Commande manger - situation non-error gérée:", {
@@ -114,12 +123,12 @@ export async function handleEatCommand(interaction: any, character: any) {
       error.response?.data?.error?.includes("vivres") ||
       error.message?.includes("vivres")
     ) {
-      errorMessage = "❌ La ville n'a plus de vivres disponibles.";
+      errorMessage = "❌ L'expédition n'a plus de vivres disponibles.";
     } else if (
       error.response?.data?.error?.includes("nécessaires") ||
       error.message?.includes("nécessaires")
     ) {
-      errorMessage = "❌ La ville n'a pas assez de vivres pour votre repas.";
+      errorMessage = "❌ L'expédition n'a pas assez de vivres pour votre repas.";
     }
 
     await interaction.reply({
@@ -164,13 +173,17 @@ export async function handleEatButton(interaction: any, character: any) {
       components: [], // Supprimer les boutons
     });
 
-    // Envoyer le message de log
+    // Envoyer le message de log avec la bonne source de stock
+    const stockSource = eatResult.stockSource === "EXPEDITION"
+      ? `expédition "${eatResult.expeditionName}"`
+      : "ville";
+
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
       `🍽️ **${character.name || user.username}** a pris un repas, il reste **${
         eatResult.town.foodStock
-      }** de vivres dans la ville`
+      }** de vivres dans ${stockSource}`
     );
   } catch (error: any) {
     logger.warn("Bouton manger - situation non-error gérée:", {
@@ -213,12 +226,12 @@ export async function handleEatButton(interaction: any, character: any) {
       error.response?.data?.error?.includes("vivres") ||
       error.message?.includes("vivres")
     ) {
-      errorMessage = "❌ La ville n'a plus de vivres disponibles.";
+      errorMessage = "❌ L'expédition n'a plus de vivres disponibles.";
     } else if (
       error.response?.data?.error?.includes("nécessaires") ||
       error.message?.includes("nécessaires")
     ) {
-      errorMessage = "❌ La ville n'a pas assez de vivres pour votre repas.";
+      errorMessage = "❌ L'expédition n'a pas assez de vivres pour votre repas.";
     }
 
     // Modifier la réponse avec le message d'erreur et supprimer les boutons

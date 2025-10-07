@@ -351,6 +351,17 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     }
   }
 
+  // Ajouter le bouton Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
+  if (data.character.hungerLevel < 4 && data.character.hungerLevel > 0) {
+    const eatButton = new ButtonBuilder()
+      .setCustomId(`eat_food:${data.character.id}`)
+      .setLabel("Manger 🍞 (1)")
+      .setStyle(ButtonStyle.Primary);
+
+    const eatButtonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(eatButton);
+    components.push(eatButtonRow);
+  }
+
   return { embed, components };
 }
 

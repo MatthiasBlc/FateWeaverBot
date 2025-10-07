@@ -28,6 +28,10 @@ Tester les interractions avec plusieurs personnages
 ✅Ajouter la liste des membres dans expédition-admin
 ✅Bouton gérer les membres expédition-admin
 
+QUESTIONS:
+foodstock on conserve ? si oui on conserve les boutons manger ? si non on les delete ?
+/manger on conser ? ou est-ce que /profil garde tout ?
+
 V2: Gestion de faim et PA spécifiques en expédition.
 
 dayli message (weather)
