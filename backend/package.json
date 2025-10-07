@@ -13,7 +13,7 @@
     "start:migrate:prod": "prisma migrate deploy && prisma db seed && node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed": "tsx prisma/seed.ts",
     "migrate:full": "prisma migrate dev && npm run prisma:seed",
     "postinstall": "prisma generate"
   },
@@ -21,7 +21,7 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
