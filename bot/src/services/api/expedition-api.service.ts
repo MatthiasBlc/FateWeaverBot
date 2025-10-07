@@ -1,39 +1,7 @@
 import { AxiosInstance } from 'axios';
 import { logger } from '../logger';
-
-export interface ExpeditionMember {
-  id: string;
-  character: {
-    id: string;
-    name: string;
-    user: {
-      id: string;
-      discordId: string;
-      username: string;
-    };
-  };
-}
-
-export interface Expedition {
-  id: string;
-  name: string;
-  foodStock: number;
-  duration: number;
-  townId: string;
-  createdBy: string;
-  status: 'PLANNING' | 'LOCKED' | 'DEPARTED' | 'RETURNED';
-  startedAt?: string | null;
-  endsAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  town?: {
-    id: string;
-    name: string;
-    foodStock: number;
-  };
-  members?: ExpeditionMember[];
-  participants?: ExpeditionMember[];
-}
+import { Expedition } from '../../types/entities';
+import { CreateExpeditionDto } from '../../types/dto';
 
 export class ExpeditionAPIService {
   private api: AxiosInstance;
@@ -91,13 +59,7 @@ export class ExpeditionAPIService {
     }
   }
 
-  async createExpedition(data: {
-    name: string;
-    townId: string;
-    initialResources: { resourceTypeName: string; quantity: number }[];
-    duration: number;
-    characterId: string;
-  }): Promise<{ data: Expedition }> {
+  async createExpedition(data: CreateExpeditionDto): Promise<{ data: Expedition }> {
     try {
       const response = await this.api.post<Expedition>(this.basePath, data);
 

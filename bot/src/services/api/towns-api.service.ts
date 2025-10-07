@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import { Town } from '../towns.service';
+import { Town } from '../../types/entities';
 
 export class TownsAPIService {
   constructor(private http: AxiosInstance) {}

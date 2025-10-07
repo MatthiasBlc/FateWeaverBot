@@ -11,7 +11,7 @@ import {
 import { logger } from "../../services/logger.js";
 import { apiService } from "../../services/api.js";
 import { sendLogMessage } from "../../utils/channels.js";
-import { Expedition } from "../../types/expedition";
+import { Expedition } from "../../types/entities";
 import {
   getActiveCharacterFromCommand,
   getActiveCharacterFromModal,
@@ -1267,7 +1267,7 @@ export async function handleExpeditionTransferDirectionSelect(
     // Show amount input modal with selected direction
     const maxAmount =
       selectedDirection === "to_town"
-        ? currentExpedition.foodStock
+        ? (currentExpedition.foodStock ?? 0)
         : townResponse.foodStock;
 
     logger.info("Creating transfer modal", {
@@ -1449,9 +1449,10 @@ export async function handleExpeditionTransferModal(
     // Validate transfer based on direction
     if (directionValue === "to_town") {
       // Transferring FROM expedition TO town
-      if (amount > expedition.foodStock) {
+      const expeditionFoodStock = expedition.foodStock ?? 0;
+      if (amount > expeditionFoodStock) {
         await interaction.reply({
-          content: `❌ L'expédition n'a que ${expedition.foodStock} nourriture. Vous ne pouvez pas en retirer ${amount}.`,
+          content: `❌ L'expédition n'a que ${expeditionFoodStock} nourriture. Vous ne pouvez pas en retirer ${amount}.`,
           flags: ["Ephemeral"],
         });
         return;

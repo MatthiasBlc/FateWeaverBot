@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, ModalSubmitInteraction } from "discord.js";
 import { apiService } from "@/services/api";
-import { Character } from "@/services/api/character-api.service";
+import { Character } from "@/types/entities";
 import { logger } from "@/services/logger";
 
 /**

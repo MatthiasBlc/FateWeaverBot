@@ -21,11 +21,12 @@ import {
 // Import des services spécialisés
 import { CharacterAPIService } from "./api/character-api.service";
 import { GuildAPIService } from "./api/guild-api.service";
-import { Expedition, CreateExpeditionData } from "../types/expedition";
+import { Expedition } from "../types/entities";
+import { CreateExpeditionDto } from "../types/dto";
 import { ChantierAPIService } from "./api/chantier-api.service";
 import { ExpeditionAPIService } from "./api/expedition-api.service";
 import { TownsAPIService } from "./api/towns-api.service";
-import { Town } from "./towns.service";
+import { Town } from "../types/entities";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -326,7 +327,7 @@ class APIService {
   }
 
   public async createExpedition(
-    expeditionData: CreateExpeditionData
+    expeditionData: CreateExpeditionDto
   ): Promise<{ data: Expedition }> {
     return this.expeditions.createExpedition(expeditionData);
   }

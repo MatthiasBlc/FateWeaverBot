@@ -8,18 +8,12 @@ import {
 } from "discord.js";
 import { createExpeditionModifyModal } from "../../modals/expedition-modals";
 import { ExpeditionAPIService } from "../../services/api/expedition-api.service";
-import { Character } from "../../types/entities";
-import { Expedition } from "../../services/api/expedition-api.service";
+import { Character, Expedition } from "../../types/entities";
 import { apiService } from "../../services/api";
 
 // Type for character with user details from the API
-interface CharacterWithUser extends Character {
-  user: {
-    id: string;
-    username: string;
-  };
-  townId: string;
-}
+// Note: Character already has optional user with full details, so we just use Character
+type CharacterWithUser = Character;
 import { logger } from "../../services/logger";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
@@ -155,7 +149,7 @@ export async function handleExpeditionAdminModify(interaction: any, expeditionId
     }
 
     // Show modification modal with current values
-    const modal = createExpeditionModifyModal(expeditionId, expedition.duration, expedition.foodStock);
+    const modal = createExpeditionModifyModal(expeditionId, expedition.duration, expedition.foodStock ?? 0);
     await interaction.showModal(modal);
 
   } catch (error) {

@@ -7,7 +7,7 @@ import {
 } from "discord.js";
 import { apiService } from "../services/api";
 import { logger } from "../services/logger";
-import { Town, Character } from "../types/api-types";
+import { Town, Character } from "../types/entities";
 
 /**
  * Modal pour créer un nouveau personnage

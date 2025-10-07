@@ -2,48 +2,7 @@ import { AxiosInstance } from "axios";
 import { BaseAPIService } from "./base-api.service";
 import { logger } from "../logger";
 import { EatResult } from "../../features/hunger/hunger.types";
-
-/**
- * Interface pour les données de personnage retournées par l'API
- */
-export interface Character {
-  id: string;
-  name: string;
-  userId: string;
-  townId: string;
-  isActive: boolean;
-  isDead: boolean;
-  canReroll: boolean;
-  hungerLevel: number;
-  paTotal: number;
-  hp: number;
-  pm: number;
-  roles?: Array<{ discordId: string; name: string }>;
-  lastPaUpdate: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    discordId: string;
-    username: string;
-    discriminator: string;
-    globalName: string | null;
-    avatar: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
-
-interface User {
-  id: string;
-  discordId: string;
-  username: string;
-  discriminator: string;
-  globalName: string | null;
-  avatar: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Character } from "../../types/entities";
 
 /**
  * Service API spécialisé pour les personnages

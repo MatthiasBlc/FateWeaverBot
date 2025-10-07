@@ -1,45 +1,9 @@
+import { Character, Town } from '../../types/entities';
+
+// Re-export for backward compatibility
+export type { Character, Town };
+
 // --- Types and Interfaces --- //
-
-export interface Character {
-  id: string;
-  name: string;
-  paTotal: number;
-  hungerLevel: number;
-  hp: number;
-  pm: number;
-  isDead: boolean;
-  canReroll: boolean;
-  isActive: boolean;
-  userId: string;
-  townId: string;
-  user?: {
-    id: string;
-    discordId: string;
-    username: string;
-    discriminator: string;
-    globalName: string;
-    avatar: string;
-  };
-  town?: {
-    id: string;
-    name: string;
-    foodStock: number;
-    guildId: string;
-  };
-}
-
-export interface Town {
-  id: string;
-  name: string;
-  foodStock: number;
-  guildId: string;
-  guild?: {
-    id: string;
-    discordGuildId: string;
-    name: string;
-  };
-  chantiers?: any[];
-}
 
 export interface CharacterAdminState {
   characters: Character[];

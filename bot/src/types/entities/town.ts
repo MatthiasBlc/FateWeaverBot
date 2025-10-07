@@ -1,3 +1,6 @@
+/**
+ * Town entity - Represents an in-game town/city
+ */
 export interface Town {
   id: string;
   name: string;
@@ -6,5 +9,10 @@ export interface Town {
   population: number;
   createdAt: Date | string;
   updatedAt: Date | string;
-  // Add other town properties as needed
+  guild?: {
+    id: string;
+    discordGuildId: string;
+    name: string;
+  };
+  chantiers?: any[];
 }

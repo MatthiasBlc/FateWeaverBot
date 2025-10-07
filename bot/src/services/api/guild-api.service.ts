@@ -1,7 +1,7 @@
 import { AxiosInstance } from "axios";
 import { BaseAPIService } from "./base-api.service";
 import { logger } from "../logger";
-import { Town } from "../towns.service";
+import { Town } from "../../types/entities";
 
 export interface GuildUpdateData {
   logChannelId?: string | null;

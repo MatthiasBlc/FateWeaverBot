@@ -1,15 +1,6 @@
 import { apiService } from './api';
 import { logger } from './logger';
-
-export interface Town {
-  id: string;
-  name: string;
-  guildId: string;
-  foodStock: number;
-  population: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { Town } from '../types/entities';
 
 export async function getTownByGuildId(guildId: string): Promise<Town | null> {
   try {
