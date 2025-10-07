@@ -12,8 +12,6 @@ import { logger } from "../services/logger.js";
  * 5. Tester immédiatement après ajout
  *
  * 📋 MODALS EXISTANTS (NE PAS TOUCHER) :
- * - food_modal : ajout foodstock
- * - remove_food_modal : retrait foodstock
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
@@ -59,56 +57,6 @@ export class ModalHandler {
    * et AVANT la fermeture de la fonction }
    */
   private registerDefaultHandlers() {
-    // Gestionnaire pour les modals d'ajout de foodstock
-    this.registerHandler("food_modal", async (interaction) => {
-      try {
-        const { handleAddFoodModal } = await import(
-          "../features/admin/food-admin.handlers.js"
-        );
-        await handleAddFoodModal(interaction);
-      } catch (error) {
-        logger.error("Error handling food modal:", { error });
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({
-            content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
-            ephemeral: true,
-          });
-        } else if (interaction.deferred) {
-          await interaction.followUp({
-            content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de foodstock.",
-            ephemeral: true,
-          });
-        }
-      }
-    });
-
-    // Gestionnaire pour les modals de retrait de foodstock
-    this.registerHandler("remove_food_modal", async (interaction) => {
-      try {
-        const { handleRemoveFoodModal } = await import(
-          "../features/admin/food-admin.handlers.js"
-        );
-        await handleRemoveFoodModal(interaction);
-      } catch (error) {
-        logger.error("Error handling remove food modal:", { error });
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({
-            content:
-              "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
-            ephemeral: true,
-          });
-        } else if (interaction.deferred) {
-          await interaction.followUp({
-            content:
-              "❌ Erreur lors du traitement du formulaire de retrait de foodstock.",
-            ephemeral: true,
-          });
-        }
-      }
-    });
-
     // Gestionnaire pour les modals de création de personnage
     this.registerHandler("character_creation_modal", async (interaction) => {
       try {
@@ -202,20 +150,25 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de transfert d'expédition (nouveau format avec direction)
-    this.registerHandler("expedition_transfer_amount_modal_", async (interaction) => {
-      try {
-        const { handleExpeditionTransferModal } = await import(
-          "../features/expeditions/expedition.handlers.js"
-        );
-        await handleExpeditionTransferModal(interaction);
-      } catch (error) {
-        logger.error("Error handling expedition transfer amount modal:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors du transfert de nourriture.",
-          flags: ["Ephemeral"],
-        });
+    this.registerHandler(
+      "expedition_transfer_amount_modal_",
+      async (interaction) => {
+        try {
+          const { handleExpeditionTransferModal } = await import(
+            "../features/expeditions/expedition.handlers.js"
+          );
+          await handleExpeditionTransferModal(interaction);
+        } catch (error) {
+          logger.error("Error handling expedition transfer amount modal:", {
+            error,
+          });
+          await interaction.reply({
+            content: "❌ Erreur lors du transfert de nourriture.",
+            flags: ["Ephemeral"],
+          });
+        }
       }
-    });
+    );
 
     // Gestionnaire pour les modals d'investissement dans les chantiers
     this.registerHandler("invest_modal", async (interaction) => {
@@ -253,12 +206,14 @@ export class ModalHandler {
         logger.error("Error handling stock admin add modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+            content:
+              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+            content:
+              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
           });
         }
       }
@@ -275,12 +230,14 @@ export class ModalHandler {
         logger.error("Error handling stock admin remove modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+            content:
+              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+            content:
+              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
           });
         }
       }
@@ -353,8 +310,6 @@ export const modalHandler = ModalHandler.getInstance();
  * - Ne pas ajouter en dehors de la zone sécurisée
  *
  * 🔍 MODALS ACTUELLEMENT SUPPORTÉS :
- * - food_modal : ajout foodstock
- * - remove_food_modal : retrait foodstock
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
