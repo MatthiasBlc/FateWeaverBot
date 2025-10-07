@@ -18,6 +18,7 @@ import {
   getActionPointsEmoji,
 } from "./users.utils";
 import { getCharacterCapabilities } from "../../services/capability.service";
+import { formatErrorForLog } from "../../utils/errors";
 import { httpClient } from "../../services/httpClient";
 
 export async function handleProfileCommand(interaction: any) {
@@ -66,9 +67,6 @@ export async function handleProfileCommand(interaction: any) {
       // Cas spécial : personnage mort qui ne peut pas reroll mais existe dans characterStatus.character
       if (characterStatus.character && characterStatus.character.isDead && !characterStatus.character.canReroll) {
         const character = characterStatus.character;
-        console.log(
-          `[BOT /profil] Personnage mort détecté SANS permission de reroll: ${character.id}`
-        );
 
         // Calculer le temps restant avant la prochaine mise à jour
         const timeUntilUpdate = calculateTimeUntilNextUpdate();
@@ -122,10 +120,6 @@ export async function handleProfileCommand(interaction: any) {
 
         // Vérifier si le personnage actif est mort et peut reroll
         if (characterStatus.canReroll && character) {
-          console.log(
-            `[BOT /profil] Personnage mort détecté avec permission de reroll: ${character.id}`
-          );
-
           logger.info(
             "Personnage mort actif détecté, ouverture directe de la modale de reroll",
             {
@@ -510,7 +504,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
   if (customId.startsWith('use_capability:')) {
     const [, capabilityId, characterId, userId] = customId.split(':');
 
-    console.log('DEBUG: Bouton capacité cliqué:', {
+    logger.debug('Capability button clicked', {
       customId,
       capabilityId,
       characterId,
@@ -521,7 +515,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
     try {
       // Vérifier que l'utilisateur qui clique est bien le propriétaire du profil
       if (interaction.user.id !== userId) {
-        console.log('DEBUG: Échec vérification propriétaire:', {
+        logger.debug('Owner verification failed', {
           expected: userId,
           actual: interaction.user.id
         });
@@ -554,7 +548,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Vérifier que le personnage appartient à l'utilisateur
       if (!character.user || character.user.discordId !== userId) {
-        console.log('DEBUG: Échec vérification propriétaire personnage:', {
+        logger.debug('Character owner verification failed', {
           characterUserId: character.userId,
           characterDiscordId: character.user?.discordId,
           expectedUserId: userId,
@@ -600,7 +594,12 @@ export async function handleProfileButtonInteraction(interaction: any) {
       });
 
     } catch (error: any) {
-      console.error("Erreur lors de l'utilisation de capacité via bouton:", error);
+      logger.error("Error using capability via button:", {
+        error: formatErrorForLog(error),
+        capabilityId,
+        characterId,
+        userId: interaction.user.id,
+      });
 
       // Extraire le message d'erreur détaillé du backend pour les erreurs HTTP
       let errorMessage = 'Une erreur est survenue';

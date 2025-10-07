@@ -427,7 +427,7 @@ export async function handleExpeditionCreationModal(
     }
 
     // Create expedition
-    console.log("DEBUG: Envoi de la requête de création d'expédition:", {
+    logger.debug("Creating expedition", {
       name,
       initialResources: [{ resourceTypeName: "Vivres", quantity: foodAmount }],
       duration: durationDays,
@@ -445,10 +445,10 @@ export async function handleExpeditionCreationModal(
       createdBy: interaction.user.id, // Discord user ID
     });
 
-    console.log(
-      "DEBUG: Réponse de création d'expédition reçue:",
-      newExpedition
-    );
+    logger.debug("Expedition created successfully", {
+      expeditionId: newExpedition.data?.id,
+      expeditionName: newExpedition.data?.name,
+    });
 
     // Join the creator to the expedition
     let joinSuccess = false;

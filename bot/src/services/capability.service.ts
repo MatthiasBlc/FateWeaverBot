@@ -1,4 +1,6 @@
 import { httpClient } from './httpClient';
+import { logger } from './logger';
+import { formatErrorForLog } from '../utils/errors';
 
 export interface Capability {
   id: string;
@@ -26,7 +28,10 @@ export async function getCharacterCapabilities(characterId: string): Promise<Cap
       cooldown: item.capability?.cooldown || item.cooldown || 0,
     }));
   } catch (error) {
-    console.error('Error fetching character capabilities:', error);
+    logger.error('Error fetching character capabilities:', {
+      characterId,
+      error: formatErrorForLog(error),
+    });
     return [];
   }
 }
