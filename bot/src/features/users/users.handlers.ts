@@ -351,15 +351,28 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     }
   }
 
-  // Ajouter le bouton Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
+  // Ajouter les boutons Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
   if (data.character.hungerLevel < 4 && data.character.hungerLevel > 0) {
-    const eatButton = new ButtonBuilder()
+    // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
+    const buttons = [];
+
+    // Bouton pour les vivres (toujours affiché si personnage peut manger)
+    const vivresButton = new ButtonBuilder()
       .setCustomId(`eat_food:${data.character.id}`)
       .setLabel("Manger 🍞 (1)")
       .setStyle(ButtonStyle.Primary);
+    buttons.push(vivresButton);
 
-    const eatButtonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(eatButton);
-    components.push(eatButtonRow);
+    // Bouton pour la nourriture (toujours affiché si personnage peut manger)
+    const nourritureButton = new ButtonBuilder()
+      .setCustomId(`eat_nourriture:${data.character.id}`)
+      .setLabel("Manger 🍽️ (1)")
+      .setStyle(ButtonStyle.Secondary);
+    buttons.push(nourritureButton);
+
+    // Ajouter les boutons à la ligne
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
+    components.push(buttonRow);
   }
 
   return { embed, components };

@@ -77,7 +77,7 @@ export class ButtonHandler {
       }
     });
 
-    // Gestionnaire pour les boutons de nourriture
+    // Gestionnaire pour les boutons de nourriture (vivres)
     this.registerHandlerByPrefix("eat_food", async (interaction) => {
       await interaction.deferUpdate();
 
@@ -107,7 +107,46 @@ export class ButtonHandler {
 
         await handleEatButton(interaction, character);
       } catch (error) {
-        logger.error("Error handling eat button:", { error });
+        logger.error("Error handling eat food button:", { error });
+        await interaction.editReply({
+          content: "❌ Une erreur est survenue lors de l'action de manger.",
+          embeds: [],
+          components: [],
+        });
+      }
+    });
+
+    // Gestionnaire pour les boutons de nourriture alternative
+    this.registerHandlerByPrefix("eat_nourriture", async (interaction) => {
+      await interaction.deferUpdate();
+
+      try {
+        const { handleEatAlternativeButton } = await import(
+          "../features/hunger/hunger.handlers.js"
+        );
+
+        // Extraire l'ID du personnage de l'ID personnalisé du bouton
+        const characterId = interaction.customId.split(":")[1];
+
+        if (!characterId) {
+          throw new Error("ID du personnage manquant dans l'ID du bouton");
+        }
+
+        // Récupérer le personnage par son ID
+        const character = await apiService.getCharacterById(characterId);
+
+        if (!character) {
+          await interaction.editReply({
+            content: "❌ Personnage introuvable.",
+            embeds: [],
+            components: [],
+          });
+          return;
+        }
+
+        await handleEatAlternativeButton(interaction, character);
+      } catch (error) {
+        logger.error("Error handling eat nourriture button:", { error });
         await interaction.editReply({
           content: "❌ Une erreur est survenue lors de l'action de manger.",
           embeds: [],

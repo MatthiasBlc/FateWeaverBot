@@ -15,4 +15,5 @@ export interface EatResult {
   // Nouveaux champs pour gérer la consommation depuis ville ou expédition
   stockSource?: "CITY" | "EXPEDITION";
   expeditionName?: string;
+  resourceTypeConsumed?: string;
 }

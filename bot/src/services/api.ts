@@ -222,6 +222,13 @@ class APIService {
   }
 
   /**
+   * Permet à un personnage de manger un type de nourriture alternatif
+   */
+  public async eatFoodAlternative(characterId: string, resourceTypeName: string) {
+    return this.characters.eatFoodAlternative(characterId, resourceTypeName);
+  }
+
+  /**
    * Récupère tous les personnages d'une guilde
    */
   public async getGuildCharacters(guildId: string) {

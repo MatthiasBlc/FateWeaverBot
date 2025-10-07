@@ -247,9 +247,9 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         town: true,
         expeditionMembers: {
           include: {
-            expedition: true
-          }
-        }
+            expedition: true,
+          },
+        },
       },
     });
 
@@ -262,7 +262,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Récupérer le type de ressource "Vivres"
     const vivresType = await prisma.resourceType.findFirst({
-      where: { name: "Vivres" }
+      where: { name: "Vivres" },
     });
 
     if (!vivresType) {
@@ -276,7 +276,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Vérifier si le personnage est en expédition
     const activeExpedition = character.expeditionMembers.find(
-      em => em.expedition.status === "DEPARTED"
+      (em) => em.expedition.status === "DEPARTED"
     );
 
     if (activeExpedition) {
@@ -297,9 +297,9 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         locationType_locationId_resourceTypeId: {
           locationType,
           locationId,
-          resourceTypeId: vivresType.id
-        }
-      }
+          resourceTypeId: vivresType.id,
+        },
+      },
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
@@ -324,12 +324,12 @@ export const eatFood: RequestHandler = async (req, res, next) => {
           locationType_locationId_resourceTypeId: {
             locationType,
             locationId,
-            resourceTypeId: vivresType.id
-          }
+            resourceTypeId: vivresType.id,
+          },
         },
         data: {
-          quantity: { decrement: foodToConsume }
-        }
+          quantity: { decrement: foodToConsume },
+        },
       });
 
       // Récupérer le stock mis à jour pour la réponse
@@ -338,15 +338,15 @@ export const eatFood: RequestHandler = async (req, res, next) => {
           locationType_locationId_resourceTypeId: {
             locationType,
             locationId,
-            resourceTypeId: vivresType.id
-          }
-        }
+            resourceTypeId: vivresType.id,
+          },
+        },
       });
 
       return {
         character: updatedCharacter,
         stockQuantity: updatedStock?.quantity || 0,
-        stockName
+        stockName,
       };
     });
 
@@ -373,6 +373,148 @@ export const getTownCharacters: RequestHandler = async (req, res, next) => {
     const { townId } = req.params;
     const characters = await characterService.getTownCharacters(townId);
     res.status(200).json(characters);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { resourceTypeName } = req.body; // Nom du type de ressource à consommer
+
+    if (!resourceTypeName) {
+      throw createHttpError(400, "resourceTypeName est requis");
+    }
+
+    // Récupérer le personnage avec ses informations d'expédition
+    const character = await prisma.character.findUnique({
+      where: { id },
+      include: {
+        town: true,
+        expeditionMembers: {
+          include: {
+            expedition: true,
+          },
+        },
+      },
+    });
+
+    if (!character) throw createHttpError(404, "Personnage non trouvé");
+    if (character.isDead) throw createHttpError(400, "Ce personnage est mort");
+    if (character.hungerLevel >= 4)
+      throw createHttpError(400, "Tu n'as pas faim");
+
+    const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
+
+    // Récupérer le type de ressource demandé
+    const resourceType = await prisma.resourceType.findFirst({
+      where: { name: resourceTypeName },
+    });
+
+    if (!resourceType) {
+      throw createHttpError(
+        404,
+        `Type de ressource '${resourceTypeName}' non trouvé`
+      );
+    }
+
+    // Déterminer la source des ressources selon la logique demandée
+    let locationType: "CITY" | "EXPEDITION";
+    let locationId: string;
+    let stockName: string;
+
+    // Vérifier si le personnage est en expédition DEPARTED
+    const activeExpedition = character.expeditionMembers.find(
+      (em) => em.expedition.status === "DEPARTED"
+    );
+
+    if (activeExpedition) {
+      // Personnage en expédition DEPARTED → consommer de l'expédition
+      locationType = "EXPEDITION";
+      locationId = activeExpedition.expeditionId;
+      stockName = `expédition "${activeExpedition.expedition.name}"`;
+    } else {
+      // Personnage en ville ou expédition LOCKED → consommer de la ville
+      locationType = "CITY";
+      locationId = character.townId;
+      stockName = `ville "${character.town.name}"`;
+    }
+
+    // Récupérer le stock approprié
+    const foodStock = await prisma.resourceStock.findUnique({
+      where: {
+        locationType_locationId_resourceTypeId: {
+          locationType,
+          locationId,
+          resourceTypeId: resourceType.id,
+        },
+      },
+    });
+
+    if (!foodStock || foodStock.quantity < foodToConsume) {
+      throw createHttpError(
+        400,
+        `${stockName} n'a que ${foodStock?.quantity || 0} ${resourceType.name}`
+      );
+    }
+
+    const newHungerLevel = Math.min(4, character.hungerLevel + 1);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedCharacter = await tx.character.update({
+        where: { id },
+        data: { hungerLevel: newHungerLevel },
+        include: { user: true },
+      });
+
+      // Retirer les ressources du stock approprié (ville ou expédition)
+      await tx.resourceStock.update({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType,
+            locationId,
+            resourceTypeId: resourceType.id,
+          },
+        },
+        data: {
+          quantity: { decrement: foodToConsume },
+        },
+      });
+
+      // Récupérer le stock mis à jour pour la réponse
+      const updatedStock = await tx.resourceStock.findUnique({
+        where: {
+          locationType_locationId_resourceTypeId: {
+            locationType,
+            locationId,
+            resourceTypeId: resourceType.id,
+          },
+        },
+      });
+
+      return {
+        character: updatedCharacter,
+        stockQuantity: updatedStock?.quantity || 0,
+        stockName,
+        resourceTypeName: resourceType.name,
+      };
+    });
+
+    res.status(200).json({
+      character: {
+        id: result.character.id,
+        name: result.character.name,
+        hungerLevel: result.character.hungerLevel,
+        user: { username: result.character.user.username },
+      },
+      town: {
+        name: character.town.name,
+        foodStock: result.stockQuantity,
+      },
+      foodConsumed: foodToConsume,
+      resourceTypeConsumed: result.resourceTypeName,
+    });
   } catch (error) {
     next(error);
   }
