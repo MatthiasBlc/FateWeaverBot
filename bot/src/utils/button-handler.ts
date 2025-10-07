@@ -159,30 +159,44 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling profile button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de l'interaction du profil.",
+          content: "❌ Erreur lors de l'affichage du retrait de ressources.",
           flags: ["Ephemeral"],
         });
       }
     });
 
-    // Gestionnaire pour les boutons d'administration d'expédition
-    this.registerHandlerByPrefix("expedition_admin_", async (interaction) => {
+    // Gestionnaire pour le bouton d'ajout de stock admin
+    this.registerHandler("stock_admin_add", async (interaction) => {
       try {
-        const { handleExpeditionAdminButton } = await import(
-          "../features/admin/expedition-admin.handlers.js"
+        const { handleStockAdminAddButton } = await import(
+          "../features/admin/stock-admin.handlers.js"
         );
-        await handleExpeditionAdminButton(interaction);
+        await handleStockAdminAddButton(interaction);
       } catch (error) {
-        logger.error("Error handling expedition admin button:", { error });
+        logger.error("Error handling stock admin add button:", { error });
         await interaction.reply({
-          content:
-            "❌ Erreur lors du traitement de l'interaction d'administration d'expédition.",
+          content: "❌ Erreur lors de l'affichage de l'ajout de ressources.",
           flags: ["Ephemeral"],
         });
       }
     });
 
-    // Gestionnaire pour le bouton de changement de saison
+    // Gestionnaire pour le bouton de retrait de stock admin
+    this.registerHandler("stock_admin_remove", async (interaction) => {
+      try {
+        const { handleStockAdminRemoveButton } = await import(
+          "../features/admin/stock-admin.handlers.js"
+        );
+        await handleStockAdminRemoveButton(interaction);
+      } catch (error) {
+        logger.error("Error handling stock admin remove button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du retrait de ressources.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     this.registerHandler("next_season", async (interaction) => {
       logger.info("🎯 Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
 

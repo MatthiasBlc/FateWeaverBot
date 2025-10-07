@@ -9,7 +9,7 @@ import {
 import { createExpeditionModifyModal } from "../../modals/expedition-modals";
 import { ExpeditionAPIService } from "../../services/api/expedition-api.service";
 import { Character } from "../../types/entities";
-import { Expedition } from "../../types/expedition";
+import { Expedition } from "../../services/api/expedition-api.service";
 import { apiService } from "../../services/api";
 
 // Type for character with user details from the API

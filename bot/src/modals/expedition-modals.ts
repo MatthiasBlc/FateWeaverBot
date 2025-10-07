@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 
 /**
- * Modal pour créer une nouvelle expédition
+ * Modal pour créer une nouvelle expédition avec sélection de vivres et nourriture uniquement
  */
 export function createExpeditionCreationModal() {
   const modal = new ModalBuilder()
@@ -22,12 +22,21 @@ export function createExpeditionCreationModal() {
     .setMinLength(1)
     .setMaxLength(100);
 
-  const foodInput = new TextInputBuilder()
-    .setCustomId("expedition_food_input")
-    .setLabel("Stock de nourriture à emporter")
+  const vivresInput = new TextInputBuilder()
+    .setCustomId("expedition_vivres_input")
+    .setLabel("🍞 Vivres à emporter")
     .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setPlaceholder("Quantité de nourriture (ex: 50)")
+    .setRequired(false)
+    .setPlaceholder("Quantité de vivres (ex: 50)")
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const nourritureInput = new TextInputBuilder()
+    .setCustomId("expedition_nourriture_input")
+    .setLabel("🍖 Nourriture à emporter")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false)
+    .setPlaceholder("Quantité de nourriture (ex: 25)")
     .setMinLength(1)
     .setMaxLength(10);
 
@@ -41,10 +50,11 @@ export function createExpeditionCreationModal() {
     .setMaxLength(10);
 
   const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
-  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(foodInput);
-  const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
+  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(vivresInput);
+  const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nourritureInput);
+  const fourthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
 
-  modal.addComponents([firstRow, secondRow, thirdRow]);
+  modal.addComponents([firstRow, secondRow, thirdRow, fourthRow]);
 
   return modal;
 }

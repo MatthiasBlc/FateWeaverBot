@@ -2,6 +2,23 @@ import { logger } from "../services/logger.js";
 
 /**
  * Gestionnaire centralisé des interactions de sélections (StringSelectMenu)
+ *
+ * ⚠️ IMPORTANT - INSTRUCTIONS POUR AJOUTER DE NOUVEAUX HANDLERS :
+ *
+ * 1. AJOUTER DANS registerDefaultHandlers() UNIQUEMENT
+ * 2. NE PAS MODIFIER LES HANDLERS EXISTANTS
+ * 3. AJOUTER APRÈS LE DERNIER HANDLER EXISTANT
+ * 4. RESPECTER LE FORMAT : this.registerHandler("nom_du_handler", ...)
+ * 5. TESTER APRÈS CHAQUE AJOUT
+ *
+ * 📋 HANDLERS EXISTANTS (NE PAS TOUCHER) :
+ * - expedition_join_select
+ * - expedition_transfer_direction
+ * - expedition_admin_select
+ * - expedition_admin_add_member_ (préfixe)
+ * - expedition_admin_remove_member_ (préfixe)
+ * - stock_admin_add_select
+ * - stock_admin_remove_select
  */
 export class SelectMenuHandler {
   private static instance: SelectMenuHandler;
@@ -43,6 +60,10 @@ export class SelectMenuHandler {
 
   /**
    * Enregistre les gestionnaires par défaut
+   *
+   * ⚠️ ZONE D'AJOUT SÉCURISÉE :
+   * Ajouter les nouveaux handlers APRÈS le commentaire "NOUVEAUX HANDLERS"
+   * et AVANT la fermeture de la fonction }
    */
   private registerDefaultHandlers() {
     // Gestionnaire pour les sélections d'administration de personnages
@@ -164,6 +185,75 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour les sélections d'ajout de stock admin
+    this.registerHandler("stock_admin_add_select", async (interaction) => {
+      try {
+        const { handleStockAdminAddSelect } = await import(
+          "../features/admin/stock-admin.handlers.js"
+        );
+        await handleStockAdminAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling stock admin add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection d'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les sélections de retrait de stock admin
+    this.registerHandler("stock_admin_remove_select", async (interaction) => {
+      try {
+        const { handleStockAdminRemoveSelect } = await import(
+          "../features/admin/stock-admin.handlers.js"
+        );
+        await handleStockAdminRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling stock admin remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection de retrait de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== NOUVEAUX HANDLERS ===================
+    // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
+    // Ne pas modifier les handlers existants au-dessus de cette ligne
+    // ========================================================
+
+    // Gestionnaire pour les sélections d'ajout de stock admin
+    this.registerHandler("stock_admin_add_select", async (interaction) => {
+      try {
+        const { handleStockAdminAddSelect } = await import(
+          "../features/admin/stock-admin.handlers.js"
+        );
+        await handleStockAdminAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling stock admin add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection d'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les sélections de retrait de stock admin
+    this.registerHandler("stock_admin_remove_select", async (interaction) => {
+      try {
+        const { handleStockAdminRemoveSelect } = await import(
+          "../features/admin/stock-admin.handlers.js"
+        );
+        await handleStockAdminRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling stock admin remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la sélection de retrait de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**
@@ -210,3 +300,30 @@ export class SelectMenuHandler {
 
 // Export d'une instance singleton
 export const selectMenuHandler = SelectMenuHandler.getInstance();
+
+/**
+ * 📋 RÉCAPITULATIF DES INSTRUCTIONS DE SÉCURITÉ
+ *
+ * ✅ POUR AJOUTER UN NOUVEAU HANDLER :
+ * 1. Aller dans registerDefaultHandlers() ligne 68
+ * 2. Ajouter APRÈS le commentaire "NOUVEAUX HANDLERS" ligne 222
+ * 3. Respecter le format : this.registerHandler("nom", handler)
+ * 4. Tester immédiatement après ajout
+ *
+ * ❌ À NE PAS FAIRE :
+ * - Ne pas modifier les handlers existants
+ * - Ne pas supprimer de handlers
+ * - Ne pas changer l'ordre des handlers
+ * - Ne pas ajouter en dehors de la zone sécurisée
+ *
+ * 🔍 HANDLERS ACTUELLEMENT SUPPORTÉS :
+ * - character_admin_* (préfixe)
+ * - capability_admin_select
+ * - expedition_join_select
+ * - expedition_transfer_direction
+ * - expedition_admin_select
+ * - expedition_admin_add_member_* (préfixe)
+ * - expedition_admin_remove_member_* (préfixe)
+ * - stock_admin_add_select
+ * - stock_admin_remove_select
+ */
