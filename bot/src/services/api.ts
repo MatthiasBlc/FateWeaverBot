@@ -165,6 +165,13 @@ class APIService {
   }
 
   /**
+   * Récupère une ville par son ID
+   */
+  public async getTownById(townId: string): Promise<Town | null> {
+    return this.towns.getTownById(townId);
+  }
+
+  /**
    * Récupère tous les chantiers d'une guilde
    */
   public async getChantiersByServer(guildId: string) {

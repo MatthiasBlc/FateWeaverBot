@@ -20,20 +20,25 @@ import { checkAdmin } from "../../utils/admin";
  * Handler principal pour la commande /stock-admin unifiée
  * Affiche directement les stocks avec boutons d'actions en dessous
  */
-export async function handleStockAdminCommand(interaction: ChatInputCommandInteraction) {
+export async function handleStockAdminCommand(
+  interaction: ChatInputCommandInteraction
+) {
   try {
     // Vérifier que l'utilisateur est admin
     const isUserAdmin = await checkAdmin(interaction);
     if (!isUserAdmin) {
-      logger.warn("Utilisateur non admin tente d'utiliser la commande stock admin", {
-        userId: interaction.user.id,
-        guildId: interaction.guildId,
-      });
+      logger.warn(
+        "Utilisateur non admin tente d'utiliser la commande stock admin",
+        {
+          userId: interaction.user.id,
+          guildId: interaction.guildId,
+        }
+      );
       return;
     }
 
     // Récupérer la ville du serveur
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.reply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -43,7 +48,7 @@ export async function handleStockAdminCommand(interaction: ChatInputCommandInter
     }
 
     // Récupérer les ressources de la ville
-    const resources = await apiService.getResources('CITY', town.id);
+    const resources = await apiService.getResources("CITY", town.id);
 
     // Créer l'embed avec les stocks
     const embed = new EmbedBuilder()
@@ -89,8 +94,10 @@ export async function handleStockAdminCommand(interaction: ChatInputCommandInter
       .setLabel("➖ Retirer")
       .setStyle(ButtonStyle.Danger);
 
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(addButton, removeButton);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      addButton,
+      removeButton
+    );
 
     await interaction.reply({
       embeds: [embed],
@@ -105,7 +112,6 @@ export async function handleStockAdminCommand(interaction: ChatInputCommandInter
       userId: interaction.user.id,
       resourcesCount: resources?.length || 0,
     });
-
   } catch (error) {
     logger.error("Error in stock admin command:", { error });
     await interaction.reply({
@@ -123,7 +129,7 @@ export async function handleStockAdminViewButton(interaction: any) {
     await interaction.deferUpdate();
 
     // Récupérer la ville du serveur
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -134,7 +140,7 @@ export async function handleStockAdminViewButton(interaction: any) {
     }
 
     // Récupérer les ressources de la ville
-    const resources = await apiService.getResources('CITY', town.id);
+    const resources = await apiService.getResources("CITY", town.id);
 
     if (!resources || resources.length === 0) {
       await interaction.editReply({
@@ -181,11 +187,11 @@ export async function handleStockAdminViewButton(interaction: any) {
       townName: town.name,
       userId: interaction.user.id,
     });
-
   } catch (error) {
     logger.error("Error in stock admin view button:", { error });
     await interaction.editReply({
-      content: "❌ Une erreur est survenue lors de la récupération des ressources.",
+      content:
+        "❌ Une erreur est survenue lors de la récupération des ressources.",
       embeds: [],
       components: [],
     });
@@ -200,7 +206,7 @@ export async function handleStockAdminAddButton(interaction: any) {
     await interaction.deferUpdate();
 
     // Récupérer la ville du serveur
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -213,20 +219,25 @@ export async function handleStockAdminAddButton(interaction: any) {
     // Récupérer tous les types de ressources disponibles depuis la nouvelle API dédiée
     let allResourceTypes = [];
     try {
-      allResourceTypes = await apiService.getAllResourceTypes() || [];
-      logger.info(`Found ${allResourceTypes.length} resource types from getAllResourceTypes()`);
+      allResourceTypes = (await apiService.getAllResourceTypes()) || [];
+      logger.info(
+        `Found ${allResourceTypes.length} resource types from getAllResourceTypes()`
+      );
     } catch (error) {
-      logger.error("Could not get resource types from getAllResourceTypes()", { error });
+      logger.error("Could not get resource types from getAllResourceTypes()", {
+        error,
+      });
       // Si l'API dédiée ne fonctionne pas, affiche le message d'erreur
       await interaction.editReply({
-        content: "❌ Service de récupération des types de ressources non disponible. Veuillez contacter un administrateur.",
+        content:
+          "❌ Service de récupération des types de ressources non disponible. Veuillez contacter un administrateur.",
         embeds: [],
         components: [],
       });
       return;
     }
 
-    const townResources = await apiService.getResources('CITY', town.id);
+    const townResources = await apiService.getResources("CITY", town.id);
 
     // Créer le menu de sélection avec TOUS les types de ressources disponibles
     const selectMenu = new StringSelectMenuBuilder()
@@ -235,23 +246,32 @@ export async function handleStockAdminAddButton(interaction: any) {
       .addOptions(
         allResourceTypes.map((resourceType: any) => {
           // Trouver le stock actuel de cette ressource dans la ville (sera 0 si n'existe pas)
-          const currentStock = townResources?.find((townResource: any) => townResource.resourceType.id === resourceType.id);
+          const currentStock = townResources?.find(
+            (townResource: any) =>
+              townResource.resourceType.id === resourceType.id
+          );
           const currentQuantity = currentStock?.quantity || 0;
 
           return {
             label: `${resourceType.emoji} ${resourceType.name}`,
-            description: `Stock actuel: ${currentQuantity} unités${resourceType.description ? ` - ${resourceType.description}` : ''}`,
+            description: `Stock actuel: ${currentQuantity} unités${
+              resourceType.description ? ` - ${resourceType.description}` : ""
+            }`,
             value: resourceType.id.toString(),
           };
         })
       );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
       .setTitle(`➕ Ajouter des Ressources - ${town.name}`)
-      .setDescription("Sélectionnez le type de ressource que vous souhaitez ajouter :")
+      .setDescription(
+        "Sélectionnez le type de ressource que vous souhaitez ajouter :"
+      )
       .setTimestamp();
 
     await interaction.editReply({
@@ -266,11 +286,11 @@ export async function handleStockAdminAddButton(interaction: any) {
       userId: interaction.user.id,
       availableResourceTypes: allResourceTypes.length,
     });
-
   } catch (error) {
     logger.error("Error in stock admin add button:", { error });
     await interaction.editReply({
-      content: "❌ Une erreur est survenue lors de la préparation de l'ajout de ressources.",
+      content:
+        "❌ Une erreur est survenue lors de la préparation de l'ajout de ressources.",
       embeds: [],
       components: [],
     });
@@ -285,7 +305,7 @@ export async function handleStockAdminRemoveButton(interaction: any) {
     await interaction.deferUpdate();
 
     // Récupérer la ville du serveur
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -296,8 +316,9 @@ export async function handleStockAdminRemoveButton(interaction: any) {
     }
 
     // Récupérer les ressources disponibles dans la ville (avec stock > 0)
-    const resources = await apiService.getResources('CITY', town.id);
-    const availableResources = resources?.filter((resource: any) => resource.quantity > 0) || [];
+    const resources = await apiService.getResources("CITY", town.id);
+    const availableResources =
+      resources?.filter((resource: any) => resource.quantity > 0) || [];
 
     if (availableResources.length === 0) {
       await interaction.editReply({
@@ -320,12 +341,16 @@ export async function handleStockAdminRemoveButton(interaction: any) {
         }))
       );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
 
     const embed = new EmbedBuilder()
       .setColor(0xffa500)
       .setTitle(`➖ Retirer des Ressources - ${town.name}`)
-      .setDescription("Sélectionnez le type de ressource que vous souhaitez retirer :")
+      .setDescription(
+        "Sélectionnez le type de ressource que vous souhaitez retirer :"
+      )
       .setTimestamp();
 
     await interaction.editReply({
@@ -340,11 +365,11 @@ export async function handleStockAdminRemoveButton(interaction: any) {
       userId: interaction.user.id,
       availableResources: availableResources.length,
     });
-
   } catch (error) {
     logger.error("Error in stock admin remove button:", { error });
     await interaction.editReply({
-      content: "❌ Une erreur est survenue lors de la préparation du retrait de ressources.",
+      content:
+        "❌ Une erreur est survenue lors de la préparation du retrait de ressources.",
       embeds: [],
       components: [],
     });
@@ -354,10 +379,12 @@ export async function handleStockAdminRemoveButton(interaction: any) {
 /**
  * Handler pour la sélection de ressource lors de l'ajout
  */
-export async function handleStockAdminAddSelect(interaction: StringSelectMenuInteraction) {
+export async function handleStockAdminAddSelect(
+  interaction: StringSelectMenuInteraction
+) {
   try {
     const resourceTypeId = parseInt(interaction.values[0]);
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
 
     if (!town) {
       await interaction.reply({
@@ -367,11 +394,25 @@ export async function handleStockAdminAddSelect(interaction: StringSelectMenuInt
       return;
     }
 
-    // Récupérer les détails du type de ressource
-    const resources = await apiService.getResources('CITY', town.id);
-    const selectedResource = resources?.find((resource: any) => resource.resourceType.id === resourceTypeId);
+    // Récupérer tous les types de ressources pour avoir les détails du type sélectionné
+    let allResourceTypes = [];
+    try {
+      allResourceTypes = (await apiService.getAllResourceTypes()) || [];
+    } catch (error) {
+      logger.error("Could not get resource types for select", { error });
+      await interaction.reply({
+        content:
+          "❌ Service de récupération des types de ressources non disponible.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
-    if (!selectedResource) {
+    const selectedResourceType = allResourceTypes.find(
+      (resourceType: any) => resourceType.id === resourceTypeId
+    );
+
+    if (!selectedResourceType) {
       await interaction.reply({
         content: "❌ Type de ressource non trouvé.",
         flags: ["Ephemeral"],
@@ -382,26 +423,30 @@ export async function handleStockAdminAddSelect(interaction: StringSelectMenuInt
     // Créer le modal pour saisir la quantité
     const modal = new ModalBuilder()
       .setCustomId(`stock_admin_add_modal_${resourceTypeId}`)
-      .setTitle(`Ajouter ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name}`);
+      .setTitle(
+        `Ajouter ${selectedResourceType.emoji} ${selectedResourceType.name}`
+      );
 
     const amountInput = new TextInputBuilder()
       .setCustomId("amount_input")
-      .setLabel(`Quantité de ${selectedResource.resourceType.name} à ajouter`)
+      .setLabel(`Quantité de ${selectedResourceType.name} à ajouter`)
       .setStyle(TextInputStyle.Short)
       .setRequired(true)
       .setPlaceholder("Entrez un nombre (ex: 100)")
       .setMinLength(1)
       .setMaxLength(10);
 
-    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      amountInput
+    );
     modal.addComponents([row]);
 
     await interaction.showModal(modal);
-
   } catch (error) {
     logger.error("Error in stock admin add select:", { error });
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la sélection de la ressource.",
+      content:
+        "❌ Une erreur est survenue lors de la sélection de la ressource.",
       flags: ["Ephemeral"],
     });
   }
@@ -410,10 +455,12 @@ export async function handleStockAdminAddSelect(interaction: StringSelectMenuInt
 /**
  * Handler pour la sélection de ressource lors du retrait
  */
-export async function handleStockAdminRemoveSelect(interaction: StringSelectMenuInteraction) {
+export async function handleStockAdminRemoveSelect(
+  interaction: StringSelectMenuInteraction
+) {
   try {
     const resourceTypeId = parseInt(interaction.values[0]);
-    const town = await getTownByGuildId(interaction.guildId || '');
+    const town = await getTownByGuildId(interaction.guildId || "");
 
     if (!town) {
       await interaction.reply({
@@ -423,13 +470,15 @@ export async function handleStockAdminRemoveSelect(interaction: StringSelectMenu
       return;
     }
 
-    // Récupérer les détails du type de ressource et le stock actuel
-    const resources = await apiService.getResources('CITY', town.id);
-    const selectedResource = resources?.find((resource: any) => resource.resourceType.id === resourceTypeId);
+    // Récupérer les ressources disponibles dans la ville (avec stock > 0)
+    const resources = await apiService.getResources("CITY", town.id);
+    const selectedResource = resources?.find(
+      (resource: any) => resource.resourceType.id === resourceTypeId
+    );
 
     if (!selectedResource) {
       await interaction.reply({
-        content: "❌ Type de ressource non trouvé.",
+        content: "❌ Ressource non trouvée dans la ville.",
         flags: ["Ephemeral"],
       });
       return;
@@ -438,7 +487,9 @@ export async function handleStockAdminRemoveSelect(interaction: StringSelectMenu
     // Créer le modal pour saisir la quantité
     const modal = new ModalBuilder()
       .setCustomId(`stock_admin_remove_modal_${resourceTypeId}`)
-      .setTitle(`Retirer ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name}`);
+      .setTitle(
+        `Retirer ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name}`
+      );
 
     const amountInput = new TextInputBuilder()
       .setCustomId("amount_input")
@@ -449,15 +500,17 @@ export async function handleStockAdminRemoveSelect(interaction: StringSelectMenu
       .setMinLength(1)
       .setMaxLength(10);
 
-    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      amountInput
+    );
     modal.addComponents([row]);
 
     await interaction.showModal(modal);
-
   } catch (error) {
     logger.error("Error in stock admin remove select:", { error });
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la sélection de la ressource.",
+      content:
+        "❌ Une erreur est survenue lors de la sélection de la ressource.",
       flags: ["Ephemeral"],
     });
   }
@@ -466,11 +519,16 @@ export async function handleStockAdminRemoveSelect(interaction: StringSelectMenu
 /**
  * Handler pour la soumission du modal d'ajout de ressource
  */
-export async function handleStockAdminAddModal(interaction: ModalSubmitInteraction) {
+export async function handleStockAdminAddModal(
+  interaction: ModalSubmitInteraction
+) {
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
 
-    const amount = parseInt(interaction.fields.getTextInputValue("amount_input"), 10);
+    const amount = parseInt(
+      interaction.fields.getTextInputValue("amount_input"),
+      10
+    );
 
     if (isNaN(amount) || amount <= 0) {
       await interaction.editReply({
@@ -481,12 +539,149 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
 
     // Extraire l'ID du type de ressource du custom ID du modal
     const modalCustomId = interaction.customId;
-    const resourceTypeId = parseInt(modalCustomId.split('_')[4]);
+    const resourceTypeId = parseInt(modalCustomId.split("_")[4]);
 
-    // Récupérer la ville et les ressources actuelles
-    const town = await getTownByGuildId(interaction.guildId || '');
-    const resources = await apiService.getResources('CITY', town.id);
-    const selectedResource = resources?.find((resource: any) => resource.resourceType.id === resourceTypeId);
+    // Récupérer la ville du serveur
+    const town = await getTownByGuildId(interaction.guildId || "");
+    if (!town) {
+      await interaction.editReply({
+        content: "❌ Informations manquantes pour effectuer l'opération.",
+      });
+      return;
+    }
+
+    const resources = await apiService.getResources("CITY", town.id);
+    const selectedResource = resources?.find(
+      (resource: any) => resource.resourceType.id === resourceTypeId
+    );
+
+    // Récupérer tous les types de ressources pour avoir les détails du type sélectionné
+    let allResourceTypes = [];
+    try {
+      allResourceTypes = (await apiService.getAllResourceTypes()) || [];
+      logger.info(
+        `Found ${allResourceTypes.length} resource types from getAllResourceTypes()`
+      );
+    } catch (error) {
+      logger.error("Could not get resource types for modal", { error });
+      await interaction.editReply({
+        content:
+          "❌ Service de récupération des types de ressources non disponible.",
+      });
+      return;
+    }
+
+    const selectedResourceType = allResourceTypes.find(
+      (resourceType: any) => resourceType.id === resourceTypeId
+    );
+
+    if (!selectedResourceType) {
+      await interaction.editReply({
+        content: "❌ Type de ressource non trouvé.",
+      });
+      return;
+    }
+
+    // Vérifier si la ressource existe déjà dans la ville
+    if (selectedResource) {
+      // Ressource existe : mettre à jour la quantité existante (retrait)
+      await apiService.updateResource(
+        "CITY",
+        town.id,
+        resourceTypeId,
+        selectedResource.quantity - amount
+      );
+
+      // Créer l'embed de confirmation pour retrait de ressource existante
+      const embed = new EmbedBuilder()
+        .setColor(0xffa500)
+        .setTitle(
+          `➖ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`
+        )
+        .setDescription(
+          `**${amount}** unités de ${selectedResourceType.name} ont été retirées de la ville **${town.name}**.`
+        )
+        .addFields(
+          {
+            name: "Ancien stock",
+            value: `${selectedResource.quantity}`,
+            inline: true,
+          },
+          { name: "Montant retiré", value: `-${amount}`, inline: true },
+          {
+            name: "Nouveau stock",
+            value: `${selectedResource.quantity - amount}`,
+            inline: true,
+          }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+
+      logger.info("Resource removed successfully via stock admin (existing)", {
+        guildId: interaction.guildId,
+        townId: town.id,
+        townName: town.name,
+        resourceTypeId,
+        resourceTypeName: selectedResourceType.name,
+        amount,
+        previousStock: selectedResource.quantity,
+        newStock: selectedResource.quantity - amount,
+        userId: interaction.user.id,
+      });
+    } else {
+      // Ressource n'existe pas : erreur car on ne peut pas retirer une ressource qui n'existe pas
+      await interaction.editReply({
+        content: "❌ Impossible de retirer une ressource qui n'existe pas dans la ville.",
+      });
+      return;
+    }
+  } catch (error) {
+    logger.error("Error in stock admin remove modal:", {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      guildId: interaction.guildId,
+      userId: interaction.user.id,
+    });
+    await interaction.editReply({
+      content: `❌ Erreur lors du retrait de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+    });
+  }
+}
+
+/**
+ * Handler pour la soumission du modal de retrait de ressource
+ */
+export async function handleStockAdminRemoveModal(
+  interaction: ModalSubmitInteraction
+) {
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    const amount = parseInt(
+      interaction.fields.getTextInputValue("amount_input"),
+      10
+    );
+
+    if (isNaN(amount) || amount <= 0) {
+      await interaction.editReply({
+        content: "❌ Veuillez entrer un nombre valide (supérieur à 0).",
+      });
+      return;
+    }
+
+    // Extraire l'ID du type de ressource du custom ID du modal
+    const modalCustomId = interaction.customId;
+    const resourceTypeId = parseInt(modalCustomId.split("_")[4]);
+
+    // Récupérer la ville du serveur
+    const town = await getTownByGuildId(interaction.guildId || "");
+    const resources = await apiService.getResources("CITY", town.id);
+    const selectedResource = resources?.find(
+      (resource: any) => resource.resourceType.id === resourceTypeId
+    );
 
     if (!town) {
       await interaction.editReply({
@@ -498,17 +693,22 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
     // Récupérer tous les types de ressources pour avoir les détails du type sélectionné
     let allResourceTypes = [];
     try {
-      allResourceTypes = await apiService.getAllResourceTypes() || [];
-      logger.info(`Found ${allResourceTypes.length} resource types from getAllResourceTypes()`);
+      allResourceTypes = (await apiService.getAllResourceTypes()) || [];
+      logger.info(
+        `Found ${allResourceTypes.length} resource types from getAllResourceTypes()`
+      );
     } catch (error) {
       logger.error("Could not get resource types for modal", { error });
       await interaction.editReply({
-        content: "❌ Service de récupération des types de ressources non disponible.",
+        content:
+          "❌ Service de récupération des types de ressources non disponible.",
       });
       return;
     }
 
-    const selectedResourceType = allResourceTypes.find((resourceType: any) => resourceType.id === resourceTypeId);
+    const selectedResourceType = allResourceTypes.find(
+      (resourceType: any) => resourceType.id === resourceTypeId
+    );
 
     if (!selectedResourceType) {
       await interaction.editReply({
@@ -519,18 +719,35 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
 
     // Vérifier si la ressource existe déjà dans la ville
     if (selectedResource) {
-      // Ressource existe : mettre à jour la quantité existante
-      await apiService.updateResource('CITY', town.id, resourceTypeId, selectedResource.quantity + amount);
+      // Ressource existe : mettre à jour la quantité existante (retrait)
+      await apiService.updateResource(
+        "CITY",
+        town.id,
+        resourceTypeId,
+        selectedResource.quantity - amount
+      );
 
-      // Créer l'embed de confirmation pour ressource existante
+      // Créer l'embed de confirmation pour retrait de ressource existante
       const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle(`✅ ${selectedResourceType.emoji} ${selectedResourceType.name} Ajoutés`)
-        .setDescription(`**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`)
+        .setColor(0xffa500)
+        .setTitle(
+          `➖ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`
+        )
+        .setDescription(
+          `**${amount}** unités de ${selectedResourceType.name} ont été retirées de la ville **${town.name}**.`
+        )
         .addFields(
-          { name: "Ancien stock", value: `${selectedResource.quantity}`, inline: true },
-          { name: "Montant ajouté", value: `+${amount}`, inline: true },
-          { name: "Nouveau stock", value: `${selectedResource.quantity + amount}`, inline: true }
+          {
+            name: "Ancien stock",
+            value: `${selectedResource.quantity}`,
+            inline: true,
+          },
+          { name: "Montant retiré", value: `-${amount}`, inline: true },
+          {
+            name: "Nouveau stock",
+            value: `${selectedResource.quantity - amount}`,
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -538,7 +755,7 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
         embeds: [embed],
       });
 
-      logger.info("Resource added successfully via stock admin (existing)", {
+      logger.info("Resource removed successfully via stock admin (existing)", {
         guildId: interaction.guildId,
         townId: town.id,
         townName: town.name,
@@ -546,123 +763,25 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
         resourceTypeName: selectedResourceType.name,
         amount,
         previousStock: selectedResource.quantity,
-        newStock: selectedResource.quantity + amount,
+        newStock: selectedResource.quantity - amount,
         userId: interaction.user.id,
       });
-
     } else {
-      // Ressource n'existe pas : créer une nouvelle entrée
-      await apiService.addResource('CITY', town.id, resourceTypeId, amount);
-
-      // Créer l'embed de confirmation pour nouvelle ressource
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle(`✅ ${selectedResourceType.emoji} ${selectedResourceType.name} Créés`)
-        .setDescription(`**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`)
-        .addFields(
-          { name: "Stock initial", value: `${amount}`, inline: true },
-          { name: "Créé par", value: `${interaction.user.username}`, inline: true },
-          { name: "Status", value: "✅ Ressource ajoutée à la ville", inline: true }
-        )
-        .setTimestamp();
-
+      // Ressource n'existe pas : erreur car on ne peut pas retirer une ressource qui n'existe pas
       await interaction.editReply({
-        embeds: [embed],
+        content: "❌ Impossible de retirer une ressource qui n'existe pas dans la ville.",
       });
-
-      logger.info("Resource created successfully via stock admin (new)", {
-        guildId: interaction.guildId,
-        townId: town.id,
-        townName: town.name,
-        resourceTypeId,
-        resourceTypeName: selectedResourceType.name,
-        amount,
-        userId: interaction.user.id,
-      });
+      return;
     }
-
   } catch (error) {
-    logger.error("Error in stock admin add modal:", { error });
-    await interaction.editReply({
-      content: "❌ Une erreur est survenue lors de l'ajout de la ressource.",
-    });
-  }
-}
-
-/**
- * Handler pour la soumission du modal de retrait de ressource
- */
-export async function handleStockAdminRemoveModal(interaction: ModalSubmitInteraction) {
-  try {
-    await interaction.deferReply({ flags: ["Ephemeral"] });
-
-    const amount = parseInt(interaction.fields.getTextInputValue("amount_input"), 10);
-
-    if (isNaN(amount) || amount <= 0) {
-      await interaction.editReply({
-        content: "❌ Veuillez entrer un nombre valide (supérieur à 0).",
-      });
-      return;
-    }
-
-    // Extraire l'ID du type de ressource du custom ID du modal
-    const modalCustomId = interaction.customId;
-    const resourceTypeId = parseInt(modalCustomId.split('_')[4]);
-
-    // Récupérer la ville et le type de ressource
-    const town = await getTownByGuildId(interaction.guildId || '');
-    const resources = await apiService.getResources('CITY', town.id);
-    const selectedResource = resources?.find((resource: any) => resource.resourceType.id === resourceTypeId);
-
-    if (!town || !selectedResource) {
-      await interaction.editReply({
-        content: "❌ Informations manquantes pour effectuer l'opération.",
-      });
-      return;
-    }
-
-    if (selectedResource.quantity < amount) {
-      await interaction.editReply({
-        content: `❌ La ville n'a que **${selectedResource.quantity}** unités de ${selectedResource.resourceType.name}. Vous ne pouvez pas en retirer **${amount}**.`,
-      });
-      return;
-    }
-
-    // Retirer la ressource via l'API
-    await apiService.updateResource('CITY', town.id, resourceTypeId, selectedResource.quantity - amount);
-
-    // Créer l'embed de confirmation
-    const embed = new EmbedBuilder()
-      .setColor(0xffa500)
-      .setTitle(`✅ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`)
-      .setDescription(`**${amount}** unités de ${selectedResource.resourceType.name} ont été retirées de la ville **${town.name}**.`)
-      .addFields(
-        { name: "Ancien stock", value: `${selectedResource.quantity}`, inline: true },
-        { name: "Montant retiré", value: `-${amount}`, inline: true },
-        { name: "Nouveau stock", value: `${selectedResource.quantity - amount}`, inline: true }
-      )
-      .setTimestamp();
-
-    await interaction.editReply({
-      embeds: [embed],
-    });
-
-    logger.info("Resource removed successfully via stock admin", {
+    logger.error("Error in stock admin remove modal:", {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
       guildId: interaction.guildId,
-      townId: town.id,
-      townName: town.name,
-      resourceTypeId,
-      resourceTypeName: selectedResource.resourceType.name,
-      amount,
-      previousStock: selectedResource.quantity,
-      newStock: selectedResource.quantity - amount,
       userId: interaction.user.id,
     });
-
-  } catch (error) {
-    logger.error("Error in stock admin remove modal:", { error });
     await interaction.editReply({
-      content: "❌ Une erreur est survenue lors du retrait de la ressource.",
+      content: `❌ Erreur lors du retrait de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
     });
   }
 }
