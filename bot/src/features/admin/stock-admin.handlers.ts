@@ -210,10 +210,11 @@ export async function handleStockAdminAddButton(interaction: any) {
       return;
     }
 
-    // Récupérer tous les types de ressources disponibles
-    const resources = await apiService.getResources('CITY', town.id);
+    // Récupérer les ressources de la ville actuelle pour extraire tous les types de ressources disponibles
+    const townResources = await apiService.getResources('CITY', town.id);
+    const allResourceTypes = townResources || []; // Utiliser les ressources de la ville comme référence pour les types
 
-    if (!resources || resources.length === 0) {
+    if (!allResourceTypes || allResourceTypes.length === 0) {
       await interaction.editReply({
         content: "❌ Aucun type de ressource trouvé.",
         embeds: [],
@@ -222,16 +223,22 @@ export async function handleStockAdminAddButton(interaction: any) {
       return;
     }
 
-    // Créer le menu de sélection de ressource
+    // Créer le menu de sélection de ressource avec TOUS les types disponibles
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("stock_admin_add_select")
       .setPlaceholder("Sélectionnez le type de ressource à ajouter")
       .addOptions(
-        resources.map((resource: any) => ({
-          label: `${resource.resourceType.emoji} ${resource.resourceType.name}`,
-          description: `${resource.resourceType.description || 'Ressource disponible'}`,
-          value: resource.resourceType.id.toString(),
-        }))
+        allResourceTypes.map((resource: any) => {
+          // Trouver le stock actuel de cette ressource dans la ville
+          const currentStock = townResources?.find((townResource: any) => townResource.resourceType.id === resource.resourceType.id);
+          const currentQuantity = currentStock?.quantity || 0;
+
+          return {
+            label: `${resource.resourceType.emoji} ${resource.resourceType.name}`,
+            description: `Stock actuel: ${currentQuantity} unités${resource.resourceType.description ? ` - ${resource.resourceType.description}` : ''}`,
+            value: resource.resourceType.id.toString(),
+          };
+        })
       );
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
@@ -252,7 +259,7 @@ export async function handleStockAdminAddButton(interaction: any) {
       townId: town.id,
       townName: town.name,
       userId: interaction.user.id,
-      availableResourceTypes: resources.length,
+      availableResourceTypes: allResourceTypes.length,
     });
 
   } catch (error) {
