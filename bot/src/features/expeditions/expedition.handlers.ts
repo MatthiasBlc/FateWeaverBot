@@ -16,7 +16,11 @@ import {
   getActiveCharacterFromCommand,
   getActiveCharacterFromModal,
 } from "../../utils/character";
-import { createExpeditionCreationModal, createExpeditionTransferModal, createExpeditionTransferAmountModal } from "../../modals/expedition-modals";
+import {
+  createExpeditionCreationModal,
+  createExpeditionTransferModal,
+  createExpeditionTransferAmountModal,
+} from "../../modals/expedition-modals";
 // Import des services
 import { getTownByGuildId } from "../../services/towns.service";
 
@@ -35,15 +39,252 @@ declare global {
   }
 }
 
-export interface CharacterWithTown {
-  id: string;
-  name: string;
-  townId: string;
-  town: {
-    id: string;
-    name: string;
-  };
-  userId: string;
+/**
+ * Nouvelle commande principale pour gérer les expéditions
+ * - Si membre d'une expédition : affiche les infos
+ * - Si pas membre : affiche la liste avec boutons
+ */
+export async function handleExpeditionMainCommand(
+  interaction: ChatInputCommandInteraction
+) {
+  const member = interaction.member as GuildMember;
+  const user = interaction.user;
+
+  try {
+    // Get user's active character
+    let character;
+    try {
+      character = await getActiveCharacterFromCommand(interaction);
+    } catch (error: any) {
+      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+        await interaction.reply({
+          content: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+      throw error;
+    }
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Aucun personnage actif trouvé.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (character.isDead) {
+      await interaction.reply({
+        content: "❌ Un mort ne peut pas gérer les expéditions.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Check if character is already on an active expedition
+    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(character.id);
+
+    if (activeExpeditions && activeExpeditions.length > 0) {
+      // Character is a member - show expedition info
+      const expedition = activeExpeditions[0];
+
+      const embed = new EmbedBuilder()
+        .setColor(0x0099ff)
+        .setTitle(`🚀 ${expedition.name}`)
+        .addFields(
+          {
+            name: "📦 Stock de nourriture",
+            value: `${expedition.foodStock || 0}`,
+            inline: true,
+          },
+          {
+            name: "⏱️ Durée",
+            value: `${expedition.duration} jours`,
+            inline: true,
+          },
+          {
+            name: "📍 Statut",
+            value: expedition.status === "PLANNING" ? "🔄 PLANIFICATION" : expedition.status,
+            inline: true,
+          }
+        )
+        .setTimestamp();
+
+      // Add buttons only if expedition is PLANNING
+      const components = [];
+      if (expedition.status === "PLANNING") {
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId("expedition_leave")
+            .setLabel("Quitter")
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId("expedition_transfer")
+            .setLabel("Transférer nourriture")
+            .setStyle(ButtonStyle.Primary)
+        );
+        components.push(buttonRow);
+      }
+
+      await interaction.reply({
+        embeds: [embed],
+        components,
+        flags: ["Ephemeral"],
+      });
+    } else {
+      // Character is not a member - show available expeditions
+      const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+      if (!townResponse) {
+        await interaction.reply({
+          content: "❌ Aucune ville trouvée pour ce serveur.",
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+
+      const expeditions = await apiService.getExpeditionsByTown(townResponse.id);
+      const availableExpeditions = expeditions.filter(
+        (exp: Expedition) => exp.status === "PLANNING"
+      );
+
+      if (availableExpeditions.length === 0) {
+        // No expeditions available - only show "Create new expedition" button
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId("expedition_create_new")
+            .setLabel("Créer une nouvelle expédition")
+            .setStyle(ButtonStyle.Primary)
+        );
+
+        await interaction.reply({
+          content: "🏕️ **Aucune expédition en cours de planification.**\n\nVous pouvez créer une nouvelle expédition :",
+          components: [buttonRow],
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+
+      // Expeditions available - show list with both buttons
+      const expeditionList = availableExpeditions
+        .map((exp: Expedition, index: number) =>
+          `**${index + 1}.** ${exp.name} (${exp.duration}j)`
+        )
+        .join("\n");
+
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId("expedition_create_new")
+          .setLabel("Créer une nouvelle expédition")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("expedition_join_existing")
+          .setLabel("Rejoindre une expédition")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      await interaction.reply({
+        content: `🏕️ **Expéditions disponibles :**\n${expeditionList}\n\nChoisissez une action :`,
+        components: [buttonRow],
+        flags: ["Ephemeral"],
+      });
+    }
+  } catch (error) {
+    logger.error("Error in expedition main command:", { error });
+    await interaction.reply({
+      content: `❌ Erreur lors de l'accès aux expéditions: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour le bouton "Créer une nouvelle expédition"
+ * Version adaptée pour les boutons (convertit ButtonInteraction en ChatInputCommandInteraction)
+ */
+export async function handleExpeditionCreateNewButton(interaction: any) {
+  try {
+    // Créer une interaction de commande complète à partir de l'interaction de bouton
+    const commandInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      options: {
+        getSubcommand: () => 'start',
+        getString: (name: string) => {
+          // Pour les boutons, pas de paramètres à récupérer
+          return null;
+        }
+      },
+      guildId: interaction.guildId,
+      guild: interaction.guild,
+      channelId: interaction.channelId,
+      channel: interaction.channel,
+      user: interaction.user,
+      member: interaction.member,
+      client: interaction.client,
+      createdAt: interaction.createdAt,
+      reply: interaction.reply.bind(interaction),
+      deferReply: interaction.deferReply?.bind(interaction),
+      editReply: interaction.editReply?.bind(interaction),
+      followUp: interaction.followUp?.bind(interaction),
+      deferUpdate: interaction.deferUpdate?.bind(interaction),
+      update: interaction.update?.bind(interaction),
+      showModal: interaction.showModal?.bind(interaction)
+    } as ChatInputCommandInteraction;
+
+    await handleExpeditionStartCommand(commandInteraction);
+  } catch (error) {
+    logger.error("Error in expedition create new button:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'ouverture du formulaire de création d'expédition.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gestionnaire pour le bouton "Rejoindre une expédition"
+ * Version adaptée pour les boutons (convertit ButtonInteraction en ChatInputCommandInteraction)
+ */
+export async function handleExpeditionJoinExistingButton(interaction: any) {
+  try {
+    // Créer une interaction de commande complète à partir de l'interaction de bouton
+    const commandInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      options: {
+        getSubcommand: () => 'join',
+        getString: (name: string) => {
+          // Pour les boutons, pas de paramètres à récupérer
+          return null;
+        }
+      },
+      guildId: interaction.guildId,
+      guild: interaction.guild,
+      channelId: interaction.channelId,
+      channel: interaction.channel,
+      user: interaction.user,
+      member: interaction.member,
+      client: interaction.client,
+      createdAt: interaction.createdAt,
+      reply: interaction.reply.bind(interaction),
+      deferReply: interaction.deferReply?.bind(interaction),
+      editReply: interaction.editReply?.bind(interaction),
+      followUp: interaction.followUp?.bind(interaction),
+      deferUpdate: interaction.deferUpdate?.bind(interaction),
+      update: interaction.update?.bind(interaction)
+    } as ChatInputCommandInteraction;
+
+    await handleExpeditionJoinCommand(commandInteraction);
+  } catch (error) {
+    logger.error("Error in expedition join existing button:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'ouverture de la liste d'expéditions.",
+      flags: ["Ephemeral"],
+    });
+  }
 }
 
 export async function handleExpeditionStartCommand(
@@ -69,9 +310,13 @@ export async function handleExpeditionStartCommand(
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
           flags: ["Ephemeral"],
         });
         return;
@@ -184,9 +429,7 @@ export async function handleExpeditionCreationModal(
     // Create expedition
     console.log("DEBUG: Envoi de la requête de création d'expédition:", {
       name,
-      initialResources: [
-        { resourceTypeName: "Vivres", quantity: foodAmount }
-      ],
+      initialResources: [{ resourceTypeName: "Vivres", quantity: foodAmount }],
       duration: durationDays,
       townId: townResponse.id,
       characterId: character.id,
@@ -195,16 +438,17 @@ export async function handleExpeditionCreationModal(
 
     const newExpedition = await apiService.createExpedition({
       name,
-      initialResources: [
-        { resourceTypeName: "Vivres", quantity: foodAmount }
-      ],
+      initialResources: [{ resourceTypeName: "Vivres", quantity: foodAmount }],
       duration: durationDays,
       townId: townResponse.id,
       characterId: character.id, // Add character ID for auto-joining
       createdBy: interaction.user.id, // Discord user ID
     });
 
-    console.log("DEBUG: Réponse de création d'expédition reçue:", newExpedition);
+    console.log(
+      "DEBUG: Réponse de création d'expédition reçue:",
+      newExpedition
+    );
 
     // Join the creator to the expedition
     let joinSuccess = false;
@@ -341,9 +585,13 @@ export async function handleExpeditionJoinCommand(
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
           flags: ["Ephemeral"],
         });
         return;
@@ -370,12 +618,18 @@ export async function handleExpeditionJoinCommand(
     }
 
     // Check if character is already in an active expedition
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(character.id);
-    
+    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+      character.id
+    );
+
     if (activeExpeditions && activeExpeditions.length > 0) {
       const activeExpedition = activeExpeditions[0]; // Prend la première expédition active trouvée
       await interaction.reply({
-        content: `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`,
+        content: `❌ Vous êtes déjà dans l'expédition **${
+          activeExpedition.name
+        }** (${getStatusEmoji(
+          activeExpedition.status
+        )} ${activeExpedition.status.toLowerCase()}).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -439,9 +693,13 @@ export async function handleExpeditionJoinSelect(interaction: any) {
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
           flags: ["Ephemeral"],
         });
         return;
@@ -501,9 +759,13 @@ export async function handleExpeditionInfoCommand(
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
           flags: ["Ephemeral"],
         });
         return;
@@ -640,9 +902,13 @@ export async function handleExpeditionLeaveButton(interaction: any) {
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande `/start` pour créer un personnage.",
+          content:
+            "❌ Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande `/start` pour créer un personnage.",
           flags: ["Ephemeral"],
         });
         return;
@@ -653,7 +919,8 @@ export async function handleExpeditionLeaveButton(interaction: any) {
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif pour quitter une expédition.",
+        content:
+          "❌ Vous devez avoir un personnage actif pour quitter une expédition.",
         flags: ["Ephemeral"],
       });
       return;
@@ -690,7 +957,9 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     // Check if expedition is in PLANNING status (only time you can leave)
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(' ')[1]}**.`,
+        content: `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${
+          getStatusEmoji(currentExpedition.status).split(" ")[1]
+        }**.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -702,7 +971,9 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     // Check if expedition was terminated (last member left)
     let expeditionTerminated = false;
     try {
-      const updatedExpedition = await apiService.getExpeditionById(currentExpedition.id);
+      const updatedExpedition = await apiService.getExpeditionById(
+        currentExpedition.id
+      );
       expeditionTerminated = updatedExpedition?.status === "RETURNED";
     } catch (error) {
       // Expedition might have been deleted if terminated
@@ -719,7 +990,11 @@ export async function handleExpeditionLeaveButton(interaction: any) {
 
       // Send log message
       const logMessage = `🚪 **${character.name}** a quitté l'expédition "**${currentExpedition.name}**" (dernier membre - expédition terminée)`;
-      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        logMessage
+      );
     } else {
       // Update the message to show successful departure
       await interaction.update({
@@ -730,7 +1005,11 @@ export async function handleExpeditionLeaveButton(interaction: any) {
 
       // Send log message
       const logMessage = `🚪 **${character.name}** a quitté l'expédition "**${currentExpedition.name}**"`;
-      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        logMessage
+      );
     }
 
     logger.info("Character left expedition via Discord button", {
@@ -740,7 +1019,6 @@ export async function handleExpeditionLeaveButton(interaction: any) {
       joinedBy: interaction.user.id,
       expeditionTerminated,
     });
-
   } catch (error) {
     logger.error("Error in expedition leave button:", { error });
     await interaction.reply({
@@ -760,9 +1038,13 @@ export async function handleExpeditionTransferButton(interaction: any) {
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture. Utilisez d'abord la commande `/start` pour créer un personnage.",
+          content:
+            "❌ Vous devez avoir un personnage actif pour transférer de la nourriture. Utilisez d'abord la commande `/start` pour créer un personnage.",
           flags: ["Ephemeral"],
         });
         return;
@@ -773,7 +1055,8 @@ export async function handleExpeditionTransferButton(interaction: any) {
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+        content:
+          "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
         flags: ["Ephemeral"],
       });
       return;
@@ -810,14 +1093,18 @@ export async function handleExpeditionTransferButton(interaction: any) {
     // Check if expedition is in PLANNING status (only time you can transfer)
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(' ')[1]}**.`,
+        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${
+          getStatusEmoji(currentExpedition.status).split(" ")[1]
+        }**.`,
         flags: ["Ephemeral"],
       });
       return;
     }
 
     // Get town information for current food stock
-    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    const townResponse = await apiService.getTownByGuildId(
+      interaction.guildId!
+    );
     if (!townResponse) {
       await interaction.reply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -845,7 +1132,9 @@ export async function handleExpeditionTransferButton(interaction: any) {
         },
       ]);
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
 
     await interaction.reply({
       content: "Choisissez la direction du transfert de nourriture :",
@@ -860,7 +1149,6 @@ export async function handleExpeditionTransferButton(interaction: any) {
       expeditionFoodStock: currentExpedition.foodStock,
       townFoodStock: townResponse.foodStock,
     });
-
   } catch (error) {
     logger.error("Error in expedition transfer button:", { error });
     await interaction.reply({
@@ -872,7 +1160,9 @@ export async function handleExpeditionTransferButton(interaction: any) {
   }
 }
 
-export async function handleExpeditionTransferDirectionSelect(interaction: any) {
+export async function handleExpeditionTransferDirectionSelect(
+  interaction: any
+) {
   try {
     logger.info("Expedition transfer direction select handler called", {
       customId: interaction.customId,
@@ -885,9 +1175,13 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+          content:
+            "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
           flags: ["Ephemeral"],
         });
         return;
@@ -898,7 +1192,8 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+        content:
+          "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
         flags: ["Ephemeral"],
       });
       return;
@@ -958,7 +1253,9 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
     }
 
     // Get town information for validation
-    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    const townResponse = await apiService.getTownByGuildId(
+      interaction.guildId!
+    );
     if (!townResponse) {
       await interaction.reply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -968,9 +1265,10 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
     }
 
     // Show amount input modal with selected direction
-    const maxAmount = selectedDirection === "to_town"
-      ? currentExpedition.foodStock
-      : townResponse.foodStock;
+    const maxAmount =
+      selectedDirection === "to_town"
+        ? currentExpedition.foodStock
+        : townResponse.foodStock;
 
     logger.info("Creating transfer modal", {
       expeditionId: currentExpedition.id,
@@ -995,7 +1293,6 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
       selectedDirection,
       maxAmount,
     });
-
   } catch (error) {
     logger.error("Error in expedition transfer direction select:", { error });
     await interaction.reply({
@@ -1007,7 +1304,9 @@ export async function handleExpeditionTransferDirectionSelect(interaction: any) 
   }
 }
 
-export async function handleExpeditionTransferModal(interaction: ModalSubmitInteraction) {
+export async function handleExpeditionTransferModal(
+  interaction: ModalSubmitInteraction
+) {
   try {
     // Get user's active character
     let character;
@@ -1015,9 +1314,13 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
       character = await getActiveCharacterFromModal(interaction);
     } catch (error: any) {
       // Handle specific error cases
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de nourriture.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de nourriture.",
           flags: ["Ephemeral"],
         });
         return;
@@ -1035,11 +1338,13 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
     }
 
     // Get form inputs
-    const amountValue = interaction.fields.getTextInputValue("transfer_amount_input");
+    const amountValue = interaction.fields.getTextInputValue(
+      "transfer_amount_input"
+    );
 
     // Get direction from modal custom ID (format: expedition_transfer_amount_modal_{expeditionId}_{direction})
     const modalCustomId = interaction.customId;
-    const parts = modalCustomId.split('_');
+    const parts = modalCustomId.split("_");
 
     logger.info("Modal parsing debug", {
       modalCustomId,
@@ -1086,14 +1391,14 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
     const modalPrefix = "expedition_transfer_amount_modal_";
     const expeditionId = modalCustomId.substring(
       modalPrefix.length,
-      modalCustomId.lastIndexOf('_' + directionValue)
+      modalCustomId.lastIndexOf("_" + directionValue)
     );
 
     logger.info("Expedition ID parsing debug", {
       modalCustomId,
       modalPrefix,
       directionValue,
-      lastIndexOf: modalCustomId.lastIndexOf('_' + directionValue),
+      lastIndexOf: modalCustomId.lastIndexOf("_" + directionValue),
       expeditionId,
       expeditionIdLength: expeditionId.length,
     });
@@ -1130,7 +1435,9 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
     }
 
     // Get town data for validation
-    const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+    const townResponse = await apiService.getTownByGuildId(
+      interaction.guildId!
+    );
     if (!townResponse) {
       await interaction.reply({
         content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -1165,16 +1472,32 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
     try {
       if (directionValue === "to_town") {
         // Transfer from expedition to town
-        await apiService.transferExpeditionFood(expeditionId, amount, "to_town");
+        await apiService.transferExpeditionFood(
+          expeditionId,
+          amount,
+          "to_town"
+        );
       } else {
         // Transfer from town to expedition
-        await apiService.transferExpeditionFood(expeditionId, amount, "from_town");
+        await apiService.transferExpeditionFood(
+          expeditionId,
+          amount,
+          "from_town"
+        );
       }
       transferSuccess = true;
     } catch (error) {
-      logger.error("Error during food transfer:", { error, expeditionId, characterId: character.id, amount, direction: directionValue });
+      logger.error("Error during food transfer:", {
+        error,
+        expeditionId,
+        characterId: character.id,
+        amount,
+        direction: directionValue,
+      });
       await interaction.reply({
-        content: `❌ Erreur lors du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+        content: `❌ Erreur lors du transfert: ${
+          error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
         flags: ["Ephemeral"],
       });
       return;
@@ -1182,14 +1505,20 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
 
     if (transferSuccess) {
       // Get updated data for response
-      const updatedExpedition = await apiService.getExpeditionById(expeditionId);
-      const updatedTown = await apiService.getTownByGuildId(interaction.guildId!);
+      const updatedExpedition = await apiService.getExpeditionById(
+        expeditionId
+      );
+      const updatedTown = await apiService.getTownByGuildId(
+        interaction.guildId!
+      );
 
       // Create response embed
       const embed = new EmbedBuilder()
         .setColor(0x00ff00)
         .setTitle(`✅ Transfert de nourriture réussi`)
-        .setDescription(`Le transfert de **${amount}** nourriture a été effectué avec succès !`)
+        .setDescription(
+          `Le transfert de **${amount}** nourriture a été effectué avec succès !`
+        )
         .addFields(
           {
             name: "📦 Stock de l'expédition",
@@ -1203,7 +1532,10 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
           },
           {
             name: "📍 Direction",
-            value: directionValue === "to_town" ? "Expédition → Ville" : "Ville → Expédition",
+            value:
+              directionValue === "to_town"
+                ? "Expédition → Ville"
+                : "Ville → Expédition",
             inline: true,
           }
         )
@@ -1215,9 +1547,14 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
       });
 
       // Send log message
-      const directionText = directionValue === "to_town" ? "vers la ville" : "vers l'expédition";
+      const directionText =
+        directionValue === "to_town" ? "vers la ville" : "vers l'expédition";
       const logMessage = `🍖 **${character.name}** a transféré **${amount}** nourriture ${directionText} dans l'expédition "**${expedition.name}**"`;
-      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        logMessage
+      );
 
       logger.info("Expedition food transfer completed", {
         expeditionId,
@@ -1231,7 +1568,6 @@ export async function handleExpeditionTransferModal(interaction: ModalSubmitInte
         newTownStock: updatedTown?.foodStock,
       });
     }
-
   } catch (error) {
     logger.error("Error in expedition transfer modal:", { error });
     await interaction.reply({

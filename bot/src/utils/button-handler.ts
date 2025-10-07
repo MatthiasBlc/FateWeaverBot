@@ -59,6 +59,16 @@ export class ButtonHandler {
           "../features/expeditions/expedition.handlers.js"
         );
         await handleExpeditionTransferButton(interaction);
+      } else if (customId === "expedition_create_new") {
+        const { handleExpeditionCreateNewButton } = await import(
+          "../features/expeditions/expedition.handlers.js"
+        );
+        await handleExpeditionCreateNewButton(interaction);
+      } else if (customId === "expedition_join_existing") {
+        const { handleExpeditionJoinExistingButton } = await import(
+          "../features/expeditions/expedition.handlers.js"
+        );
+        await handleExpeditionJoinExistingButton(interaction);
       } else if (customId.startsWith("expedition_admin_")) {
         const { handleExpeditionAdminButton } = await import(
           "../features/admin/expedition-admin.handlers.js"
