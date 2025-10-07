@@ -416,6 +416,14 @@ class APIService {
   }
 
   /**
+   * Récupère tous les types de ressources disponibles
+   */
+  public async getAllResourceTypes() {
+    const response = await this.api.get('/resources/types');
+    return response.data;
+  }
+
+  /**
    * Ajoute des ressources à un lieu
    */
   public async addResource(locationType: string, locationId: string, resourceTypeId: number, quantity: number) {

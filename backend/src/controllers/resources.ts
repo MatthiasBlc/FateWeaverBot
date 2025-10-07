@@ -283,3 +283,17 @@ export const transferResource: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getAllResourceTypes: RequestHandler = async (req, res, next) => {
+  try {
+    const resourceTypes = await prisma.resourceType.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    res.status(200).json(resourceTypes);
+  } catch (error) {
+    next(error);
+  }
+};

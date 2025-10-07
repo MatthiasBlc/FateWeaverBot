@@ -6,6 +6,7 @@ import {
   updateResource,
   removeResource,
   transferResource,
+  getAllResourceTypes,
 } from "../controllers/resources";
 
 const router = Router();
@@ -24,5 +25,11 @@ router.delete("/:locationType/:locationId/:resourceTypeId", requireAuthOrInterna
 
 // Transférer des ressources entre deux lieux
 router.post("/:fromLocationType/:fromLocationId/:toLocationType/:toLocationId/:resourceTypeId/transfer", requireAuthOrInternal, transferResource);
+
+// Récupérer tous les types de ressources disponibles
+router.get("/types", requireAuthOrInternal, getAllResourceTypes);
+
+// Route dédiée pour accès direct aux ResourceType (pour plus de clarté)
+router.get("/resource-types", requireAuthOrInternal, getAllResourceTypes);
 
 export default router;

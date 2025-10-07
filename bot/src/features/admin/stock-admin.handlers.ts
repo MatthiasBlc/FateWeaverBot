@@ -210,33 +210,38 @@ export async function handleStockAdminAddButton(interaction: any) {
       return;
     }
 
-    // Récupérer les ressources de la ville actuelle pour extraire tous les types de ressources disponibles
-    const townResources = await apiService.getResources('CITY', town.id);
-    const allResourceTypes = townResources || []; // Utiliser les ressources de la ville comme référence pour les types
-
-    if (!allResourceTypes || allResourceTypes.length === 0) {
+    // Récupérer tous les types de ressources disponibles depuis la nouvelle API dédiée
+    let allResourceTypes = [];
+    try {
+      allResourceTypes = await apiService.getAllResourceTypes() || [];
+      logger.info(`Found ${allResourceTypes.length} resource types from getAllResourceTypes()`);
+    } catch (error) {
+      logger.error("Could not get resource types from getAllResourceTypes()", { error });
+      // Si l'API dédiée ne fonctionne pas, affiche le message d'erreur
       await interaction.editReply({
-        content: "❌ Aucun type de ressource trouvé.",
+        content: "❌ Service de récupération des types de ressources non disponible. Veuillez contacter un administrateur.",
         embeds: [],
         components: [],
       });
       return;
     }
 
-    // Créer le menu de sélection de ressource avec TOUS les types disponibles
+    const townResources = await apiService.getResources('CITY', town.id);
+
+    // Créer le menu de sélection avec TOUS les types de ressources disponibles
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("stock_admin_add_select")
       .setPlaceholder("Sélectionnez le type de ressource à ajouter")
       .addOptions(
-        allResourceTypes.map((resource: any) => {
-          // Trouver le stock actuel de cette ressource dans la ville
-          const currentStock = townResources?.find((townResource: any) => townResource.resourceType.id === resource.resourceType.id);
+        allResourceTypes.map((resourceType: any) => {
+          // Trouver le stock actuel de cette ressource dans la ville (sera 0 si n'existe pas)
+          const currentStock = townResources?.find((townResource: any) => townResource.resourceType.id === resourceType.id);
           const currentQuantity = currentStock?.quantity || 0;
 
           return {
-            label: `${resource.resourceType.emoji} ${resource.resourceType.name}`,
-            description: `Stock actuel: ${currentQuantity} unités${resource.resourceType.description ? ` - ${resource.resourceType.description}` : ''}`,
-            value: resource.resourceType.id.toString(),
+            label: `${resourceType.emoji} ${resourceType.name}`,
+            description: `Stock actuel: ${currentQuantity} unités${resourceType.description ? ` - ${resourceType.description}` : ''}`,
+            value: resourceType.id.toString(),
           };
         })
       );
@@ -478,48 +483,103 @@ export async function handleStockAdminAddModal(interaction: ModalSubmitInteracti
     const modalCustomId = interaction.customId;
     const resourceTypeId = parseInt(modalCustomId.split('_')[4]);
 
-    // Récupérer la ville et le type de ressource
+    // Récupérer la ville et les ressources actuelles
     const town = await getTownByGuildId(interaction.guildId || '');
     const resources = await apiService.getResources('CITY', town.id);
     const selectedResource = resources?.find((resource: any) => resource.resourceType.id === resourceTypeId);
 
-    if (!town || !selectedResource) {
+    if (!town) {
       await interaction.editReply({
         content: "❌ Informations manquantes pour effectuer l'opération.",
       });
       return;
     }
 
-    // Ajouter la ressource via l'API
-    await apiService.updateResource('CITY', town.id, resourceTypeId, selectedResource.quantity + amount);
+    // Récupérer tous les types de ressources pour avoir les détails du type sélectionné
+    let allResourceTypes = [];
+    try {
+      allResourceTypes = await apiService.getAllResourceTypes() || [];
+      logger.info(`Found ${allResourceTypes.length} resource types from getAllResourceTypes()`);
+    } catch (error) {
+      logger.error("Could not get resource types for modal", { error });
+      await interaction.editReply({
+        content: "❌ Service de récupération des types de ressources non disponible.",
+      });
+      return;
+    }
 
-    // Créer l'embed de confirmation
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(`✅ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Ajoutés`)
-      .setDescription(`**${amount}** unités de ${selectedResource.resourceType.name} ont été ajoutées à la ville **${town.name}**.`)
-      .addFields(
-        { name: "Ancien stock", value: `${selectedResource.quantity}`, inline: true },
-        { name: "Montant ajouté", value: `+${amount}`, inline: true },
-        { name: "Nouveau stock", value: `${selectedResource.quantity + amount}`, inline: true }
-      )
-      .setTimestamp();
+    const selectedResourceType = allResourceTypes.find((resourceType: any) => resourceType.id === resourceTypeId);
 
-    await interaction.editReply({
-      embeds: [embed],
-    });
+    if (!selectedResourceType) {
+      await interaction.editReply({
+        content: "❌ Type de ressource non trouvé.",
+      });
+      return;
+    }
 
-    logger.info("Resource added successfully via stock admin", {
-      guildId: interaction.guildId,
-      townId: town.id,
-      townName: town.name,
-      resourceTypeId,
-      resourceTypeName: selectedResource.resourceType.name,
-      amount,
-      previousStock: selectedResource.quantity,
-      newStock: selectedResource.quantity + amount,
-      userId: interaction.user.id,
-    });
+    // Vérifier si la ressource existe déjà dans la ville
+    if (selectedResource) {
+      // Ressource existe : mettre à jour la quantité existante
+      await apiService.updateResource('CITY', town.id, resourceTypeId, selectedResource.quantity + amount);
+
+      // Créer l'embed de confirmation pour ressource existante
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle(`✅ ${selectedResourceType.emoji} ${selectedResourceType.name} Ajoutés`)
+        .setDescription(`**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`)
+        .addFields(
+          { name: "Ancien stock", value: `${selectedResource.quantity}`, inline: true },
+          { name: "Montant ajouté", value: `+${amount}`, inline: true },
+          { name: "Nouveau stock", value: `${selectedResource.quantity + amount}`, inline: true }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+
+      logger.info("Resource added successfully via stock admin (existing)", {
+        guildId: interaction.guildId,
+        townId: town.id,
+        townName: town.name,
+        resourceTypeId,
+        resourceTypeName: selectedResourceType.name,
+        amount,
+        previousStock: selectedResource.quantity,
+        newStock: selectedResource.quantity + amount,
+        userId: interaction.user.id,
+      });
+
+    } else {
+      // Ressource n'existe pas : créer une nouvelle entrée
+      await apiService.addResource('CITY', town.id, resourceTypeId, amount);
+
+      // Créer l'embed de confirmation pour nouvelle ressource
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle(`✅ ${selectedResourceType.emoji} ${selectedResourceType.name} Créés`)
+        .setDescription(`**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`)
+        .addFields(
+          { name: "Stock initial", value: `${amount}`, inline: true },
+          { name: "Créé par", value: `${interaction.user.username}`, inline: true },
+          { name: "Status", value: "✅ Ressource ajoutée à la ville", inline: true }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+
+      logger.info("Resource created successfully via stock admin (new)", {
+        guildId: interaction.guildId,
+        townId: town.id,
+        townName: town.name,
+        resourceTypeId,
+        resourceTypeName: selectedResourceType.name,
+        amount,
+        userId: interaction.user.id,
+      });
+    }
 
   } catch (error) {
     logger.error("Error in stock admin add modal:", { error });
