@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "users" ADD COLUMN     "updated_at" TIMESTAMP(3) NOT NULL;
+ALTER TABLE "users" ADD COLUMN     "updated_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL;
