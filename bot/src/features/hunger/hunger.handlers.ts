@@ -66,7 +66,7 @@ export async function handleEatCommand(interaction: any, character: any) {
     }
 
     // Tenter de faire manger le personnage
-    const eatResult = await apiService.eatFood(character.id);
+    const eatResult = await apiService.characters.eatFood(character.id);
 
     // Créer l'embed de réponse
     const embed = createEatEmbed(eatResult, character.name || user.username);
@@ -165,7 +165,7 @@ export async function handleEatButton(interaction: any, character: any) {
     });
 
     // Tenter de faire manger le personnage
-    const eatResult = await apiService.eatFood(character.id);
+    const eatResult = await apiService.characters.eatFood(character.id);
 
     // Créer l'embed de réponse
     const embed = createEatEmbed(eatResult, character.name || user.username);
@@ -278,7 +278,7 @@ export async function handleEatAlternativeButton(
     );
 
     // Tenter de faire manger le personnage avec de la nourriture
-    const eatResult = await apiService.eatFoodAlternative(
+    const eatResult = await apiService.characters.eatFoodAlternative(
       character.id,
       "Nourriture"
     );

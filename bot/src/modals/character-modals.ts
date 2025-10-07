@@ -89,7 +89,7 @@ export async function handleCharacterCreation(
     );
 
     // Get or create town
-    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as Town;
+    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as Town;
 
     if (!town) {
       await interaction.reply({
@@ -100,7 +100,7 @@ export async function handleCharacterCreation(
     }
 
     // Create character
-    const character = (await apiService.createCharacter({
+    const character = (await apiService.characters.createCharacter({
       name: characterName.trim(),
       userId: user.id,
       townId: town.id,
@@ -163,7 +163,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     );
 
     // Get town
-    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as Town;
+    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as Town;
 
     if (!town) {
       await interaction.reply({
@@ -174,7 +174,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     }
 
     // Create reroll character
-    const newCharacter = (await apiService.createRerollCharacter({
+    const newCharacter = (await apiService.characters.createRerollCharacter({
       userId: user.id,
       townId: town.id,
       name: newCharacterName.trim(),
@@ -230,7 +230,7 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
     );
 
     // Get town
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
 
     if (!town) {
       await interaction.reply({
@@ -241,7 +241,7 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
     }
 
     // Check if user needs character creation
-    const needsCreation = await apiService.needsCharacterCreation(
+    const needsCreation = await apiService.characters.needsCharacterCreation(
       user.id,
       (town as Town).id
     );
@@ -283,7 +283,7 @@ export async function checkAndPromptReroll(interaction: any) {
     );
 
     // Get town
-    const town = await apiService.getTownByGuildId(interaction.guildId!);
+    const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
 
     if (!town) {
       await interaction.reply({

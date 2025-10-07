@@ -20,14 +20,14 @@ export async function getActiveCharacterForUser(
 
   try {
     // Récupérer la ville du serveur
-    const town = await apiService.getTownByGuildId(guildId) as { id: string } | null;
+    const town = await apiService.guilds.getTownByGuildId(guildId) as { id: string } | null;
 
     if (!town || typeof town !== 'object' || !('id' in town)) {
       throw new Error("Aucune ville trouvée pour ce serveur");
     }
 
     // Récupérer le personnage actif de l'utilisateur
-    const character = await apiService.getActiveCharacter(userId, town.id);
+    const character = await apiService.characters.getActiveCharacter(userId, town.id);
 
     if (!character) {
       throw new Error("Vous devez d'abord créer un personnage avec la commande `/start`");

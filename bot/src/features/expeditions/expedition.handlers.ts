@@ -4,6 +4,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuBuilder,
+  TextChannel,
   type GuildMember,
   type ModalSubmitInteraction,
   type ChatInputCommandInteraction,
@@ -89,15 +90,20 @@ export async function handleExpeditionMainCommand(
       // Character is a member - show expedition info
       const expedition = activeExpeditions[0];
 
+      // Récupérer les ressources détaillées de l'expédition
+      let expeditionResources: any[] = [];
+      try {
+        expeditionResources = await apiService.getResources("EXPEDITION", expedition.id);
+      } catch (error) {
+        logger.warn("Could not fetch expedition resources:", error);
+        // Continue without detailed resources if API call fails
+      }
+
+      // Create embed
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle(`🚀 ${expedition.name}`)
         .addFields(
-          {
-            name: "📦 Stock de nourriture",
-            value: `${expedition.foodStock || 0}`,
-            inline: true,
-          },
           {
             name: "⏱️ Durée",
             value: `${expedition.duration} jours`,
@@ -105,13 +111,52 @@ export async function handleExpeditionMainCommand(
           },
           {
             name: "📍 Statut",
-            value: expedition.status === "PLANNING" ? "🔄 PLANIFICATION" : expedition.status,
+            value: getStatusEmoji(expedition.status),
             inline: true,
-          }
+          },
+          {
+            name: "👥 Membres",
+            value: expedition.members?.length.toString() || "0",
+            inline: true,
+          },
+          { name: " ", value: " ", inline: true }
         )
         .setTimestamp();
 
-      // Add buttons only if expedition is PLANNING
+      // Add detailed resources if available
+      if (expeditionResources && expeditionResources.length > 0) {
+        const resourceDetails = expeditionResources
+          .filter(resource => resource.quantity > 0)
+          .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
+          .join("\n");
+
+        if (resourceDetails) {
+          embed.addFields({
+            name: "📦 Ressources détaillées",
+            value: resourceDetails,
+            inline: false,
+          });
+        }
+      }
+
+      // Add member list if there are members
+      if (expedition.members && expedition.members.length > 0) {
+        const memberList = expedition.members
+          .map((member) => {
+            const characterName = member.character?.name || "Inconnu";
+            const discordUsername = member.character?.user?.username || "Inconnu";
+            return `• **${characterName}** - ${discordUsername}`;
+          })
+          .join("\n");
+
+        embed.addFields({
+          name: "📋 Membres inscrits",
+          value: memberList,
+          inline: false,
+        });
+      }
+
+      // Add buttons only if expedition is PLANNING and user is a member
       const components = [];
       if (expedition.status === "PLANNING") {
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -192,9 +237,8 @@ export async function handleExpeditionMainCommand(
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'accès aux expéditions: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -361,9 +405,8 @@ export async function handleExpeditionStartCommand(
   } catch (error) {
     logger.error("Error in expedition start command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de la création de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -377,15 +420,19 @@ export async function handleExpeditionCreationModal(
 
   try {
     const name = interaction.fields.getTextInputValue("expedition_name_input");
-    const foodStock = interaction.fields.getTextInputValue(
-      "expedition_food_input"
-    );
-    const duration = interaction.fields.getTextInputValue(
-      "expedition_duration_input"
-    );
+
+    // Récupérer les valeurs des champs séparés pour vivres et nourriture
+    const vivresValue = interaction.fields.getTextInputValue("expedition_vivres_input") || "0";
+    const nourritureValue = interaction.fields.getTextInputValue("expedition_nourriture_input") || "0";
+
+    const duration = interaction.fields.getTextInputValue("expedition_duration_input");
+
+    // Convertir en nombres et calculer le total
+    const vivresAmount = parseInt(vivresValue, 10) || 0;
+    const nourritureAmount = parseInt(nourritureValue, 10) || 0;
+    const foodStock = vivresAmount + nourritureAmount;
 
     // Validate inputs
-    const foodAmount = parseInt(foodStock, 10);
     const durationDays = parseInt(duration, 10);
 
     // Get character ID from modal interaction
@@ -398,9 +445,9 @@ export async function handleExpeditionCreationModal(
       return;
     }
 
-    if (isNaN(foodAmount) || foodAmount <= 0) {
+    if (isNaN(foodStock) || foodStock <= 0) {
       await interaction.reply({
-        content: "❌ Le stock de nourriture doit être un nombre positif.",
+        content: "❌ Le stock de nourriture total (vivres + nourriture) doit être un nombre positif.",
         flags: ["Ephemeral"],
       });
       return;
@@ -429,16 +476,29 @@ export async function handleExpeditionCreationModal(
     // Create expedition
     logger.debug("Creating expedition", {
       name,
-      initialResources: [{ resourceTypeName: "Vivres", quantity: foodAmount }],
+      vivresAmount,
+      nourritureAmount,
+      totalFoodStock: foodStock,
       duration: durationDays,
       townId: townResponse.id,
       characterId: character.id,
       createdBy: interaction.user.id,
     });
 
+    // Construire le tableau des ressources initiales
+    const initialResources = [];
+
+    if (vivresAmount > 0) {
+      initialResources.push({ resourceTypeName: "Vivres", quantity: vivresAmount });
+    }
+
+    if (nourritureAmount > 0) {
+      initialResources.push({ resourceTypeName: "Nourriture", quantity: nourritureAmount });
+    }
+
     const newExpedition = await apiService.createExpedition({
       name,
-      initialResources: [{ resourceTypeName: "Vivres", quantity: foodAmount }],
+      initialResources,
       duration: durationDays,
       townId: townResponse.id,
       characterId: character.id, // Add character ID for auto-joining
@@ -508,6 +568,15 @@ export async function handleExpeditionCreationModal(
       memberCount = joinSuccess ? 1 : 0; // Set to 1 only if join was successful
     }
 
+    // Récupérer les ressources détaillées de la nouvelle expédition
+    let expeditionResources: any[] = [];
+    try {
+      expeditionResources = await apiService.getResources("EXPEDITION", newExpedition.data.id);
+    } catch (error) {
+      logger.warn("Could not fetch expedition resources after creation:", error);
+      // Continue without detailed resources if API call fails
+    }
+
     // Create embed
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
@@ -515,25 +584,91 @@ export async function handleExpeditionCreationModal(
       .setDescription(`Vous avez créé une nouvelle expédition avec succès !`)
       .addFields(
         {
-          name: "📦 Stock de nourriture",
-          value: `${foodAmount}`,
+          name: "⏱️ Durée",
+          value: `${durationDays} jours`,
           inline: true,
         },
-        { name: "⏱️ Durée", value: `${durationDays} jours`, inline: true },
-        { name: "📍 Statut", value: "🔄 PLANIFICATION", inline: true },
-        { name: "👥 Membres", value: memberCount.toString(), inline: true },
-        { name: "🏛️ Ville", value: townResponse.name, inline: true },
+        {
+          name: "📍 Statut",
+          value: "🔄 PLANIFICATION",
+          inline: true,
+        },
+        {
+          name: "👥 Membres",
+          value: memberCount.toString(),
+          inline: true,
+        },
         { name: " ", value: " ", inline: true }
       )
       .setTimestamp();
+
+    // Add detailed resources if available
+    if (expeditionResources && expeditionResources.length > 0) {
+      const resourceDetails = expeditionResources
+        .filter(resource => resource.quantity > 0)
+        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
+        .join("\n");
+
+      if (resourceDetails) {
+        embed.addFields({
+          name: "📦 Ressources détaillées",
+          value: resourceDetails,
+          inline: false,
+        });
+      }
+    }
+
     await interaction.reply({
       embeds: [embed],
       flags: ["Ephemeral"],
     });
 
-    // Send log message to configured log channel
-    const logMessage = `🏕️ Nouvelle expédition créée : "**${newExpedition.data.name}**" par **${character.name}**\n📦 Stock nourriture : ${foodAmount}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
-    await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+    // Send public log message to configured log channel
+    const publicEmbed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle(`🏕️ Nouvelle expédition créée`)
+      .setDescription(`**${newExpedition.data.name}** créée par **${character.name}**`)
+      .addFields(
+        {
+          name: "⏱️ Durée",
+          value: `${durationDays} jours`,
+          inline: true,
+        },
+        { name: " ", value: " ", inline: true }
+      )
+      .setTimestamp();
+
+    // Add detailed resources to public message if available
+    if (expeditionResources && expeditionResources.length > 0) {
+      const resourceDetails = expeditionResources
+        .filter(resource => resource.quantity > 0)
+        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
+        .join("\n");
+
+      if (resourceDetails) {
+        publicEmbed.addFields({
+          name: "📦 Ressources détaillées",
+          value: resourceDetails,
+          inline: false,
+        });
+      }
+    }
+
+    // Send public embed to log channel
+    try {
+      const guild = await apiService.getGuildByDiscordId(interaction.guildId!) as { logChannelId?: string } | null;
+      if (guild?.logChannelId) {
+        const logChannel = interaction.client.channels.cache.get(guild.logChannelId) as TextChannel;
+        if (logChannel) {
+          await logChannel.send({ embeds: [publicEmbed] });
+        }
+      }
+    } catch (error) {
+      logger.warn("Could not send public embed to log channel:", error);
+    }
+
+    // Send old format log message for backward compatibility
+    const logMessage = `🏕️ Nouvelle expédition créée : "**${newExpedition.data.name}**" par **${character.name}**\n📦 Stock nourriture : ${foodStock}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
 
     logger.info("Expedition created via Discord", {
       expeditionId: newExpedition.data.id,
@@ -544,7 +679,7 @@ export async function handleExpeditionCreationModal(
       characterName: character.name,
       townId: townResponse.id,
       townName: townResponse.name,
-      foodStock: foodAmount,
+      foodStock: foodStock,
       duration: durationDays,
       memberCount: memberCount,
       autoJoinSuccess: joinSuccess,
@@ -552,9 +687,8 @@ export async function handleExpeditionCreationModal(
   } catch (error) {
     logger.error("Error in expedition creation modal:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de la création de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -625,11 +759,10 @@ export async function handleExpeditionJoinCommand(
     if (activeExpeditions && activeExpeditions.length > 0) {
       const activeExpedition = activeExpeditions[0]; // Prend la première expédition active trouvée
       await interaction.reply({
-        content: `❌ Vous êtes déjà dans l'expédition **${
-          activeExpedition.name
-        }** (${getStatusEmoji(
-          activeExpedition.status
-        )} ${activeExpedition.status.toLowerCase()}).`,
+        content: `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name
+          }** (${getStatusEmoji(
+            activeExpedition.status
+          )} ${activeExpedition.status.toLowerCase()}).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -738,9 +871,8 @@ export async function handleExpeditionJoinSelect(interaction: any) {
   } catch (error) {
     logger.error("Error in expedition join select:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de la participation à l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de la participation à l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -797,6 +929,15 @@ export async function handleExpeditionInfoCommand(
 
     const currentExpedition = activeExpeditions[0];
 
+    // Récupérer les ressources détaillées de l'expédition
+    let expeditionResources: any[] = [];
+    try {
+      expeditionResources = await apiService.getResources("EXPEDITION", currentExpedition.id);
+    } catch (error) {
+      logger.warn("Could not fetch expedition resources:", error);
+      // Continue without detailed resources if API call fails
+    }
+
     // Create embed
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -804,7 +945,7 @@ export async function handleExpeditionInfoCommand(
       .addFields(
         {
           name: "📦 Stock de nourriture",
-          value: `${currentExpedition.foodStock}`,
+          value: `${currentExpedition.foodStock || 0}`,
           inline: true,
         },
         {
@@ -830,6 +971,22 @@ export async function handleExpeditionInfoCommand(
         { name: " ", value: " ", inline: true }
       )
       .setTimestamp();
+
+    // Add detailed resources if available
+    if (expeditionResources && expeditionResources.length > 0) {
+      const resourceDetails = expeditionResources
+        .filter(resource => resource.quantity > 0)
+        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
+        .join("\n");
+
+      if (resourceDetails) {
+        embed.addFields({
+          name: "📦 Ressources détaillées",
+          value: resourceDetails,
+          inline: false,
+        });
+      }
+    }
 
     // Add member list if there are members
     if (currentExpedition.members && currentExpedition.members.length > 0) {
@@ -957,9 +1114,8 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     // Check if expedition is in PLANNING status (only time you can leave)
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${
-          getStatusEmoji(currentExpedition.status).split(" ")[1]
-        }**.`,
+        content: `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]
+          }**.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -1022,9 +1178,8 @@ export async function handleExpeditionLeaveButton(interaction: any) {
   } catch (error) {
     logger.error("Error in expedition leave button:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors du départ de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors du départ de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -1093,9 +1248,8 @@ export async function handleExpeditionTransferButton(interaction: any) {
     // Check if expedition is in PLANNING status (only time you can transfer)
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${
-          getStatusEmoji(currentExpedition.status).split(" ")[1]
-        }**.`,
+        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]
+          }**.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -1152,9 +1306,8 @@ export async function handleExpeditionTransferButton(interaction: any) {
   } catch (error) {
     logger.error("Error in expedition transfer button:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'ouverture du transfert de nourriture: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de l'ouverture du transfert de nourriture: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -1296,9 +1449,8 @@ export async function handleExpeditionTransferDirectionSelect(
   } catch (error) {
     logger.error("Error in expedition transfer direction select:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de la sélection de direction: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de la sélection de direction: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -1496,9 +1648,8 @@ export async function handleExpeditionTransferModal(
         direction: directionValue,
       });
       await interaction.reply({
-        content: `❌ Erreur lors du transfert: ${
-          error instanceof Error ? error.message : "Erreur inconnue"
-        }`,
+        content: `❌ Erreur lors du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"
+          }`,
         flags: ["Ephemeral"],
       });
       return;
@@ -1572,9 +1723,8 @@ export async function handleExpeditionTransferModal(
   } catch (error) {
     logger.error("Error in expedition transfer modal:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors du traitement du transfert: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors du traitement du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }

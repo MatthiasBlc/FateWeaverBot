@@ -62,9 +62,12 @@ class APIService {
   }
 
   // ========== DÉLÉGATION AUX SERVICES SPÉCIALISÉS ==========
+  // NOTE: Prefer using apiService.characters, apiService.guilds, etc. directly
+  // These wrapper methods are kept for backward compatibility during migration
 
   /**
    * Récupère ou crée un utilisateur
+   * @note This calls an external service function (not part of specialized services)
    */
   public async getOrCreateUser(
     discordId: string,
@@ -134,6 +137,7 @@ class APIService {
 
   /**
    * Récupère un personnage actif par son ID Discord et l'ID de la ville
+   * @deprecated Use apiService.characters.getActiveCharacter() instead
    */
   public async getActiveCharacter(discordId: string, townId: string) {
     return this.characters.getActiveCharacter(discordId, townId);
@@ -142,6 +146,7 @@ class APIService {
   /**
    * Récupère un personnage par son ID
    * @param characterId L'ID du personnage à récupérer
+   * @deprecated Use apiService.characters.getCharacterById() instead
    */
   public async getCharacterById(characterId: string) {
     return this.characters.getCharacterById(characterId);
@@ -160,6 +165,7 @@ class APIService {
 
   /**
    * Récupère une ville par l'ID de sa guilde
+   * @deprecated Use apiService.guilds.getTownByGuildId() instead
    */
   public async getTownByGuildId(guildId: string): Promise<Town | null> {
     return this.guilds.getTownByGuildId(guildId);
@@ -167,6 +173,7 @@ class APIService {
 
   /**
    * Récupère une ville par son ID
+   * @deprecated Use apiService.towns.getTownById() instead
    */
   public async getTownById(townId: string): Promise<Town | null> {
     return this.towns.getTownById(townId);
@@ -174,6 +181,7 @@ class APIService {
 
   /**
    * Récupère tous les chantiers d'une guilde
+   * @deprecated Use apiService.chantiers.getChantiersByServer() instead
    */
   public async getChantiersByServer(guildId: string) {
     return this.chantiers.getChantiersByServer(guildId);
@@ -181,6 +189,7 @@ class APIService {
 
   /**
    * Crée un nouveau chantier
+   * @deprecated Use apiService.chantiers.createChantier() instead
    */
   public async createChantier(
     chantierData: {
@@ -195,6 +204,7 @@ class APIService {
 
   /**
    * Supprime un chantier par son ID
+   * @deprecated Use apiService.chantiers.deleteChantier() instead
    */
   public async deleteChantier(id: string) {
     return this.chantiers.deleteChantier(id);
@@ -202,6 +212,7 @@ class APIService {
 
   /**
    * Investit des points d'action dans un chantier
+   * @deprecated Use apiService.chantiers.investInChantier() instead
    */
   public async investInChantier(
     characterId: string,
@@ -211,12 +222,16 @@ class APIService {
     return this.chantiers.investInChantier(characterId, chantierId, points);
   }
 
+  /**
+   * @deprecated Use apiService.expeditions.getActiveExpeditionsForCharacter() instead
+   */
   public async getActiveExpeditionsForCharacter(characterId: string) {
     return this.expeditions.getActiveExpeditionsForCharacter(characterId);
   }
 
   /**
    * Permet à un personnage de manger
+   * @deprecated Use apiService.characters.eatFood() instead
    */
   public async eatFood(characterId: string) {
     return this.characters.eatFood(characterId);
@@ -224,6 +239,7 @@ class APIService {
 
   /**
    * Permet à un personnage de manger un type de nourriture alternatif
+   * @deprecated Use apiService.characters.eatFoodAlternative() instead
    */
   public async eatFoodAlternative(characterId: string, resourceTypeName: string) {
     return this.characters.eatFoodAlternative(characterId, resourceTypeName);
@@ -231,6 +247,7 @@ class APIService {
 
   /**
    * Récupère tous les personnages d'une guilde
+   * @deprecated Use apiService.characters.getGuildCharacters() instead
    */
   public async getGuildCharacters(guildId: string) {
     return this.characters.getGuildCharacters(guildId);
@@ -245,6 +262,7 @@ class APIService {
 
   /**
    * Récupère tous les personnages d'une ville
+   * @deprecated Use apiService.characters.getTownCharacters() instead
    */
   public async getTownCharacters(townId: string) {
     return this.characters.getTownCharacters(townId);
@@ -252,6 +270,7 @@ class APIService {
 
   /**
    * Crée un nouveau personnage
+   * @deprecated Use apiService.characters.createCharacter() instead
    */
   public async createCharacter(characterData: {
     name: string;
@@ -263,6 +282,7 @@ class APIService {
 
   /**
    * Tue un personnage
+   * @deprecated Use apiService.characters.killCharacter() instead
    */
   public async killCharacter(characterId: string) {
     return this.characters.killCharacter(characterId);
@@ -270,6 +290,7 @@ class APIService {
 
   /**
    * Donne l'autorisation de reroll à un personnage
+   * @deprecated Use apiService.characters.grantRerollPermission() instead
    */
   public async grantRerollPermission(characterId: string) {
     return this.characters.grantRerollPermission(characterId);
@@ -277,6 +298,7 @@ class APIService {
 
   /**
    * Crée un personnage reroll
+   * @deprecated Use apiService.characters.createRerollCharacter() instead
    */
   public async createRerollCharacter(rerollData: {
     userId: string;
@@ -288,6 +310,7 @@ class APIService {
 
   /**
    * Change le personnage actif d'un utilisateur
+   * @deprecated Use apiService.characters.switchActiveCharacter() instead
    */
   public async switchActiveCharacter(
     userId: string,
@@ -299,6 +322,7 @@ class APIService {
 
   /**
    * Récupère les points d'action d'un personnage
+   * @deprecated Use apiService.characters.getActionPoints() instead
    */
   public async getActionPoints(characterId: string) {
     return this.characters.getActionPoints(characterId);
@@ -306,6 +330,7 @@ class APIService {
 
   /**
    * Récupère les personnages morts éligibles pour reroll
+   * @deprecated Use apiService.characters.getRerollableCharacters() instead
    */
   public async getRerollableCharacters(userId: string, townId: string) {
     return this.characters.getRerollableCharacters(userId, townId);
@@ -313,31 +338,45 @@ class APIService {
 
   /**
    * Vérifie si un utilisateur a besoin de créer un personnage
+   * @deprecated Use apiService.characters.needsCharacterCreation() instead
    */
   public async needsCharacterCreation(userId: string, townId: string) {
     return this.characters.needsCharacterCreation(userId, townId);
   }
 
+  /**
+   * @deprecated Use apiService.expeditions.getExpeditionsByTown() instead
+   */
   public async getExpeditionsByTown(townId: string) {
     return this.expeditions.getExpeditionsByTown(townId);
   }
 
+  /**
+   * @deprecated Use apiService.expeditions.getAllExpeditions() instead
+   */
   public async getAllExpeditions(includeReturned = false) {
     return this.expeditions.getAllExpeditions(includeReturned);
   }
 
+  /**
+   * @deprecated Use apiService.expeditions.createExpedition() instead
+   */
   public async createExpedition(
     expeditionData: CreateExpeditionDto
   ): Promise<{ data: Expedition }> {
     return this.expeditions.createExpedition(expeditionData);
   }
 
+  /**
+   * @deprecated Use apiService.expeditions.getExpeditionById() instead
+   */
   public async getExpeditionById(expeditionId: string) {
     return this.expeditions.getExpeditionById(expeditionId);
   }
 
   /**
    * Met à jour les statistiques d'un personnage (PA, faim, etc.)
+   * @deprecated Use apiService.characters.updateCharacterStats() instead
    */
   public async updateCharacterStats(
     characterId: string,
@@ -356,6 +395,7 @@ class APIService {
 
   /**
    * Rejoint une expédition
+   * @deprecated Use apiService.expeditions.joinExpedition() instead
    */
   public async joinExpedition(expeditionId: string, characterId: string) {
     return this.expeditions.joinExpedition(expeditionId, characterId);

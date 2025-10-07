@@ -50,7 +50,7 @@ export async function handleViewStockCommand(interaction: any) {
     }
 
     // Récupérer la ville du personnage (pas forcément celle du serveur)
-    const townResponse = await apiService.getTownById(character.townId);
+    const townResponse = await apiService.towns.getTownById(character.townId);
 
     if (!townResponse) {
       await interaction.reply({

@@ -2,37 +2,18 @@
 
 -------------------------Node Discord /update-------------------------
 
-PV
+Tester les interractions d'expéditions avec plusieurs personnages
 
-✅ ❤️ ❤️ ❤️ 🖤 🖤
-✅ ❤️‍🩹 🖤 🖤 🖤 🖤
-✅ 💜 💜 💜 🖤 🖤
-✅ Profil : rôle bug
+Expédition bouton transferer la nourriture non fonctionnel , doit avoir deux champs dans la modale et gérer les deux ressources en transfert
 
-✅ Passer expéditions en jours et non pas en heure.
-
-✅Expedition create message invisible mais log
-
-Expedition info
-✅->membres 0 ?
-✅-> ajouter liste des membres
-✅->bouton quitter non fonctionnel
-✅-> bouton Transférer nourriture non fonctionnel
-✅-> ajouter égalemetn un log au transfert
-
-✅Expedition join log
-✅expedition leave log
-
-Tester les interractions avec plusieurs personnages
-
-✅Ajouter la liste des membres dans expédition-admin
-✅Bouton gérer les membres expédition-admin
 
 QUESTIONS:
 foodstock on conserve ? si oui on conserve les boutons manger ? si non on les delete ?
-/manger on conser ? ou est-ce que /profil garde tout ?
+/manger on conserve ? ou est-ce que /profil garde tout ?
 
-V2: Gestion de faim et PA spécifiques en expédition.
+ExpéditionV2: Gestion de faim et PA spécifiques en expédition.
+
+CapacitéV2: beaucoup de trucs
 
 dayli message (weather)
 Prévoir 7 messages types x2
@@ -388,4 +369,27 @@ Après création FE > FV
 
 Fin d'exped : FE → FV
 
+PV
+
+✅ ❤️ ❤️ ❤️ 🖤 🖤
+✅ ❤️‍🩹 🖤 🖤 🖤 🖤
+✅ 💜 💜 💜 🖤 🖤
+✅ Profil : rôle bug
+
+✅ Passer expéditions en jours et non pas en heure.
+
+✅Expedition create message invisible mais log
+
+Expedition info
+✅->membres 0 ?
+✅-> ajouter liste des membres
+✅->bouton quitter non fonctionnel
+✅-> bouton Transférer nourriture non fonctionnel
+✅-> ajouter égalemetn un log au transfert
+
+✅Expedition join log
+✅expedition leave log
+
+✅Ajouter la liste des membres dans expédition-admin
+✅Bouton gérer les membres expédition-admin
 -------------------------Notes-------------------------

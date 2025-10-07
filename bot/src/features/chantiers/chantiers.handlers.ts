@@ -55,7 +55,7 @@ import { getStatusText, getStatusEmoji } from "./chantiers.utils";
 
 export async function handleListCommand(interaction: CommandInteraction) {
   try {
-    const chantiers: Chantier[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
 
@@ -112,7 +112,7 @@ export async function handleListCommand(interaction: CommandInteraction) {
 export async function handleInvestCommand(interaction: CommandInteraction) {
   try {
     // Récupérer les chantiers de la guilde
-    const chantiers: Chantier[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
 
@@ -270,7 +270,7 @@ export async function handleAddCommand(interaction: CommandInteraction) {
     }
 
     // Créer le chantier
-    const result = await apiService.createChantier(
+    const result = await apiService.chantiers.createChantier(
       {
         name: nom,
         cost: cout,
@@ -369,7 +369,7 @@ export async function handleInvestModalSubmit(
     }
 
     // Récupérer la ville du serveur
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     const town = townResponse as unknown as Town;
@@ -379,7 +379,7 @@ export async function handleInvestModalSubmit(
     }
 
     // Récupérer tous les personnages de la ville et trouver celui de l'utilisateur
-    const townCharacters = (await apiService.getTownCharacters(
+    const townCharacters = (await apiService.characters.getTownCharacters(
       town.id
     )) as any[];
     const userCharacters = townCharacters.filter(
@@ -389,7 +389,7 @@ export async function handleInvestModalSubmit(
 
     if (!activeCharacter) {
       // Vérifier si l'utilisateur a besoin de créer un personnage
-      const needsCreation = await apiService.needsCharacterCreation(
+      const needsCreation = await apiService.characters.needsCharacterCreation(
         user.id,
         town.id
       );
@@ -474,7 +474,7 @@ export async function handleInvestModalSubmit(
     }
 
     // Appeler l'API pour effectuer l'investissement
-    const result = (await apiService.investInChantier(
+    const result = (await apiService.chantiers.investInChantier(
       activeCharacter.id,
       chantierId,
       points
@@ -546,7 +546,7 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
     if (!isUserAdmin) return;
 
     // Récupérer les chantiers de la guilde
-    const chantiers: Chantier[] = await apiService.getChantiersByServer(
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
 
@@ -609,7 +609,7 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
       }
 
       // Supprimer le chantier
-      await apiService.deleteChantier(selectedChantierId);
+      await apiService.chantiers.deleteChantier(selectedChantierId);
 
       // Répondre avec le résultat
       await response.update({
