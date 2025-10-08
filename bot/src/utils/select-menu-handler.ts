@@ -126,7 +126,7 @@ export class SelectMenuHandler {
     this.registerHandler("expedition_join_select", async (interaction) => {
       try {
         const { handleExpeditionJoinSelect } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionJoinSelect(interaction);
       } catch (error) {
@@ -142,7 +142,7 @@ export class SelectMenuHandler {
     this.registerHandler("expedition_transfer_direction", async (interaction) => {
       try {
         const { handleExpeditionTransferDirectionSelect } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionTransferDirectionSelect(interaction);
       } catch (error) {

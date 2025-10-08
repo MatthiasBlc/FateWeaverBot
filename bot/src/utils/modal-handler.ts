@@ -121,7 +121,7 @@ export class ModalHandler {
     this.registerHandler("expedition_creation_modal", async (interaction) => {
       try {
         const { handleExpeditionCreationModal } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionCreationModal(interaction);
       } catch (error) {
@@ -155,7 +155,7 @@ export class ModalHandler {
       async (interaction) => {
         try {
           const { handleExpeditionTransferModal } = await import(
-            "../features/expeditions/expedition.handlers.js"
+            "../features/expeditions/expedition.command.js"
           );
           await handleExpeditionTransferModal(interaction);
         } catch (error) {

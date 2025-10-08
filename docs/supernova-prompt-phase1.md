@@ -208,7 +208,7 @@ Elle est déjà dans `utils/embeds.ts`
 
 ### ✅ Vérification Batch 2
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -260,7 +260,7 @@ createInfoEmbed("titre", "description").addFields(...)
 
 ### ✅ Vérification Batch 3
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -307,7 +307,7 @@ Si une fonction locale `getStockColorLocal()` existe, la supprimer (déjà dans 
 
 ### ✅ Vérification Batch 4
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -338,7 +338,7 @@ import { createSuccessEmbed, createErrorEmbed, createInfoEmbed, createCustomEmbe
 
 3. **Tester après CHAQUE fichier :**
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ### ✅ Vérification Batch 5
@@ -412,7 +412,7 @@ const row = createConfirmationButtons("action");
 
 ### ✅ Vérification Batch 6
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---

@@ -6,7 +6,7 @@ import {
   handleExpeditionStartCommand,
   handleExpeditionJoinCommand,
   handleExpeditionInfoCommand
-} from "@/features/expeditions/expedition.handlers";
+} from "@/features/expeditions/expedition.command";
 
 const command: Command = {
   data: new SlashCommandBuilder()

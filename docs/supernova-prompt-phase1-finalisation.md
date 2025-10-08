@@ -61,7 +61,7 @@ const embed = createInfoEmbed(
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -110,7 +110,7 @@ const timeoutEmbed = createWarningEmbed(
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -147,7 +147,7 @@ const embed = createCustomEmbed({
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -181,7 +181,7 @@ const embed = createCustomEmbed({
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -214,7 +214,7 @@ const embed = createInfoEmbed(
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -251,7 +251,7 @@ const embed = createCustomEmbed({
 
 ### Vérification
 ```bash
-npm run build
+cd bot && npm run build
 ```
 
 ---
@@ -337,11 +337,12 @@ npm run build
 ## 🚨 Règles Strictes (Rappel)
 
 ### ✅ OBLIGATOIRE
-1. **Test après CHAQUE fichier** : `npm run build`
-2. **Si erreur** : STOP et documente
-3. **Commit après chaque fichier** : `git commit -m "refactor(phase1): migrate [filename]"`
-4. Ne PAS modifier la logique métier
-5. Respecter exactement les patterns ci-dessus
+1. **Test après CHAQUE fichier** : `cd bot && npm run build`
+2. **⚠️ Toutes les commandes npm doivent être exécutées DEPUIS le dossier bot/** : `cd bot && npm run ...`
+3. **Si erreur** : STOP et documente
+4. **Commit après chaque fichier** : `git commit -m "refactor(phase1): migrate [filename]"`
+5. Ne PAS modifier la logique métier
+6. Respecter exactement les patterns ci-dessus
 
 ### ❌ INTERDIT
 1. Modifier plusieurs fichiers avant de tester

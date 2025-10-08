@@ -51,22 +51,22 @@ export class ButtonHandler {
 
       if (customId === "expedition_leave") {
         const { handleExpeditionLeaveButton } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionLeaveButton(interaction);
       } else if (customId === "expedition_transfer") {
         const { handleExpeditionTransferButton } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionTransferButton(interaction);
       } else if (customId === "expedition_create_new") {
         const { handleExpeditionCreateNewButton } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionCreateNewButton(interaction);
       } else if (customId === "expedition_join_existing") {
         const { handleExpeditionJoinExistingButton } = await import(
-          "../features/expeditions/expedition.handlers.js"
+          "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionJoinExistingButton(interaction);
       } else if (customId.startsWith("expedition_admin_")) {
