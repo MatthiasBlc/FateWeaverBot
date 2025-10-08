@@ -52,12 +52,18 @@ export function generateDynamicHelpSections(
     }
 
     // Déterminer la catégorie basée sur le nom de la commande
-    let category = "⚙️ Commandes de base";
+    let category = "⚙️ Autres";
 
-    if (command.data.name.includes("chantier")) {
-      category = "🏗️ Commandes des chantiers";
+    if (command.data.name.includes("profil") || command.data.name.includes("stock")) {
+      category = "🍖 Survie";
+    } else if (command.data.name.includes("expedition")) {
+      category = "🚀 Aventure";
+    } else if (command.data.name.includes("chantier")) {
+      category = "🏗️ Communauté";
+    } else if (command.data.name.includes("help")) {
+      category = "📚 Aide";
     } else if (isAdminCommand) {
-      category = "🔧 Commandes administrateur";
+      category = "🔧 Administration";
     }
 
     if (!commandGroups[category]) {
@@ -83,9 +89,12 @@ export function generateDynamicHelpSections(
 
   // Convertir les groupes en sections d'aide avec un ordre cohérent
   const categoryOrder = [
-    "⚙️ Commandes de base",
-    "🔧 Commandes administrateur",
-    "🏗️ Commandes des chantiers"
+    "🍖 Survie",
+    "🚀 Aventure",
+    "🏗️ Communauté",
+    "📚 Aide",
+    "⚙️ Autres",
+    "🔧 Administration"
   ];
 
   // Trier les catégories selon l'ordre défini
@@ -114,8 +123,19 @@ export function generateDynamicHelpSections(
     });
   });
 
-  // Ajouter une section d'information générale (seulement pour les utilisateurs)
+  // Ajouter une section d'exemples (seulement pour les utilisateurs)
   if (!isAdmin) {
+    sections.push({
+      name: "💡 Exemples d'utilisation",
+      value: "```\n" +
+        "/profil - Voir votre personnage et gérer la faim\n" +
+        "/stock - Consulter les ressources de votre ville\n" +
+        "/expedition - Participer à une expédition\n" +
+        "/chantiers - Contribuer à un projet communautaire\n" +
+        "```",
+      inline: false,
+    });
+
     sections.push({
       name: "❓ Besoin d'aide supplémentaire ?",
       value: "Contactez un administrateur de la guilde pour toute question ou problème.",
