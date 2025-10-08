@@ -19,7 +19,7 @@ import { logger } from "../../services/logger";
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
   try {
     // Get all expeditions (including returned ones for admin)
-    const expeditions = await apiService.getAllExpeditions(true) as Expedition[];
+    const expeditions = await apiService.expeditions.getAllExpeditions(true) as Expedition[];
 
     if (!expeditions || expeditions.length === 0) {
       await interaction.reply({
@@ -82,7 +82,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
     const expeditionId = interaction.values[0];
 
     // Get expedition details
-    const expedition = await apiService.getExpeditionById(expeditionId);
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
       await interaction.reply({
         content: "❌ Expédition non trouvée.",
@@ -139,7 +139,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
 export async function handleExpeditionAdminModify(interaction: any, expeditionId: string) {
   try {
     // Get expedition details
-    const expedition = await apiService.getExpeditionById(expeditionId);
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
       await interaction.reply({
         content: "❌ Expédition non trouvée.",
@@ -224,7 +224,7 @@ export async function handleExpeditionModifyModal(interaction: any) {
 export async function handleExpeditionAdminMembers(interaction: any, expeditionId: string) {
   try {
     // Get expedition details
-    const expedition = await apiService.getExpeditionById(expeditionId) as Expedition;
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId) as Expedition;
     if (!expedition) {
       await interaction.reply({
         content: "❌ Expédition non trouvée.",
@@ -235,7 +235,7 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
 
     // Get all characters in the guild/town for selection
     const guildId = expedition.townId; // Assuming this is the guild ID or we need to get it differently
-    const characters = await apiService.getTownCharacters(expedition.townId) as CharacterWithUser[];
+    const characters = await apiService.characters.getTownCharacters(expedition.townId) as CharacterWithUser[];
 
     if (!characters || characters.length === 0) {
       await interaction.reply({
@@ -348,7 +348,7 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
     await apiService.addMemberToExpedition(expeditionId, characterId);
 
     // Get updated expedition info
-    const expedition = await apiService.getExpeditionById(expeditionId);
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
 
     // Update the message with new member count
     const memberList = expedition?.members?.map(member =>
@@ -391,7 +391,7 @@ export async function handleExpeditionAdminRemoveMember(interaction: any) {
     await apiService.removeMemberFromExpedition(expeditionId, characterId);
 
     // Get updated expedition info
-    const expedition = await apiService.getExpeditionById(expeditionId);
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
 
     // Update the message with new member count
     const memberList = expedition?.members?.map(member =>

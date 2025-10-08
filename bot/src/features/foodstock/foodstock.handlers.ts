@@ -17,7 +17,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
 
   try {
     // Récupérer les informations de la ville
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
 

@@ -94,7 +94,7 @@ export class ButtonHandler {
         }
 
         // Récupérer le personnage par son ID
-        const character = await apiService.getCharacterById(characterId);
+        const character = await apiService.characters.getCharacterById(characterId);
 
         if (!character) {
           await interaction.editReply({
@@ -133,7 +133,7 @@ export class ButtonHandler {
         }
 
         // Récupérer le personnage par son ID
-        const character = await apiService.getCharacterById(characterId);
+        const character = await apiService.characters.getCharacterById(characterId);
 
         if (!character) {
           await interaction.editReply({

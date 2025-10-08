@@ -175,7 +175,7 @@ export async function handleStatsModalSubmit(
   }
 
   try {
-    const updatedCharacter = (await apiService.updateCharacterStats(
+    const updatedCharacter = (await apiService.characters.updateCharacterStats(
       characterId,
       {
         paTotal: paNumber,
@@ -303,7 +303,7 @@ export async function handleAdvancedStatsModalSubmit(
   };
 
   try {
-    const updatedCharacter = (await apiService.updateCharacterStats(
+    const updatedCharacter = (await apiService.characters.updateCharacterStats(
       characterId,
       updateData
     )) as Character;
@@ -355,7 +355,7 @@ async function getCharactersFromState(interaction: any): Promise<Character[]> {
   const guildId = interaction.guildId;
   if (!guildId) return [];
 
-  const town = await apiService.getTownByGuildId(guildId);
+  const town = await apiService.guilds.getTownByGuildId(guildId);
   if (
     !town ||
     typeof town !== "object" ||
@@ -364,7 +364,7 @@ async function getCharactersFromState(interaction: any): Promise<Character[]> {
   )
     return [];
 
-  return (await apiService.getTownCharacters(town.id)) as Character[];
+  return (await apiService.characters.getTownCharacters(town.id)) as Character[];
 }
 
 /**
@@ -414,7 +414,7 @@ async function handleKillButton(
       return;
     }
 
-    await apiService.killCharacter(character.id);
+    await apiService.characters.killCharacter(character.id);
 
     const embed = new EmbedBuilder()
       .setColor(0xff0000)
@@ -466,7 +466,7 @@ async function handleToggleRerollButton(
 ) {
   try {
     const newCanReroll = !character.canReroll;
-    await apiService.updateCharacterStats(character.id, {
+    await apiService.characters.updateCharacterStats(character.id, {
       canReroll: newCanReroll,
     });
 

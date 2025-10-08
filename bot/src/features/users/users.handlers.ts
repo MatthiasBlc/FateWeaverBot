@@ -27,7 +27,7 @@ export async function handleProfileCommand(interaction: any) {
 
   try {
     // Récupérer la ville d'abord
-    const town = (await apiService.getTownByGuildId(interaction.guildId!)) as {
+    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as {
       id: string;
     } | null;
 
@@ -140,7 +140,7 @@ export async function handleProfileCommand(interaction: any) {
         const capabilities = await getCharacterCapabilities(character.id);
 
         // Récupérer les points d'action du personnage
-        const actionPointsResponse = (await apiService.getActionPoints(
+        const actionPointsResponse = (await apiService.characters.getActionPoints(
           character.id
         )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;

@@ -18,13 +18,13 @@ async function getCharacterById(characterId: string, interaction: any): Promise<
     throw new Error("GuildId non trouvé dans l'interaction");
   }
 
-  const town = (await apiService.getTownByGuildId(guildId)) as Town | null;
+  const town = (await apiService.guilds.getTownByGuildId(guildId)) as Town | null;
   if (!town || !town.id) {
     throw new Error("Ville non trouvée pour ce serveur");
   }
 
   // Récupérer tous les personnages de la ville
-  const characters = (await apiService.getTownCharacters(town.id)) as Character[];
+  const characters = (await apiService.characters.getTownCharacters(town.id)) as Character[];
   const character = characters.find(c => c.id === characterId);
 
   if (!character) {
@@ -94,7 +94,7 @@ export async function handleCharacterAdminCommand(
     });
 
     // Récupérer la ville du serveur
-    const town = (await apiService.getTownByGuildId(
+    const town = (await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     )) as Town | null;
 
@@ -110,7 +110,7 @@ export async function handleCharacterAdminCommand(
     }
 
     // Récupérer tous les personnages de la ville
-    const characters = (await apiService.getTownCharacters(
+    const characters = (await apiService.characters.getTownCharacters(
       town.id
     )) as Character[];
 

@@ -84,7 +84,7 @@ export async function handleExpeditionMainCommand(
     }
 
     // Check if character is already on an active expedition
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(character.id);
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
 
     if (activeExpeditions && activeExpeditions.length > 0) {
       // Character is a member - show expedition info
@@ -179,7 +179,7 @@ export async function handleExpeditionMainCommand(
       });
     } else {
       // Character is not a member - show available expeditions
-      const townResponse = await apiService.getTownByGuildId(interaction.guildId!);
+      const townResponse = await apiService.guilds.getTownByGuildId(interaction.guildId!);
       if (!townResponse) {
         await interaction.reply({
           content: "❌ Aucune ville trouvée pour ce serveur.",
@@ -188,7 +188,7 @@ export async function handleExpeditionMainCommand(
         return;
       }
 
-      const expeditions = await apiService.getExpeditionsByTown(townResponse.id);
+      const expeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
       const availableExpeditions = expeditions.filter(
         (exp: Expedition) => exp.status === "PLANNING"
       );
@@ -462,7 +462,7 @@ export async function handleExpeditionCreationModal(
     }
 
     // Get town info
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
@@ -496,7 +496,7 @@ export async function handleExpeditionCreationModal(
       initialResources.push({ resourceTypeName: "Nourriture", quantity: nourritureAmount });
     }
 
-    const newExpedition = await apiService.createExpedition({
+    const newExpedition = await apiService.expeditions.createExpedition({
       name,
       initialResources,
       duration: durationDays,
@@ -513,7 +513,7 @@ export async function handleExpeditionCreationModal(
     // Join the creator to the expedition
     let joinSuccess = false;
     try {
-      const joinResponse = await apiService.joinExpedition(
+      const joinResponse = await apiService.expeditions.joinExpedition(
         newExpedition.data.id,
         character.id
       );
@@ -538,7 +538,7 @@ export async function handleExpeditionCreationModal(
     let memberCount = 0;
     let expeditionMembers: any[] = [];
     try {
-      const updatedExpedition = await apiService.getExpeditionById(
+      const updatedExpedition = await apiService.expeditions.getExpeditionById(
         newExpedition.data.id
       );
       memberCount = updatedExpedition?.members?.length || 0;
@@ -702,7 +702,7 @@ export async function handleExpeditionJoinCommand(
 
   try {
     // Get town info
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
@@ -752,7 +752,7 @@ export async function handleExpeditionJoinCommand(
     }
 
     // Check if character is already in an active expedition
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
       character.id
     );
 
@@ -769,7 +769,7 @@ export async function handleExpeditionJoinCommand(
     }
 
     // Get available expeditions (PLANNING status)
-    const expeditions = await apiService.getExpeditionsByTown(townResponse.id);
+    const expeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
 
     const availableExpeditions = expeditions.filter(
       (exp: Expedition) => exp.status === "PLANNING"
@@ -915,7 +915,7 @@ export async function handleExpeditionInfoCommand(
     }
 
     // Get character's active expeditions
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
       character.id
     );
 
@@ -1084,7 +1084,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     }
 
     // Get character's active expeditions
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
       character.id
     );
 
@@ -1127,7 +1127,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     // Check if expedition was terminated (last member left)
     let expeditionTerminated = false;
     try {
-      const updatedExpedition = await apiService.getExpeditionById(
+      const updatedExpedition = await apiService.expeditions.getExpeditionById(
         currentExpedition.id
       );
       expeditionTerminated = updatedExpedition?.status === "RETURNED";
@@ -1218,7 +1218,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
     }
 
     // Get character's active expeditions
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
       character.id
     );
 
@@ -1256,7 +1256,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
     }
 
     // Get town information for current food stock
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
@@ -1362,7 +1362,7 @@ export async function handleExpeditionTransferDirectionSelect(
     logger.info("Selected direction", { selectedDirection });
 
     // Get character's active expeditions
-    const activeExpeditions = await apiService.getActiveExpeditionsForCharacter(
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
       character.id
     );
 
@@ -1406,7 +1406,7 @@ export async function handleExpeditionTransferDirectionSelect(
     }
 
     // Get town information for validation
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
@@ -1556,7 +1556,7 @@ export async function handleExpeditionTransferModal(
     });
 
     // Get current expedition data
-    const expedition = await apiService.getExpeditionById(expeditionId);
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
       await interaction.reply({
         content: "❌ Expédition introuvable.",
@@ -1587,7 +1587,7 @@ export async function handleExpeditionTransferModal(
     }
 
     // Get town data for validation
-    const townResponse = await apiService.getTownByGuildId(
+    const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
@@ -1657,10 +1657,10 @@ export async function handleExpeditionTransferModal(
 
     if (transferSuccess) {
       // Get updated data for response
-      const updatedExpedition = await apiService.getExpeditionById(
+      const updatedExpedition = await apiService.expeditions.getExpeditionById(
         expeditionId
       );
-      const updatedTown = await apiService.getTownByGuildId(
+      const updatedTown = await apiService.guilds.getTownByGuildId(
         interaction.guildId!
       );
 

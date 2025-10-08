@@ -22,7 +22,7 @@ export async function handleCharacterDeath(
     logger.info("Handling character death", { characterId, guildId, cause });
 
     // Tuer le personnage
-    await apiService.killCharacter(characterId);
+    await apiService.characters.killCharacter(characterId);
 
     // Envoyer un message de log
     const deathCause = cause || "mort naturelle";
@@ -57,7 +57,7 @@ export async function checkAndHandleHungerDeath(
 ): Promise<boolean> {
   try {
     // Tuer le personnage (si pas déjà mort)
-    await apiService.killCharacter(characterId);
+    await apiService.characters.killCharacter(characterId);
 
     // Envoyer un message de log
     const logMessage = `💀 Un personnage est mort de faim.`;
@@ -117,7 +117,7 @@ export async function canUserPerformAction(userId: string, guildId: string): Pro
       "0000"
     );
 
-    const town = await apiService.getTownByGuildId(guildId) as { id: string } | null;
+    const town = await apiService.guilds.getTownByGuildId(guildId) as { id: string } | null;
 
     if (!town || typeof town !== 'object' || !('id' in town)) {
       logger.warn("No town found for guild", { guildId });
@@ -125,7 +125,7 @@ export async function canUserPerformAction(userId: string, guildId: string): Pro
     }
 
     // Vérifier si l'utilisateur a un personnage actif
-    const rerollableCharacters = await apiService.getRerollableCharacters(userId, town.id) as unknown[] | null;
+    const rerollableCharacters = await apiService.characters.getRerollableCharacters(userId, town.id) as unknown[] | null;
     
     if (!Array.isArray(rerollableCharacters)) {
       logger.warn("Invalid rerollable characters response", { userId, townId: town.id });

@@ -9,7 +9,7 @@ import { ERROR_MESSAGES } from "../constants/errors";
  * @throws Error if town is not found
  */
 export async function getTownByGuildId(guildId: string): Promise<Town> {
-  const town = await apiService.getTownByGuildId(guildId);
+  const town = await apiService.guilds.getTownByGuildId(guildId);
   if (!town) {
     throw new Error(ERROR_MESSAGES.TOWN_NOT_FOUND);
   }

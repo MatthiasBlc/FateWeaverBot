@@ -306,7 +306,7 @@ export async function handleInvestModalSubmit(
     const chantierId = customId.replace("invest_modal_", "");
 
     // Récupérer le chantier depuis l'API
-    const chantiers = await apiService.getChantiersByServer(
+    const chantiers = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
     const chantier = chantiers.find((c: Chantier) => c.id === chantierId);
