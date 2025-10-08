@@ -1,3 +1,4 @@
+import { createCustomEmbed, getStockColor } from "../../utils/embeds";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -72,34 +73,29 @@ export async function handleViewFoodStockCommand(interaction: any) {
     }
 
     // Créer l'embed d'information
-    const embed = new EmbedBuilder()
-      .setColor(getFoodStockColor(town.foodStock))
-      .setTitle(`🏪 Stock de Vivres`)
-      .setDescription(
-        `La ville **${town.name}** dispose actuellement de **${town.foodStock}** vivres.`
-      )
-      .addFields(
-        {
-          name: "📊 Stock Actuel",
-          value: `${town.foodStock}`,
-          inline: true,
-        },
-        {
-          name: "🏘️ Ville",
-          value: town.name,
-          inline: true,
-        },
-        {
-          name: "💡 Conseil",
-          value: getFoodStockAdvice(town.foodStock),
-          inline: true,
-        }
-      )
-      .setFooter({
-        text: "Utilisez /manger pour nourrir votre personnage",
-        iconURL: interaction.client.user?.displayAvatarURL(),
-      })
-      .setTimestamp();
+    const embed = createCustomEmbed({
+      color: getStockColor(town.foodStock),
+      title: "🏪 Stock de Vivres",
+      description: `La ville **${town.name}** dispose actuellement de **${town.foodStock}** vivres.`,
+      footer: { text: "Utilisez /manger pour nourrir votre personnage", iconURL: interaction.client.user?.displayAvatarURL() },
+      timestamp: true,
+    }).addFields(
+      {
+        name: "📊 Stock Actuel",
+        value: `${town.foodStock}`,
+        inline: true,
+      },
+      {
+        name: "🏘️ Ville",
+        value: town.name,
+        inline: true,
+      },
+      {
+        name: "💡 Conseil",
+        value: getFoodStockAdvice(town.foodStock),
+        inline: true,
+      }
+    );
 
     // Ajouter le champ du statut de faim du personnage
     if (character) {
@@ -159,12 +155,6 @@ export async function handleViewFoodStockCommand(interaction: any) {
   }
 }
 
-function getFoodStockColor(stock: number): number {
-  if (stock > 100) return 0x00ff00; // Vert - stock élevé
-  if (stock > 50) return 0xffff00; // Jaune - stock moyen
-  if (stock > 20) return 0xffa500; // Orange - stock faible
-  return 0xff0000; // Rouge - stock critique
-}
 
 function getFoodStockAdvice(stock: number): string {
   if (stock <= 0) return "🚨 Aucun vivre ! La ville va mourir de faim !";
