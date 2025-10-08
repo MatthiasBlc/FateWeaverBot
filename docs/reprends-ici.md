@@ -447,3 +447,5 @@ The handler should:
 - Update button label if possible (or instruct user to refresh with `/expedition`).
 Please continue the conversation from where we left it off without asking the user any further questions. Continue 
 with the last task that you were asked to work on. 
+
+Do not forget you can ask me to make supernova work on tasks for us if you think it's effective and it can help us to save credits.
