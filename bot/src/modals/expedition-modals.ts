@@ -128,25 +128,41 @@ export function createExpeditionTransferModal(expeditionId: string, currentFoodS
 }
 
 /**
- * Modal pour saisir uniquement le montant de nourriture à transférer (direction déjà choisie)
+ * Modal pour saisir le montant de ressources à transférer (direction déjà choisie)
+ * Supporte Vivres ET Nourriture dans une seule opération
  */
-export function createExpeditionTransferAmountModal(expeditionId: string, direction: "to_town" | "from_town", maxAmount: number) {
+export function createExpeditionTransferAmountModal(
+  expeditionId: string,
+  direction: "to_town" | "from_town",
+  maxVivres: number,
+  maxNourriture: number
+) {
   const modal = new ModalBuilder()
     .setCustomId(`expedition_transfer_amount_modal_${expeditionId}_${direction}`)
-    .setTitle(`Transférer de la nourriture ${direction === "to_town" ? "vers la ville" : "vers l'expédition"}`);
+    .setTitle(`Transférer des ressources ${direction === "to_town" ? "vers la ville" : "vers l'expédition"}`);
 
-  const amountInput = new TextInputBuilder()
-    .setCustomId("transfer_amount_input")
-    .setLabel("Quantité de nourriture à transférer")
+  const vivresInput = new TextInputBuilder()
+    .setCustomId("transfer_vivres_input")
+    .setLabel("🍞 Vivres à transférer")
     .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setPlaceholder(`Montant (maximum: ${maxAmount})`)
+    .setRequired(false)
+    .setPlaceholder(`Quantité (max: ${maxVivres}, laissez vide si 0)`)
     .setMinLength(1)
     .setMaxLength(10);
 
-  const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+  const nourritureInput = new TextInputBuilder()
+    .setCustomId("transfer_nourriture_input")
+    .setLabel("🍖 Nourriture à transférer")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false)
+    .setPlaceholder(`Quantité (max: ${maxNourriture}, laissez vide si 0)`)
+    .setMinLength(1)
+    .setMaxLength(10);
 
-  modal.addComponents([amountRow]);
+  const vivresRow = new ActionRowBuilder<TextInputBuilder>().addComponents(vivresInput);
+  const nourritureRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nourritureInput);
+
+  modal.addComponents([vivresRow, nourritureRow]);
 
   return modal;
 }

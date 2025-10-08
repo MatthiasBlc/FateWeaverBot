@@ -158,6 +158,7 @@ class APIService {
 
   /**
    * Transfère de la nourriture entre ville et expédition
+   * @deprecated Utiliser transferResource pour plus de flexibilité
    */
   public async transferExpeditionFood(
     expeditionId: string,
@@ -168,6 +169,14 @@ class APIService {
       amount,
       direction,
     });
+  }
+
+  /**
+   * Récupère tous les types de ressources disponibles
+   */
+  public async getResourceTypes() {
+    const response = await this.api.get("/resources/types");
+    return response.data;
   }
 
   /**
