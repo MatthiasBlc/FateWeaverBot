@@ -1,3 +1,4 @@
+import { createCustomEmbed, getStockColor } from "../../utils/embeds";
 import {
   EmbedBuilder,
   type GuildMember,
@@ -74,11 +75,13 @@ export async function handleViewStockCommand(interaction: any) {
     const resources = resourcesResponse as ResourceStock[];
 
     // Créer l'embed d'information
-    const embed = new EmbedBuilder()
-      .setColor(getStockColor(resources))
-      .setTitle(`🏙️ Stock de la Ville : ${townResponse.name}`)
-      .setDescription(`Stock actuel de toutes les ressources de la ville **${townResponse.name}** (ville de votre personnage **${character.name}**).`)
-      .setTimestamp();
+    const totalStock = resources.reduce((sum, resource) => sum + resource.quantity, 0);
+    const embed = createCustomEmbed({
+      color: getStockColor(totalStock),
+      title: `🏙️ Stock de la Ville : ${townResponse.name}`,
+      description: `Stock actuel de toutes les ressources de la ville **${townResponse.name}** (ville de votre personnage **${character.name}**).`,
+      timestamp: true,
+    });
 
     // Ajouter les ressources au format demandé
     const resourceLines: string[] = [];
@@ -150,11 +153,3 @@ export async function handleViewStockCommand(interaction: any) {
   }
 }
 
-function getStockColor(resources: ResourceStock[]): number {
-  const totalQuantity = resources.reduce((sum, resource) => sum + resource.quantity, 0);
-
-  if (totalQuantity > 200) return 0x00ff00; // Vert - stock élevé
-  if (totalQuantity > 100) return 0xffff00; // Jaune - stock moyen
-  if (totalQuantity > 50) return 0xffa500; // Orange - stock faible
-  return 0xff0000; // Rouge - stock critique
-}
