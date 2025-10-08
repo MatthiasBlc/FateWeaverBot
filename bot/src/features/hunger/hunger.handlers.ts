@@ -6,6 +6,8 @@ import {
   getHungerLevelText,
   getHungerEmoji,
 } from "../../utils/hunger";
+import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 import { getActiveCharacterForUser } from "../../utils/character";
 import type { EatResult } from "./hunger.types";
 import { createCustomEmbed, createSuccessEmbed, getHungerColor } from "../../utils/embeds";
@@ -132,10 +134,7 @@ export async function handleEatCommand(interaction: any, character: any) {
         "❌ L'expédition n'a pas assez de vivres pour votre repas.";
     }
 
-    await interaction.reply({
-      content: errorMessage,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, errorMessage);
   }
 }
 
