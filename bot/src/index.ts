@@ -58,120 +58,20 @@ client.commands = new Collection<string, Command>();
 // Load commands
 async function loadCommands() {
   try {
-    // Load commands from commands directory
+    // 1. Chargement des commandes du dossier commands/
     const commandsPath = new URL("commands", import.meta.url);
     const commandFiles = (await fs.readdir(commandsPath)).filter(
       (file) =>
-        (file.endsWith(".js") || file.endsWith(".ts")) && !file.startsWith("_")
+        (file.endsWith(".js") || file.endsWith(".ts")) &&
+        !file.startsWith("_") &&
+        !file.includes(".test.") &&
+        !file.endsWith(".d.ts")
     );
 
-    for (const file of commandFiles) {
-      const filePath = new URL(`commands/${file}`, import.meta.url);
-      const commandModule = (await import(filePath.href)).default;
-
-      // Handle both single commands and arrays of commands
-      const commandsToProcess = Array.isArray(commandModule)
-        ? commandModule
-        : [commandModule];
-
-      for (const command of commandsToProcess) {
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        } else {
-          logger.warn(
-            `[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`
-          );
-        }
-      }
-    }
-
-    // Load user commands from user-commands directory
-    const userCommandsPath = new URL("commands/user-commands", import.meta.url);
-    const userCommandFiles = (await fs.readdir(userCommandsPath)).filter(
-      (file) =>
-        (file.endsWith(".js") || file.endsWith(".ts")) && !file.startsWith("_")
-    );
-
-    logger.info(`Loading ${userCommandFiles.length} user commands...`);
-    for (const file of userCommandFiles) {
-      const filePath = new URL(
-        `commands/user-commands/${file}`,
-        import.meta.url
-      );
-      const commandModule = (await import(filePath.href)).default;
-
-      // Handle both single commands and arrays of commands
-      const commandsToProcess = Array.isArray(commandModule)
-        ? commandModule
-        : [commandModule];
-
-      for (const command of commandsToProcess) {
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        } else {
-          logger.warn(
-            `[WARNING] The user command at ${filePath} is missing required "data" or "execute" property.`
-          );
-        }
-      }
-    }
-    logger.info("UserCommands loaded successfully");
-
-    // Load commands from admin-commands directory
-    const adminCommandsPath = new URL(
-      "commands/admin-commands",
-      import.meta.url
-    );
-    const adminCommandFiles = (await fs.readdir(adminCommandsPath)).filter(
-      (file) =>
-        (file.endsWith(".js") || file.endsWith(".ts")) && !file.startsWith("_")
-    );
-
-    logger.info(`Loading ${adminCommandFiles.length} admin commands...`);
-    for (const file of adminCommandFiles) {
-      const filePath = new URL(
-        `commands/admin-commands/${file}`,
-        import.meta.url
-      );
-      const commandModule = (await import(filePath.href)).default;
-
-      // Handle both single commands and arrays of commands
-      const commandsToProcess = Array.isArray(commandModule)
-        ? commandModule
-        : [commandModule];
-
-      for (const command of commandsToProcess) {
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        } else {
-          logger.warn(
-            `[WARNING] The admin command at ${filePath} is missing required "data" or "execute" property.`
-          );
-        }
-      }
-    }
-    logger.info("AdminCommands loaded successfully");
-
-    // Load commands from features directory
-    const featuresPath = new URL("features", import.meta.url);
-    const featureDirs = (await fs.readdir(featuresPath)).filter(
-      (file) => !file.endsWith(".ts") && !file.endsWith(".js")
-    );
-
-    for (const dir of featureDirs) {
-      const featurePath = new URL(`features/${dir}`, import.meta.url);
-      const featureFiles = (await fs.readdir(featurePath)).filter(
-        (file) =>
-          (file.endsWith(".js") || file.endsWith(".ts")) &&
-          file.includes("command") &&
-          !file.startsWith("_")
-      );
-
-      for (const file of featureFiles) {
-        const filePath = new URL(`features/${dir}/${file}`, import.meta.url);
+    // Fonction utilitaire pour charger une commande
+    const loadCommand = async (filePath: URL) => {
+      try {
         const commandModule = (await import(filePath.href)).default;
-
-        // Handle both single commands and arrays of commands
         const commandsToProcess = Array.isArray(commandModule)
           ? commandModule
           : [commandModule];
@@ -185,10 +85,85 @@ async function loadCommands() {
             );
           }
         }
+      } catch (error) {
+        logger.error(`Error loading command from ${filePath}:`, error);
+      }
+    };
+
+    // Chargement des commandes racine
+    for (const file of commandFiles) {
+      const filePath = new URL(`commands/${file}`, import.meta.url);
+      await loadCommand(filePath);
+    }
+
+    // Chargement des commandes utilisateur
+    const userCommandsPath = new URL("commands/user-commands", import.meta.url);
+    const userCommandFiles = (await fs.readdir(userCommandsPath)).filter(
+      (file) =>
+        (file.endsWith(".js") || file.endsWith(".ts")) &&
+        !file.startsWith("_") &&
+        !file.includes(".test.") &&
+        !file.endsWith(".d.ts")
+    );
+
+    logger.info(`Loading ${userCommandFiles.length} user commands...`);
+    for (const file of userCommandFiles) {
+      const filePath = new URL(
+        `commands/user-commands/${file}`,
+        import.meta.url
+      );
+      await loadCommand(filePath);
+    }
+
+    // Chargement des commandes admin
+    const adminCommandsPath = new URL(
+      "commands/admin-commands",
+      import.meta.url
+    );
+    const adminCommandFiles = (await fs.readdir(adminCommandsPath)).filter(
+      (file) =>
+        (file.endsWith(".js") || file.endsWith(".ts")) &&
+        !file.startsWith("_") &&
+        !file.includes(".test.") &&
+        !file.endsWith(".d.ts")
+    );
+
+    logger.info(`Loading ${adminCommandFiles.length} admin commands...`);
+    for (const file of adminCommandFiles) {
+      const filePath = new URL(
+        `commands/admin-commands/${file}`,
+        import.meta.url
+      );
+      await loadCommand(filePath);
+    }
+
+    // 2. Chargement des commandes du dossier features/
+    const featuresPath = new URL("features", import.meta.url);
+    const featureDirs = (
+      await fs.readdir(featuresPath, { withFileTypes: true })
+    )
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
+
+    for (const dir of featureDirs) {
+      const featureDirPath = new URL(`features/${dir}`, import.meta.url);
+      const featureFiles = (await fs.readdir(featureDirPath)).filter((file) => {
+        const isCommandFile =
+          (file.endsWith(".command.ts") || file.endsWith(".command.js")) &&
+          !file.startsWith("_") &&
+          !file.includes(".test.") &&
+          !file.endsWith(".d.ts");
+
+        return isCommandFile;
+      });
+
+      for (const file of featureFiles) {
+        const filePath = new URL(`features/${dir}/${file}`, import.meta.url);
+        await loadCommand(filePath);
       }
     }
 
-    logger.info("Commands loaded successfully");
+    logger.info("All commands loaded successfully");
   } catch (error) {
     logger.error("Error loading commands:", { error });
   }
