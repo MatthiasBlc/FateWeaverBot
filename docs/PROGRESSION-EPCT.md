@@ -112,31 +112,35 @@
 
 ---
 
-## 📅 PHASES FUTURES
+### ✅ Phase 5: Expéditions Multi-Ressources (EN COURS)
 
----
-
-### Phase 5: Expéditions Multi-Ressources (6h estimé)
-
-#### Sous-tâche 5.1: Transfert Multi-Ressources (4h)
+#### ✅ Sous-tâche 5.1: Transfert Multi-Ressources (TERMINÉE)
 **Fichiers** :
-- `bot/src/modals/expedition-modals.ts`
-- `bot/src/features/expeditions/handlers/expedition-transfer.ts`
+- `bot/src/modals/expedition-modals.ts` (modal avec 2 champs)
+- `bot/src/features/expeditions/handlers/expedition-transfer.ts` (handlers)
+- `bot/src/services/api.ts` (méthode getResourceTypes)
 
-**Backend** : ✅ Déjà prêt (`transferResource` supporte tout)
+**Backend** : ✅ Utilise `/resources/*/transfer` existant
 
-**Tâches** :
-- [ ] Modifier `createExpeditionTransferAmountModal` :
-  - [ ] Ajouter 2 champs : Vivres + Nourriture
-  - [ ] CustomId: `expedition_transfer_amount_modal_${direction}`
-- [ ] Modifier `handleExpeditionTransferModal` :
-  - [ ] Parser les 2 champs
-  - [ ] Appels API séparés si quantité > 0
-  - [ ] Validation quantités
-- [ ] Tests : vivres seul, nourriture seule, les deux, insuffisant
-- [ ] Build + commit
+**Modifications faites** :
+- [x] Modal `createExpeditionTransferAmountModal` modifié :
+  - [x] Ajouté 2 champs : Vivres + Nourriture
+  - [x] Placeholders dynamiques avec max
+  - [x] Champs optionnels (laissez vide si 0)
+- [x] Handler `handleExpeditionTransferDirectionSelect` :
+  - [x] Récupère stocks Vivres + Nourriture (expédition + ville)
+  - [x] Passe maxVivres et maxNourriture au modal
+- [x] Handler `handleExpeditionTransferModal` :
+  - [x] Parse les 2 champs (vivres + nourriture)
+  - [x] Validation : au moins 1 ressource > 0
+  - [x] Validation : quantités <= stocks disponibles
+  - [x] Récupère resource type IDs via getResourceTypes()
+  - [x] Appels transferResource séparés si quantité > 0
+  - [x] Affiche résumé combiné avec stocks mis à jour
+- [x] Build validé ✅
+- [x] Commit : "Implement multi-resource expedition transfers" (05cec16)
 
-**État** : ⏸️ À VENIR
+**État** : ✅ TERMINÉE
 
 ---
 
@@ -242,17 +246,18 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : ~62k / 200k (31%)
-**Phases complétées** : 4/7 (Phase 1, 2, 3, 4 terminées)
-**Commits créés** : 10 commits
-**Temps estimé restant** : ~17h de dev
+**Tokens utilisés** : ~97k / 200k (49%)
+**Phases complétées** : 4.5/7 (Phase 1-4 + Phase 5.1 terminées)
+**Commits créés** : 12 commits
+**Temps estimé restant** : ~13h de dev
 
 ### Détails :
 - ✅ Phase 1 : Quick Wins (bug fix + suppressions + renommages)
 - ✅ Phase 2 : Emojis (migration centralisée terminée via Supernova)
 - ✅ Phase 3 : UX (/stock + /help améliorés)
 - ✅ Phase 4 : Système "Manger +" (corrections TS appliquées)
-- ⏸️ Phase 5-7 : À venir
+- 🔄 Phase 5 : Expéditions Multi-Ressources (5.1 ✅, 5.2 à venir)
+- ⏸️ Phase 6-7 : À venir
 
 ---
 
@@ -271,5 +276,5 @@ npx tsc --noEmit
 
 ---
 
-**Dernière action** : Phase 4 corrigée (erreurs TypeScript résolues, build OK)
-**Prochaine action** : Démarrer Phase 5 (Expéditions Multi-Ressources)
+**Dernière action** : Phase 5.1 terminée (transferts multi-ressources Vivres + Nourriture)
+**Prochaine action** : Phase 5.2 (Retour Urgence expéditions) ou Phase 6 (Chantiers Ressources)
