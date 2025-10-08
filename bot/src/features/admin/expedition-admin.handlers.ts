@@ -12,9 +12,8 @@ import { ExpeditionAPIService } from "../../services/api/expedition-api.service"
 import { Character, Expedition } from "../../types/entities";
 import { apiService } from "../../services/api";
 
-// Type for character with user details from the API
-// Note: Character already has optional user with full details, so we just use Character
-type CharacterWithUser = Character;
+import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { validateCharacterExists } from "../../utils/character-validation.js";
 import { logger } from "../../services/logger";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
@@ -23,10 +22,7 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
     const expeditions = await apiService.expeditions.getAllExpeditions(true) as Expedition[];
 
     if (!expeditions || expeditions.length === 0) {
-      await interaction.reply({
-        content: "❌ Aucune expédition trouvée.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune expédition trouvée.");
       return;
     }
 
@@ -36,10 +32,7 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
     );
 
     if (expeditionsWithMembers.length === 0) {
-      await interaction.reply({
-        content: "❌ Aucune expédition avec membres trouvée.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune expédition avec membres trouvée.");
       return;
     }
 
@@ -70,10 +63,7 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
 
   } catch (error) {
     logger.error("Error in expedition admin command:", { error });
-    await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la récupération des expéditions.",
-      flags: ["Ephemeral"],
-    });
+      await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la récupération des expéditions.");
   }
 }
 
@@ -84,10 +74,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
     // Get expedition details
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
-      await interaction.reply({
-        content: "❌ Expédition non trouvée.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Expédition non trouvée.");
       return;
     }
 
@@ -128,10 +115,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition admin select:", { error });
-    await interaction.reply({
-      content: "❌ Une erreur est survenue lors de la récupération des détails de l'expédition.",
-      flags: ["Ephemeral"],
-    });
+      await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la récupération des détails de l'expédition.");
   }
 }
 
@@ -140,10 +124,7 @@ export async function handleExpeditionAdminModify(interaction: any, expeditionId
     // Get expedition details
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
-      await interaction.reply({
-        content: "❌ Expédition non trouvée.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Expédition non trouvée.");
       return;
     }
 
@@ -153,10 +134,7 @@ export async function handleExpeditionAdminModify(interaction: any, expeditionId
 
   } catch (error) {
     logger.error("Error in expedition admin modify:", { error });
-    await interaction.reply({
-      content: "❌ Une erreur est survenue lors de l'ouverture du formulaire de modification.",
-      flags: ["Ephemeral"],
-    });
+      await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'ouverture du formulaire de modification.");
   }
 }
 
@@ -171,18 +149,12 @@ export async function handleExpeditionModifyModal(interaction: any) {
     const foodStockValue = parseInt(foodStock, 10);
 
     if (isNaN(durationValue) || durationValue < 1) {
-      await interaction.reply({
-        content: "❌ La durée doit être un nombre positif d'au moins 1 jour.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ La durée doit être un nombre positif d'au moins 1 jour.");
       return;
     }
 
     if (isNaN(foodStockValue) || foodStockValue < 0) {
-      await interaction.reply({
-        content: "❌ Le stock de nourriture doit être un nombre positif.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Le stock de nourriture doit être un nombre positif.");
       return;
     }
 
@@ -211,12 +183,9 @@ export async function handleExpeditionModifyModal(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition modify modal:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors de la modification de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors de la modification de l'expédition: ${
+      error instanceof Error ? error.message : "Erreur inconnue"
+    }`);
   }
 }
 
@@ -234,13 +203,10 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
 
     // Get all characters in the guild/town for selection
     const guildId = expedition.townId; // Assuming this is the guild ID or we need to get it differently
-    const characters = await apiService.characters.getTownCharacters(expedition.townId) as CharacterWithUser[];
+    const characters = await apiService.characters.getTownCharacters(expedition.townId) as Character[];
 
     if (!characters || characters.length === 0) {
-      await interaction.reply({
-        content: "❌ Aucun personnage trouvé dans cette ville.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage trouvé dans cette ville.");
       return;
     }
 
@@ -250,10 +216,7 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
     );
 
     if (availableCharacters.length === 0) {
-      await interaction.reply({
-        content: "❌ Tous les personnages de cette ville sont déjà dans l'expédition.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Tous les personnages de cette ville sont déjà dans l'expédition.");
       return;
     }
 
@@ -326,18 +289,12 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
     
     // Vérifier que le personnage est actif et vivant
     if (!character.isActive) {
-      await interaction.reply({
-        content: "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage n'est pas actif.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage n'est pas actif.");
       return;
     }
     
     if (character.isDead) {
-      await interaction.reply({
-        content: "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage est mort.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage est mort.");
       return;
     }
 
@@ -371,10 +328,7 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
 
   } catch (error) {
     logger.error("Error adding member to expedition:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors de l'ajout du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors de l'ajout du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -413,10 +367,7 @@ export async function handleExpeditionAdminRemoveMember(interaction: any) {
 
   } catch (error) {
     logger.error("Error removing member from expedition:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors du retrait du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors du retrait du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -439,10 +390,7 @@ export async function handleExpeditionAdminReturn(interaction: any, expeditionId
 
   } catch (error) {
     logger.error("Error in expedition admin return:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors du retour forcé de l'expédition: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors du retour forcé de l'expédition: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -470,16 +418,10 @@ export async function handleExpeditionAdminButton(interaction: any) {
       const expeditionId = customId.replace("expedition_admin_return_", "");
       await handleExpeditionAdminReturn(interaction, expeditionId);
     } else {
-      await interaction.reply({
-        content: "⚠️ Action d'administration d'expédition non reconnue",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "⚠️ Action d'administration d'expédition non reconnue");
     }
   } catch (error) {
     logger.error("Error in expedition admin button:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors de l'administration de l'expédition",
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "❌ Erreur lors de l'administration de l'expédition");
   }
 }
