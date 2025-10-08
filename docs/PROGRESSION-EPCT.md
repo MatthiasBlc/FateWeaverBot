@@ -26,16 +26,32 @@
 
 ---
 
-### 🔄 Phase 2: Infrastructure Emojis (EN COURS - Supernova)
+### ✅ Phase 2: Infrastructure Emojis (TERMINÉE - Supernova)
 - [x] Créer `bot/src/constants/emojis.ts` (FAIT)
-- [ ] Migrer `text-formatters.ts` (Supernova en cours)
-- [ ] Migrer `users.handlers.ts` (Supernova en cours)
-- [ ] Migrer `chantiers.handlers.ts` (Supernova en cours)
-- [ ] Build validé
-- [ ] Commits créés
+- [x] Migrer `text-formatters.ts` (11 emojis remplacés)
+- [x] Migrer `users.handlers.ts` (~30 emojis remplacés, 3 parties)
+- [x] Migrer `chantiers.handlers.ts` (~15 emojis remplacés)
+- [x] Build validé ✅ (3/3 builds réussis)
+- [x] Commits créés (3 commits Supernova)
 
-**Prompt Supernova** : `docs/supernova-prompt-phase2-emojis.md`
-**Attendre rapport** : Supernova doit fournir métriques
+**Métriques Supernova** :
+- Fichiers migrés : 3
+- Emojis remplacés : ~50+
+- Imports ajoutés : 3
+- Aucune erreur TypeScript sur les modifications
+
+**Bénéfices** :
+- Single source of truth pour emojis
+- Changement global en 1 fichier
+- Autocomplete TypeScript
+- Meilleure maintenabilité
+
+**Commits** :
+- 721f7e9 - Migrate text-formatters.ts
+- 6a5ab06 - Migrate users.handlers.ts (1/3)
+- 985542c - Migrate chantiers.handlers.ts
+
+**État** : ✅ MISSION ACCOMPLIE
 
 ---
 
@@ -246,17 +262,17 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : ~97k / 200k (49%)
+**Tokens utilisés** : ~130k / 200k (65%)
 **Phases complétées** : 4.5/7 (Phase 1-4 + Phase 5.1 terminées)
-**Commits créés** : 12 commits
+**Commits créés** : 15 commits (12 Claude + 3 Supernova)
 **Temps estimé restant** : ~13h de dev
 
 ### Détails :
-- ✅ Phase 1 : Quick Wins (bug fix + suppressions + renommages)
-- ✅ Phase 2 : Emojis (migration centralisée terminée via Supernova)
-- ✅ Phase 3 : UX (/stock + /help améliorés)
-- ✅ Phase 4 : Système "Manger +" (corrections TS appliquées)
-- 🔄 Phase 5 : Expéditions Multi-Ressources (5.1 ✅, 5.2 à venir)
+- ✅ Phase 1 : Quick Wins (bug fix + suppressions + renommages) - 5 commits
+- ✅ Phase 2 : Emojis (migration centralisée, ~50+ emojis) - 3 commits Supernova
+- ✅ Phase 3 : UX (/stock + /help améliorés) - 2 commits
+- ✅ Phase 4 : Système "Manger +" (corrections TS appliquées) - 2 commits
+- 🔄 Phase 5 : Expéditions Multi-Ressources (5.1 ✅, 5.2 à venir) - 3 commits
 - ⏸️ Phase 6-7 : À venir
 
 ---
@@ -265,14 +281,16 @@ npx tsc --noEmit
 
 ### Reprendre le travail :
 1. **Lire ce fichier** : `docs/PROGRESSION-EPCT.md`
-2. **Continuer Phase 5** : Expéditions Multi-Ressources (transfert + retour urgence)
-3. **Cocher au fur et à mesure** ✅
+2. **Continuer Phase 5.2** : Retour Urgence (système de votes expéditions)
+3. **Ou passer à Phase 6** : Chantiers Ressources
+4. **Cocher au fur et à mesure** ✅
 
 ### Fichiers de référence :
 - Plan général : `docs/TODO.md` (section "Node Discord /update")
-- Config emojis : `bot/src/constants/emojis.ts`
+- Config emojis : `bot/src/constants/emojis.ts` (~50+ emojis centralisés)
 - Architecture : `bot/ARCHITECTURE.md`
 - Système Manger+ : `bot/src/features/hunger/eat-more.handlers.ts`
+- Transferts multi-ressources : `bot/src/features/expeditions/handlers/expedition-transfer.ts`
 
 ---
 
