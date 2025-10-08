@@ -15,6 +15,8 @@ import { createExpeditionCreationModal } from "../../../modals/expedition-modals
 import { getTownByGuildId } from "../../../services/towns.service";
 import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { createActionButtons } from "../../../utils/discord-components";
+import { validateCharacterAlive } from "../../../utils/character-validation";
+import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -53,10 +55,7 @@ export async function handleExpeditionCreateNewButton(interaction: any) {
     await handleExpeditionStartCommand(commandInteraction);
   } catch (error) {
     logger.error("Error in expedition create new button:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors de l'ouverture du formulaire de création d'expédition.",
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "❌ Erreur lors de l'ouverture du formulaire de création d'expédition.");
   }
 }
 
@@ -70,10 +69,7 @@ export async function handleExpeditionStartCommand(
     // Get town info
     const town = await getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
       return;
     }
 
@@ -87,11 +83,7 @@ export async function handleExpeditionStartCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await interaction.reply({
-          content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
         return;
       }
       // Re-throw other errors
@@ -99,20 +91,18 @@ export async function handleExpeditionStartCommand(
     }
 
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
-    // Check if character is dead
-    if (character.isDead) {
-      await interaction.reply({
-        content: "❌ Un mort ne peut pas démarrer une expédition.",
-        flags: ["Ephemeral"],
-      });
-      return;
+    try {
+      validateCharacterAlive(character);
+    } catch (error) {
+      if (error instanceof Error) {
+        await replyEphemeral(interaction, error.message);
+        return;
+      }
+      throw error;
     }
 
     // Check if character is already on an expedition
@@ -121,10 +111,7 @@ export async function handleExpeditionStartCommand(
         character.id
       );
     if (activeExpeditions && activeExpeditions.length > 0) {
-      await interaction.reply({
-        content: `❌ Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`,
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, `❌ Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`);
       return;
     }
 
@@ -133,11 +120,7 @@ export async function handleExpeditionStartCommand(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in expedition start command:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
-        }`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }
 
@@ -167,26 +150,17 @@ export async function handleExpeditionCreationModal(
     // Get character ID from modal interaction
     const character = await getActiveCharacterFromModal(interaction);
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
     if (isNaN(foodStock) || foodStock <= 0) {
-      await interaction.reply({
-        content: "❌ Le stock de nourriture total (vivres + nourriture) doit être un nombre positif.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Le stock de nourriture total (vivres + nourriture) doit être un nombre positif.");
       return;
     }
 
     if (isNaN(durationDays) || durationDays < 1) {
-      await interaction.reply({
-        content: "❌ La durée doit être d'au moins 1 jour.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ La durée doit être d'au moins 1 jour.");
       return;
     }
 
@@ -195,10 +169,7 @@ export async function handleExpeditionCreationModal(
       interaction.guildId!
     );
     if (!townResponse) {
-      await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
       return;
     }
 
@@ -413,10 +384,6 @@ export async function handleExpeditionCreationModal(
     });
   } catch (error) {
     logger.error("Error in expedition creation modal:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
-        }`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }

@@ -13,6 +13,8 @@ import { createInfoEmbed, createSuccessEmbed } from "../../../utils/embeds";
 import { createActionButtons } from "../../../utils/discord-components";
 import { Expedition } from "../../../types/entities";
 import { getStatusEmoji } from "../expedition-utils";
+import { validateCharacterAlive } from "../../../utils/character-validation";
+import { replyEphemeral } from "../../../utils/interaction-helpers";
 
 /**
  * Nouvelle commande principale pour gérer les expéditions
@@ -42,19 +44,18 @@ export async function handleExpeditionMainCommand(
     }
 
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
-    if (character.isDead) {
-      await interaction.reply({
-        content: "❌ Un mort ne peut pas gérer les expéditions.",
-        flags: ["Ephemeral"],
-      });
-      return;
+    try {
+      validateCharacterAlive(character);
+    } catch (error) {
+      if (error instanceof Error) {
+        await replyEphemeral(interaction, error.message);
+        return;
+      }
+      throw error;
     }
 
     // Check if character is already on an active expedition
@@ -155,10 +156,7 @@ export async function handleExpeditionMainCommand(
       // Character is not a member - show available expeditions
       const townResponse = await apiService.guilds.getTownByGuildId(interaction.guildId!);
       if (!townResponse) {
-        await interaction.reply({
-          content: "❌ Aucune ville trouvée pour ce serveur.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
         return;
       }
 
@@ -176,11 +174,7 @@ export async function handleExpeditionMainCommand(
             .setStyle(ButtonStyle.Primary)
         );
 
-        await interaction.reply({
-          content: "🏕️ **Aucune expédition en cours de planification.**\n\nVous pouvez créer une nouvelle expédition :",
-          components: [buttonRow],
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "🏕️ **Aucune expédition en cours de planification.**\n\nVous pouvez créer une nouvelle expédition :");
         return;
       }
 
@@ -202,11 +196,7 @@ export async function handleExpeditionMainCommand(
           .setStyle(ButtonStyle.Secondary)
       );
 
-      await interaction.reply({
-        content: `🏕️ **Expéditions disponibles :**\n${expeditionList}\n\nChoisissez une action :`,
-        components: [buttonRow],
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, `🏕️ **Expéditions disponibles :**\n${expeditionList}\n\nChoisissez une action :`);
     }
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
@@ -235,11 +225,7 @@ export async function handleExpeditionInfoCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await interaction.reply({
-          content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
         return;
       }
       // Re-throw other errors
@@ -247,10 +233,7 @@ export async function handleExpeditionInfoCommand(
     }
 
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
@@ -260,10 +243,7 @@ export async function handleExpeditionInfoCommand(
     );
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
-      await interaction.reply({
-        content: "❌ Votre personnage ne participe à aucune expédition active.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Votre personnage ne participe à aucune expédition active.");
       return;
     }
 
@@ -368,10 +348,6 @@ export async function handleExpeditionInfoCommand(
     });
   } catch (error) {
     logger.error("Error in expedition info command:", { error });
-    await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la récupération des informations d'expédition.",
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la récupération des informations d'expédition.");
   }
 }

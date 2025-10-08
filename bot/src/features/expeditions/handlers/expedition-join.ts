@@ -12,6 +12,8 @@ import { getTownByGuildId } from "../../../services/towns.service";
 import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { getStatusEmoji, canJoinExpedition } from "../expedition-utils";
 import { Expedition } from "../../../types/entities";
+import { validateCharacterAlive } from "../../../utils/character-validation";
+import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 
 /**
  * Gestionnaire pour le bouton "Rejoindre une expédition"
@@ -49,10 +51,7 @@ export async function handleExpeditionJoinExistingButton(interaction: any) {
     await handleExpeditionJoinCommand(commandInteraction);
   } catch (error) {
     logger.error("Error in expedition join existing button:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors de l'ouverture de la liste d'expéditions.",
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "❌ Erreur lors de l'ouverture de la liste d'expéditions.");
   }
 }
 
@@ -68,10 +67,7 @@ export async function handleExpeditionJoinCommand(
       interaction.guildId!
     );
     if (!townResponse) {
-      await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
       return;
     }
 
@@ -85,11 +81,7 @@ export async function handleExpeditionJoinCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await interaction.reply({
-          content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
         return;
       }
       // Re-throw other errors
@@ -97,20 +89,18 @@ export async function handleExpeditionJoinCommand(
     }
 
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
-    // Check if character is dead
-    if (character.isDead) {
-      await interaction.reply({
-        content: "❌ Un mort ne peut pas rejoindre une expédition.",
-        flags: ["Ephemeral"],
-      });
-      return;
+    try {
+      validateCharacterAlive(character);
+    } catch (error) {
+      if (error instanceof Error) {
+        await replyEphemeral(interaction, error.message);
+        return;
+      }
+      throw error;
     }
 
     // Check if character is already in an active expedition
@@ -120,13 +110,7 @@ export async function handleExpeditionJoinCommand(
 
     if (activeExpeditions && activeExpeditions.length > 0) {
       const activeExpedition = activeExpeditions[0]; // Prend la première expédition active trouvée
-      await interaction.reply({
-        content: `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name
-          }** (${getStatusEmoji(
-            activeExpedition.status
-          )} ${activeExpedition.status.toLowerCase()}).`,
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`);
       return;
     }
 
@@ -138,10 +122,7 @@ export async function handleExpeditionJoinCommand(
     );
 
     if (availableExpeditions.length === 0) {
-      await interaction.reply({
-        content: "❌ Aucune expédition en cours de planification disponible.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune expédition en cours de planification disponible.");
       return;
     }
 
@@ -161,18 +142,10 @@ export async function handleExpeditionJoinCommand(
       selectMenu
     );
 
-    await interaction.reply({
-      content: "Choisissez une expédition à rejoindre:",
-      components: [row],
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "Choisissez une expédition à rejoindre:");
   } catch (error) {
     logger.error("Error in expedition join command:", { error });
-    await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la recherche des expéditions.",
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la recherche des expéditions.");
   }
 }
 
@@ -192,11 +165,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await interaction.reply({
-          content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
         return;
       }
       // Re-throw other errors
@@ -204,20 +173,18 @@ export async function handleExpeditionJoinSelect(interaction: any) {
     }
 
     if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
       return;
     }
 
-    // Check if character is dead
-    if (character.isDead) {
-      await interaction.reply({
-        content: "❌ Un mort ne peut pas rejoindre une expédition.",
-        flags: ["Ephemeral"],
-      });
-      return;
+    try {
+      validateCharacterAlive(character);
+    } catch (error) {
+      if (error instanceof Error) {
+        await replyEphemeral(interaction, error.message);
+        return;
+      }
+      throw error;
     }
 
     await interaction.update({
@@ -232,10 +199,6 @@ export async function handleExpeditionJoinSelect(interaction: any) {
     });
   } catch (error) {
     logger.error("Error in expedition join select:", { error });
-    await interaction.reply({
-      content: `❌ Erreur lors de la participation à l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
-        }`,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, `❌ Erreur lors de la participation à l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }
