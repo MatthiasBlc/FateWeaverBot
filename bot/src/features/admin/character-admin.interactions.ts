@@ -11,6 +11,7 @@ import {
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getHungerLevelText } from "../../utils/hunger";
+import { createSuccessEmbed, createErrorEmbed } from "../../utils/embeds";
 import type { Character } from "./character-admin.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
@@ -185,48 +186,46 @@ export async function handleStatsModalSubmit(
       }
     )) as Character;
 
-    // Créer l'embed avec la couleur appropriée selon l'état du personnage
-    const embedColor = updatedCharacter.isDead ? 0xff0000 : 0x00ff00;
-    const embedTitle = updatedCharacter.isDead
-      ? "💀 Personnage décédé"
-      : "✅ Stats mises à jour";
+    // Créer l'embed avec les utilitaires centralisés
     const deathReason =
       (hpNumber <= 0 ? "PV à 0" : "") +
       (pmNumber <= 0 ? (hpNumber <= 0 ? ", " : "") + "PM à 0" : "") +
       (hungerNumber <= 0
         ? (hpNumber <= 0 || pmNumber <= 0 ? ", " : "") + "faim à 0"
         : "");
-    const embedDescription = updatedCharacter.isDead
-      ? `**${updatedCharacter.name}** est mort (${deathReason}).`
-      : `**${updatedCharacter.name}** a été modifié.`;
 
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(embedTitle)
-      .setDescription(embedDescription)
-      .addFields(
-        {
-          name: "Points d'Actions",
-          value: `${updatedCharacter.paTotal}`,
-          inline: true,
-        },
-        {
-          name: "Niveau de faim",
-          value: getHungerLevelText(updatedCharacter.hungerLevel),
-          inline: true,
-        },
-        {
-          name: "Points de vie",
-          value: `${updatedCharacter.hp}`,
-          inline: true,
-        },
-        {
-          name: "Points mentaux",
-          value: `${updatedCharacter.pm}`,
-          inline: true,
-        }
-      )
-      .setTimestamp();
+    const embed = updatedCharacter.isDead
+      ? createErrorEmbed(
+          `💀 Personnage décédé`,
+          `**${updatedCharacter.name}** est mort (${deathReason}).`
+        )
+      : createSuccessEmbed(
+          "Stats mises à jour",
+          `**${updatedCharacter.name}** a été modifié.`
+        );
+
+    embed.addFields(
+      {
+        name: "Points d'Actions",
+        value: `${updatedCharacter.paTotal}`,
+        inline: true,
+      },
+      {
+        name: "Niveau de faim",
+        value: getHungerLevelText(updatedCharacter.hungerLevel),
+        inline: true,
+      },
+      {
+        name: "Points de vie",
+        value: `${updatedCharacter.hp}`,
+        inline: true,
+      },
+      {
+        name: "Points mentaux",
+        value: `${updatedCharacter.pm}`,
+        inline: true,
+      }
+    );
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 
