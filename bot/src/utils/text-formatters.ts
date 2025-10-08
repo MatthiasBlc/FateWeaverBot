@@ -1,3 +1,4 @@
+import { CHARACTER, HUNGER, RESOURCES } from "../constants/emojis.js";
 import type { Character } from "../types/entities";
 
 /**
@@ -5,13 +6,13 @@ import type { Character } from "../types/entities";
  */
 export function formatCharacterStats(character: Character): string {
   const lines = [
-    `❤️ **PV:** ${character.hp}/5`,
-    `⚡ **PM:** ${character.pm}/5`,
-    `🎯 **PA:** ${character.paTotal}/4`,
+    `${CHARACTER.HP_FULL} **PV:** ${character.hp}/5`,
+    `${CHARACTER.PA} **PM:** ${character.pm}/5`,
+    `${CHARACTER.PA_ALT} **PA:** ${character.paTotal}/4`,
   ];
 
   if (character.hungerLevel !== undefined) {
-    lines.push(`🍖 **Faim:** ${getHungerLevelText(character.hungerLevel)}`);
+    lines.push(`${HUNGER.ICON} **Faim:** ${getHungerLevelText(character.hungerLevel)}`);
   }
 
   return lines.join("\n");
@@ -23,17 +24,17 @@ export function formatCharacterStats(character: Character): string {
 function getHungerLevelText(hungerLevel: number): string {
   switch (hungerLevel) {
     case 0:
-      return "💀 Mort de faim";
+      return `${HUNGER.DEAD} Mort de faim`;
     case 1:
-      return "😰 Agonisant";
+      return `${HUNGER.AGONY} Agonisant`;
     case 2:
-      return "😟 Affamé";
+      return `${HUNGER.STARVING} Affamé`;
     case 3:
-      return "😐 Faim";
+      return `${HUNGER.HUNGRY} Faim`;
     case 4:
-      return "😊 Rassasié";
+      return `${HUNGER.FED} Rassasié`;
     default:
-      return "❓ Inconnu";
+      return `${HUNGER.UNKNOWN} Inconnu`;
   }
 }
 
@@ -46,7 +47,7 @@ export function formatResourceList(resources: Array<{ name: string; quantity: nu
   }
 
   return resources
-    .map((r) => `${r.emoji || "📦"} **${r.name}**: ${r.quantity}`)
+    .map((r) => `${r.emoji || RESOURCES.GENERIC} **${r.name}**: ${r.quantity}`)
     .join("\n");
 }
 
