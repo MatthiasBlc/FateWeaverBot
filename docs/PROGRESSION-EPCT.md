@@ -41,40 +41,42 @@
 
 ## 🚧 PHASE EN COURS
 
-### Phase 3: Améliorations UX (EN COURS)
+### ✅ Phase 3: Améliorations UX (TERMINÉE)
 
-#### Tâche 3.1: Simplifier /stock
+#### ✅ Tâche 3.1: Simplifier /stock
 **Fichier** : `bot/src/features/stock/stock.handlers.ts`
 
-**Modifications à faire** :
-- [ ] Supprimer lignes 102-109 (info personnage)
-- [ ] Supprimer total ressources
-- [ ] Supprimer phrase descriptive ville
-- [ ] Ajouter tri par catégorie :
-  - [ ] Groupe 1 : Nourriture + Vivres en premier
-  - [ ] Groupe 2 : Autres ressources par paires (brut + transformé)
-- [ ] Tester build
-- [ ] Commit : "Simplify /stock display - Remove character info, add resource sorting"
+**Modifications faites** :
+- [x] Supprimé lignes 102-109 (info personnage)
+- [x] Supprimé total ressources
+- [x] Supprimé phrase descriptive ville
+- [x] Ajouté tri par catégorie :
+  - [x] Groupe 1 : Nourriture + Vivres en premier
+  - [x] Groupe 2 : Autres ressources alphabétique
+- [x] Testé build ✅
+- [x] Commit : "Simplify /stock display" (ce9ca02)
 
-**État** : ⏸️ EN ATTENTE
+**État** : ✅ TERMINÉE
 
 ---
 
-#### Tâche 3.2: Améliorer /help avec catégories
-**Fichier** : `bot/src/features/help/help.handlers.ts`
+#### ✅ Tâche 3.2: Améliorer /help avec catégories
+**Fichier** : `bot/src/features/help/help.utils.ts`
 
-**Modifications à faire** :
-- [ ] Créer catégories :
-  - [ ] 🍖 Survie (profil, stock)
-  - [ ] 🚀 Aventure (expedition)
-  - [ ] 🏗️ Communauté (chantiers)
-- [ ] Ajouter emojis par catégorie (utiliser constantes)
-- [ ] Ajouter exemples d'usage
-- [ ] Améliorer descriptions
-- [ ] Tester build
-- [ ] Commit : "Improve /help with categories and examples"
+**Modifications faites** :
+- [x] Créé catégories :
+  - [x] 🍖 Survie (profil, stock)
+  - [x] 🚀 Aventure (expedition)
+  - [x] 🏗️ Communauté (chantiers)
+  - [x] 📚 Aide (help)
+  - [x] 🔧 Administration
+- [x] Ajouté emojis par catégorie
+- [x] Ajouté section exemples d'usage
+- [x] Amélioré organisation
+- [x] Testé build ✅
+- [x] Commit : "Improve /help with better categories" (c973f02)
 
-**État** : ⏸️ EN ATTENTE
+**État** : ✅ TERMINÉE
 
 ---
 
@@ -233,10 +235,16 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : 101k / 200k (50%)
-**Phases complétées** : 1/7
-**Phases en cours** : 2 (Phase 2 Supernova, Phase 3 en cours)
-**Temps estimé restant** : ~25h de dev
+**Tokens utilisés** : 115k / 200k (57%)
+**Phases complétées** : 3/7 (Phase 1, 2 en cours Supernova, Phase 3)
+**Commits créés** : 8 commits
+**Temps estimé restant** : ~20h de dev
+
+### Détails :
+- ✅ Phase 1 : Quick Wins (bug fix + suppressions + renommages)
+- 🔄 Phase 2 : Emojis (Supernova en cours)
+- ✅ Phase 3 : UX (/stock + /help améliorés)
+- ⏸️ Phase 4-7 : À venir
 
 ---
 
@@ -244,8 +252,8 @@ npx tsc --noEmit
 
 ### Reprendre le travail :
 1. **Lire ce fichier** : `docs/PROGRESSION-EPCT.md`
-2. **Vérifier rapport Supernova Phase 2** (si terminé)
-3. **Continuer Phase 3** depuis la dernière tâche cochée
+2. **Vérifier rapport Supernova Phase 2** (si terminé, cocher les tâches)
+3. **Continuer Phase 4** : Système "Manger +" dans /profil
 4. **Cocher au fur et à mesure** ✅
 
 ### Fichiers de référence :
@@ -256,5 +264,5 @@ npx tsc --noEmit
 
 ---
 
-**Dernière action** : Création fichier progression, début Phase 3
-**Prochaine action** : Simplifier /stock (supprimer info personnage, trier ressources)
+**Dernière action** : Phase 3 terminée (/stock simplifié, /help amélioré)
+**Prochaine action** : Attendre rapport Supernova Phase 2, puis démarrer Phase 4 (système "Manger +")
