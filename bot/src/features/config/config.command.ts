@@ -10,7 +10,7 @@ import { handleConfigChannelCommand } from "./config.handlers";
 // Commande pour configurer le salon de logs
 const configChannelCommand: Command = {
   data: new SlashCommandBuilder()
-    .setName("config-channel")
+    .setName("config-channel-admin")
     .setDescription("Configure le salon pour les logs automatiques")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
