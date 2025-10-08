@@ -52,6 +52,7 @@ import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { checkAdmin } from "../../utils/roles";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils";
+import { createInfoEmbed } from "../../utils/embeds";
 
 export async function handleListCommand(interaction: CommandInteraction) {
   try {
@@ -66,10 +67,10 @@ export async function handleListCommand(interaction: CommandInteraction) {
       });
     }
 
-    const embed = new EmbedBuilder()
-      .setColor("#0099ff")
-      .setTitle("🏗️ Liste des chantiers")
-      .setDescription("Voici la liste des chantiers en cours sur ce serveur :");
+    const embed = createInfoEmbed(
+      "🏗️ Liste des chantiers",
+      "Voici la liste des chantiers en cours sur ce serveur :"
+    );
 
     // Grouper les chantiers par statut
     const chantiersParStatut = chantiers.reduce<Record<string, Chantier[]>>(

@@ -11,7 +11,7 @@ import {
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getHungerLevelText } from "../../utils/hunger";
-import { createSuccessEmbed, createErrorEmbed } from "../../utils/embeds";
+import { createSuccessEmbed, createErrorEmbed, createInfoEmbed } from "../../utils/embeds";
 import type { Character } from "./character-admin.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
@@ -307,28 +307,26 @@ export async function handleAdvancedStatsModalSubmit(
       updateData
     )) as Character;
 
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle("✅ Stats avancées mises à jour")
-      .setDescription(`**${updatedCharacter.name}** a été modifié.`)
-      .addFields(
-        {
-          name: "Mort",
-          value: updatedCharacter.isDead ? "💀 Oui" : "❤️ Non",
-          inline: true,
-        },
-        {
-          name: "Actif",
-          value: updatedCharacter.isActive ? "✅ Oui" : "❌ Non",
-          inline: true,
-        },
-        {
-          name: "Reroll",
-          value: updatedCharacter.canReroll ? "✅ Oui" : "❌ Non",
-          inline: true,
-        }
-      )
-      .setTimestamp();
+    const embed = createSuccessEmbed(
+      "Stats avancées mises à jour",
+      `**${updatedCharacter.name}** a été modifié.`
+    ).addFields(
+      {
+        name: "Mort",
+        value: updatedCharacter.isDead ? "💀 Oui" : "❤️ Non",
+        inline: true,
+      },
+      {
+        name: "Actif",
+        value: updatedCharacter.isActive ? "✅ Oui" : "❌ Non",
+        inline: true,
+      },
+      {
+        name: "Reroll",
+        value: updatedCharacter.canReroll ? "✅ Oui" : "❌ Non",
+        inline: true,
+      }
+    );
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
@@ -415,11 +413,10 @@ async function handleKillButton(
 
     await apiService.characters.killCharacter(character.id);
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle("💀 Personnage Tué")
-      .setDescription(`**${character.name}** a été tué.`)
-      .setTimestamp();
+    const embed = createErrorEmbed(
+      "💀 Personnage Tué",
+      `**${character.name}** a été tué.`
+    );
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
 
@@ -469,17 +466,10 @@ async function handleToggleRerollButton(
       canReroll: newCanReroll,
     });
 
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(
-        `🔄 Autorisation de Reroll ${newCanReroll ? "Accordée" : "Révoquée"}`
-      )
-      .setDescription(
-        `**${character.name}** ${
-          newCanReroll ? "peut maintenant" : "ne peut plus"
-        } créer un nouveau personnage.`
-      )
-      .setTimestamp();
+    const embed = createSuccessEmbed(
+      `Autorisation de Reroll ${newCanReroll ? "Accordée" : "Révoquée"}`,
+      `**${character.name}** ${newCanReroll ? "peut maintenant" : "ne peut plus"} créer un nouveau personnage.`
+    );
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
@@ -676,13 +666,12 @@ export async function handleViewCapabilities(
       .map(cap => `• **${cap.name}** (${cap.costPA} PA)`)
       .join('\n');
 
-    const embed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`🔮 Capacités de ${character.name}`)
-      .setDescription(capabilitiesList)
-      .setFooter({
-        text: `${capabilities.length} capacité${capabilities.length > 1 ? 's' : ''} connue${capabilities.length > 1 ? 's' : ''}`,
-      });
+    const embed = createInfoEmbed(
+      `🔮 Capacités de ${character.name}`,
+      capabilitiesList
+    ).setFooter({
+      text: `${capabilities.length} capacité${capabilities.length > 1 ? 's' : ''} connue${capabilities.length > 1 ? 's' : ''}`,
+    });
 
     await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
   } catch (error) {
@@ -752,13 +741,13 @@ export async function handleCapabilitySelect(
       }
     }
 
-    const embed = new EmbedBuilder()
-      .setColor(action === 'add' ? 0x00ff00 : 0xff0000)
-      .setTitle(`${action === 'add' ? '➕' : '➖'} ${action === 'add' ? 'Ajout' : 'Suppression'} de capacités`)
-      .setDescription(results.join('\n'))
-      .setFooter({
-        text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ${action === 'add' ? 'ajoutée' : 'retirée'}${selectedCapabilityIds.length > 1 ? 's' : ''}`,
-      });
+    const embed = action === 'add'
+      ? createSuccessEmbed('Ajout de capacités', results.join('\n')).setFooter({
+          text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ajoutée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
+        })
+      : createErrorEmbed('Suppression de capacités', results.join('\n')).setFooter({
+          text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} retirée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
+        });
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

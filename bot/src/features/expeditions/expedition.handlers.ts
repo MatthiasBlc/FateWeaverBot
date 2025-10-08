@@ -24,8 +24,7 @@ import {
 } from "../../modals/expedition-modals";
 // Import des services
 import { getTownByGuildId } from "../../services/towns.service";
-
-// Déclaration de types globaux
+import { createInfoEmbed, createSuccessEmbed } from "../../utils/embeds";
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
@@ -100,28 +99,28 @@ export async function handleExpeditionMainCommand(
       }
 
       // Create embed
-      const embed = new EmbedBuilder()
-        .setColor(0x0099ff)
-        .setTitle(`🚀 ${expedition.name}`)
-        .addFields(
-          {
-            name: "⏱️ Durée",
-            value: `${expedition.duration} jours`,
-            inline: true,
-          },
-          {
-            name: "📍 Statut",
-            value: getStatusEmoji(expedition.status),
-            inline: true,
-          },
-          {
-            name: "👥 Membres",
-            value: expedition.members?.length.toString() || "0",
-            inline: true,
-          },
-          { name: " ", value: " ", inline: true }
-        )
-        .setTimestamp();
+      const embed = createInfoEmbed(
+        `🚀 ${expedition.name}`,
+        ""
+      )
+      .addFields(
+        {
+          name: "⏱️ Durée",
+          value: `${expedition.duration} jours`,
+          inline: true,
+        },
+        {
+          name: "📍 Statut",
+          value: getStatusEmoji(expedition.status),
+          inline: true,
+        },
+        {
+          name: "👥 Membres",
+          value: expedition.members?.length.toString() || "0",
+          inline: true,
+        },
+        { name: " ", value: " ", inline: true }
+      );
 
       // Add detailed resources if available
       if (expeditionResources && expeditionResources.length > 0) {
@@ -578,29 +577,28 @@ export async function handleExpeditionCreationModal(
     }
 
     // Create embed
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(`🏕️ Expédition créée : ${newExpedition.data.name}`)
-      .setDescription(`Vous avez créé une nouvelle expédition avec succès !`)
-      .addFields(
-        {
-          name: "⏱️ Durée",
-          value: `${durationDays} jours`,
-          inline: true,
-        },
-        {
-          name: "📍 Statut",
-          value: "🔄 PLANIFICATION",
-          inline: true,
-        },
-        {
-          name: "👥 Membres",
-          value: memberCount.toString(),
-          inline: true,
-        },
-        { name: " ", value: " ", inline: true }
-      )
-      .setTimestamp();
+    const embed = createSuccessEmbed(
+      `🏕️ Expédition créée : ${newExpedition.data.name}`,
+      `Vous avez créé une nouvelle expédition avec succès !`
+    )
+    .addFields(
+      {
+        name: "⏱️ Durée",
+        value: `${durationDays} jours`,
+        inline: true,
+      },
+      {
+        name: "📍 Statut",
+        value: "🔄 PLANIFICATION",
+        inline: true,
+      },
+      {
+        name: "👥 Membres",
+        value: memberCount.toString(),
+        inline: true,
+      },
+      { name: " ", value: " ", inline: true }
+    );
 
     // Add detailed resources if available
     if (expeditionResources && expeditionResources.length > 0) {
@@ -624,19 +622,18 @@ export async function handleExpeditionCreationModal(
     });
 
     // Send public log message to configured log channel
-    const publicEmbed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(`🏕️ Nouvelle expédition créée`)
-      .setDescription(`**${newExpedition.data.name}** créée par **${character.name}**`)
-      .addFields(
-        {
-          name: "⏱️ Durée",
-          value: `${durationDays} jours`,
-          inline: true,
-        },
-        { name: " ", value: " ", inline: true }
-      )
-      .setTimestamp();
+    const publicEmbed = createSuccessEmbed(
+      `🏕️ Nouvelle expédition créée`,
+      `**${newExpedition.data.name}** créée par **${character.name}**`
+    )
+    .addFields(
+      {
+        name: "⏱️ Durée",
+        value: `${durationDays} jours`,
+        inline: true,
+      },
+      { name: " ", value: " ", inline: true }
+    );
 
     // Add detailed resources to public message if available
     if (expeditionResources && expeditionResources.length > 0) {
@@ -939,38 +936,38 @@ export async function handleExpeditionInfoCommand(
     }
 
     // Create embed
-    const embed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`🚀 ${currentExpedition.name}`)
-      .addFields(
-        {
-          name: "📦 Stock de nourriture",
-          value: `${currentExpedition.foodStock || 0}`,
-          inline: true,
-        },
-        {
-          name: "⏱️ Durée",
-          value: `${currentExpedition.duration} jours`,
-          inline: true,
-        },
-        {
-          name: "📍 Statut",
-          value: getStatusEmoji(currentExpedition.status),
-          inline: true,
-        },
-        {
-          name: "👥 Membres",
-          value: currentExpedition.members?.length.toString() || "0",
-          inline: true,
-        },
-        {
-          name: "🏛️ Ville",
-          value: currentExpedition.town?.name || "Inconnue",
-          inline: true,
-        },
-        { name: " ", value: " ", inline: true }
-      )
-      .setTimestamp();
+    const embed = createInfoEmbed(
+      `🚀 ${currentExpedition.name}`,
+      ""
+    )
+    .addFields(
+      {
+        name: "📦 Stock de nourriture",
+        value: `${currentExpedition.foodStock || 0}`,
+        inline: true,
+      },
+      {
+        name: "⏱️ Durée",
+        value: `${currentExpedition.duration} jours`,
+        inline: true,
+      },
+      {
+        name: "📍 Statut",
+        value: getStatusEmoji(currentExpedition.status),
+        inline: true,
+      },
+      {
+        name: "👥 Membres",
+        value: currentExpedition.members?.length.toString() || "0",
+        inline: true,
+      },
+      {
+        name: "🏛️ Ville",
+        value: currentExpedition.town?.name || "Inconnue",
+        inline: true,
+      },
+      { name: " ", value: " ", inline: true }
+    );
 
     // Add detailed resources if available
     if (expeditionResources && expeditionResources.length > 0) {
@@ -1665,33 +1662,30 @@ export async function handleExpeditionTransferModal(
       );
 
       // Create response embed
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle(`✅ Transfert de nourriture réussi`)
-        .setDescription(
-          `Le transfert de **${amount}** nourriture a été effectué avec succès !`
-        )
-        .addFields(
-          {
-            name: "📦 Stock de l'expédition",
-            value: `${updatedExpedition?.foodStock || expedition.foodStock}`,
-            inline: true,
-          },
-          {
-            name: "🏛️ Stock de la ville",
-            value: `${updatedTown?.foodStock || townResponse.foodStock}`,
-            inline: true,
-          },
-          {
-            name: "📍 Direction",
-            value:
-              directionValue === "to_town"
-                ? "Expédition → Ville"
-                : "Ville → Expédition",
-            inline: true,
-          }
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        `✅ Transfert de nourriture réussi`,
+        `Le transfert de **${amount}** nourriture a été effectué avec succès !`
+      )
+      .addFields(
+        {
+          name: "📦 Stock de l'expédition",
+          value: `${updatedExpedition?.foodStock || expedition.foodStock}`,
+          inline: true,
+        },
+        {
+          name: "🏛️ Stock de la ville",
+          value: `${updatedTown?.foodStock || townResponse.foodStock}`,
+          inline: true,
+        },
+        {
+          name: "📍 Direction",
+          value:
+            directionValue === "to_town"
+              ? "Expédition → Ville"
+              : "Ville → Expédition",
+          inline: true,
+        }
+      );
 
       await interaction.reply({
         embeds: [embed],

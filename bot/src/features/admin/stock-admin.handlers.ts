@@ -14,6 +14,7 @@ import {
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getTownByGuildId } from "../../utils/town";
+import { createInfoEmbed, createSuccessEmbed, getStockColor } from "../../utils/embeds";
 import { checkAdmin } from "../../utils/admin";
 
 /**
@@ -51,11 +52,10 @@ export async function handleStockAdminCommand(
     const resources = await apiService.getResources("CITY", town.id);
 
     // Créer l'embed avec les stocks
-    const embed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`🏛️ Ressources de ${town.name}`)
-      .setDescription("Vue complète des stocks de ressources de la ville")
-      .setTimestamp();
+    const embed = createInfoEmbed(
+      `🏛️ Ressources de ${town.name}`,
+      "Vue complète des stocks de ressources de la ville"
+    );
 
     // Ajouter chaque ressource avec son stock
     if (resources && resources.length > 0) {
@@ -152,11 +152,10 @@ export async function handleStockAdminViewButton(interaction: any) {
     }
 
     // Créer l'embed avec toutes les ressources
-    const embed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`🏛️ Ressources de ${town.name}`)
-      .setDescription("Vue complète des stocks de ressources de la ville")
-      .setTimestamp();
+    const embed = createInfoEmbed(
+      `🏛️ Ressources de ${town.name}`,
+      "Vue complète des stocks de ressources de la ville"
+    );
 
     // Ajouter chaque ressource avec son stock
     resources.forEach((resource: any) => {
@@ -266,13 +265,10 @@ export async function handleStockAdminAddButton(interaction: any) {
       selectMenu
     );
 
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(`➕ Ajouter des Ressources - ${town.name}`)
-      .setDescription(
-        "Sélectionnez le type de ressource que vous souhaitez ajouter :"
-      )
-      .setTimestamp();
+    const embed = createSuccessEmbed(
+      `➕ Ajouter des Ressources - ${town.name}`,
+      "Sélectionnez le type de ressource que vous souhaitez ajouter :"
+    );
 
     await interaction.editReply({
       embeds: [embed],
@@ -345,13 +341,10 @@ export async function handleStockAdminRemoveButton(interaction: any) {
       selectMenu
     );
 
-    const embed = new EmbedBuilder()
-      .setColor(0xffa500)
-      .setTitle(`➖ Retirer des Ressources - ${town.name}`)
-      .setDescription(
-        "Sélectionnez le type de ressource que vous souhaitez retirer :"
-      )
-      .setTimestamp();
+    const embed = createInfoEmbed(
+      `➖ Retirer des Ressources - ${town.name}`,
+      "Sélectionnez le type de ressource que vous souhaitez retirer :"
+    );
 
     await interaction.editReply({
       embeds: [embed],
@@ -593,28 +586,22 @@ export async function handleStockAdminAddModal(
       );
 
       // Créer l'embed de confirmation pour ajout de ressource existante
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle(
-          `➕ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Ajoutés`
-        )
-        .setDescription(
-          `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
-        )
-        .addFields(
-          {
-            name: "Ancien stock",
-            value: `${selectedResource.quantity}`,
-            inline: true,
-          },
-          { name: "Montant ajouté", value: `+${amount}`, inline: true },
-          {
-            name: "Nouveau stock",
-            value: `${selectedResource.quantity + amount}`,
-            inline: true,
-          }
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        `${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Ajoutés`,
+        `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
+      ).addFields(
+        {
+          name: "Ancien stock",
+          value: `${selectedResource.quantity}`,
+          inline: true,
+        },
+        { name: "Montant ajouté", value: `+${amount}`, inline: true },
+        {
+          name: "Nouveau stock",
+          value: `${selectedResource.quantity + amount}`,
+          inline: true,
+        }
+      );
 
       await interaction.editReply({
         embeds: [embed],
@@ -641,28 +628,22 @@ export async function handleStockAdminAddModal(
       );
 
       // Créer l'embed de confirmation pour création de nouvelle ressource
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle(
-          `➕ ${selectedResourceType.emoji} ${selectedResourceType.name} Ajoutés`
-        )
-        .setDescription(
-          `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
-        )
-        .addFields(
-          {
-            name: "Ancien stock",
-            value: "0",
-            inline: true,
-          },
-          { name: "Montant ajouté", value: `+${amount}`, inline: true },
-          {
-            name: "Nouveau stock",
-            value: `${amount}`,
-            inline: true,
-          }
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        `${selectedResourceType.emoji} ${selectedResourceType.name} Ajoutés`,
+        `**${amount}** unités de ${selectedResourceType.name} ont été ajoutées à la ville **${town.name}**.`
+      ).addFields(
+        {
+          name: "Ancien stock",
+          value: "0",
+          inline: true,
+        },
+        { name: "Montant ajouté", value: `+${amount}`, inline: true },
+        {
+          name: "Nouveau stock",
+          value: `${amount}`,
+          inline: true,
+        }
+      );
 
       await interaction.editReply({
         embeds: [embed],
@@ -777,28 +758,22 @@ export async function handleStockAdminRemoveModal(
       );
 
       // Créer l'embed de confirmation pour retrait de ressource existante
-      const embed = new EmbedBuilder()
-        .setColor(0xffa500)
-        .setTitle(
-          `➖ ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`
-        )
-        .setDescription(
-          `**${amount}** unités de ${selectedResourceType.name} ont été retirées de la ville **${town.name}**.`
-        )
-        .addFields(
-          {
-            name: "Ancien stock",
-            value: `${selectedResource.quantity}`,
-            inline: true,
-          },
-          { name: "Montant retiré", value: `-${amount}`, inline: true },
-          {
-            name: "Nouveau stock",
-            value: `${selectedResource.quantity - amount}`,
-            inline: true,
-          }
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        `${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name} Retirés`,
+        `**${amount}** unités de ${selectedResourceType.name} ont été retirées de la ville **${town.name}**.`
+      ).addFields(
+        {
+          name: "Ancien stock",
+          value: `${selectedResource.quantity}`,
+          inline: true,
+        },
+        { name: "Montant retiré", value: `-${amount}`, inline: true },
+        {
+          name: "Nouveau stock",
+          value: `${selectedResource.quantity - amount}`,
+          inline: true,
+        }
+      );
 
       await interaction.editReply({
         embeds: [embed],

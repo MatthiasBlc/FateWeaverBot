@@ -20,6 +20,7 @@ import {
 import { getCharacterCapabilities } from "../../services/capability.service";
 import { formatErrorForLog } from "../../utils/errors";
 import { httpClient } from "../../services/httpClient";
+import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
 
 export async function handleProfileCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -235,20 +236,16 @@ export async function handleProfileCommand(interaction: any) {
 }
 
 function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
-  const embed = new EmbedBuilder()
-    .setColor(getHungerColor(data.character.hungerLevel))
-    .setTitle(`📋 Profil de ${data.character.name || "Sans nom"}`)
-    .setThumbnail(data.user.displayAvatarURL)
-    .addFields({
-      name: "🎭 **INFORMATIONS DU PERSONNAGE**",
-      value: "",
-      inline: false,
-    })
-    .setFooter({
+  const embed = createCustomEmbed({
+    color: getHungerColor(data.character.hungerLevel),
+    title: `📋 Profil de ${data.character.name || "Sans nom"}`,
+    thumbnail: data.user.displayAvatarURL,
+    footer: {
       text: `Profil de: ${data.character.name}`,
       iconURL: data.user.displayAvatarURL,
-    })
-    .setTimestamp();
+    },
+    timestamp: true,
+  });
 
   // Formatage des rôles avec mentions Discord comme dans l'ancienne version
   const rolesText =
@@ -389,20 +386,20 @@ function getHungerLevelText(level: number): string {
   }
 }
 
-function getHungerColor(level: number): number {
+function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return 0x000000; // Noir - Mort
+      return "💀";
     case 1:
-      return 0xff4500; // Rouge-orange - Agonie
+      return "😰";
     case 2:
-      return 0xffa500; // Orange - Affamé
+      return "😕";
     case 3:
-      return 0xffff00; // Jaune - Faim
+      return "🤤";
     case 4:
-      return 0x00ff00; // Vert - En bonne santé
+      return "😊";
     default:
-      return 0x808080; // Gris - Inconnu
+      return "❓";
   }
 }
 
@@ -444,23 +441,6 @@ function createAdvancedHungerDisplay(level: number): {
         text: `${baseEmoji} **État inconnu**`,
         emoji: baseEmoji,
       };
-  }
-}
-
-function getHungerEmoji(level: number): string {
-  switch (level) {
-    case 0:
-      return "💀";
-    case 1:
-      return "😰";
-    case 2:
-      return "😕";
-    case 3:
-      return "🤤";
-    case 4:
-      return "😊";
-    default:
-      return "❓";
   }
 }
 

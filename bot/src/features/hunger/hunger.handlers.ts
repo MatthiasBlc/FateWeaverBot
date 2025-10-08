@@ -5,10 +5,10 @@ import { sendLogMessage } from "../../utils/channels";
 import {
   getHungerLevelText,
   getHungerEmoji,
-  getHungerColor,
 } from "../../utils/hunger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import type { EatResult } from "./hunger.types";
+import { createCustomEmbed, createSuccessEmbed, getHungerColor } from "../../utils/embeds";
 
 /**
  * Crée un embed pour afficher le résultat d'un repas
@@ -26,11 +26,11 @@ function createEatEmbed(
       ? `expédition "${eatResult.expeditionName}"`
       : "ville";
 
-  return new EmbedBuilder()
-    .setColor(getHungerColor(eatResult.character.hungerLevel))
-    .setTitle("🍽️ Repas")
-    .setDescription(`${hungerEmoji} **${characterName}** a mangé !`)
-    .addFields(
+  return createCustomEmbed({
+    color: getHungerColor(eatResult.character.hungerLevel),
+    title: "🍽️ Repas",
+    description: `${hungerEmoji} **${characterName}** a mangé !`,
+    fields: [
       {
         name: "État de faim",
         value: hungerLevelText,
@@ -46,8 +46,9 @@ function createEatEmbed(
         value: `${eatResult.town.foodStock} (dans ${stockSourceName})`,
         inline: true,
       }
-    )
-    .setTimestamp();
+    ],
+    timestamp: true,
+  });
 }
 
 export async function handleEatCommand(interaction: any, character: any) {
@@ -104,13 +105,10 @@ export async function handleEatCommand(interaction: any, character: any) {
       error.message?.includes("pas faim") ||
       error.message?.includes("pas besoin de manger")
     ) {
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle("🍽️ Pas faim")
-        .setDescription(
-          "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        "🍽️ Pas faim",
+        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+      );
 
       await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
       return;
@@ -206,13 +204,10 @@ export async function handleEatButton(interaction: any, character: any) {
       error.message?.includes("pas faim") ||
       error.message?.includes("pas besoin de manger")
     ) {
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle("🍽️ Pas faim")
-        .setDescription(
-          "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        "🍽️ Pas faim",
+        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+      );
 
       await interaction.editReply({
         embeds: [embed],
@@ -324,13 +319,10 @@ export async function handleEatAlternativeButton(
       error.message?.includes("pas faim") ||
       error.message?.includes("pas besoin de manger")
     ) {
-      const embed = new EmbedBuilder()
-        .setColor(0x00ff00)
-        .setTitle("🍽️ Pas faim")
-        .setDescription(
-          "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
-        )
-        .setTimestamp();
+      const embed = createSuccessEmbed(
+        "🍽️ Pas faim",
+        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+      );
 
       await interaction.editReply({
         embeds: [embed],
