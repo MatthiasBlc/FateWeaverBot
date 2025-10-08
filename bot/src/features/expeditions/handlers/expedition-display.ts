@@ -131,7 +131,7 @@ export async function handleExpeditionMainCommand(
         });
       }
 
-      // Add buttons only if expedition is PLANNING and user is a member
+      // Add buttons based on expedition status
       const components = [];
       if (expedition.status === "PLANNING") {
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -143,6 +143,14 @@ export async function handleExpeditionMainCommand(
             .setCustomId("expedition_transfer")
             .setLabel("Transférer nourriture")
             .setStyle(ButtonStyle.Primary)
+        );
+        components.push(buttonRow);
+      } else if (expedition.status === "DEPARTED") {
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`expedition_emergency_return:${expedition.id}`)
+            .setLabel("🚨 Voter retour d'urgence")
+            .setStyle(ButtonStyle.Warning)
         );
         components.push(buttonRow);
       }
@@ -325,7 +333,7 @@ export async function handleExpeditionInfoCommand(
       });
     }
 
-    // Add buttons only if expedition is PLANNING and user is a member
+    // Add buttons based on expedition status
     const components = [];
     if (currentExpedition.status === "PLANNING") {
       const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -337,6 +345,14 @@ export async function handleExpeditionInfoCommand(
           .setCustomId("expedition_transfer")
           .setLabel("Transférer nourriture")
           .setStyle(ButtonStyle.Primary)
+      );
+      components.push(buttonRow);
+    } else if (currentExpedition.status === "DEPARTED") {
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`expedition_emergency_return:${currentExpedition.id}`)
+          .setLabel("🚨 Voter retour d'urgence")
+          .setStyle(ButtonStyle.Warning)
       );
       components.push(buttonRow);
     }

@@ -103,6 +103,20 @@ async function returnExpeditionsDue() {
   }
 }
 
+async function processEmergencyReturns() {
+  try {
+    logger.debug("Starting emergency return check");
+
+    const emergencyCount = await expeditionService.forceEmergencyReturns();
+
+    if (emergencyCount > 0) {
+      logger.info(`Processed ${emergencyCount} emergency returns`);
+    }
+  } catch (error) {
+    logger.error("Error in processEmergencyReturns cron job:", { error });
+  }
+}
+
 export function setupExpeditionJobs() {
   // Lock expeditions at midnight (00:00)
   const lockJob = new CronJob("0 0 * * *", lockExpeditionsDue, null, true, "Europe/Paris");
@@ -116,9 +130,14 @@ export function setupExpeditionJobs() {
   const returnJob = new CronJob("*/10 * * * *", returnExpeditionsDue, null, true, "Europe/Paris");
   logger.info("Expedition return job scheduled every 10 minutes");
 
+  // Process emergency returns every 10 minutes (same as normal returns)
+  const emergencyJob = new CronJob("*/10 * * * *", processEmergencyReturns, null, true, "Europe/Paris");
+  logger.info("Emergency return job scheduled every 10 minutes");
+
   return {
     lockJob,
     departJob,
-    returnJob
+    returnJob,
+    emergencyJob
   };
 }

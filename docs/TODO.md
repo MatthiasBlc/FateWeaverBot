@@ -213,6 +213,8 @@ lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
 
 -------------------------Idea To work about -------------------------
 
+Faire le point sur les CRON task
+
 sélectionner fil ?
 
 Développer les TESTS

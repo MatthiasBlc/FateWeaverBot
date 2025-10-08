@@ -715,6 +715,158 @@ export class ExpeditionService {
     });
   }
 
+  /**
+   * Toggle emergency return vote for a user on an expedition
+   * Returns the vote if created, null if removed
+   */
+  async toggleEmergencyVote(
+    expeditionId: string,
+    userId: string
+  ): Promise<{ voted: boolean; totalVotes: number; membersCount: number; thresholdReached: boolean }> {
+    return await prisma.$transaction(async (tx) => {
+      // Vérifier que l'expédition existe et est DEPARTED
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        include: {
+          members: true,
+          emergencyVotes: true,
+        },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      if (expedition.status !== ExpeditionStatus.DEPARTED) {
+        throw new Error("Can only vote for emergency return on DEPARTED expeditions");
+      }
+
+      // Vérifier si l'utilisateur est membre de l'expédition
+      const isMember = expedition.members.some(
+        (member) => member.characterId && member.character // Will be loaded if needed
+      );
+
+      // Actually check userId properly via character relation
+      const memberCharacters = await tx.character.findMany({
+        where: {
+          id: { in: expedition.members.map((m) => m.characterId) },
+          userId,
+        },
+      });
+
+      if (memberCharacters.length === 0) {
+        throw new Error("User is not a member of this expedition");
+      }
+
+      // Check if vote already exists
+      const existingVote = await tx.expeditionEmergencyVote.findUnique({
+        where: {
+          expedition_vote_unique: {
+            expeditionId,
+            userId,
+          },
+        },
+      });
+
+      let voted: boolean;
+
+      if (existingVote) {
+        // Remove vote (dévote)
+        await tx.expeditionEmergencyVote.delete({
+          where: { id: existingVote.id },
+        });
+        voted = false;
+      } else {
+        // Add vote
+        await tx.expeditionEmergencyVote.create({
+          data: {
+            expeditionId,
+            userId,
+          },
+        });
+        voted = true;
+      }
+
+      // Get updated vote count
+      const totalVotes = await tx.expeditionEmergencyVote.count({
+        where: { expeditionId },
+      });
+
+      const membersCount = expedition.members.length;
+      const threshold = Math.ceil(membersCount / 2); // 50% arrondi supérieur
+      const thresholdReached = totalVotes >= threshold;
+
+      // Update pendingEmergencyReturn flag if threshold reached
+      if (thresholdReached && !expedition.pendingEmergencyReturn) {
+        await tx.expedition.update({
+          where: { id: expeditionId },
+          data: { pendingEmergencyReturn: true },
+        });
+
+        logger.info("expedition_emergency_return_triggered", {
+          expeditionId,
+          totalVotes,
+          membersCount,
+          threshold,
+        });
+      } else if (!thresholdReached && expedition.pendingEmergencyReturn) {
+        // Reset flag if below threshold
+        await tx.expedition.update({
+          where: { id: expeditionId },
+          data: { pendingEmergencyReturn: false },
+        });
+      }
+
+      return {
+        voted,
+        totalVotes,
+        membersCount,
+        thresholdReached,
+      };
+    });
+  }
+
+  /**
+   * Force emergency return for all expeditions with pendingEmergencyReturn flag
+   * Called by cron job
+   */
+  async forceEmergencyReturns(): Promise<number> {
+    const expeditions = await prisma.expedition.findMany({
+      where: {
+        status: ExpeditionStatus.DEPARTED,
+        pendingEmergencyReturn: true,
+      },
+      select: { id: true, name: true },
+    });
+
+    let returnedCount = 0;
+
+    for (const expedition of expeditions) {
+      try {
+        await this.returnExpedition(expedition.id);
+
+        // Clear votes after return
+        await prisma.expeditionEmergencyVote.deleteMany({
+          where: { expeditionId: expedition.id },
+        });
+
+        logger.info("expedition_emergency_return_executed", {
+          expeditionId: expedition.id,
+          expeditionName: expedition.name,
+        });
+
+        returnedCount++;
+      } catch (error) {
+        logger.error("Failed to force emergency return", {
+          expeditionId: expedition.id,
+          error,
+        });
+      }
+    }
+
+    return returnedCount;
+  }
+
   async getActiveExpeditionsForCharacter(
     characterId: string
   ): Promise<ExpeditionWithDetails[]> {

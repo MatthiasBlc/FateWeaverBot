@@ -9,6 +9,7 @@ import {
   joinExpedition,
   leaveExpedition,
   transferExpeditionResource,
+  toggleEmergencyVote,
 } from "../controllers/expedition";
 
 const router = Router();
@@ -43,5 +44,8 @@ router.get("/", requireAuthOrInternal, getAllExpeditions);
 
 // Transférer des ressources (ville <-> expédition)
 router.post("/:id/transfer", requireAuthOrInternal, transferExpeditionResource);
+
+// Toggle vote pour retour d'urgence
+router.post("/:id/emergency-vote", requireAuthOrInternal, toggleEmergencyVote);
 
 export default router;

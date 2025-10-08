@@ -343,3 +343,39 @@ export const transferExpeditionResource = async (req: Request, res: Response) =>
     }
   }
 };
+
+/**
+ * Toggle emergency return vote for an expedition
+ * POST /expeditions/:id/emergency-vote
+ */
+export const toggleEmergencyVote = async (req: Request, res: Response) => {
+  try {
+    const { id: expeditionId } = req.params;
+    const { userId } = req.body;
+
+    // Check if this is an internal request
+    const isInternalRequest = req.get("x-internal-request") === "true";
+
+    if (!isInternalRequest && !req.session.userId) {
+      return res.status(401).json({ error: "Utilisateur non authentifié" });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId requis" });
+    }
+
+    const result = await expeditionService.toggleEmergencyVote(expeditionId, userId);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Erreur lors du vote d'urgence:", error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+};
