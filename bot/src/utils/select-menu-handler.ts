@@ -190,7 +190,7 @@ export class SelectMenuHandler {
     this.registerHandler("stock_admin_add_select", async (interaction) => {
       try {
         const { handleStockAdminAddSelect } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin/stock-add.js"
         );
         await handleStockAdminAddSelect(interaction);
       } catch (error) {
@@ -206,7 +206,7 @@ export class SelectMenuHandler {
     this.registerHandler("stock_admin_remove_select", async (interaction) => {
       try {
         const { handleStockAdminRemoveSelect } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin/stock-remove.js"
         );
         await handleStockAdminRemoveSelect(interaction);
       } catch (error) {
@@ -222,38 +222,6 @@ export class SelectMenuHandler {
     // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
-
-    // Gestionnaire pour les sélections d'ajout de stock admin
-    this.registerHandler("stock_admin_add_select", async (interaction) => {
-      try {
-        const { handleStockAdminAddSelect } = await import(
-          "../features/admin/stock-admin.handlers.js"
-        );
-        await handleStockAdminAddSelect(interaction);
-      } catch (error) {
-        logger.error("Error handling stock admin add select:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection d'ajout de ressource.",
-          flags: ["Ephemeral"],
-        });
-      }
-    });
-
-    // Gestionnaire pour les sélections de retrait de stock admin
-    this.registerHandler("stock_admin_remove_select", async (interaction) => {
-      try {
-        const { handleStockAdminRemoveSelect } = await import(
-          "../features/admin/stock-admin.handlers.js"
-        );
-        await handleStockAdminRemoveSelect(interaction);
-      } catch (error) {
-        logger.error("Error handling stock admin remove select:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection de retrait de ressource.",
-          flags: ["Ephemeral"],
-        });
-      }
-    });
   }
 
   /**

@@ -170,7 +170,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   // Route vers les gestionnaires appropriés selon le type d'interaction
   if (customId === CHARACTER_ADMIN_CUSTOM_IDS.SELECT_MENU) {
     const { handleCharacterSelect } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-select"
     );
     return handleCharacterSelect(interaction);
   }
@@ -185,7 +185,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX)
   ) {
     const { handleCharacterAction } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-select"
     );
     return handleCharacterAction(interaction);
   }
@@ -197,7 +197,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     // Récupérer le personnage depuis le customId
     const characterId = customId.replace(CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX, '');
     const { handleCapabilitiesButton } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-capabilities"
     );
     const character = await getCharacterById(characterId, interaction);
     return handleCapabilitiesButton(interaction, character);
@@ -207,7 +207,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   if (customId.startsWith("capability_admin_add:")) {
     const characterId = customId.replace("capability_admin_add:", '');
     const { handleAddCapabilities } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-capabilities"
     );
     const character = await getCharacterById(characterId, interaction);
     return handleAddCapabilities(interaction, character);
@@ -217,7 +217,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   if (customId.startsWith("capability_admin_remove:")) {
     const characterId = customId.replace("capability_admin_remove:", '');
     const { handleRemoveCapabilities } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-capabilities"
     );
     const character = await getCharacterById(characterId, interaction);
     return handleRemoveCapabilities(interaction, character);
@@ -227,7 +227,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   if (customId.startsWith("capability_admin_view:")) {
     const characterId = customId.replace("capability_admin_view:", '');
     const { handleViewCapabilities } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-capabilities"
     );
     const character = await getCharacterById(characterId, interaction);
     return handleViewCapabilities(interaction, character);
@@ -236,7 +236,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
   // Vérifier si c'est une sélection de capacités
   if (customId.startsWith("capability_admin_select")) {
     const { handleCapabilitySelect } = await import(
-      "./character-admin.interactions"
+      "./character-admin/character-capabilities"
     );
     
     // Extraire l'ID du personnage depuis le customId (format: capability_admin_select:characterId)
@@ -292,7 +292,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_MODAL_PREFIX)
   ) {
     const { handleStatsModalSubmit, handleAdvancedStatsModalSubmit } =
-      await import("./character-admin.interactions");
+      await import("./character-admin/character-stats");
 
     if (customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_MODAL_PREFIX)) {
       return handleStatsModalSubmit(interaction);

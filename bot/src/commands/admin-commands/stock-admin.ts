@@ -14,7 +14,7 @@ import {
   handleStockAdminRemoveSelect,
   handleStockAdminAddModal,
   handleStockAdminRemoveModal,
-} from "../../features/admin/stock-admin.handlers";
+} from "../../features/admin/stock-admin.command";
 
 // Commande admin unifiée pour gérer tous les stocks de ressources (réservé aux admins)
 const stockAdminCommand: Command = {

@@ -93,7 +93,7 @@ export class ModalHandler {
       async (interaction) => {
         try {
           const { handleAdvancedStatsModalSubmit } = await import(
-            "../features/admin/character-admin.interactions"
+            "../features/admin/character-admin/character-stats.js"
           );
           await handleAdvancedStatsModalSubmit(interaction);
         } catch (error) {
@@ -199,7 +199,7 @@ export class ModalHandler {
     this.registerHandler("stock_admin_add_modal_", async (interaction) => {
       try {
         const { handleStockAdminAddModal } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin/stock-add.js"
         );
         await handleStockAdminAddModal(interaction);
       } catch (error) {
@@ -223,7 +223,7 @@ export class ModalHandler {
     this.registerHandler("stock_admin_remove_modal_", async (interaction) => {
       try {
         const { handleStockAdminRemoveModal } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin/stock-remove.js"
         );
         await handleStockAdminRemoveModal(interaction);
       } catch (error) {

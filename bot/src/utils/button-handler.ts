@@ -159,7 +159,7 @@ export class ButtonHandler {
     this.registerHandlerByPrefix("character_admin_", async (interaction) => {
       try {
         const { handleCharacterAdminInteraction } = await import(
-          "../features/admin/character-admin.handlers"
+          "../features/admin/character-admin.handlers.js"
         );
         await handleCharacterAdminInteraction(interaction);
       } catch (error) {
@@ -176,7 +176,7 @@ export class ButtonHandler {
     this.registerHandlerByPrefix("capability_admin_", async (interaction) => {
       try {
         const { handleCharacterAdminInteraction } = await import(
-          "../features/admin/character-admin.handlers"
+          "../features/admin/character-admin.handlers.js"
         );
         await handleCharacterAdminInteraction(interaction);
       } catch (error) {
@@ -208,7 +208,7 @@ export class ButtonHandler {
     this.registerHandler("stock_admin_add", async (interaction) => {
       try {
         const { handleStockAdminAddButton } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin.command.js"
         );
         await handleStockAdminAddButton(interaction);
       } catch (error) {
@@ -224,7 +224,7 @@ export class ButtonHandler {
     this.registerHandler("stock_admin_remove", async (interaction) => {
       try {
         const { handleStockAdminRemoveButton } = await import(
-          "../features/admin/stock-admin.handlers.js"
+          "../features/admin/stock-admin.command.js"
         );
         await handleStockAdminRemoveButton(interaction);
       } catch (error) {
