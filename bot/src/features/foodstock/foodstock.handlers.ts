@@ -1,4 +1,3 @@
-import { createCustomEmbed, getStockColor } from "../../utils/embeds";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -6,8 +5,11 @@ import {
   ButtonStyle,
   type GuildMember,
 } from "discord.js";
+import { createCustomEmbed, getStockColor } from "../../utils/embeds";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
+import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import type { Town } from "../admin/character-admin.types";
@@ -23,10 +25,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
     );
 
     if (!townResponse) {
-      await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
       return;
     }
 
@@ -148,10 +147,7 @@ export async function handleViewFoodStockCommand(interaction: any) {
       errorMessage = "❌ Problème d'autorisation. Contactez un administrateur.";
     }
 
-    await interaction.reply({
-      content: errorMessage,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, errorMessage);
   }
 }
 
