@@ -6,7 +6,7 @@ export async function handleHelpCommand(interaction: any) {
   try {
     // Récupérer les commandes du client via l'interaction
     const client = interaction.client;
-    const commands: any = client.commands; 
+    const commands: any = client.commands;
     const sections = commands
       ? generateDynamicHelpSections(commands, false)
       : [];
@@ -28,10 +28,7 @@ export async function handleHelpCommand(interaction: any) {
     logger.error("Error in help command:", { error });
 
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: "❌ Une erreur est survenue lors de l'affichage de l'aide.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'affichage de l'aide.");
     } else {
       await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'affichage de l'aide.");
     }
