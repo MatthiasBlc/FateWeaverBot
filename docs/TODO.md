@@ -78,24 +78,96 @@ Aide-moi à créer un script d’initialisation pour tes futures sessions, afin 
 
 -------------------------Node Discord /update-------------------------
 
+## fichier config emoji
+
+Regrouper les emoji dans un fichier de "config" pour que l'on puisse les changer partout tous d'un coup plus facilement
+
+## Update des commandes
+
+### Commandes Utilisateurs
+
+/help
+-> actualiser et rendre plus lisible avec des catégories etc
+
+/profil
+->un bouton "manger" et un "manger +". si faim <=0 ou >=4 alors on affiche ces boutons.
+
+    -> En Ville (pas dans une expédition avec status : DEPARTED)
+      -> le bouton "manger" fait manger 1 de nourriture venant de la ville, s'il n'y en a pas, il fait manger 1 vivre venant de la ville, s'il n'y en a pas erreur (plus rien à manger en ville).
+      -> le bouton "manger +" ouvre un message éphémère avec : état de la faim, état des stocks de vivres dans la ville et nourriture dans la ville avec une alerte de pénurie. La nourriture n'apparait que si la ressource nourriture existe dans le ResourceStock de la ville du character. Ce message propose 4 boutons:
+        ->manger 1 vivre (venant du stock de la ville)
+        -> manger 1 nourriture (venant du stock de la ville). Le bouton nourriture n'apparait que si le stock de nourriture >0 dans le ResourceStock de la ville du character
+        -> manger à sa faim des vivres (mange des vivres jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de vivre consommé. S'il faut consommer 3 vivres mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux vivres. Le bouton ne s'affiche que s'il faut consommer plus d'un seul vivre pour être à 4/4.
+        -> manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de la ville.
+    -> En Expédition avec status : DEPARTED
+      -> le bouton "manger" fait manger 1 de nourriture venant de l'Expédition, s'il n'y en a pas, il fait manger 1 vivre venant de l'Expédition, s'il n'y en a pas erreur (plus rien à manger dans l'Expédition).
+      -> le bouton "manger +" ouvre un message éphémère avec : état de la faim, état des stocks de vivres dans l'Expédition et nourriture dans l'Expédition avec une alerte de pénurie. La nourriture n'apparait que si la ressource nourriture existe dans le ResourceStock de l'Expédition du character. Ce message propose 4 boutons:
+        ->manger 1 vivre (venant du stock de l'Expédition)
+        -> manger 1 nourriture (venant du stock de l'Expédition). Le bouton nourriture n'apparait que si le stock de nourriture >0 dans le ResourceStock de l'Expédition du character
+        -> manger à sa faim des vivres (mange des vivres jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de vivre consommé. S'il faut consommer 3 vivres mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux vivres. Le bouton ne s'affiche que s'il faut consommer plus d'un seul vivre pour être à 4/4.
+        -> manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de l'Expédition.
+
+/stock
+->ok comme ça pour l'instant, semble fonctionner correctement
+
+/foodstock
+-> Commande plus utilisée
+
+/manger
+-> Commande plus utilisée
+
+/ping
+-> Commande plus utilisée
+
+/expedition
+-> Ne devrait plus avoir de sous commandes (tout est géré par la commande /expedition directement avec des boutons)
+-> Nombreux tests de fonctionnalité à faire et de CRON.
+-> le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer)
+-> lorsque l'on est dans une expédition qui n'est pas encore en status DEPARTED, un bouton "transferer la nourriture" doit ouvrir une modale avec deux champs danset gérer les deux ressources en transfert. il doit aussi gére de manière ergonomique le transfert de vivres et / ou nourriture vers la ville et inversement. Un scond bouton quitter l'expédition doit être présent.
+-> lorsque l'on est dans une expédition en status DEPARTED, il devrait y avoir un bouton "retour de l'expédition en urgence".
+Ce bouton agit comme un toggelable, si au moins la moitié des membres d'une expédition (hors isdead true ou agonie) appuie sur le bouton, alors l'expédition est retournée en urgence. Rappuyer sur le bouton doit annuler l'opt-in pour le retour en urgence. Un retour en urgence validé fait rentrer l'expédition lors du prochain cron avec le status RETURNED, a condition que tous les membres ne soient pas en isdead = true à ce moment là.
+-> il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition.
+
+/chantiers
+-> actuellement la commande a deux sous commandes : liste et build.
+-> Remplacer par une commande sans sous commande : /chantier donne la liste des chantiers, un bouton "participer" renvoie sur l'ancien message de build : liste déroulante des chantiers, choix de celui pour lequel l'on veut participer, modale demandant le nombre de PA et gérant toutes les erreurs, investissement des PA dans le chantier.
+->-> Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources) (voir commande chantier-admin)
+
+### Commandes Administrateur
+
+/admin-help
+-> actualiser et rendre plus lisible avec des catégories etc
+->rename en help-admin
+
+/config-channel
+->rename en config-channel-admin
+-> fonctionne bien
+
+/season-admin
+-> fonctionne bien
+
+/character-admin
+-> fonctionne bien
+
+/stock-admin
+-> fonctionne bien
+
+/expedition-admin
+-> A tester en profondeur
+
+/chantiers-admin
+-> Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources)
+
+# Lister ce qui peut être fait en ville et en expédition, et ce qui ne peut pas être fait si l'on est pas dans l'une ou l'autre des situations
+
+##Tests urgents
+
 Tester les interractions d'expéditions avec plusieurs personnages
+Commandes users non visibles par les users sur le server A Tale of a Star
 
-Expédition bouton transferer la nourriture non fonctionnel , doit avoir deux champs dans la modale et gérer les deux ressources en transfert
+## CapacitéV2
 
-QUESTIONS:
-foodstock on conserve ? si oui on conserve les boutons manger ? si non on les delete ?
-/manger on conserve ? ou est-ce que /profil garde tout ?
-
-ExpéditionV2: Gestion de faim et PA spécifiques en expédition.
-
-CapacitéV2: beaucoup de trucs
-
-dayli message (weather)
-Prévoir 7 messages types x2
-== 2 array de 7, clone array, rm du clone quand utilisé, prendre random dans l'array
-
-Commandes users non visibles par les users...
-
+beaucoup de trucs
 Capacité
 capacité hiver
 capacité en "+"
@@ -106,17 +178,11 @@ Pour l’artisanat, tu veux probablement des stocks distincts dans la ville (min
 
 Instinct ?
 
-Effets saisonniers :
-Le principe “une semaine IRL sur deux” → top pour la cadence.
-Il faudra une table ou un paramètre global Season (enum : SUMMER | WINTER).
-Cron hebdomadaire à prévoir pour basculer la saison.
+## Daily messages:
 
-gestion des saisons par VILLE et non pas globale !!!!!
--------------------------Idea To work about -------------------------
-
-Gestion des pénuries ?? Alerte etc ?
-
-Action auto :
+dayli message (weather)
+Prévoir 7 messages types x2
+== 2 array de 7, clone array, rm du clone quand utilisé, prendre random dans l'array
 
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
@@ -125,11 +191,23 @@ Action auto :
   récap des ressources vivres etc
   annonce du départ de l'expédition (préparée la veille)
 
+## Erreur sur la gestion des saisons à vérifier :
+
+gestion des saisons par VILLE et non pas globale !!!!!
+
+##idées en vrac a réfléchir:
+
+- système d'évènements
+
+Gestion des pénuries ?? Alerte etc ?
+
+Système de réapprovisionnement automatique des vivres via des chantiers ??
+
+logs de la création de personnages
+
+-------------------------Idea To work about -------------------------
+
 sélectionner fil ?
-
-Créer Nourriture ?
-
-/manger plusieurs boutons suivant la situation (jusquà full ? une seule ration?)
 
 Développer les TESTS
 
@@ -140,10 +218,6 @@ Développer les TESTS
 lors de la mort d'un personnage écrire la raison
 
 # Pouvoir faire manger les copains ? ou admin peuvent faire manger un joueur ?
-
-Refacto les add + remove commands in one and only
-
-Refacto le backend
 
 Actions des charactes :
 
@@ -183,13 +257,6 @@ Action des Admins:
 - message quotidien "belle journée" ou "journée pluvieuse" etc
 - pouvoir lui donner un message différent la veille
 
-#info
-Système de réapprovisionnement automatique des vivres via des chantiers ??
-
-#logs génériques à ajouter
-logs des morts
-logs de la création de personnages
-
 #multi ville possible
 Un character est lié à une ville et à un user.
 Il est lié à la guilde par la ville.
@@ -203,19 +270,6 @@ Toutes les commandes liées à la ville et les characters sont liés à la ville
 
 Lors de l'interraction d'un User, on vérifie qu'il a bien un character sur la ville actuelle.
 Si ce nest pas le cas, un nouveau character est créer (couple ville / user)
-
-admin-help │
-ping │
-help
-chantiers-admin│ 'add, delete' │
-character-admin
-foodstock-admin│ 'add, remove' │
-foodstock │
-manger │
-chantiers │'liste, build' │
-config-channel
-profil'
-
 -------------------------Done-------------------------
 
 -------------------------Notes-------------------------
