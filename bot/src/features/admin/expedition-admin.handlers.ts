@@ -13,7 +13,7 @@ import { Character, Expedition } from "../../types/entities";
 import { apiService } from "../../services/api";
 
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
-import { validateCharacterExists } from "../../utils/character-validation.js";
+import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 import { logger } from "../../services/logger";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
@@ -287,16 +287,9 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
     // Get character details to check status
     const character = await apiService.characters.getCharacterById(characterId);
     
-    // Vérifier que le personnage est actif et vivant
-    if (!character.isActive) {
-      await replyEphemeral(interaction, "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage n'est pas actif.");
-      return;
-    }
-    
-    if (character.isDead) {
-      await replyEphemeral(interaction, "❌ Impossible d'ajouter ce personnage à l'expédition : le personnage est mort.");
-      return;
-    }
+    // Validate character exists and is alive
+    validateCharacterExists(character);
+    validateCharacterAlive(character);
 
     // Add member to expedition
     await apiService.addMemberToExpedition(expeditionId, characterId);

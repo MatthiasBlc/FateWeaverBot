@@ -48,11 +48,11 @@ interface InvestResult {
   isCompleted: boolean;
 }
 import { sendLogMessage } from "../../utils/channels.js";
-import { apiService } from "../../services/api";
-import { logger } from "../../services/logger";
-import { checkAdmin } from "../../utils/roles";
-import { getStatusText, getStatusEmoji } from "./chantiers.utils";
-import { createInfoEmbed } from "../../utils/embeds";
+import { apiService } from "../../services/api/index.js";
+import { logger } from "../../services/logger.js";
+import { checkAdmin } from "../../utils/roles.js";
+import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
+import { createInfoEmbed } from "../../utils/embeds.js";
 
 export async function handleListCommand(interaction: CommandInteraction) {
   try {
