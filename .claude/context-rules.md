@@ -248,11 +248,13 @@ node scripts/context-helper.js list
 
 ## 🔄 Workflow Recommandé
 
-### Début de Session
-1. **Exécuter** : `node scripts/context-helper.js init`
-2. **Lire** les suggestions affichées
+### Début de Session (Automatique ⭐)
+1. **Hook auto-exécute** : `context-helper.js auto-suggest` (configuré dans `.claude/settings.local.json`)
+2. **Lire** les suggestions affichées automatiquement
 3. **Charger** les fichiers suggérés dans Claude
 4. **Commencer** à travailler
+
+> 💡 **Alternative manuelle** : Si besoin de plus de détails, exécuter `node scripts/context-helper.js init`
 
 ### Changement de Tâche
 1. **Exécuter** : `node scripts/context-helper.js suggest --task "nouvelle tâche"`
@@ -346,6 +348,42 @@ Claude "se souvient" dans la conversation :
 "Comme on l'a vu dans embeds.ts plus tôt..."
 → Pas besoin de recharger si déjà dans la conversation
 ```
+
+### 4. Hook Automatique (Recommandé ⭐)
+Le système est configuré pour **s'exécuter automatiquement** à chaque démarrage de Claude :
+
+**Configuration** : `.claude/settings.local.json`
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [{
+          "type": "command",
+          "command": "node scripts/context-helper.js auto-suggest"
+        }]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [{
+          "type": "command",
+          "command": "node scripts/context-helper.js auto-suggest"
+        }]
+      }
+    ]
+  }
+}
+```
+
+**Ce qui se passe automatiquement** :
+1. ✅ Claude démarre une session (nouvelle ou reprise)
+2. ✅ Hook déclenche `context-helper.js auto-suggest`
+3. ✅ Analyse TODO.md + fichiers récents (git)
+4. ✅ Affiche suggestions de contexte minimal
+5. ✅ Sauvegarde session dans `.claude/last-session.json`
+
+**Avantage** : Plus besoin de penser à exécuter la commande, c'est **100% automatique** !
 
 ---
 

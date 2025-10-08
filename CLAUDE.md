@@ -1,5 +1,16 @@
 # CLAUDE - Essentials
 
+**🤖 AUTO-CONTEXT SYSTEM - RUN THIS FIRST:**
+
+```bash
+node scripts/context-helper.js init
+```
+
+This analyzes your current task and suggests optimal files to load, minimizing tokens.
+See `.claude/context-rules.md` for how the intelligent context system works.
+
+---
+
 **Read this first. Only read detailed docs when needed.**
 
 ---

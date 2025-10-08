@@ -275,10 +275,16 @@ export function createCapabilitySelectMenu(
 export function createCapabilityActionButtons(
   characterId: string
 ): ActionRowBuilder<ButtonBuilder> {
-  return createConfirmationButtons(`capability_admin:${characterId}`, {
-    confirmLabel: "➕ Ajouter Capacités",
-    cancelLabel: "➖ Retirer Capacités",
-    confirmStyle: ButtonStyle.Success,
-    cancelStyle: ButtonStyle.Danger,
-  });
+  return createActionButtons([
+    {
+      customId: `capability_admin_add:${characterId}`,
+      label: "➕ Ajouter Capacités",
+      style: ButtonStyle.Success,
+    },
+    {
+      customId: `capability_admin_remove:${characterId}`,
+      label: "➖ Retirer Capacités",
+      style: ButtonStyle.Danger,
+    },
+  ]);
 }
