@@ -53,6 +53,7 @@ import { logger } from "../../services/logger.js";
 import { checkAdmin } from "../../utils/roles.js";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
+import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis.js";
 
 export async function handleListCommand(interaction: CommandInteraction) {
   try {
@@ -68,7 +69,7 @@ export async function handleListCommand(interaction: CommandInteraction) {
     }
 
     const embed = createInfoEmbed(
-      "🏗️ Liste des chantiers",
+      `${CHANTIER.ICON} Liste des chantiers`,
       "Voici la liste des chantiers en cours sur ce serveur :"
     );
 
@@ -264,7 +265,7 @@ export async function handleAddCommand(interaction: CommandInteraction) {
     if (!nom || cout === null) {
       await interaction.reply({
         content:
-          "❌ Erreur: Les paramètres 'nom' et 'cout' sont requis pour créer un chantier.",
+          `${STATUS.ERROR} Erreur: Les paramètres 'nom' et 'cout' sont requis pour créer un chantier.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -282,7 +283,7 @@ export async function handleAddCommand(interaction: CommandInteraction) {
 
     // Répondre avec le résultat
     await chatInputInteraction.reply({
-      content: `✅ Chantier "${result.name}" créé avec succès !\n📊 Coût: ${
+      content: `✅ Chantier "${result.name}" créé avec succès !\n${STATUS.STATS} Coût: ${
         result.cost
       } PA\n📋 Statut: ${getStatusText(result.status)}`,
       flags: ["Ephemeral"],
@@ -314,7 +315,7 @@ export async function handleInvestModalSubmit(
 
     if (!chantier) {
       await interaction.reply({
-        content: "❌ Chantier non trouvé.",
+        content: `${STATUS.ERROR} Chantier non trouvé.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -330,7 +331,7 @@ export async function handleInvestModalSubmit(
     if (!inputValue || inputValue.trim() === "") {
       await interaction.reply({
         content:
-          "❌ Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).",
+          `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -340,7 +341,7 @@ export async function handleInvestModalSubmit(
     if (inputValue.includes('.') || inputValue.includes(',')) {
       await interaction.reply({
         content:
-          "❌ Veuillez entrer un nombre entier uniquement (pas de décimales).",
+          `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -352,7 +353,7 @@ export async function handleInvestModalSubmit(
     if (isNaN(points) || points <= 0) {
       await interaction.reply({
         content:
-          "❌ Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).",
+          `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -410,7 +411,7 @@ export async function handleInvestModalSubmit(
 
       await interaction.reply({
         content:
-          "❌ Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande `/create-character` pour créer votre personnage.",
+          `${STATUS.ERROR} Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande \`/create-character\` pour créer votre personnage.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -420,7 +421,7 @@ export async function handleInvestModalSubmit(
     if (!activeCharacter.isActive) {
       await interaction.reply({
         content:
-          "❌ Votre personnage est inactif et ne peut pas investir dans les chantiers.",
+          `${STATUS.ERROR} Votre personnage est inactif et ne peut pas investir dans les chantiers.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -438,7 +439,7 @@ export async function handleInvestModalSubmit(
     if (activeCharacter.paTotal <= 0) {
       await interaction.reply({
         content:
-          "❌ Votre personnage n'a plus de points d'action pour investir dans ce chantier.",
+          `${STATUS.ERROR} Votre personnage n'a plus de points d'action pour investir dans ce chantier.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -468,7 +469,7 @@ export async function handleInvestModalSubmit(
     // Vérification finale : si après ajustement il n'y a plus de PA à investir
     if (points <= 0) {
       await interaction.reply({
-        content: "❌ Vous n'avez pas de points d'action disponibles pour investir dans ce chantier.",
+        content: `${STATUS.ERROR} Vous n'avez pas de points d'action disponibles pour investir dans ce chantier.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -481,7 +482,7 @@ export async function handleInvestModalSubmit(
       points
     )) as InvestResult;
 
-    let responseMessage = `✅ Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
+    let responseMessage = `${STATUS.SUCCESS} Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
 
     // Ajouter des informations sur les ajustements effectués
     if (adjustedForChantierLimit) {
@@ -492,14 +493,14 @@ export async function handleInvestModalSubmit(
 
     if (result.isCompleted) {
       responseMessage +=
-        "\n🎉 Félicitations ! Le chantier est maintenant terminé !";
+        `${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
 
       // Envoyer un message dans le channel de logs
       const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
       await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
     } else {
       const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
-      responseMessage += `\n📊 Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
+      responseMessage += `\n${STATUS.STATS} Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
     }
 
     await interaction.reply({
@@ -515,7 +516,7 @@ export async function handleInvestModalSubmit(
     ) {
       await interaction.reply({
         content:
-          "❌ Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande `/create-character` pour créer votre personnage.",
+          `${STATUS.ERROR} Vous devez avoir un personnage actif pour investir dans les chantiers. Utilisez la commande \`/create-character\` pour créer votre personnage.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -614,7 +615,7 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
 
       // Répondre avec le résultat
       await response.update({
-        content: `✅ Le chantier "${selectedChantier.name}" a été supprimé avec succès.`,
+        content: `${STATUS.SUCCESS} Le chantier "${selectedChantier.name}" a été supprimé avec succès.`,
         components: [],
       });
     } catch (error) {

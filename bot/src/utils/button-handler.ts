@@ -155,6 +155,86 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Manger +" (menu avancé)
+    this.registerHandlerByPrefix("eat_more", async (interaction) => {
+      try {
+        const { handleEatMoreButton } = await import(
+          "../features/hunger/eat-more.handlers.js"
+        );
+        await handleEatMoreButton(interaction);
+      } catch (error) {
+        logger.error("Error handling eat more button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du menu avancé.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour manger 1 vivre
+    this.registerHandlerByPrefix("eat_vivre_1", async (interaction) => {
+      try {
+        const { handleEatVivre1Button } = await import(
+          "../features/hunger/eat-more.handlers.js"
+        );
+        await handleEatVivre1Button(interaction);
+      } catch (error) {
+        logger.error("Error handling eat vivre 1 button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la consommation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour manger 1 nourriture
+    this.registerHandlerByPrefix("eat_nourriture_1", async (interaction) => {
+      try {
+        const { handleEatNourriture1Button } = await import(
+          "../features/hunger/eat-more.handlers.js"
+        );
+        await handleEatNourriture1Button(interaction);
+      } catch (error) {
+        logger.error("Error handling eat nourriture 1 button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la consommation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour manger vivres à satiété
+    this.registerHandlerByPrefix("eat_vivre_full", async (interaction) => {
+      try {
+        const { handleEatVivreFull } = await import(
+          "../features/hunger/eat-more.handlers.js"
+        );
+        await handleEatVivreFull(interaction);
+      } catch (error) {
+        logger.error("Error handling eat vivre full button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la consommation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour manger nourriture à satiété
+    this.registerHandlerByPrefix("eat_nourriture_full", async (interaction) => {
+      try {
+        const { handleEatNourritureFull } = await import(
+          "../features/hunger/eat-more.handlers.js"
+        );
+        await handleEatNourritureFull(interaction);
+      } catch (error) {
+        logger.error("Error handling eat nourriture full button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la consommation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les boutons d'administration de personnages
     this.registerHandlerByPrefix("character_admin_", async (interaction) => {
       try {

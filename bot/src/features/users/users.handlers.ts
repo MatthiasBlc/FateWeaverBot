@@ -362,6 +362,13 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       .setStyle(ButtonStyle.Secondary);
     buttons.push(nourritureButton);
 
+    // Bouton "Manger +" pour accéder au menu avancé
+    const eatMoreButton = new ButtonBuilder()
+      .setCustomId(`eat_more:${data.character.id}`)
+      .setLabel("Manger + 🍴")
+      .setStyle(ButtonStyle.Success);
+    buttons.push(eatMoreButton);
+
     // Ajouter les boutons à la ligne
     const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
     components.push(buttonRow);
