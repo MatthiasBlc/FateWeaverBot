@@ -51,14 +51,14 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       return;
     }
 
-    // Déterminer la localisation (ville ou expédition)
+    // Déterminer la localisation (ville ou expédition) et récupérer les stocks
     let locationType = "CITY";
     let locationId = character.townId;
 
     // Vérifier si le personnage est en expédition DEPARTED
     try {
-      const expeditions = await apiService.expeditions.getExpeditionsByGuild(
-        interaction.guildId!
+      const expeditions = await apiService.expeditions.getExpeditionsByTown(
+        character.townId
       );
 
       const activeExpedition = expeditions.find(
@@ -295,37 +295,18 @@ async function handleEatResource(
       return;
     }
 
-    // Déterminer localisation
-    let locationType = "CITY";
-    let locationId = character.townId;
-
-    try {
-      const expeditions = await apiService.expeditions.getExpeditionsByGuild(
-        interaction.guildId!
-      );
-      const activeExpedition = expeditions.find(
-        (exp: any) =>
-          exp.status === "DEPARTED" &&
-          exp.members?.some((m: any) => m.characterId === character.id)
-      );
-
-      if (activeExpedition) {
-        locationType = "EXPEDITION";
-        locationId = activeExpedition.id;
-      }
-    } catch (error) {
-      logger.error("Erreur vérification expédition:", error);
-    }
-
     // Consommer les ressources
     for (let i = 0; i < quantity; i++) {
       try {
-        await apiService.eatFood(
-          character.id,
-          resourceName,
-          locationType,
-          locationId
-        );
+        // Utiliser les méthodes API appropriées selon le type de ressource
+        if (resourceName === "Vivres") {
+          await apiService.characters.eatFood(character.id);
+        } else {
+          await apiService.characters.eatFoodAlternative(
+            character.id,
+            resourceName
+          );
+        }
       } catch (error: any) {
         logger.error(
           `Erreur lors de la consommation ${i + 1}/${quantity}:`,
