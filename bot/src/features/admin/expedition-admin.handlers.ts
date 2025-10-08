@@ -1,3 +1,4 @@
+import { createInfoEmbed, createSuccessEmbed, createErrorEmbed, createWarningEmbed } from "../../utils/embeds";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -56,11 +57,10 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff9900)
-      .setTitle("🛠️ Administration des Expéditions")
-      .setDescription(`**${expeditionsWithMembers.length}** expéditions avec membres trouvées`)
-      .setTimestamp();
+    const embed = createWarningEmbed(
+      "🛠️ Administration des Expéditions",
+      `**${expeditionsWithMembers.length}** expéditions avec membres trouvées`
+    );
 
     await interaction.reply({
       embeds: [embed],
@@ -109,18 +109,17 @@ export async function handleExpeditionAdminSelect(interaction: any) {
       );
 
     // Create embed with expedition details
-    const embed = new EmbedBuilder()
-      .setColor(0xff9900)
-      .setTitle(`🛠️ ${expedition.name}`)
-      .addFields(
-        { name: "📦 Stock de nourriture", value: `${expedition.foodStock}`, inline: true },
-        { name: "⏱️ Durée", value: `${expedition.duration}h`, inline: true },
-        { name: "📍 Statut", value: getStatusEmoji(expedition.status), inline: true },
-        { name: "👥 Membres", value: `${expedition.members?.length || 0}`, inline: true },
-        { name: "🏛️ Ville", value: expedition.town?.name || "Inconnue", inline: true },
-        { name: "👤 Créée par", value: `<@${expedition.createdBy}>`, inline: true }
-      )
-      .setTimestamp();
+    const embed = createWarningEmbed(
+      `🛠️ ${expedition.name}`,
+      "Détails de l'expédition"
+    ).addFields(
+      { name: "📦 Stock de nourriture", value: `${expedition.foodStock}`, inline: true },
+      { name: "⏱️ Durée", value: `${expedition.duration}h`, inline: true },
+      { name: "📍 Statut", value: getStatusEmoji(expedition.status), inline: true },
+      { name: "👥 Membres", value: `${expedition.members?.length || 0}`, inline: true },
+      { name: "🏛️ Ville", value: expedition.town?.name || "Inconnue", inline: true },
+      { name: "👤 Créée par", value: `<@${expedition.createdBy}>`, inline: true }
+    );
 
     await interaction.update({
       embeds: [embed],
@@ -293,16 +292,14 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
       `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
     ).join('\n') || 'Aucun membre';
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff9900)
-      .setTitle(`👥 Gestion des membres - ${expedition.name}`)
-      .setDescription(`**Membres actuels (${expedition.members?.length || 0}):**\n${memberList}`)
-      .addFields(
-        { name: "➕ Ajouter un membre", value: `${availableCharacters.length} personnage(s) disponible(s)`, inline: true },
-        { name: "➖ Retirer un membre", value: (expedition.members?.length || 0) > 0 ? `${expedition.members?.length} membre(s)` : "Aucun membre", inline: true },
-        { name: "📍 Ville", value: expedition.town?.name || "Inconnue", inline: true }
-      )
-      .setTimestamp();
+    const embed = createWarningEmbed(
+      `👥 Gestion des membres - ${expedition.name}`,
+      `**Membres actuels (${expedition.members?.length || 0}):**\n${memberList}`
+    ).addFields(
+      { name: "➕ Ajouter un membre", value: `${availableCharacters.length} personnage(s) disponible(s)`, inline: true },
+      { name: "➖ Retirer un membre", value: (expedition.members?.length || 0) > 0 ? `${expedition.members?.length} membre(s)` : "Aucun membre", inline: true },
+      { name: "📍 Ville", value: expedition.town?.name || "Inconnue", inline: true }
+    );
 
     await interaction.reply({
       embeds: [embed],
@@ -355,11 +352,10 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
       `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
     ).join('\n') || 'Aucun membre';
 
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle(`✅ Membre ajouté - ${expedition?.name}`)
-      .setDescription(`**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`)
-      .setTimestamp();
+    const embed = createSuccessEmbed(
+      `✅ Membre ajouté - ${expedition?.name}`,
+      `**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`
+    );
 
     await interaction.update({
       embeds: [embed],
@@ -398,11 +394,10 @@ export async function handleExpeditionAdminRemoveMember(interaction: any) {
       `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
     ).join('\n') || 'Aucun membre';
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle(`❌ Membre retiré - ${expedition?.name}`)
-      .setDescription(`**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`)
-      .setTimestamp();
+    const embed = createErrorEmbed(
+      `Membre retiré - ${expedition?.name}`,
+      `**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`
+    );
 
     await interaction.update({
       embeds: [embed],
