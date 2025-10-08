@@ -6,7 +6,7 @@ import { createHelpEmbed, generateDynamicHelpSections } from "../../features/hel
 // Commande admin help pour lister toutes les commandes admin disponibles
 const adminHelpCommand: Command = {
   data: new SlashCommandBuilder()
-    .setName("admin-help")
+    .setName("help-admin")
     .setDescription("Affiche la liste des commandes administrateur disponibles")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
