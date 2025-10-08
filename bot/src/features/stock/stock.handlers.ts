@@ -61,22 +61,35 @@ export async function handleViewStockCommand(interaction: any) {
 
     const resources = resourcesResponse as ResourceStock[];
 
+    // Trier les ressources par catégorie : nourriture/vivres d'abord, puis autres
+    const sortedResources = [...resources].sort((a, b) => {
+      const aName = a.resourceType.name.toLowerCase();
+      const bName = b.resourceType.name.toLowerCase();
+
+      // Nourriture et Vivres en premier
+      const isAFood = aName.includes('nourriture') || aName.includes('vivres');
+      const isBFood = bName.includes('nourriture') || bName.includes('vivres');
+
+      if (isAFood && !isBFood) return -1;
+      if (!isAFood && isBFood) return 1;
+
+      // Sinon, ordre alphabétique
+      return aName.localeCompare(bName);
+    });
+
     // Créer l'embed d'information
-    const totalStock = resources.reduce((sum, resource) => sum + resource.quantity, 0);
+    const totalStock = sortedResources.reduce((sum, resource) => sum + resource.quantity, 0);
     const embed = createCustomEmbed({
       color: getStockColor(totalStock),
       title: `🏙️ Stock de la Ville : ${townResponse.name}`,
-      description: `Stock actuel de toutes les ressources de la ville **${townResponse.name}** (ville de votre personnage **${character.name}**).`,
       timestamp: true,
     });
 
-    // Ajouter les ressources au format demandé
+    // Ajouter les ressources triées
     const resourceLines: string[] = [];
-    let totalResources = 0;
 
-    for (const resource of resources) {
+    for (const resource of sortedResources) {
       resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
-      totalResources += resource.quantity;
     }
 
     if (resourceLines.length === 0) {
@@ -90,21 +103,6 @@ export async function handleViewStockCommand(interaction: any) {
         name: "📦 Ressources",
         value: resourceLines.join('\n'),
         inline: false,
-      });
-
-      embed.addFields({
-        name: "📊 Total",
-        value: `${totalResources} ressources au total`,
-        inline: true,
-      });
-    }
-
-    // Ajouter des informations sur le personnage si disponible
-    if (character) {
-      embed.addFields({
-        name: "👤 Votre Personnage",
-        value: `**${character.name}** (Niveau ${character.hungerLevel}/4)`,
-        inline: true,
       });
     }
 
