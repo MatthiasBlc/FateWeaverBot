@@ -1,4 +1,8 @@
-import { createInfoEmbed, createSuccessEmbed, createWarningEmbed } from "../../utils/embeds";
+import {
+  createInfoEmbed,
+  createSuccessEmbed,
+  createWarningEmbed,
+} from "../../utils/embeds";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -11,6 +15,11 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 import { apiService } from "../../services/api";
+import {
+  replyEphemeral,
+  replyError,
+  replySuccess,
+} from "../../utils/interaction-helpers.js";
 import { logger } from "../../services/logger.js";
 
 interface GuildConfig {
@@ -22,21 +31,21 @@ interface GuildConfig {
 }
 
 export async function handleConfigChannelCommand(
-  interaction: CommandInteraction
+  interaction: ChatInputCommandInteraction
 ) {
   if (!interaction.guild) {
-    return interaction.reply({
-      content: "Cette commande ne peut être utilisée que dans un serveur.",
-      flags: ["Ephemeral"],
-    });
+    return replyEphemeral(
+      interaction,
+      "Cette commande ne peut être utilisée que dans un serveur."
+    );
   }
 
   // Vérifier les permissions d'administrateur
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({
-      content: "Vous devez être administrateur pour utiliser cette commande.",
-      flags: ["Ephemeral"],
-    });
+    return replyEphemeral(
+      interaction,
+      "Vous devez être administrateur pour utiliser cette commande."
+    );
   }
 
   const guild = interaction.guild;
@@ -45,7 +54,9 @@ export async function handleConfigChannelCommand(
   let currentLogChannel = null;
   let currentLogChannelName = null;
   try {
-    const guildConfig = await apiService.getGuildByDiscordId(guild.id) as GuildConfig;
+    const guildConfig = (await apiService.getGuildByDiscordId(
+      guild.id
+    )) as GuildConfig;
     if (guildConfig && guildConfig.logChannelId) {
       currentLogChannel = guild.channels.cache.get(guildConfig.logChannelId);
       currentLogChannelName = currentLogChannel
@@ -65,10 +76,10 @@ export async function handleConfigChannelCommand(
   );
 
   if (textChannels.size === 0) {
-    return interaction.reply({
-      content: "Aucun salon textuel accessible n'a été trouvé.",
-      flags: ["Ephemeral"],
-    });
+    return replyEphemeral(
+      interaction,
+      "Aucun salon textuel accessible n'a été trouvé."
+    );
   }
 
   // Limiter à 25 salons maximum (limite Discord)
@@ -167,10 +178,7 @@ export async function handleConfigChannelCommand(
     const selectedChannel = guild.channels.cache.get(selectedChannelId);
 
     if (!selectedChannel) {
-      return selectInteraction.reply({
-        content: "Le salon sélectionné n'existe plus.",
-        flags: ["Ephemeral"],
-      });
+      return replyEphemeral(selectInteraction, "Le salon sélectionné n'existe plus.");
     }
 
     // Sauvegarder dans la base de données
