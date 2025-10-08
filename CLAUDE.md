@@ -14,8 +14,8 @@
 
 ## ⚡ Critical Protocols (Read These)
 
-1. **Token Optimization:** `docs/COLLABORATION-PROTOCOL.md` - When to use Supernova vs Claude
-2. **Meta-Protocol:** When you discover efficient workflows → document in `docs/` → reference here
+1. **Token Optimization:** `.claude/collaboration.md` - When to use Supernova vs Claude
+2. **Meta-Protocol:** When you discover efficient workflows → document in `.claude/` or `docs/` → reference here
 
 ---
 
@@ -35,10 +35,11 @@ docker compose logs -f backenddev        # Backend logs
 
 ## 📚 Detailed Documentation (Read On-Demand)
 
-- **Full Architecture & Workflows:** `CLAUDE-REFERENCE.md` (214 lines - read when modifying structure/adding features)
+- **Full Architecture & Workflows:** `.claude/reference.md` (214 lines - read when modifying structure/adding features)
+- **Collaboration Protocol:** `.claude/collaboration.md` (273 lines - read at start of multi-step projects)
+- **Context System Explained:** `.claude/context-optimization.md` (146 lines - how this system works)
 - **Refactoring Progress:** `docs/refactoring-progress.md` (read when continuing refactoring work)
-- **Collaboration Protocol:** `docs/COLLABORATION-PROTOCOL.md` (read at start of multi-step projects)
-- **Context Optimization System:** `docs/CONTEXT-OPTIMIZATION.md` (explains this 3-tier system)
+- **All .claude/ docs indexed:** `.claude/README.md`
 
 ---
 

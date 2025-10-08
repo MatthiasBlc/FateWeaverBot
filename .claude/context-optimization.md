@@ -20,8 +20,8 @@ Minimiser les tokens consommés à chaque session tout en conservant l'informati
 
 ### Niveau 2 : Documents de Référence - LUS À LA DEMANDE
 **Fichiers :**
-- `CLAUDE-REFERENCE.md` (214 lignes) - Architecture complète, workflows détaillés
-- `docs/COLLABORATION-PROTOCOL.md` (300 lignes) - Protocole Supernova détaillé
+- `.claude/reference.md` (214 lignes) - Architecture complète, workflows détaillés
+- `.claude/collaboration.md` (273 lignes) - Protocole Supernova détaillé
 - `docs/refactoring-progress.md` (300+ lignes) - Historique refactoring
 
 **Tokens :** ~1,500 tokens par lecture (seulement si nécessaire)
@@ -66,14 +66,14 @@ Session typique:
 
 ## 🎯 Règles pour Claude
 
-### Quand lire CLAUDE-REFERENCE.md (214 lignes)
+### Quand lire .claude/reference.md (214 lignes)
 - Ajouter une nouvelle feature/commande Discord
 - Modifier l'architecture (nouveau module, réorganisation)
 - Questions sur les modèles de données Prisma
 - Comprendre le système de deployment
 - Ajouter un endpoint backend
 
-### Quand lire COLLABORATION-PROTOCOL.md (300 lignes)
+### Quand lire .claude/collaboration.md (273 lignes)
 - Début d'un projet multi-étapes (refactoring, migration)
 - Tâche répétitive sur plusieurs fichiers
 - Hésitation : "Est-ce que Supernova pourrait faire ça ?"
@@ -92,9 +92,10 @@ Session typique:
 ## 📝 Maintenance du Système
 
 ### Ajouter un nouveau protocole/workflow
-1. Créer `docs/NOUVEAU-PROTOCOLE.md`
+1. Créer `.claude/nouveau-protocole.md` (si spécifique Claude) ou `docs/NOUVEAU.md` (si doc projet)
 2. Ajouter référence dans `CLAUDE.md` section "Detailed Documentation"
-3. Garder CLAUDE.md minimal (max 40 lignes)
+3. Mettre à jour `.claude/README.md` si fichier Claude
+4. Garder CLAUDE.md minimal (max 60 lignes)
 
 ### Mettre à jour l'état du projet
 Modifier `CLAUDE.md` section "Current Project Status" :
