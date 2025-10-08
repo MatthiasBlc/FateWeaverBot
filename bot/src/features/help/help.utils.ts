@@ -1,17 +1,16 @@
+import { createInfoEmbed } from "../../utils/embeds";
 import { Collection, EmbedBuilder } from "discord.js";
 import type { Command } from "../../types/command";
 import type { HelpEmbedData, HelpSection } from "./help.types";
 
 export function createHelpEmbed(data: HelpEmbedData): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setColor(data.color as any) // Type assertion temporaire
-    .setTitle(data.title)
-    .setDescription(data.description)
-    .setTimestamp()
-    .setFooter({
-      text: `Demandé par ${data.username}`,
-      iconURL: data.avatarUrl,
-    });
+  const embed = createInfoEmbed(
+    data.title,
+    data.description
+  ).setFooter({
+    text: `Demandé par ${data.username}`,
+    iconURL: data.avatarUrl,
+  });
 
   // Ajouter les sections d'aide
   data.sections.forEach(section => {
