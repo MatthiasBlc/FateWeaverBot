@@ -108,6 +108,10 @@ Regrouper les emoji dans un fichier de "config" pour que l'on puisse les changer
         -> manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de l'Expédition.
 
 /stock
+-> retirer 👤 Votre Personnage **character name** (**faim**)
+-> retirer le total de ressources
+-> retirer cette phrase : Stock actuel de toutes les ressources de la ville Owl's Lab City (ville de votre personnage ChatMot).
+-> trier les ressources par types : nourriture + vivres et le reste (tout de même groupé deux par deux, produit brut puis sa transformation)
 ->ok comme ça pour l'instant, semble fonctionner correctement
 
 /foodstock
@@ -121,12 +125,12 @@ Regrouper les emoji dans un fichier de "config" pour que l'on puisse les changer
 
 /expedition
 -> Ne devrait plus avoir de sous commandes (tout est géré par la commande /expedition directement avec des boutons)
--> Nombreux tests de fonctionnalité à faire et de CRON.
 -> le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer)
 -> lorsque l'on est dans une expédition qui n'est pas encore en status DEPARTED, un bouton "transferer la nourriture" doit ouvrir une modale avec deux champs danset gérer les deux ressources en transfert. il doit aussi gére de manière ergonomique le transfert de vivres et / ou nourriture vers la ville et inversement. Un scond bouton quitter l'expédition doit être présent.
 -> lorsque l'on est dans une expédition en status DEPARTED, il devrait y avoir un bouton "retour de l'expédition en urgence".
 Ce bouton agit comme un toggelable, si au moins la moitié des membres d'une expédition (hors isdead true ou agonie) appuie sur le bouton, alors l'expédition est retournée en urgence. Rappuyer sur le bouton doit annuler l'opt-in pour le retour en urgence. Un retour en urgence validé fait rentrer l'expédition lors du prochain cron avec le status RETURNED, a condition que tous les membres ne soient pas en isdead = true à ce moment là.
 -> il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition.
+-> Nombreux tests de fonctionnalité à faire et de CRON.
 
 /chantiers
 -> actuellement la commande a deux sous commandes : liste et build.
@@ -147,7 +151,7 @@ Ce bouton agit comme un toggelable, si au moins la moitié des membres d'une exp
 -> fonctionne bien
 
 /character-admin
--> fonctionne bien
+-> Bontons ajouter et retirer capacités ne fonctionnent plus "Échec de l'interaction"
 
 /stock-admin
 -> fonctionne bien
@@ -204,6 +208,8 @@ Gestion des pénuries ?? Alerte etc ?
 Système de réapprovisionnement automatique des vivres via des chantiers ??
 
 logs de la création de personnages
+
+lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
 
 -------------------------Idea To work about -------------------------
 
