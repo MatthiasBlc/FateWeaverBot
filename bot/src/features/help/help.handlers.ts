@@ -1,5 +1,6 @@
 import { logger } from "../../services/logger";
 import { createHelpEmbed, generateDynamicHelpSections } from "./help.utils";
+import { replyEphemeral } from "../../utils/interaction-helpers.js";
 
 export async function handleHelpCommand(interaction: any) {
   try {
@@ -32,10 +33,7 @@ export async function handleHelpCommand(interaction: any) {
         flags: ["Ephemeral"],
       });
     } else {
-      await interaction.reply({
-        content: "❌ Une erreur est survenue lors de l'affichage de l'aide.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'affichage de l'aide.");
     }
   }
 }
