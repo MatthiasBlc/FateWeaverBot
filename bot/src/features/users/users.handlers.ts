@@ -1,3 +1,4 @@
+import { CHARACTER, HUNGER, STATUS, CAPABILITIES, RESOURCES } from "../../constants/emojis.js";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -34,7 +35,7 @@ export async function handleProfileCommand(interaction: any) {
 
     if (!town || typeof town !== "object" || !("id" in town)) {
       await interaction.reply({
-        content: "❌ Impossible de trouver la ville pour ce serveur.",
+        content: `${STATUS.ERROR} Impossible de trouver la ville pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -194,14 +195,14 @@ export async function handleProfileCommand(interaction: any) {
         return;
       } else if (characterStatus.needsCreation) {
         await interaction.reply({
-          content: "❌ Vous devez d'abord créer un personnage.",
+          content: `${STATUS.ERROR} Vous devez d'abord créer un personnage.`,
           flags: ["Ephemeral"],
         });
         return;
       } else if (characterStatus.canReroll) {
         await interaction.reply({
           content:
-            "⚠️ Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.",
+            `${STATUS.WARNING} Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.`,
           flags: ["Ephemeral"],
         });
         return;

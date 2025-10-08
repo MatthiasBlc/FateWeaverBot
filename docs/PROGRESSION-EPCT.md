@@ -235,7 +235,7 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : 115k / 200k (57%)
+**Tokens utilisés** : ~42k / 200k (21%)
 **Phases complétées** : 3/7 (Phase 1, 2 en cours Supernova, Phase 3)
 **Commits créés** : 8 commits
 **Temps estimé restant** : ~20h de dev
