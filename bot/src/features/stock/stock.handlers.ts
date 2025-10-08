@@ -6,6 +6,8 @@ import {
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
+import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 
 interface ResourceStock {
   id: number;
@@ -31,22 +33,13 @@ export async function handleViewStockCommand(interaction: any) {
     let character;
     try {
       character = await getActiveCharacterForUser(interaction.user.id, interaction.guildId!);
+      validateCharacterAlive(character);
     } catch (error: any) {
       if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
-        await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.",
-          flags: ["Ephemeral"],
-        });
+        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.");
         return;
       }
-      throw error;
-    }
-
-    if (!character) {
-      await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, error.message);
       return;
     }
 
@@ -54,10 +47,7 @@ export async function handleViewStockCommand(interaction: any) {
     const townResponse = await apiService.towns.getTownById(character.townId);
 
     if (!townResponse) {
-      await interaction.reply({
-        content: "❌ Ville de votre personnage introuvable.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Ville de votre personnage introuvable.");
       return;
     }
 
@@ -65,10 +55,7 @@ export async function handleViewStockCommand(interaction: any) {
     const resourcesResponse = await apiService.getResources("CITY", character.townId);
 
     if (!resourcesResponse || !Array.isArray(resourcesResponse)) {
-      await interaction.reply({
-        content: "❌ Impossible de récupérer le stock de ressources.",
-        flags: ["Ephemeral"],
-      });
+      await replyEphemeral(interaction, "❌ Impossible de récupérer le stock de ressources.");
       return;
     }
 
@@ -146,10 +133,7 @@ export async function handleViewStockCommand(interaction: any) {
       errorMessage = "❌ Problème d'autorisation. Contactez un administrateur.";
     }
 
-    await interaction.reply({
-      content: errorMessage,
-      flags: ["Ephemeral"],
-    });
+    await replyEphemeral(interaction, errorMessage);
   }
 }
 
