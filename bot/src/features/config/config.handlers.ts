@@ -1,3 +1,4 @@
+import { createInfoEmbed, createSuccessEmbed, createWarningEmbed } from "../../utils/embeds";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -116,10 +117,10 @@ export async function handleConfigChannelCommand(
       "ℹ️ Aucun salon n'est actuellement configuré pour les logs.";
   }
 
-  const embed = new EmbedBuilder()
-    .setColor("#0099ff")
-    .setTitle("⚙️ Configuration du salon de logs")
-    .setDescription(embedDescription);
+  const embed = createInfoEmbed(
+    "⚙️ Configuration du salon de logs",
+    embedDescription
+  );
 
   const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     selectMenu
@@ -145,17 +146,16 @@ export async function handleConfigChannelCommand(
 
       logger.info(`Log channel disabled for guild ${guild.id}`);
 
-      const successEmbed = new EmbedBuilder()
-        .setColor("#ff9900")
-        .setTitle("🚫 Logs désactivés")
-        .setDescription("L'envoi automatique des logs a été désactivé.")
-        .addFields([
-          {
-            name: "Guilde",
-            value: guild.name,
-            inline: true,
-          },
-        ]);
+      const successEmbed = createWarningEmbed(
+        "🚫 Logs désactivés",
+        "L'envoi automatique des logs a été désactivé."
+      ).addFields([
+        {
+          name: "Guilde",
+          value: guild.name,
+          inline: true,
+        },
+      ]);
 
       await selectInteraction.update({
         embeds: [successEmbed],
@@ -180,24 +180,21 @@ export async function handleConfigChannelCommand(
       `Log channel configured for guild ${guild.id}: ${selectedChannelId}`
     );
 
-    const successEmbed = new EmbedBuilder()
-      .setColor("#00ff00")
-      .setTitle("✅ Salon configuré avec succès")
-      .setDescription(
-        `Le salon ${selectedChannel} a été enregistré pour les logs automatiques.`
-      )
-      .addFields([
-        {
-          name: "Salon",
-          value: `${selectedChannel}`,
-          inline: true,
-        },
-        {
-          name: "Guilde",
-          value: guild.name,
-          inline: true,
-        },
-      ]);
+    const successEmbed = createSuccessEmbed(
+      "✅ Salon configuré avec succès",
+      `Le salon ${selectedChannel} a été enregistré pour les logs automatiques.`
+    ).addFields([
+      {
+        name: "Salon",
+        value: `${selectedChannel}`,
+        inline: true,
+      },
+      {
+        name: "Guilde",
+        value: guild.name,
+        inline: true,
+      },
+    ]);
 
     await selectInteraction.update({
       embeds: [successEmbed],
@@ -206,12 +203,10 @@ export async function handleConfigChannelCommand(
   } catch (error) {
     if (error instanceof Error && error.message.includes("time")) {
       // Timeout
-      const timeoutEmbed = new EmbedBuilder()
-        .setColor("#ff9900")
-        .setTitle("⏰ Temps écoulé")
-        .setDescription(
-          "La configuration a été annulée car aucune sélection n'a été faite dans le délai imparti."
-        );
+      const timeoutEmbed = createWarningEmbed(
+        "⏰ Temps écoulé",
+        "La configuration a été annulée car aucune sélection n'a été faite dans le délai imparti."
+      );
 
       await interaction.editReply({
         embeds: [timeoutEmbed],
