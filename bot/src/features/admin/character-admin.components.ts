@@ -1,3 +1,4 @@
+import { createActionButtons, createConfirmationButtons } from "../../utils/discord-components";
 import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -64,53 +65,50 @@ export function createCharacterSelectMenu(characters: Character[]) {
  * Crée les boutons d'action pour un personnage sélectionné.
  */
 export function createCharacterActionButtons(character: Character) {
-  const buttons = [
-    new ButtonBuilder()
-      .setCustomId(
-        `${CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX}${character.id}`
-      )
-      .setLabel("Modifier Stats")
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(character.isDead), // Désactiver pour les personnages morts
-    new ButtonBuilder()
-      .setCustomId(
-        `${CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX}${character.id}`
-      )
-      .setLabel("Stats Avancées")
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(false), // Toujours accessible pour gérer l'état (vie/mort/reroll)
-    new ButtonBuilder()
-      .setCustomId(
-        `${CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX}${character.id}`
-      )
-      .setLabel(character.canReroll ? "Interdire Reroll" : "Autoriser Reroll")
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(false), // Les admins peuvent gérer le reroll même pour les personnages morts
-  ];
+  const buttons = [];
 
+  // Bouton Modifier Stats
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX}${character.id}`,
+    label: "Modifier Stats",
+    style: ButtonStyle.Primary,
+    disabled: character.isDead,
+  });
+
+  // Bouton Stats Avancées
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX}${character.id}`,
+    label: "Stats Avancées",
+    style: ButtonStyle.Secondary,
+    disabled: false,
+  });
+
+  // Bouton Toggle Reroll
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX}${character.id}`,
+    label: character.canReroll ? "Interdire Reroll" : "Autoriser Reroll",
+    style: ButtonStyle.Secondary,
+    disabled: false,
+  });
+
+  // Bouton Tuer Personnage (seulement si pas mort)
   if (!character.isDead) {
-    buttons.push(
-      new ButtonBuilder()
-        .setCustomId(
-          `${CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX}${character.id}`
-        )
-        .setLabel("Tuer Personnage")
-        .setStyle(ButtonStyle.Danger)
-    );
+    buttons.push({
+      customId: `${CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX}${character.id}`,
+      label: "Tuer Personnage",
+      style: ButtonStyle.Danger,
+    });
   }
 
-  // Bouton pour gérer les capacités (toujours disponible)
-  buttons.push(
-    new ButtonBuilder()
-      .setCustomId(
-        `${CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX}${character.id}`
-      )
-      .setLabel("Gérer Capacités")
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji("🔮")
-  );
+  // Bouton Gérer Capacités
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX}${character.id}`,
+    label: "Gérer Capacités",
+    style: ButtonStyle.Secondary,
+    emoji: "🔮",
+  });
 
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
+  return createActionButtons(buttons);
 }
 
 /**
@@ -277,16 +275,10 @@ export function createCapabilitySelectMenu(
 export function createCapabilityActionButtons(
   characterId: string
 ): ActionRowBuilder<ButtonBuilder> {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`capability_admin_add:${characterId}`)
-      .setLabel("Ajouter Capacités")
-      .setStyle(ButtonStyle.Success)
-      .setEmoji("➕"),
-    new ButtonBuilder()
-      .setCustomId(`capability_admin_remove:${characterId}`)
-      .setLabel("Retirer Capacités")
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji("➖")
-  );
+  return createConfirmationButtons(`capability_admin:${characterId}`, {
+    confirmLabel: "➕ Ajouter Capacités",
+    cancelLabel: "➖ Retirer Capacités",
+    confirmStyle: ButtonStyle.Success,
+    cancelStyle: ButtonStyle.Danger,
+  });
 }
