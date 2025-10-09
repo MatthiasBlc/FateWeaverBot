@@ -66,7 +66,7 @@ export async function handleViewStockCommand(interaction: any) {
       ['Vivres', 'Nourriture'],
       ['Bois', 'Planches'],
       ['Minerai', 'Fer'],
-      ['Tissus', 'Vêtements']
+      ['Tissus']
     ];
 
     // Créer l'embed d'information
