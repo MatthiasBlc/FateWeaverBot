@@ -61,12 +61,13 @@ export async function handleViewStockCommand(interaction: any) {
 
     const resources = resourcesResponse as ResourceStock[];
 
-    // Définir l'ordre des groupes de ressources (brut, transformation)
+    // Définir l'ordre des groupes de ressources (brut, transformation, science)
     const resourceOrder = [
       ['Vivres', 'Nourriture'],
       ['Bois', 'Planches'],
       ['Minerai', 'Métal'],
-      ['Tissu']
+      ['Tissu'],
+      ['Cataplasme'] // Science resources
     ];
 
     // Créer l'embed d'information

@@ -38,6 +38,7 @@ export class ButtonHandler {
    * Liste des gestionnaires critiques à préserver :
    * - expedition_ : boutons d'expédition
    * - eat_food : boutons de nourriture
+   * - use_cataplasme : utilisation cataplasmes
    * - character_admin_ : administration personnages
    * - capability_admin_ : administration capacités
    * - use_capability : utilisation capacités utilisateur
@@ -236,6 +237,47 @@ export class ButtonHandler {
         await interaction.reply({
           content: "❌ Erreur lors de la consommation.",
           flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour utiliser un cataplasme
+    this.registerHandlerByPrefix("use_cataplasme", async (interaction) => {
+      await interaction.deferUpdate();
+
+      try {
+        // Extraire l'ID du personnage de l'ID personnalisé du bouton
+        const characterId = interaction.customId.split(":")[1];
+
+        // Appel API backend pour utiliser un cataplasme
+        const response = await httpClient.post(
+          `/characters/${characterId}/use-cataplasme`
+        );
+
+        if (response.data.success) {
+          await interaction.editReply({
+            content: `✅ ${response.data.message}`,
+            embeds: [],
+            components: [],
+          });
+        } else {
+          await interaction.editReply({
+            content: `❌ ${response.data.message || "Impossible d'utiliser le cataplasme."}`,
+            embeds: [],
+            components: [],
+          });
+        }
+      } catch (error: any) {
+        logger.error("Error handling use cataplasme button:", { error });
+
+        const errorMessage = error.response?.data?.error ||
+                            error.response?.data?.message ||
+                            "Une erreur est survenue lors de l'utilisation du cataplasme.";
+
+        await interaction.editReply({
+          content: `❌ ${errorMessage}`,
+          embeds: [],
+          components: [],
         });
       }
     });

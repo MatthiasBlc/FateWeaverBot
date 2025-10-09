@@ -31,6 +31,66 @@ async function main() {
         description: 'Pêcher du poisson. Peut utiliser 2 PA pour un lancer chanceux.'
       },
       {
+        name: 'Bûcheronner',
+        category: CapabilityCategory.HARVEST,
+        costPA: 1,
+        description: 'Récolte 2-3 bois'
+      },
+      {
+        name: 'Miner',
+        category: CapabilityCategory.HARVEST,
+        costPA: 2,
+        description: 'Récolte 2-6 minerai'
+      },
+      {
+        name: 'Tisser',
+        category: CapabilityCategory.CRAFT,
+        costPA: 1,
+        description: 'Bois → Tissu (formule aléatoire)'
+      },
+      {
+        name: 'Forger',
+        category: CapabilityCategory.CRAFT,
+        costPA: 1,
+        description: 'Minerai → Fer (formule aléatoire)'
+      },
+      {
+        name: 'Travailler le bois',
+        category: CapabilityCategory.CRAFT,
+        costPA: 1,
+        description: 'Bois → Planches (formule aléatoire)'
+      },
+      {
+        name: 'Cuisiner',
+        category: CapabilityCategory.CRAFT,
+        costPA: 1,
+        description: 'Vivres → Nourriture (formule aléatoire)'
+      },
+      {
+        name: 'Soigner',
+        category: CapabilityCategory.SCIENCE,
+        costPA: 1,
+        description: '1 PA = +1 PV cible, 2 PA = 1 cataplasme'
+      },
+      {
+        name: 'Analyser',
+        category: CapabilityCategory.SCIENCE,
+        costPA: 1,
+        description: 'Recherche (admin)'
+      },
+      {
+        name: 'Cartographier',
+        category: CapabilityCategory.SCIENCE,
+        costPA: 1,
+        description: 'Exploration (admin)'
+      },
+      {
+        name: 'Auspice',
+        category: CapabilityCategory.SCIENCE,
+        costPA: 1,
+        description: 'Divination (admin)'
+      },
+      {
         name: 'Divertir',
         category: CapabilityCategory.SPECIAL,
         costPA: 1,
@@ -74,6 +134,7 @@ async function main() {
       { name: "Tissu", emoji: "🧵", category: "transformé", description: "Produit du bois" },
       { name: "Planches", emoji: "🪵", category: "transformé", description: "Produit du bois" },
       { name: "Nourriture", emoji: "🍖", category: "transformé", description: "Produit des vivres" },
+      { name: "Cataplasme", emoji: "🩹", category: "science", description: "Soin médical (max 3 par ville)" },
     ];
 
     for (const resourceType of resourceTypes) {

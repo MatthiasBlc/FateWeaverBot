@@ -841,3 +841,83 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+export const useCataplasme: RequestHandler = async (req, res, next) => {
+  try {
+    const { id: characterId } = req.params;
+
+    const character = await prisma.character.findUnique({
+      where: { id: characterId },
+      include: {
+        expeditionMembers: {
+          include: { expedition: true }
+        }
+      }
+    });
+
+    if (!character) {
+      throw createHttpError(404, "Personnage non trouvé");
+    }
+
+    if (character.isDead) {
+      throw createHttpError(400, "Personnage mort");
+    }
+
+    if (character.hp >= 5) {
+      throw createHttpError(400, "PV déjà au maximum");
+    }
+
+    // Determine location (city or DEPARTED expedition)
+    const departedExpedition = character.expeditionMembers.find(
+      em => em.expedition.status === "DEPARTED"
+    );
+
+    const locationType = departedExpedition ? "EXPEDITION" : "CITY";
+    const locationId = departedExpedition ? departedExpedition.expeditionId : character.townId;
+
+    // Check cataplasme availability
+    const cataplasmeType = await prisma.resourceType.findFirst({
+      where: { name: "Cataplasme" }
+    });
+
+    if (!cataplasmeType) {
+      throw createHttpError(500, "Type de ressource Cataplasme non trouvé");
+    }
+
+    const stock = await prisma.resourceStock.findUnique({
+      where: {
+        locationType_locationId_resourceTypeId: {
+          locationType,
+          locationId,
+          resourceTypeId: cataplasmeType.id
+        }
+      }
+    });
+
+    if (!stock || stock.quantity < 1) {
+      throw createHttpError(400, "Aucun cataplasme disponible");
+    }
+
+    // Use cataplasme
+    await prisma.$transaction(async (tx) => {
+      // Remove 1 cataplasme
+      await tx.resourceStock.update({
+        where: { id: stock.id },
+        data: { quantity: { decrement: 1 } }
+      });
+
+      // Heal +1 HP
+      await tx.character.update({
+        where: { id: characterId },
+        data: { hp: Math.min(5, character.hp + 1) }
+      });
+    });
+
+    res.json({
+      success: true,
+      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};

@@ -61,8 +61,10 @@ Characters can eat to restore hunger:
 
 - **Death Check:** If HP reaches 0, character dies (`isDead=true`) during daily update
 - **Agonie State:** At HP=1, character cannot use PA (any action blocked)
-- **Healing:** HP is restored by eating at hunger level 4 (Satiété) → +1 HP per day
-- **No Natural Regen:** HP does NOT regenerate on its own except through Satiété
+- **Healing Options:**
+  - **Natural:** Eating at hunger level 4 (Satiété) → +1 HP per day
+  - **Cataplasme:** Use a cataplasme (science resource) → +1 HP instantly
+- **No Natural Regen:** HP does NOT regenerate on its own except through Satiété or cataplasmes
 
 ---
 
@@ -172,6 +174,71 @@ Characters in **DEPARTED** expeditions have special restrictions:
 
 ---
 
+## 🛠️ Capabilities System
+
+Characters can perform various activities using their PA (action points). Capabilities are divided into categories:
+
+### 🌾 HARVEST Capabilities
+
+Gather raw resources from the environment:
+
+| Capability | Cost | Output | Description |
+|------------|------|--------|-------------|
+| **Pêcher** (Fish) | 1 or 2 PA | Variable vivres/bois/minerai | Fish in nearby waters (fixed loot tables) |
+| **Bûcheronner** | 1 PA | 2-3 Bois | Chop wood from trees |
+| **Miner** | 2 PA | 2-6 Minerai | Mine ore from rocks |
+
+**Pêcher Loot Tables:**
+- **1 PA:** 17 possible outcomes (0-4 vivres, 2 bois, 2 minerai)
+- **2 PA:** 17 possible outcomes (1-10 vivres, 4-6 bois/minerai) + rare GRIGRI event
+
+### 🔨 CRAFT Capabilities
+
+Transform raw resources into refined goods:
+
+| Capability | Cost | Input | Output | Formula |
+|------------|------|-------|--------|---------|
+| **Tisser** | 1-2 PA | Bois | Tissu | Random(Input-1, Input×3) |
+| **Forger** | 1-2 PA | Minerai | Métal | Random(Input-1, Input×3) |
+| **Travailler le bois** | 1-2 PA | Bois | Planches | Random(Input-1, Input×3) |
+| **Cuisiner** | 1-2 PA | Vivres | Nourriture | Random(Input-1, Input×3) |
+
+**Craft Rules:**
+- **1 PA:** Can use max 1 input resource
+- **2 PA:** Can use 1-5 input resources
+- **Output Formula:** `Output = random(Input - 1, Input × 3)`
+  - Example: 5 Bois → 4-15 Tissu
+- **Location:** Can only craft in city (not in DEPARTED expeditions)
+
+### 🔬 SCIENCE Capabilities
+
+Special knowledge-based actions:
+
+| Capability | Cost | Effect | Description |
+|------------|------|--------|-------------|
+| **Soigner** | 1 or 2 PA | Heal +1 HP OR Craft cataplasme | Two modes: heal target (1 PA) or create medicine (2 PA) |
+| **Analyser** | 1 PA | Admin only | Research and analysis (admin capability) |
+| **Cartographier** | 1 PA | Admin only | Map exploration (admin capability) |
+| **Auspice** | 1 PA | Admin only | Fortune telling (admin capability) |
+
+**Soigner Modes:**
+- **Mode 1 (1 PA):** Heal a target character for +1 HP
+- **Mode 2 (2 PA):** Craft 1 cataplasme (requires limit check)
+
+### 🩹 Cataplasme System
+
+**Cataplasme** is a special science resource with strict limits:
+
+- **Creation:** Use Soigner capability (2 PA)
+- **Limit:** Maximum 3 cataplasmes per town (city + all expeditions combined)
+- **Usage:** Use from `/profil` button when HP < 5
+- **Effect:** Restores 1 HP instantly
+- **Storage:** Appears in `/stock` command under science resources
+
+**Important:** The 3-cataplasme limit is shared across the entire town, not per expedition. This prevents stockpiling.
+
+---
+
 ## 📝 Status Summary
 
 ### Character States
@@ -193,8 +260,11 @@ Characters in **DEPARTED** expeditions have special restrictions:
 3. **Use PA before daily reset** - They cap at 4 and don't accumulate
 4. **Monitor expedition members** - Depression spreads faster in small groups
 5. **Return expeditions early** if too many members are depressed or injured
+6. **Keep 1-2 cataplasmes in stock** for emergencies (max 3 per town)
+7. **Craft in bulk with 2 PA** - More input = more output (up to 5 inputs)
+8. **Balance resource gathering** - Fish (1 PA) is cheaper than mining (2 PA)
 
 ---
 
-**Last Updated:** 2025-10-09
-**Version:** 1.0 - Initial game mechanics documentation
+**Last Updated:** 2025-10-09 (V2 - Capacités CRAFT/SCIENCE)
+**Version:** 2.0 - Added CRAFT/SCIENCE capabilities and cataplasme system

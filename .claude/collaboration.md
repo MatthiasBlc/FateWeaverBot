@@ -127,16 +127,41 @@ Tu es **Code Supernova**, agent d'exécution pour [projet].
 ## 📄 INSTRUCTIONS COMPLÈTES
 Lis et exécute : `/chemin/absolu/vers/docs/supernova-prompt-X.md`
 
-## ⚠️ RÈGLES CRITIQUES
-1. Commandes npm : `cd /chemin/absolu && npm run build`
-2. Tester APRÈS CHAQUE modification
-3. Committer APRÈS CHAQUE succès
+## ⚠️ RÈGLES CRITIQUES - IMPÉRATIF
+
+### 🚫 INTERDICTIONS ABSOLUES
+1. **NE JAMAIS supprimer un fichier** sans avoir essayé au moins 3 corrections différentes
+2. **NE JAMAIS considérer un fichier "corrompu"** - les fichiers ont juste des erreurs TypeScript à corriger
+3. **NE JAMAIS tourner en boucle** - Si même erreur après 2 tentatives, STOP et documente le problème
+4. **NE JAMAIS committer sans build** - Le build DOIT passer avant chaque commit
+
+### ✅ PROCÉDURE OBLIGATOIRE
+
+**Après CHAQUE modification de fichier :**
+1. `cd /chemin/absolu && npm run build` (backend OU bot selon le fichier)
+2. Si erreur TypeScript → **CORRIGER dans le même fichier** (pas de suppression)
+3. Si même erreur 2 fois → **STOP, documenter, passer à la tâche suivante**
+4. Si build OK → `git add . && git commit -m "message descriptif"`
+5. Continuer avec la tâche suivante
+
+**Gestion des erreurs TypeScript :**
+- Erreur de syntaxe → Corriger la syntaxe (accolade, parenthèse, etc.)
+- Import manquant → Ajouter l'import
+- Type incorrect → Ajuster le type
+- Variable non utilisée → Supprimer ou utiliser la variable
+- **JAMAIS** → Supprimer le fichier et le recréer
+
+### 📊 RAPPORT FINAL OBLIGATOIRE
+Tu DOIS fournir un rapport détaillé à la fin avec :
+- ✅ Fichiers modifiés (liste complète avec nombre de lignes)
+- ✅ Commits créés (liste avec messages)
+- ✅ Builds réussis (backend + bot si applicable)
+- ✅ Erreurs rencontrées et résolues
+- ⚠️ Problèmes NON résolus (si bloqué)
+- 📈 Métriques : Temps estimé, lignes ajoutées/supprimées
 
 ## 🎯 TÂCHES
 [Liste courte des tâches principales]
-
-## 📊 RAPPORT FINAL
-À la fin, fournis un rapport avec [liste des métriques attendues]
 
 ## 🚀 COMMENCE
 Lis le prompt détaillé et commence !
@@ -157,12 +182,91 @@ Lis le prompt détaillé et commence !
 **Fichiers cibles** : [Nombre] fichiers ([Nombre] lignes)
 **Résultat attendu** : [Métriques de succès]
 
-## ⚠️ RÈGLES CRITIQUES
+## ⚠️ RÈGLES CRITIQUES - IMPÉRATIF
 
-1. **Commandes** : [Commandes exactes avec chemins absolus]
-2. **Ordre** : [Ordre d'exécution strict]
-3. **Tests** : [Quand et comment tester]
-4. **Commits** : [Format et fréquence]
+### 🚫 INTERDICTIONS ABSOLUES
+1. **NE JAMAIS supprimer un fichier** sans avoir essayé au moins 3 corrections différentes
+2. **NE JAMAIS considérer un fichier "corrompu"** - Corriger les erreurs TypeScript, pas supprimer
+3. **NE JAMAIS tourner en boucle** - Si même erreur après 2 tentatives :
+   - STOP immédiatement
+   - Documente l'erreur dans le rapport
+   - Passe à la tâche suivante
+4. **NE JAMAIS committer sans build** - Build DOIT passer avant commit
+
+### ✅ WORKFLOW STRICT PAR FICHIER
+
+```
+Pour CHAQUE fichier modifié :
+1. Modifier le fichier
+2. cd /chemin/absolu && npm run build
+3. Si erreur :
+   a. Lire l'erreur TypeScript complète
+   b. Corriger DANS LE MÊME FICHIER (pas de suppression)
+   c. Re-build
+   d. Si même erreur → Tenter correction différente (max 2 fois)
+   e. Si toujours erreur → STOP, documenter, passer au suivant
+4. Si build OK :
+   a. git add .
+   b. git commit -m "feat: description précise"
+   c. Passer au fichier suivant
+```
+
+### 🔍 GESTION ERREURS TYPESCRIPT
+
+**Types d'erreurs et corrections :**
+- `Unexpected token` → Vérifier accolades/parenthèses/virgules
+- `Cannot find name` → Ajouter import ou déclarer la variable
+- `Type X is not assignable to Y` → Ajuster le type ou le cast
+- `X is declared but never used` → Utiliser la variable ou supprimer la déclaration
+- `Missing closing brace` → Compter les accolades, ajouter la manquante
+
+**SI BLOQUÉ après 2 tentatives :**
+1. Laisser le fichier dans son état actuel
+2. Documenter : "❌ Fichier X : Erreur Y non résolue après 2 tentatives"
+3. Passer à la tâche suivante
+4. **NE PAS** supprimer le fichier
+
+### 📊 RAPPORT FINAL OBLIGATOIRE
+
+Structure EXACTE du rapport à fournir :
+
+```markdown
+# ✅ RAPPORT FINAL - [NOM TÂCHE]
+
+## 📁 Fichiers Modifiés
+- `/chemin/fichier1.ts` (+X lignes, -Y lignes)
+- `/chemin/fichier2.ts` (+X lignes, -Y lignes)
+Total : X fichiers
+
+## 💾 Commits Créés
+1. `abc1234` - feat: description commit 1
+2. `def5678` - feat: description commit 2
+Total : X commits
+
+## ✅ Builds Réussis
+- ✅ Backend : `npm run build` (0 errors)
+- ✅ Bot : `npm run build` (0 errors)
+
+## 🔧 Erreurs Résolues
+1. **Fichier X, ligne Y** : Erreur Z → Corrigé en [explication]
+2. **Fichier A, ligne B** : Erreur C → Corrigé en [explication]
+
+## ⚠️ Problèmes Non Résolus (SI APPLICABLE)
+- ❌ Fichier `/path/file.ts` : Erreur "message" après 2 tentatives
+- Raison : [Explication de pourquoi bloqué]
+
+## 📈 Métriques
+- Durée estimée : X heures
+- Lignes ajoutées : +XXX
+- Lignes supprimées : -XXX
+- Taux de succès : X/Y tâches complétées
+```
+
+### 🎯 COMMANDES EXACTES
+- **Build backend** : `cd /home/bouloc/Repo/FateWeaverBot/backend && npm run build`
+- **Build bot** : `cd /home/bouloc/Repo/FateWeaverBot/bot && npm run build`
+- **Commit** : `git add . && git commit -m "message"`
+- **Prisma** : `cd /home/bouloc/Repo/FateWeaverBot/backend && npx prisma migrate dev --name nom_migration`
 
 ## 📦 TÂCHES (dans l'ordre)
 
@@ -250,15 +354,48 @@ Lis le prompt détaillé et commence !
 
 ## 💡 Rappels pour Claude
 
+### ⚠️ RÈGLE ABSOLUE : PROPOSITION SYSTÉMATIQUE SUPERNOVA
+
+**Claude Code DOIT TOUJOURS proposer Supernova pour les tâches volumineuses/répétitives.**
+
 Quand tu (Claude Code) vois une tâche volumineuse/répétitive :
 
-1. **Pense Supernova** : "Est-ce que Supernova peut faire ça ?"
-2. **Propose proactivement** : "Je vais créer un prompt pour Supernova"
-3. **Crée le prompt détaillé** : Ne pas lésiner sur les détails
-4. **Fournis le prompt court** : Facilite la vie de l'utilisateur
-5. **Attends le rapport** : Ne pas lancer Supernova toi-même
+1. **Pense Supernova IMMÉDIATEMENT** : "Est-ce que Supernova peut faire ça ?"
+2. **Propose SYSTÉMATIQUEMENT** : Si >3 fichiers OU >100 lignes OU répétitif → Proposer Supernova
+3. **Laisse le choix** : "Je te propose de déléguer à Supernova pour économiser des crédits. Veux-tu que je le fasse, ou préfères-tu que je m'en charge ?"
+4. **Si validation → Crée le prompt IMMÉDIATEMENT** : Prompt copier-coller ready
+5. **DEMANDE SYSTÉMATIQUEMENT le rapport** : "Colle-moi le rapport de Supernova pour que je vérifie"
 
-**Phrase clé à retenir** : "Tu dois économiser tes crédits coute que coute"
+### 🎯 Réflexes Automatiques
+
+**TOUJOURS** quand tu délègues à Supernova :
+1. ✅ Créer un prompt copier-coller ready
+2. ✅ Inclure : "À la fin, fais-moi un rapport détaillé avec [métriques]"
+3. ✅ Dire à l'utilisateur : "Colle-moi le rapport de Supernova ensuite"
+4. ✅ Attendre le rapport avant de valider/continuer
+
+**JAMAIS** :
+- ❌ Oublier de proposer Supernova pour une tâche volumineuse/répétitive
+- ❌ Valider l'utilisation de Supernova sans fournir un prompt copier-coller
+- ❌ Oublier de demander le rapport final
+- ❌ Valider sans voir le rapport de Supernova
+
+### 📏 Seuils de Décision
+
+**Utilise Supernova SI** :
+- Modifier >3 fichiers avec même pattern
+- Écrire >100 lignes de code répétitif
+- Appliquer des migrations mécaniques
+- Tester systématiquement après chaque change
+- Créer de la documentation structurée
+
+**Fais-le toi-même SI** :
+- Analyse/compréhension de code
+- Décision d'architecture
+- Debugging complexe
+- Modification <50 lignes sur 1-2 fichiers
+
+**Phrase clé à retenir** : "Tu dois économiser tes crédits coute que coute - propose Supernova SYSTÉMATIQUEMENT pour toute tâche volumineuse, et fournis TOUJOURS un prompt copier-coller si validé"
 
 ---
 

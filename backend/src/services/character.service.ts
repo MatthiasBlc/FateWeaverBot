@@ -115,27 +115,54 @@ export class CharacterService {
 
   async createCharacter(data: CreateCharacterData): Promise<Character> {
     return await prisma.$transaction(async (tx) => {
-      // Désactiver tous les autres personnages de l'utilisateur dans cette ville
+      // Désactiver tous les autres personnages actifs de cet utilisateur dans cette ville
       await tx.character.updateMany({
-        where: { userId: data.userId, townId: data.townId },
+        where: {
+          userId: data.userId,
+          townId: data.townId,
+          isActive: true,
+          isDead: false,
+        },
         data: { isActive: false },
       });
 
-      // Créer le nouveau personnage actif
-      return await tx.character.create({
+      // Créer le nouveau personnage
+      const character = await tx.character.create({
         data: {
           name: data.name,
-          user: { connect: { id: data.userId } },
-          town: { connect: { id: data.townId } },
-          isActive: true,
-          isDead: false,
-          canReroll: false,
-          hungerLevel: 4,
+          userId: data.userId,
+          townId: data.townId,
           paTotal: 2,
-          hp: 5, // Points de vie initiaux
-          pm: 5, // Points mentaux initiaux
+          hungerLevel: 4,
+          hp: 5,
+          pm: 5,
+          isActive: true,
+          divertCounter: 0,
         },
       });
+
+      // Lui donner les capacités de base
+      const baseCapabilities = [
+        'Bûcheronner',
+        'Travailler le bois'
+      ];
+
+      for (const capabilityName of baseCapabilities) {
+        const capability = await tx.capability.findUnique({
+          where: { name: capabilityName },
+        });
+
+        if (capability) {
+          await tx.characterCapability.create({
+            data: {
+              characterId: character.id,
+              capabilityId: capability.id,
+            },
+          });
+        }
+      }
+
+      return character;
     });
   }
 

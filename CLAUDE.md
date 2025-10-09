@@ -25,8 +25,9 @@ See `.claude/context-rules.md` for how the intelligent context system works.
 
 ## ⚡ Critical Protocols (Read These)
 
-1. **Token Optimization:** `.claude/collaboration.md` - When to use Supernova vs Claude
-2. **Meta-Protocol:** When you discover efficient workflows → document in `.claude/` or `docs/` → reference here
+1. **🚨 SUPERNOVA SYSTÉMATIQUE:** TOUJOURS proposer Supernova pour tâches >3 fichiers OU >100 lignes. Si validé → fournir prompt copier-coller + demander rapport final.
+2. **Token Optimization:** `.claude/collaboration.md` - Protocole détaillé Supernova
+3. **Meta-Protocol:** When you discover efficient workflows → document in `.claude/` or `docs/` → reference here
 
 ---
 

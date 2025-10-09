@@ -374,6 +374,17 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     components.push(buttonRow);
   }
 
+  // Ajouter le bouton Cataplasme si le personnage est blessé (HP < 5 et pas mort)
+  if (data.character.hp < 5 && data.character.hp > 0) {
+    const cataplasmeButton = new ButtonBuilder()
+      .setCustomId(`use_cataplasme:${data.character.id}`)
+      .setLabel("Utiliser Cataplasme 🩹")
+      .setStyle(ButtonStyle.Danger);
+
+    const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(cataplasmeButton);
+    components.push(cataplasmeRow);
+  }
+
   return { embed, components };
 }
 
