@@ -8,12 +8,12 @@ This document describes the core game mechanics for the FateWeaver Discord RPG b
 
 Each character has four primary stats that govern their survival and actions:
 
-| Stat | Range | Icon | Description |
-|------|-------|------|-------------|
-| **PA** (Points d'Action) | 0-4 | ⚡ | Action points for performing activities |
-| **HP** (Points de Vie) | 0-5 | ❤️ | Health points |
-| **PM** (Points Mentaux) | 0-5 | 💜 | Mental health points |
-| **Hunger** (Faim) | 0-4 | 🍖 | Hunger level |
+| Stat                     | Range | Icon | Description                             |
+| ------------------------ | ----- | ---- | --------------------------------------- |
+| **PA** (Points d'Action) | 0-4   | ⚡   | Action points for performing activities |
+| **HP** (Points de Vie)   | 0-5   | ❤️   | Health points                           |
+| **PM** (Points Mentaux)  | 0-5   | 💜   | Mental health points                    |
+| **Hunger** (Faim)        | 0-4   | 🍖   | Hunger level                            |
 
 ---
 
@@ -21,13 +21,13 @@ Each character has four primary stats that govern their survival and actions:
 
 ### Hunger Levels
 
-| Level | Name | Visual | Effects | Daily Update |
-|-------|------|--------|---------|--------------|
-| **4** | Satiété | 😊 | Heals +1 HP per day | -1 hunger |
-| **3** | Faim | 🤤 | Normal state | -1 hunger |
-| **2** | Faim | 😕 | Normal state | -1 hunger |
-| **1** | Affamé | 😰 | Only +1 PA regen instead of +2 | -1 hunger |
-| **0** | Agonie | 💀 | Sets HP to 1 (Agonie state) | Stays at 0 |
+| Level | Name    | Visual | Effects                        | Daily Update |
+| ----- | ------- | ------ | ------------------------------ | ------------ |
+| **4** | Satiété | 😊     | Heals +1 HP per day            | -1 hunger    |
+| **3** | Faim    | 🤤     | Normal state                   | -1 hunger    |
+| **2** | Faim    | 😕     | Normal state                   | -1 hunger    |
+| **1** | Affamé  | 😰     | Only +1 PA regen instead of +2 | -1 hunger    |
+| **0** | Agonie  | 💀     | Sets HP to 1 (Agonie state)    | Stays at 0   |
 
 ### Hunger Mechanics
 
@@ -39,6 +39,7 @@ Each character has four primary stats that govern their survival and actions:
 ### Eating
 
 Characters can eat to restore hunger:
+
 - **Vivres (Food Supplies):** Restores hunger (exact amount varies)
 - **Nourriture (Prepared Food):** Restores hunger (exact amount varies)
 - **Location Matters:**
@@ -51,11 +52,11 @@ Characters can eat to restore hunger:
 
 ### HP Levels
 
-| Level | State | Visual | Effects |
-|-------|-------|--------|---------|
-| **5-2** | Normal | ❤️❤️❤️❤️❤️ | No restrictions |
-| **1** | Agonie | ❤️‍🩹🖤🖤🖤🖤 | **Cannot use PA** |
-| **0** | Mort | 🖤🖤🖤🖤🖤 | Character dies (`isDead=true`) |
+| Level   | State  | Visual     | Effects                        |
+| ------- | ------ | ---------- | ------------------------------ |
+| **5-2** | Normal | ❤️❤️❤️❤️❤️ | No restrictions                |
+| **1**   | Agonie | ❤️‍🩹🖤🖤🖤🖤 | **Cannot use PA**              |
+| **0**   | Mort   | 🖤🖤🖤🖤🖤 | Character dies (`isDead=true`) |
 
 ### HP Mechanics
 
@@ -72,11 +73,11 @@ Characters can eat to restore hunger:
 
 ### PM Levels
 
-| Level | State | Visual | Effects |
-|-------|-------|--------|---------|
-| **5-2** | Normal | 💜💜💜💜💜 | No restrictions |
-| **1** | Déprime | 😔🖤🖤🖤🖤 | **Cannot use PA** |
-| **0** | Dépression | 🌧️🖤🖤🖤🖤 | **Cannot use PA + Contagious** |
+| Level   | State      | Visual     | Effects                        |
+| ------- | ---------- | ---------- | ------------------------------ |
+| **5-2** | Normal     | 💜💜💜💜💜 | No restrictions                |
+| **1**   | Déprime    | 💜🖤🖤🖤🖤 | **Cannot use PA**              |
+| **0**   | Dépression | 💜🖤🖤🖤🖤 | **Cannot use PA + Contagious** |
 
 ### PM Mechanics
 
@@ -86,6 +87,7 @@ Characters can eat to restore hunger:
 #### PM Contagion System
 
 When a character has PM=0 (Dépression):
+
 1. **Daily Spread:** Each day at midnight, they affect ONE random character in their location
 2. **Location Rules:**
    - If in city → Affects one random city character (not in DEPARTED expeditions)
@@ -113,16 +115,19 @@ When a character has PM=0 (Dépression):
 ### PA Usage Restrictions
 
 Characters **CANNOT** use PA if:
+
 - **HP ≤ 1** (Agonie or dead)
 - **PM ≤ 1** (Déprime or Dépression)
 
 Error messages:
+
 - HP=1: "Vous êtes en agonie et ne pouvez pas utiliser de PA"
 - PM≤1: "Votre moral est trop bas pour utiliser des PA"
 
 ### PA Usage
 
 PA is consumed when:
+
 - Using capabilities (Hunt, Gather, Fish, etc.)
 - Contributing to chantiers (construction projects)
 - Other gameplay actions
@@ -136,16 +141,20 @@ Every day at **midnight (00:00 Europe/Paris)**, the following updates occur **in
 ### Execution Order
 
 1. **Heal HP (if Satiété)**
+
    - If `hungerLevel = 4` AND `hp < 5` → `hp + 1`
 
 2. **Decrease Hunger**
+
    - All living characters → `hungerLevel - 1`
    - If hunger reaches 0 → Set `hp = 1` (Agonie)
 
 3. **Check Death**
+
    - If `hp = 0` → Set `isDead = true`
 
 4. **PM Contagion**
+
    - For each character with `pm = 0`:
      - Find eligible targets in same location
      - Randomly select ONE target
@@ -164,11 +173,13 @@ Every day at **midnight (00:00 Europe/Paris)**, the following updates occur **in
 Characters in **DEPARTED** expeditions have special restrictions:
 
 ### Cannot Access City Resources
+
 - ❌ Cannot invest in city chantiers
 - ❌ Cannot contribute resources to city chantiers
 - ❌ Cannot eat from city food stocks
 
 ### Can Only Use Expedition Resources
+
 - ✅ Can eat from expedition food stocks
 - ✅ Can participate in expedition activities
 
@@ -182,13 +193,14 @@ Characters can perform various activities using their PA (action points). Capabi
 
 Gather raw resources from the environment:
 
-| Capability | Cost | Output | Description |
-|------------|------|--------|-------------|
+| Capability        | Cost      | Output                       | Description                               |
+| ----------------- | --------- | ---------------------------- | ----------------------------------------- |
 | **Pêcher** (Fish) | 1 or 2 PA | Variable vivres/bois/minerai | Fish in nearby waters (fixed loot tables) |
-| **Bûcheronner** | 1 PA | 2-3 Bois | Chop wood from trees |
-| **Miner** | 2 PA | 2-6 Minerai | Mine ore from rocks |
+| **Bûcheronner**   | 1 PA      | 2-3 Bois                     | Chop wood from trees                      |
+| **Miner**         | 2 PA      | 2-6 Minerai                  | Mine ore from rocks                       |
 
 **Pêcher Loot Tables:**
+
 - **1 PA:** 17 possible outcomes (0-4 vivres, 2 bois, 2 minerai)
 - **2 PA:** 17 possible outcomes (1-10 vivres, 4-6 bois/minerai) + rare GRIGRI event
 
@@ -196,14 +208,15 @@ Gather raw resources from the environment:
 
 Transform raw resources into refined goods:
 
-| Capability | Cost | Input | Output | Formula |
-|------------|------|-------|--------|---------|
-| **Tisser** | 1-2 PA | Bois | Tissu | Random(Input-1, Input×3) |
-| **Forger** | 1-2 PA | Minerai | Métal | Random(Input-1, Input×3) |
-| **Travailler le bois** | 1-2 PA | Bois | Planches | Random(Input-1, Input×3) |
-| **Cuisiner** | 1-2 PA | Vivres | Nourriture | Random(Input-1, Input×3) |
+| Capability             | Cost   | Input   | Output     | Formula                  |
+| ---------------------- | ------ | ------- | ---------- | ------------------------ |
+| **Tisser**             | 1-2 PA | Bois    | Tissu      | Random(Input-1, Input×3) |
+| **Forger**             | 1-2 PA | Minerai | Métal      | Random(Input-1, Input×3) |
+| **Travailler le bois** | 1-2 PA | Bois    | Planches   | Random(Input-1, Input×3) |
+| **Cuisiner**           | 1-2 PA | Vivres  | Nourriture | Random(Input-1, Input×3) |
 
 **Craft Rules:**
+
 - **1 PA:** Can use max 1 input resource
 - **2 PA:** Can use 1-5 input resources
 - **Output Formula:** `Output = random(Input - 1, Input × 3)`
@@ -214,14 +227,15 @@ Transform raw resources into refined goods:
 
 Special knowledge-based actions:
 
-| Capability | Cost | Effect | Description |
-|------------|------|--------|-------------|
-| **Soigner** | 1 or 2 PA | Heal +1 HP OR Craft cataplasme | Two modes: heal target (1 PA) or create medicine (2 PA) |
-| **Analyser** | 1 PA | Admin only | Research and analysis (admin capability) |
-| **Cartographier** | 1 PA | Admin only | Map exploration (admin capability) |
-| **Auspice** | 1 PA | Admin only | Fortune telling (admin capability) |
+| Capability        | Cost      | Effect                         | Description                                             |
+| ----------------- | --------- | ------------------------------ | ------------------------------------------------------- |
+| **Soigner**       | 1 or 2 PA | Heal +1 HP OR Craft cataplasme | Two modes: heal target (1 PA) or create medicine (2 PA) |
+| **Analyser**      | 1 PA      | Admin only                     | Research and analysis (admin capability)                |
+| **Cartographier** | 1 PA      | Admin only                     | Map exploration (admin capability)                      |
+| **Auspice**       | 1 PA      | Admin only                     | Fortune telling (admin capability)                      |
 
 **Soigner Modes:**
+
 - **Mode 1 (1 PA):** Heal a target character for +1 HP
 - **Mode 2 (2 PA):** Craft 1 cataplasme (requires limit check)
 
@@ -243,13 +257,13 @@ Special knowledge-based actions:
 
 ### Character States
 
-| Condition | Restrictions | Visual Indicators |
-|-----------|--------------|-------------------|
-| **Dead** (`isDead=true`) | Cannot do anything | 💀 HP: 🖤🖤🖤🖤🖤 |
-| **Agonie** (HP=1) | Cannot use PA | HP: ❤️‍🩹🖤🖤🖤🖤 |
-| **Dépression** (PM=0) | Cannot use PA, spreads to others | PM: 🌧️🖤🖤🖤🖤 |
-| **Déprime** (PM=1) | Cannot use PA | PM: 😔🖤🖤🖤🖤 |
-| **Affamé** (Hunger ≤1) | Reduced PA regen (+1 instead of +2) | 😰 or 💀 |
+| Condition                | Restrictions                        | Visual Indicators |
+| ------------------------ | ----------------------------------- | ----------------- |
+| **Dead** (`isDead=true`) | Cannot do anything                  | 💀 HP: 🖤🖤🖤🖤🖤 |
+| **Agonie** (HP=1)        | Cannot use PA                       | HP: ❤️‍🩹🖤🖤🖤🖤    |
+| **Dépression** (PM=0)    | Cannot use PA, spreads to others    | PM: 💜🖤🖤🖤🖤    |
+| **Déprime** (PM=1)       | Cannot use PA                       | PM: 💜🖤🖤🖤🖤    |
+| **Affamé** (Hunger ≤1)   | Reduced PA regen (+1 instead of +2) | 😰 or 💀          |
 
 ---
 
