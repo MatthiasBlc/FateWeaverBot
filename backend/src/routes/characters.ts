@@ -20,9 +20,6 @@ router.get("/guild/:guildId", CharacterController.getGuildCharacters);
 // Récupérer tous les personnages d'une ville
 router.get("/town/:townId", CharacterController.getTownCharacters);
 
-// Créer un nouveau personnage dans une ville
-router.post("/create", CharacterController.createCharacter);
-
 // Tuer un personnage
 router.post("/:id/kill", CharacterController.killCharacter);
 

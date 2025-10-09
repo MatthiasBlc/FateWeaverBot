@@ -543,20 +543,6 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const createCharacter: RequestHandler = async (req, res, next) => {
-  try {
-    const { name, userId, townId } = req.body;
-    const character = await characterService.createCharacter({
-      name,
-      userId,
-      townId,
-    });
-    res.status(201).json(character);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const killCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;

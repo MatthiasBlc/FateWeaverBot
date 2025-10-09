@@ -1,7 +1,15 @@
 -------------------------Todo-------------------------
 Update the push
 
+Seul un personnage en vie en dépression a l'effet dépression.
+
 # Features, debug et tests
+
+agonie 48h (fin de journée en cours + journée suivante) puis mort.
+
+si le character a faim à 0 et agonie, il ne peut pas être soigné (bouton grisé) tant qu'il n'a pas remonté sa faim au moins à 1
+
+tomber en agnonie ne baisse pas pv et pm ????
 
 Update du système de faim :
 la faim diminue de 1 point toutes les 24h

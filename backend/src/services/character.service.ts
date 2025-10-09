@@ -257,14 +257,19 @@ export class CharacterService {
     return await prisma.character.findMany({
       where: {
         townId,
-        isActive: true,
-        isDead: false,
+        // Retourner TOUS les personnages (vivants, morts, actifs, inactifs)
+        // pour que character-admin et /profil puissent voir tous les états
       },
       include: {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
       },
+      orderBy: [
+        { isDead: 'asc' },     // Vivants en premier
+        { isActive: 'desc' },   // Actifs en premier
+        { createdAt: 'desc' }   // Plus récents en premier
+      ],
     });
   }
 

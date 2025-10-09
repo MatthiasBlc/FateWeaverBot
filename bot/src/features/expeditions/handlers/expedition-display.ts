@@ -74,12 +74,8 @@ export async function handleExpeditionMainCommand(
         // Continue without detailed resources if API call fails
       }
 
-      // Create embed
-      const embed = createInfoEmbed(
-        `🚀 ${expedition.name}`,
-        ""
-      )
-      .addFields(
+      // Build fields array
+      const fields: any[] = [
         {
           name: "⏱️ Durée",
           value: `${expedition.duration} jours`,
@@ -94,9 +90,8 @@ export async function handleExpeditionMainCommand(
           name: "👥 Membres",
           value: expedition.members?.length.toString() || "0",
           inline: true,
-        },
-        { name: " ", value: " ", inline: true }
-      );
+        }
+      ];
 
       // Add detailed resources if available
       if (expeditionResources && expeditionResources.length > 0) {
@@ -106,7 +101,7 @@ export async function handleExpeditionMainCommand(
           .join("\n");
 
         if (resourceDetails) {
-          embed.addFields({
+          fields.push({
             name: "📦 Ressources détaillées",
             value: resourceDetails,
             inline: false,
@@ -124,12 +119,26 @@ export async function handleExpeditionMainCommand(
           })
           .join("\n");
 
-        embed.addFields({
-          name: "📋 Membres inscrits",
-          value: memberList,
-          inline: false,
-        });
+        if (memberList) {
+          fields.push({
+            name: "📋 Membres inscrits",
+            value: memberList,
+            inline: false,
+          });
+        }
       }
+
+      // Create embed
+      const embed = createInfoEmbed(
+        `🚀 ${expedition.name}`,
+        `Expédition en ${getStatusEmoji(expedition.status)}`
+      ).addFields(fields);
+
+      logger.info("Expedition embed created", {
+        expeditionId: expedition.id,
+        fieldsCount: fields.length,
+        hasComponents: expedition.status === "PLANNING" || expedition.status === "DEPARTED"
+      });
 
       // Add buttons based on expedition status
       const components = [];
@@ -155,11 +164,21 @@ export async function handleExpeditionMainCommand(
         components.push(buttonRow);
       }
 
-      await interaction.reply({
-        embeds: [embed],
-        components,
-        flags: ["Ephemeral"],
-      });
+      try {
+        await interaction.reply({
+          embeds: [embed],
+          components,
+          flags: ["Ephemeral"],
+        });
+        logger.info("Expedition embed sent successfully", { expeditionId: expedition.id });
+      } catch (replyError) {
+        logger.error("Failed to send expedition embed", {
+          error: replyError,
+          embedData: JSON.stringify(embed.toJSON()),
+          componentsCount: components.length
+        });
+        throw replyError;
+      }
     } else {
       // Character is not a member - show available expeditions
       const townResponse = await apiService.guilds.getTownByGuildId(interaction.guildId!);
@@ -168,13 +187,19 @@ export async function handleExpeditionMainCommand(
         return;
       }
 
-      const expeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
-      const availableExpeditions = expeditions.filter(
+      const allExpeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
+
+      // Filtrer les expéditions terminées (RETURNED)
+      const expeditions = allExpeditions.filter(
+        (exp: Expedition) => exp.status !== "RETURNED"
+      );
+
+      const planningExpeditions = expeditions.filter(
         (exp: Expedition) => exp.status === "PLANNING"
       );
 
-      if (availableExpeditions.length === 0) {
-        // No expeditions available - only show "Create new expedition" button
+      if (expeditions.length === 0) {
+        // No expeditions at all - only show "Create new expedition" button
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("expedition_create_new")
@@ -182,18 +207,45 @@ export async function handleExpeditionMainCommand(
             .setStyle(ButtonStyle.Primary)
         );
 
-        await replyEphemeral(interaction, "🏕️ **Aucune expédition en cours de planification.**\n\nVous pouvez créer une nouvelle expédition :");
+        await interaction.reply({
+          content: "🏕️ **Aucune expédition dans cette ville.**\n\nVous pouvez créer une nouvelle expédition :",
+          components: [buttonRow],
+          flags: ["Ephemeral"],
+        });
         return;
       }
 
-      // Expeditions available - show list with both buttons
-      const expeditionList = availableExpeditions
+      if (planningExpeditions.length === 0) {
+        // No planning expeditions but other expeditions exist - show all with create button
+        const expeditionList = expeditions
+          .map((exp: Expedition, index: number) =>
+            `**${index + 1}.** ${exp.name} (${exp.duration}j) - ${getStatusEmoji(exp.status)}`
+          )
+          .join("\n");
+
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId("expedition_create_new")
+            .setLabel("Créer une nouvelle expédition")
+            .setStyle(ButtonStyle.Primary)
+        );
+
+        await interaction.reply({
+          content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\n⚠️ Aucune expédition disponible à rejoindre (status PLANNING).\nVous pouvez créer une nouvelle expédition :`,
+          components: [buttonRow],
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+
+      // Planning expeditions available - show all expeditions with both buttons
+      const expeditionList = expeditions
         .map((exp: Expedition, index: number) =>
-          `**${index + 1}.** ${exp.name} (${exp.duration}j)`
+          `**${index + 1}.** ${exp.name} (${exp.duration}j) - ${getStatusEmoji(exp.status)}`
         )
         .join("\n");
 
-      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      const buttons = [
         new ButtonBuilder()
           .setCustomId("expedition_create_new")
           .setLabel("Créer une nouvelle expédition")
@@ -202,9 +254,15 @@ export async function handleExpeditionMainCommand(
           .setCustomId("expedition_join_existing")
           .setLabel("Rejoindre une expédition")
           .setStyle(ButtonStyle.Secondary)
-      );
+      ];
 
-      await replyEphemeral(interaction, `🏕️ **Expéditions disponibles :**\n${expeditionList}\n\nChoisissez une action :`);
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
+
+      await interaction.reply({
+        content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\nChoisissez une action :`,
+        components: [buttonRow],
+        flags: ["Ephemeral"],
+      });
     }
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
@@ -271,34 +329,33 @@ export async function handleExpeditionInfoCommand(
       `🚀 ${currentExpedition.name}`,
       ""
     )
-    .addFields(
-      {
-        name: "📦 Stock de nourriture",
-        value: `${currentExpedition.foodStock || 0}`,
-        inline: true,
-      },
-      {
-        name: "⏱️ Durée",
-        value: `${currentExpedition.duration} jours`,
-        inline: true,
-      },
-      {
-        name: "📍 Statut",
-        value: getStatusEmoji(currentExpedition.status),
-        inline: true,
-      },
-      {
-        name: "👥 Membres",
-        value: currentExpedition.members?.length.toString() || "0",
-        inline: true,
-      },
-      {
-        name: "🏛️ Ville",
-        value: currentExpedition.town?.name || "Inconnue",
-        inline: true,
-      },
-      { name: " ", value: " ", inline: true }
-    );
+      .addFields(
+        {
+          name: "📦 Stock de nourriture",
+          value: `${currentExpedition.foodStock || 0}`,
+          inline: true,
+        },
+        {
+          name: "⏱️ Durée",
+          value: `${currentExpedition.duration} jours`,
+          inline: true,
+        },
+        {
+          name: "📍 Statut",
+          value: getStatusEmoji(currentExpedition.status),
+          inline: true,
+        },
+        {
+          name: "👥 Membres",
+          value: currentExpedition.members?.length.toString() || "0",
+          inline: true,
+        },
+        {
+          name: "🏛️ Ville",
+          value: currentExpedition.town?.name || "Inconnue",
+          inline: true,
+        }
+      );
 
     // Add detailed resources if available
     if (expeditionResources && expeditionResources.length > 0) {
