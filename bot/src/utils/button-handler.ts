@@ -321,6 +321,22 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Participer" des chantiers
+    this.registerHandler("chantier_participate", async (interaction) => {
+      try {
+        const { handleParticipateButton } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
+        await handleParticipateButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier participate button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la participation au chantier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     this.registerHandler("next_season", async (interaction) => {
       logger.info("🎯 Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
 

@@ -12,6 +12,8 @@ import {
   ModalActionRowComponentBuilder,
   type ChatInputCommandInteraction,
   Client,
+  ButtonBuilder,
+  ButtonStyle,
 } from "discord.js";
 
 interface Town {
@@ -54,6 +56,83 @@ import { checkAdmin } from "../../utils/roles.js";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
 import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis.js";
+
+/**
+ * Nouvelle commande /chantiers unifiée - Affiche liste + bouton Participer
+ */
+export async function handleChantiersCommand(interaction: CommandInteraction) {
+  try {
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
+      interaction.guildId!
+    );
+
+    if (chantiers.length === 0) {
+      return interaction.reply({
+        content: "Aucun chantier n'a encore été créé sur ce serveur.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const embed = createInfoEmbed(
+      `${CHANTIER.ICON} Liste des chantiers`,
+      "Voici la liste des chantiers en cours sur ce serveur :"
+    );
+
+    // Grouper les chantiers par statut
+    const chantiersParStatut = chantiers.reduce<Record<string, Chantier[]>>(
+      (acc, chantier) => {
+        if (!acc[chantier.status]) {
+          acc[chantier.status] = [];
+        }
+        acc[chantier.status].push(chantier);
+        return acc;
+      },
+      {}
+    );
+
+    // Ajouter une section pour chaque statut
+    for (const [statut, listeChantiers] of Object.entries(chantiersParStatut)) {
+      const chantiersText = listeChantiers
+        .map(
+          (chantier) =>
+            `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`
+        )
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
+        value: chantiersText || "Aucun chantier dans cette catégorie",
+        inline: false,
+      });
+    }
+
+    // Ajouter bouton "Participer" si au moins un chantier est disponible (non COMPLETED)
+    const availableChantiers = chantiers.filter((c) => c.status !== "COMPLETED");
+    const components = [];
+
+    if (availableChantiers.length > 0) {
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId("chantier_participate")
+          .setLabel("🏗️ Participer")
+          .setStyle(ButtonStyle.Primary)
+      );
+      components.push(buttonRow);
+    }
+
+    await interaction.reply({
+      embeds: [embed],
+      components,
+      flags: ["Ephemeral"]
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la récupération des chantiers :", { error });
+    await interaction.reply({
+      content: "Une erreur est survenue lors de la récupération des chantiers.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
 
 export async function handleListCommand(interaction: CommandInteraction) {
   try {
@@ -108,6 +187,144 @@ export async function handleListCommand(interaction: CommandInteraction) {
       content: "Une erreur est survenue lors de la récupération des chantiers.",
       flags: ["Ephemeral"],
     });
+  }
+}
+
+/**
+ * Handler pour le bouton "Participer" - Affiche select menu des chantiers
+ */
+export async function handleParticipateButton(interaction: any) {
+  try {
+    // Récupérer les chantiers de la guilde
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
+      interaction.guildId!
+    );
+
+    // Filtrer et trier les chantiers selon les critères
+    const availableChantiers = chantiers
+      .filter((c) => c.status !== "COMPLETED") // Exclure les chantiers terminés
+      .sort((a, b) => {
+        // Trier d'abord par statut (EN_COURS avant PLAN)
+        if (a.status === "IN_PROGRESS" && b.status !== "IN_PROGRESS") return -1;
+        if (a.status !== "IN_PROGRESS" && b.status === "IN_PROGRESS") return 1;
+
+        // Ensuite par nombre de PA manquants (du plus petit au plus grand)
+        const aRemaining = a.cost - a.spendOnIt;
+        const bRemaining = b.cost - b.spendOnIt;
+        return aRemaining - bRemaining;
+      });
+
+    if (availableChantiers.length === 0) {
+      return interaction.reply({
+        content: "Aucun chantier n'est disponible pour l'instant.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Créer un menu de sélection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("select_chantier_invest")
+      .setPlaceholder("Sélectionnez un chantier")
+      .addOptions(
+        availableChantiers.map((chantier) => ({
+          label: chantier.name,
+          description: `${chantier.spendOnIt}/${
+            chantier.cost
+          } PA - ${getStatusText(chantier.status)}`,
+          value: chantier.id,
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      selectMenu
+    );
+
+    await interaction.reply({
+      content: "Choisissez un chantier dans lequel investir :",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
+
+    // Gérer la sélection du chantier
+    const filter = (i: StringSelectMenuInteraction) =>
+      i.customId === "select_chantier_invest" &&
+      i.user.id === interaction.user.id;
+
+    try {
+      const response = (await interaction.channel?.awaitMessageComponent({
+        filter,
+        componentType: ComponentType.StringSelect,
+        time: 60000, // 1 minute pour choisir
+      })) as StringSelectMenuInteraction;
+
+      if (!response) return;
+
+      const selectedChantierId = response.values[0];
+      const selectedChantier = availableChantiers.find(
+        (c) => c.id === selectedChantierId
+      );
+
+      if (!selectedChantier) {
+        await response.update({
+          content: "Chantier non trouvé. Veuillez réessayer.",
+          components: [],
+        });
+        return;
+      }
+
+      // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
+      const modal = new ModalBuilder()
+        .setCustomId(`invest_modal_${selectedChantierId}`)
+        .setTitle(`Investir dans ${selectedChantier.name}`);
+
+      const pointsInput = new TextInputBuilder()
+        .setCustomId("points_input")
+        .setLabel(
+          `PA à investir (max: ${
+            selectedChantier.cost - selectedChantier.spendOnIt
+          } PA)`
+        )
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder("Entrez le nombre de PA à investir")
+        .setMinLength(1)
+        .setMaxLength(2); // Max 2 chiffres (0-99)
+
+      const firstActionRow =
+        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
+          pointsInput,
+        ]);
+      modal.addComponents(firstActionRow);
+
+      await response.showModal(modal);
+
+      // La soumission du modal sera gérée par handleInvestModalSubmit via le système centralisé
+    } catch (error) {
+      logger.error("Erreur lors de la sélection du chantier:", { error });
+      if (!interaction.replied) {
+        await interaction.followUp({
+          content: "Temps écoulé ou erreur lors de la sélection.",
+          flags: ["Ephemeral"],
+        });
+      }
+    }
+  } catch (error) {
+    logger.error("Erreur lors de la préparation de la participation :", {
+      error,
+    });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content:
+          "Une erreur est survenue lors de la préparation de la participation.",
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.followUp({
+        content:
+          "Une erreur est survenue lors de la préparation de la participation.",
+        flags: ["Ephemeral"],
+      });
+    }
   }
 }
 
