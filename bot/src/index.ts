@@ -72,11 +72,22 @@ async function loadCommands() {
     const loadCommand = async (filePath: URL) => {
       try {
         const commandModule = (await import(filePath.href)).default;
+
+        // Skip if no default export
+        if (!commandModule) {
+          return;
+        }
+
         const commandsToProcess = Array.isArray(commandModule)
           ? commandModule
           : [commandModule];
 
         for (const command of commandsToProcess) {
+          // Skip undefined/null commands
+          if (!command) {
+            continue;
+          }
+
           if ("data" in command && "execute" in command) {
             client.commands.set(command.data.name, command);
           } else {
