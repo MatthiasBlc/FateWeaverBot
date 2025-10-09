@@ -26,8 +26,10 @@ async function increaseAllCharactersHunger() {
       const newLevel = Math.max(0, character.hungerLevel - 1);
 
       const updateData: any = { hungerLevel: newLevel };
+
+      // When hunger reaches 0, set HP to 1 (Agonie) instead of killing
       if (newLevel === 0) {
-        updateData.isDead = true;
+        updateData.hp = 1;
       }
 
       await prisma.character.update({

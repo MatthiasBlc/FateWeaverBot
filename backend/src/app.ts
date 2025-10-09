@@ -16,6 +16,7 @@ import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
 import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
+import { setupDailyPmJob } from "./cron/daily-pm.cron";
 import { setupExpeditionJobs } from "./cron/expedition.cron";
 import { setupSeasonChangeJob } from "./cron/season-change.cron";
 import chantierRoutes from "./routes/chantier";
@@ -31,6 +32,7 @@ const app = express();
 if (process.env.NODE_ENV !== "test") {
   setupDailyPaJob();
   setupHungerIncreaseJob();
+  setupDailyPmJob();
   setupExpeditionJobs();
   setupSeasonChangeJob();
 }

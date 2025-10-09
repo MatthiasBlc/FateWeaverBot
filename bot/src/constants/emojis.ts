@@ -19,6 +19,8 @@ export const CHARACTER = {
   HP_BANDAGED: '❤️‍🩹',
   MP_FULL: '💜',
   MP_EMPTY: '🖤',
+  MP_DEPRESSION: '🌧️',
+  MP_DEPRESSED: '😔',
   PA: '⚡',
   PA_ALT: '🎯',
   PROFILE: '📋',

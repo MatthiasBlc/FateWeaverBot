@@ -76,6 +76,7 @@ Update du système de PM:
 1 - Déprime → (ne peut plus utiliser de PA)
 0 - Dépression → (chaque jour, un joueur dans le même lieu qui n'est pas déjà en Dépression, même ville si en ville ou même expédition si dans une expédition Status DEPARTED, perd 1 PM)
 
+Autre:
 Un personnage dans une expédition DEPARTED n'a pas accès aux stocks ou aux chantiers de la ville.
 
 

@@ -18,16 +18,34 @@ class ActionPointService {
 
   /**
    * Utilise un point d'action pour un personnage
-   * @throws {Error} Si le personnage n'a pas assez de points
+   * @throws {Error} Si le personnage n'a pas assez de points ou est dans un état bloquant
    */
   async useActionPoint(characterId: string) {
     return await prisma.$transaction(async (tx) => {
       const character = await tx.character.findUnique({
         where: { id: characterId },
-        select: { paTotal: true },
+        select: { paTotal: true, hp: true, pm: true, isDead: true },
       });
 
-      if (!character || character.paTotal <= 0) {
+      if (!character) {
+        throw new Error("Personnage non trouvé");
+      }
+
+      if (character.isDead) {
+        throw new Error("Ce personnage est mort");
+      }
+
+      // Block PA usage if HP ≤ 1 (Agonie)
+      if (character.hp <= 1) {
+        throw new Error("Vous êtes en agonie et ne pouvez pas utiliser de PA");
+      }
+
+      // Block PA usage if PM ≤ 1 (Déprime or Dépression)
+      if (character.pm <= 1) {
+        throw new Error("Votre moral est trop bas pour utiliser des PA");
+      }
+
+      if (character.paTotal <= 0) {
         throw new Error("Pas assez de points d'action disponibles");
       }
 

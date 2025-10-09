@@ -156,6 +156,13 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
+      include: {
+        expeditionMembers: {
+          include: {
+            expedition: true,
+          },
+        },
+      },
     });
 
     if (!character) {
@@ -164,6 +171,17 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     if (character.isDead) {
       return res.status(400).json({ error: "Ce personnage est mort" });
+    }
+
+    // Block if character is in a DEPARTED expedition
+    const inDepartedExpedition = character.expeditionMembers.some(
+      (em) => em.expedition.status === "DEPARTED"
+    );
+
+    if (inDepartedExpedition) {
+      return res.status(400).json({
+        error: "Vous êtes en expédition et ne pouvez pas accéder aux chantiers de la ville",
+      });
     }
 
     await actionPointService.getAvailablePoints(characterId);

@@ -298,7 +298,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     },
     {
       name: "Points mentaux (PM)",
-      value: createHeartDisplay(data.character.pm, 5, '💜', '🖤'),
+      value: createPMDisplay(data.character.pm, 5),
       inline: true,
     },
     {
@@ -421,27 +421,27 @@ function createAdvancedHungerDisplay(level: number): {
   switch (level) {
     case 0:
       return {
-        text: `${baseEmoji} **${baseText}** - Incapable d'agir`,
+        text: `${baseEmoji} **${baseText}** - HP à 1 !`,
         emoji: baseEmoji,
       };
     case 1:
       return {
-        text: `${baseEmoji} **${baseText}** - Plus de régénération PA !`,
+        text: `${baseEmoji} **${baseText}** - +1 PA au lieu de +2`,
         emoji: baseEmoji,
       };
     case 2:
       return {
-        text: `${baseEmoji} **${baseText}** - Régénération PA réduite`,
+        text: `${baseEmoji} **Faim** - État normal`,
         emoji: baseEmoji,
       };
     case 3:
       return {
-        text: `${baseEmoji} **${baseText}** - Commence à avoir faim`,
+        text: `${baseEmoji} **Faim** - État normal`,
         emoji: baseEmoji,
       };
     case 4:
       return {
-        text: `${baseEmoji} **${baseText}** - Parfait état !`,
+        text: `${baseEmoji} **Satiété** - Soigne 1 PV/jour`,
         emoji: baseEmoji,
       };
     default:
@@ -481,6 +481,40 @@ function createPVDisplay(current: number, max: number): string {
 
   // Cas normal : utiliser la fonction standard
   return createHeartDisplay(current, max);
+}
+
+/**
+ * Create PM (Mental Points) display with status text and special emojis
+ * PM=0: Depression (rain cloud) - Cannot use PA + contagious
+ * PM=1: Depressed (sad face) - Cannot use PA
+ * PM=2-5: Normal purple hearts
+ */
+function createPMDisplay(current: number, max: number): string {
+  const hearts = [];
+
+  // Build hearts display (all empty for PM=0, normal for others)
+  for (let i = 0; i < max; i++) {
+    if (current === 0) {
+      hearts.push(CHARACTER.MP_EMPTY); // All black for depression
+    } else if (i < current) {
+      hearts.push(CHARACTER.MP_FULL);
+    } else {
+      hearts.push(CHARACTER.MP_EMPTY);
+    }
+  }
+
+  // Special case: PM=0 (Dépression)
+  if (current === 0) {
+    return `${hearts.join(' ')} - ${CHARACTER.MP_DEPRESSION}**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+  }
+
+  // Special case: PM=1 (Déprime)
+  if (current === 1) {
+    return `${hearts.join(' ')} - ${CHARACTER.MP_DEPRESSED}**Déprime** (Ne peut pas utiliser de PA)`;
+  }
+
+  // Normal case: PM=2-5
+  return hearts.join(' ');
 }
 
 export async function handleProfileButtonInteraction(interaction: any) {

@@ -153,7 +153,13 @@ export class ChantierService {
       // Check character exists and is not dead
       const character = await tx.character.findUnique({
         where: { id: characterId },
-        select: { id: true, name: true, townId: true, isDead: true },
+        include: {
+          expeditionMembers: {
+            include: {
+              expedition: true,
+            },
+          },
+        },
       });
 
       if (!character) {
@@ -162,6 +168,15 @@ export class ChantierService {
 
       if (character.isDead) {
         throw new Error("This character is dead");
+      }
+
+      // Block if character is in a DEPARTED expedition
+      const inDepartedExpedition = character.expeditionMembers?.some(
+        (em: any) => em.expedition.status === "DEPARTED"
+      );
+
+      if (inDepartedExpedition) {
+        throw new Error("You are on expedition and cannot access city chantiers");
       }
 
       // Check character is in the same town as the chantier
