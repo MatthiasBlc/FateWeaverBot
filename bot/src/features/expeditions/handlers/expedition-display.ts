@@ -150,7 +150,7 @@ export async function handleExpeditionMainCommand(
           new ButtonBuilder()
             .setCustomId(`expedition_emergency_return:${expedition.id}`)
             .setLabel("🚨 Voter retour d'urgence")
-            .setStyle(ButtonStyle.Warning)
+            .setStyle(ButtonStyle.Secondary)
         );
         components.push(buttonRow);
       }
@@ -352,7 +352,7 @@ export async function handleExpeditionInfoCommand(
         new ButtonBuilder()
           .setCustomId(`expedition_emergency_return:${currentExpedition.id}`)
           .setLabel("🚨 Voter retour d'urgence")
-          .setStyle(ButtonStyle.Warning)
+          .setStyle(ButtonStyle.Secondary)
       );
       components.push(buttonRow);
     }

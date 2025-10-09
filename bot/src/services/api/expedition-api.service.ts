@@ -105,4 +105,20 @@ export class ExpeditionAPIService {
       throw error;
     }
   }
+
+  async toggleEmergencyVote(
+    expeditionId: string,
+    userId: string
+  ): Promise<{ voted: boolean; totalVotes: number; membersCount: number; thresholdReached: boolean }> {
+    try {
+      const response = await this.api.post<{ success: boolean; data: any }>(
+        `${this.basePath}/${expeditionId}/emergency-vote`,
+        { userId }
+      );
+      return response.data.data;
+    } catch (error) {
+      logger.error('Error toggling emergency vote:', error);
+      throw error;
+    }
+  }
 }

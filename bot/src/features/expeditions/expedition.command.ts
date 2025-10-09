@@ -17,3 +17,6 @@ export { handleExpeditionLeaveButton } from "./handlers/expedition-leave";
 
 // Transfer
 export { handleExpeditionTransferButton, handleExpeditionTransferDirectionSelect, handleExpeditionTransferModal } from "./handlers/expedition-transfer";
+
+// Emergency return
+export { handleEmergencyReturnButton } from "./handlers/expedition-emergency";

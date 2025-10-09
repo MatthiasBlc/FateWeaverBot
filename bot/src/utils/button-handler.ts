@@ -74,6 +74,11 @@ export class ButtonHandler {
           "../features/admin/expedition-admin.handlers.js"
         );
         await handleExpeditionAdminButton(interaction);
+      } else if (customId.startsWith("expedition_emergency_return:")) {
+        const { handleEmergencyReturnButton } = await import(
+          "../features/expeditions/expedition.command.js"
+        );
+        await handleEmergencyReturnButton(interaction);
       }
     });
 
