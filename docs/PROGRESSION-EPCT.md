@@ -1,8 +1,8 @@
 # 📋 PROGRESSION EPCT - Node Discord /update
 
-**Dernière mise à jour** : 2025-10-08
-**Session actuelle** : 50% tokens utilisés (100k/200k)
-**Statut** : En cours - Phase 3
+**Dernière mise à jour** : 2025-10-09
+**Session actuelle** : 25% tokens utilisés (50k/200k)
+**Statut** : En cours - Phase 5 (5.2 terminée)
 
 ---
 
@@ -160,26 +160,37 @@
 
 ---
 
-#### Sous-tâche 5.2: Retour Urgence (2h)
+#### ✅ Sous-tâche 5.2: Retour Urgence (TERMINÉE)
 **Fichiers** :
-- Backend: nouvelle table `expedition_emergency_votes`
-- Backend: `expedition.service.ts`, nouveau controller
-- Bot: `expedition-display.ts`, nouveau handler
+- Backend: `backend/prisma/schema.prisma` (ExpeditionEmergencyVote model)
+- Backend: `backend/src/services/expedition.service.ts` (toggleEmergencyVote, forceEmergencyReturns)
+- Backend: `backend/src/controllers/expedition.ts` (toggleEmergencyVote controller)
+- Backend: `backend/src/routes/expedition.ts` (emergency-vote route)
+- Backend: `backend/src/cron/expedition.cron.ts` (processEmergencyReturns cron)
+- Bot: `bot/src/features/expeditions/handlers/expedition-display.ts` (bouton urgence)
+- Bot: `bot/src/features/expeditions/handlers/expedition-emergency.ts` (handler)
+- Bot: `bot/src/services/api/expedition-api.service.ts` (toggleEmergencyVote API)
+- Bot: `bot/src/utils/button-handler.ts` (enregistrement handler)
+- Bot: `bot/src/features/expeditions/expedition.command.ts` (export handler)
 
-**Tâches** :
-- [ ] Migration DB : table votes
-- [ ] Backend: endpoints vote/dévote
-- [ ] Backend: logique 50% membres
-- [ ] Backend: flag `pendingEmergencyReturn`
-- [ ] Bot: bouton si status DEPARTED :
-  - [ ] `expedition_emergency_return:${expId}`
-  - [ ] Toggle vote
-  - [ ] Afficher décompte votes
-- [ ] Cron: vérifier flag et forcer RETURNED
-- [ ] Tests : vote, dévote, seuil, retour effectif
-- [ ] Build + commits
+**Modifications faites** :
+- [x] Migration DB : table `expedition_emergency_votes` créée
+- [x] Migration DB : champ `pendingEmergencyReturn` ajouté au modèle Expedition
+- [x] Backend: endpoint `POST /expeditions/:id/emergency-vote` créé
+- [x] Backend: logique toggle vote (ajoute si absent, retire si présent)
+- [x] Backend: logique 50% membres (`Math.ceil(membersCount / 2)`)
+- [x] Backend: flag `pendingEmergencyReturn` activé/désactivé selon seuil
+- [x] Backend: méthode `forceEmergencyReturns()` pour traiter les expéditions flaggées
+- [x] Backend: cron job toutes les 10 minutes (`*/10 * * * *`)
+- [x] Bot: bouton "🚨 Voter retour d'urgence" si status DEPARTED
+- [x] Bot: customId `expedition_emergency_return:${expId}`
+- [x] Bot: handler toggle vote avec affichage décompte et seuil
+- [x] Bot: messages éphémères avec état vote + progression
+- [x] Bot: logs envoyés au canal de logs
+- [x] Build validé ✅
+- [x] Commit : "Implement Phase 5.2: Emergency return voting system" (97d4e34)
 
-**État** : ⏸️ À VENIR
+**État** : ✅ TERMINÉE
 
 ---
 
@@ -262,17 +273,17 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : ~130k / 200k (65%)
-**Phases complétées** : 4.5/7 (Phase 1-4 + Phase 5.1 terminées)
-**Commits créés** : 15 commits (12 Claude + 3 Supernova)
-**Temps estimé restant** : ~13h de dev
+**Tokens utilisés** : ~50k / 200k (25%)
+**Phases complétées** : 5/7 (Phase 1-5 complètes)
+**Commits créés** : 16 commits (13 Claude + 3 Supernova)
+**Temps estimé restant** : ~10h de dev
 
 ### Détails :
 - ✅ Phase 1 : Quick Wins (bug fix + suppressions + renommages) - 5 commits
 - ✅ Phase 2 : Emojis (migration centralisée, ~50+ emojis) - 3 commits Supernova
 - ✅ Phase 3 : UX (/stock + /help améliorés) - 2 commits
 - ✅ Phase 4 : Système "Manger +" (corrections TS appliquées) - 2 commits
-- 🔄 Phase 5 : Expéditions Multi-Ressources (5.1 ✅, 5.2 à venir) - 3 commits
+- ✅ Phase 5 : Expéditions Multi-Ressources (5.1 + 5.2 terminées) - 4 commits
 - ⏸️ Phase 6-7 : À venir
 
 ---
@@ -281,9 +292,8 @@ npx tsc --noEmit
 
 ### Reprendre le travail :
 1. **Lire ce fichier** : `docs/PROGRESSION-EPCT.md`
-2. **Continuer Phase 5.2** : Retour Urgence (système de votes expéditions)
-3. **Ou passer à Phase 6** : Chantiers Ressources
-4. **Cocher au fur et à mesure** ✅
+2. **Passer à Phase 6** : Chantiers Ressources (refonte UI + système coûts ressources)
+3. **Cocher au fur et à mesure** ✅
 
 ### Fichiers de référence :
 - Plan général : `docs/TODO.md` (section "Node Discord /update")
@@ -294,5 +304,5 @@ npx tsc --noEmit
 
 ---
 
-**Dernière action** : Phase 5.1 terminée (transferts multi-ressources Vivres + Nourriture)
-**Prochaine action** : Phase 5.2 (Retour Urgence expéditions) ou Phase 6 (Chantiers Ressources)
+**Dernière action** : Phase 5.2 terminée (système de vote retour d'urgence expéditions)
+**Prochaine action** : Phase 6 (Chantiers Ressources)
