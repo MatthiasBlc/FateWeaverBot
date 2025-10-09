@@ -118,6 +118,29 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         },
       });
 
+      // Si c'est une nouvelle création (et non une mise à jour), on ajoute la compétence de base
+      if (!existingCharacter) {
+        const bucheronnerCapability = await tx.capability.findFirst({
+          where: { name: "Bûcheronner" },
+        });
+
+        if (bucheronnerCapability) {
+          await tx.characterCapability.create({
+            data: {
+              characterId: character.id,
+              capabilityId: bucheronnerCapability.id,
+            },
+          });
+          console.log(
+            `Capacité "Bûcheronner" attribuée au personnage ${character.id}`
+          );
+        } else {
+          console.error(
+            'La capacité "Bûcheronner" n\'a pas été trouvée dans la base de données'
+          );
+        }
+      }
+
       await tx.characterRole.deleteMany({
         where: { characterId: character.id },
       });
@@ -849,9 +872,9 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
       where: { id: characterId },
       include: {
         expeditionMembers: {
-          include: { expedition: true }
-        }
-      }
+          include: { expedition: true },
+        },
+      },
     });
 
     if (!character) {
@@ -868,15 +891,17 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
 
     // Determine location (city or DEPARTED expedition)
     const departedExpedition = character.expeditionMembers.find(
-      em => em.expedition.status === "DEPARTED"
+      (em) => em.expedition.status === "DEPARTED"
     );
 
     const locationType = departedExpedition ? "EXPEDITION" : "CITY";
-    const locationId = departedExpedition ? departedExpedition.expeditionId : character.townId;
+    const locationId = departedExpedition
+      ? departedExpedition.expeditionId
+      : character.townId;
 
     // Check cataplasme availability
     const cataplasmeType = await prisma.resourceType.findFirst({
-      where: { name: "Cataplasme" }
+      where: { name: "Cataplasme" },
     });
 
     if (!cataplasmeType) {
@@ -888,9 +913,9 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
         locationType_locationId_resourceTypeId: {
           locationType,
           locationId,
-          resourceTypeId: cataplasmeType.id
-        }
-      }
+          resourceTypeId: cataplasmeType.id,
+        },
+      },
     });
 
     if (!stock || stock.quantity < 1) {
@@ -902,21 +927,20 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
       // Remove 1 cataplasme
       await tx.resourceStock.update({
         where: { id: stock.id },
-        data: { quantity: { decrement: 1 } }
+        data: { quantity: { decrement: 1 } },
       });
 
       // Heal +1 HP
       await tx.character.update({
         where: { id: characterId },
-        data: { hp: Math.min(5, character.hp + 1) }
+        data: { hp: Math.min(5, character.hp + 1) },
       });
     });
 
     res.json({
       success: true,
-      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`
+      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`,
     });
-
   } catch (error) {
     next(error);
   }

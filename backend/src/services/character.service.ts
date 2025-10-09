@@ -142,10 +142,7 @@ export class CharacterService {
       });
 
       // Lui donner les capacités de base
-      const baseCapabilities = [
-        'Bûcheronner',
-        'Travailler le bois'
-      ];
+      const baseCapabilities = ["Bûcheronner"];
 
       for (const capabilityName of baseCapabilities) {
         const capability = await tx.capability.findUnique({
@@ -390,7 +387,7 @@ export class CharacterService {
     isSummer?: boolean
   ) {
     // Récupérer le personnage avec ses capacités
-    const character = await prisma.character.findUnique({
+    const character = (await prisma.character.findUnique({
       where: { id: characterId },
       include: {
         capabilities: {
@@ -399,7 +396,7 @@ export class CharacterService {
           },
         },
       },
-    }) as CharacterWithCapabilities;
+    })) as CharacterWithCapabilities;
 
     if (!character) {
       throw new Error("Personnage non trouvé");
@@ -458,10 +455,17 @@ export class CharacterService {
         );
         break;
       case "pêcher":
-        result = await this.useFishingCapability(character, capability, isSummer);
+        result = await this.useFishingCapability(
+          character,
+          capability,
+          isSummer
+        );
         break;
       case "divertir":
         result = await this.useEntertainmentCapability(character, capability);
+        break;
+      case "bûcheronner":
+        result = await this.useLoggingCapability(character, capability);
         break;
       default:
         throw new Error("Capacité non implémentée");
@@ -480,10 +484,14 @@ export class CharacterService {
       });
 
       // Ajouter les ressources générées au stock de la ville
-      if (result.loot && result.loot.foodSupplies && result.loot.foodSupplies > 0) {
+      if (
+        result.loot &&
+        result.loot.foodSupplies &&
+        result.loot.foodSupplies > 0
+      ) {
         // Récupérer le type de ressource "Vivres"
         const vivresType = await tx.resourceType.findFirst({
-          where: { name: "Vivres" }
+          where: { name: "Vivres" },
         });
 
         if (vivresType) {
@@ -492,18 +500,18 @@ export class CharacterService {
               locationType_locationId_resourceTypeId: {
                 locationType: "CITY",
                 locationId: character.townId,
-                resourceTypeId: vivresType.id
-              }
+                resourceTypeId: vivresType.id,
+              },
             },
             update: {
-              quantity: { increment: result.loot.foodSupplies }
+              quantity: { increment: result.loot.foodSupplies },
             },
             create: {
               locationType: "CITY",
               locationId: character.townId,
               resourceTypeId: vivresType.id,
-              quantity: result.loot.foodSupplies
-            }
+              quantity: result.loot.foodSupplies,
+            },
           });
         }
       }
@@ -566,6 +574,31 @@ export class CharacterService {
   }
 
   /**
+   * Capacité de bûcheronnage
+   */
+  /**
+   * Utilise la capacité de bûcheronnage
+   * @param character Le personnage qui utilise la capacité
+   * @param capability La capacité utilisée
+   * @param isSummer Si c'est l'été (affecte le taux de réussite)
+   */
+  private async useLoggingCapability(
+    character: CharacterWithCapabilities,
+    capability: Capability
+  ): Promise<CapabilityResult> {
+    // Logique de bûcheronnage : produit du bois (à implémenter selon les besoins)
+    // Pour l'instant, on utilise une logique similaire à la pêche
+    const woodAmount = Math.floor(Math.random() * 3) + 1; // 1-3 unités de bois
+
+    return {
+      success: woodAmount > 0,
+      message: `Vous avez bûcheronné avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${woodAmount} unités de bois.`,
+      publicMessage: `🌲 ${character.name} a coupé du bois et a obtenu ${woodAmount} unités.`,
+      loot: { wood: woodAmount },
+    };
+  }
+
+  /**
    * Capacité de pêche
    */
   /**
@@ -624,7 +657,9 @@ export class CharacterService {
     return {
       success: true,
       message,
-      publicMessage: `🎭 ${character.name} a donné un spectacle !${pmGained > 0 ? ' Tout le monde regagne 1 PM.' : ''}`,
+      publicMessage: `🎭 ${character.name} a donné un spectacle !${
+        pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
+      }`,
       divertCounter: newDivertCounter,
       pmGained,
     };
