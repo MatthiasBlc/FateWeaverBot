@@ -36,7 +36,7 @@ export const HUNGER = {
   HUNGRY: '🤤',
   FED: '😊',
   UNKNOWN: '❓',
-  ICON: '🍖',
+  ICON: '🍞',
 } as const;
 
 // Actions
@@ -56,40 +56,40 @@ export const CAPABILITIES = {
   GATHER: '🌿',
   FISH: '🎣',
   ENTERTAIN: '🎭',
-  GENERIC: '🔮',
+  GENERIC: '💪',
 } as const;
 
 // Expeditions
 export const EXPEDITION = {
-  PLANNING: '🔄',
+  PLANNING: '📝',
   LOCKED: '🔒',
-  DEPARTED: '✈️',
-  RETURNED: '🏠',
-  ICON: '🚀',
+  DEPARTED: '🚶‍♀️‍➡️',
+  RETURNED: '🏘️',
+  ICON: '🧭',
   CAMP: '🏕️',
 } as const;
 
 // Chantiers
 export const CHANTIER = {
   PLAN: '📝',
-  IN_PROGRESS: '🚧',
+  IN_PROGRESS: '🏗️',
   COMPLETED: '✅',
-  ICON: '🏗️',
+  ICON: '🛖',
   CELEBRATION: '🎉',
 } as const;
 
 // Locations
 export const LOCATION = {
-  CITY: '🏛️',
+  CITY: '🏘️',
   CITY_ALT: '🏙️',
-  CAMP: '⛺',
+  CAMP: '🏕️',
 } as const;
 
 // Resources
 export const RESOURCES = {
   GENERIC: '📦',
-  FOOD: '🍞',
-  PREPARED_FOOD: '🍖',
+  FOOD: '🌾',
+  PREPARED_FOOD: '🥞',
   LIST: '📋',
 } as const;
 
