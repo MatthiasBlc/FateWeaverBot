@@ -65,8 +65,8 @@ export async function handleViewStockCommand(interaction: any) {
     const resourceOrder = [
       ['Vivres', 'Nourriture'],
       ['Bois', 'Planches'],
-      ['Minerai', 'Fer'],
-      ['Tissus']
+      ['Minerai', 'Métal'],
+      ['Tissu']
     ];
 
     // Créer l'embed d'information
