@@ -110,17 +110,18 @@ enum SeasonType {
 }
 
 model Chantier {
-  id        String         @id @default(cuid())
-  name      String // Nom du chantier
-  startDate DateTime?      @map("start_date") // Date du premier investissement de PA (null si pas commencé)
-  cost      Int // Coût total en PA
-  spendOnIt Int            @default(0) // Nombre de PA investis
-  status    ChantierStatus @default(PLAN) // plan, in_progress, completed
-  town      Town           @relation(fields: [townId], references: [id], onDelete: Cascade)
-  townId    String         @map("town_id")
-  createdBy String         @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
-  createdAt DateTime       @default(now()) @map("created_at")
-  updatedAt DateTime       @updatedAt @map("updated_at")
+  id            String                  @id @default(cuid())
+  name          String // Nom du chantier
+  startDate     DateTime?               @map("start_date") // Date du premier investissement de PA (null si pas commencé)
+  cost          Int // Coût total en PA
+  spendOnIt     Int                     @default(0) // Nombre de PA investis
+  status        ChantierStatus          @default(PLAN) // plan, in_progress, completed
+  town          Town                    @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId        String                  @map("town_id")
+  createdBy     String                  @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
+  resourceCosts ChantierResourceCost[] // Coûts en ressources optionnels
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
 
   @@unique([name, townId], name: "chantier_name_town_unique")
   @@map("chantiers")
@@ -250,14 +251,15 @@ model ExpeditionEmergencyVote {
 }
 
 model ResourceType {
-  id          Int             @id @default(autoincrement())
-  name        String          @unique
-  emoji       String
-  category    String // 'base', 'transformé'
-  description String?
-  stocks      ResourceStock[] @relation("ResourceTypeToResourceStock")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  id            Int                    @id @default(autoincrement())
+  name          String                 @unique
+  emoji         String
+  category      String // 'base', 'transformé'
+  description   String?
+  stocks        ResourceStock[]        @relation("ResourceTypeToResourceStock")
+  chantierCosts ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
 
   @@map("resource_types")
 }
@@ -280,4 +282,19 @@ model ResourceStock {
   @@unique([locationType, locationId, resourceTypeId])
   @@index([locationType, locationId])
   @@map("resource_stocks")
+}
+
+model ChantierResourceCost {
+  id                  String       @id @default(cuid())
+  chantier            Chantier     @relation(fields: [chantierId], references: [id], onDelete: Cascade)
+  chantierId          String       @map("chantier_id")
+  resourceType        ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId      Int          @map("resource_type_id")
+  quantityRequired    Int          @map("quantity_required") // Quantité totale nécessaire
+  quantityContributed Int          @default(0) @map("quantity_contributed") // Quantité déjà contribuée
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@unique([chantierId, resourceTypeId], name: "chantier_resource_unique")
+  @@map("chantier_resource_costs")
 }

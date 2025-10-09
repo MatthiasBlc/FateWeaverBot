@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../util/db";
 import { actionPointService } from "../services/action-point.service";
+import { chantierService } from "../services/chantier.service";
+import { logger } from "../services/logger";
 
 export const createChantier = async (req: Request, res: Response) => {
   try {
@@ -10,6 +12,7 @@ export const createChantier = async (req: Request, res: Response) => {
       townId,
       discordGuildId,
       createdBy: requestCreatedBy,
+      resourceCosts, // Optional: [{ resourceTypeId: number, quantity: number }]
     } = req.body;
 
     const createdBy =
@@ -52,18 +55,20 @@ export const createChantier = async (req: Request, res: Response) => {
       });
     }
 
-    const chantier = await prisma.chantier.create({
-      data: {
-        name,
-        cost: parseInt(cost, 10),
-        town: { connect: { id: internalTownId } },
-        createdBy,
-      },
+    const chantier = await chantierService.createChantier({
+      name,
+      cost: parseInt(cost, 10),
+      townId: internalTownId,
+      createdBy,
+      resourceCosts: resourceCosts || undefined,
     });
 
-    res.status(201).json(chantier);
+    // Fetch full chantier with resource costs
+    const fullChantier = await chantierService.getChantierById(chantier.id);
+
+    res.status(201).json(fullChantier);
   } catch (error) {
-    console.error("Erreur lors de la création du chantier:", error);
+    logger.error("Error creating chantier", { error });
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
@@ -73,7 +78,7 @@ export const getChantiersByGuild = async (req: Request, res: Response) => {
     const { guildId } = req.params;
     const isDiscordId = /^\d{17,19}$/.test(guildId);
 
-    let whereClause = {};
+    let townId: string;
 
     if (isDiscordId) {
       const guild = await prisma.guild.findUnique({
@@ -84,19 +89,16 @@ export const getChantiersByGuild = async (req: Request, res: Response) => {
       if (!guild || !guild.town) {
         return res.status(404).json({ error: "Guilde ou ville non trouvée" });
       }
-      whereClause = { townId: guild.town.id };
+      townId = guild.town.id;
     } else {
-      whereClause = { townId: guildId };
+      townId = guildId;
     }
 
-    const chantiers = await prisma.chantier.findMany({
-      where: whereClause,
-      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    });
+    const chantiers = await chantierService.getChantiersByTown(townId);
 
     res.json(chantiers);
   } catch (error) {
-    console.error("Erreur lors de la récupération des chantiers:", error);
+    logger.error("Error fetching chantiers", { error });
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
@@ -104,7 +106,7 @@ export const getChantiersByGuild = async (req: Request, res: Response) => {
 export const getChantierById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const chantier = await prisma.chantier.findUnique({ where: { id } });
+    const chantier = await chantierService.getChantierById(id);
 
     if (!chantier) {
       return res.status(404).json({ error: "Chantier non trouvé" });
@@ -112,7 +114,7 @@ export const getChantierById = async (req: Request, res: Response) => {
 
     res.json(chantier);
   } catch (error) {
-    console.error("Erreur lors de la récupération du chantier:", error);
+    logger.error("Error fetching chantier", { error });
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
@@ -137,7 +139,12 @@ export const investInChantier = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Données d'investissement invalides" });
     }
 
-    const chantier = await prisma.chantier.findUnique({ where: { id: chantierId } });
+    const chantier = await prisma.chantier.findUnique({
+      where: { id: chantierId },
+      include: {
+        resourceCosts: true,
+      },
+    });
 
     if (!chantier) {
       return res.status(404).json({ error: "Chantier non trouvé" });
@@ -179,11 +186,18 @@ export const investInChantier = async (req: Request, res: Response) => {
         data: { paTotal: { decrement: pointsToInvest } },
       });
 
+      // Check if all resources are complete
+      const allResourcesComplete = chantier.resourceCosts.every(
+        (rc) => rc.quantityContributed >= rc.quantityRequired
+      );
+      const paComplete = chantier.spendOnIt + pointsToInvest >= chantier.cost;
+      const isCompleted = allResourcesComplete && paComplete;
+
       return await tx.chantier.update({
         where: { id: chantierId },
         data: {
           spendOnIt: { increment: pointsToInvest },
-          status: chantier.spendOnIt + pointsToInvest >= chantier.cost ? "COMPLETED" : "IN_PROGRESS",
+          status: isCompleted ? "COMPLETED" : "IN_PROGRESS",
           startDate: chantier.startDate || new Date(),
         },
       });
@@ -197,7 +211,75 @@ export const investInChantier = async (req: Request, res: Response) => {
       isCompleted: result.status === "COMPLETED",
     });
   } catch (error) {
-    console.error("Erreur lors de l'investissement:", error);
+    logger.error("Error investing in chantier", { error });
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+export const contributeResources = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { characterId, contributions } = req.body;
+
+    // Validate request body
+    if (!characterId) {
+      return res.status(400).json({ error: "characterId est requis" });
+    }
+
+    if (!contributions || !Array.isArray(contributions) || contributions.length === 0) {
+      return res.status(400).json({
+        error: "contributions doit être un tableau non-vide d'objets { resourceTypeId, quantity }",
+      });
+    }
+
+    // Validate each contribution
+    for (const contribution of contributions) {
+      if (
+        typeof contribution.resourceTypeId !== "number" ||
+        typeof contribution.quantity !== "number" ||
+        contribution.quantity <= 0
+      ) {
+        return res.status(400).json({
+          error: "Chaque contribution doit avoir resourceTypeId (number) et quantity (number > 0)",
+        });
+      }
+    }
+
+    // Call service
+    const updatedChantier = await chantierService.contributeResources(
+      id,
+      characterId,
+      contributions
+    );
+
+    res.status(200).json({
+      success: true,
+      chantier: updatedChantier,
+    });
+  } catch (error) {
+    logger.error("Error contributing resources to chantier", { error });
+
+    // Check if error is a known business logic error
+    if (error instanceof Error) {
+      if (
+        error.message.includes("not found") ||
+        error.message.includes("not require") ||
+        error.message.includes("not in the same town")
+      ) {
+        return res.status(404).json({ error: error.message });
+      }
+
+      if (
+        error.message.includes("already completed") ||
+        error.message.includes("is dead") ||
+        error.message.includes("Not enough") ||
+        error.message.includes("Cannot contribute") ||
+        error.message.includes("must be positive")
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+
     res.status(500).json({ error: "Erreur serveur" });
   }
 };

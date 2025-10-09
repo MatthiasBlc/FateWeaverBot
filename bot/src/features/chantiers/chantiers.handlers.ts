@@ -28,6 +28,18 @@ interface ActiveCharacter {
   name: string;
 }
 
+interface ResourceCost {
+  id: string;
+  resourceTypeId: number;
+  quantityRequired: number;
+  quantityContributed: number;
+  resourceType: {
+    id: number;
+    name: string;
+    emoji: string;
+  };
+}
+
 interface Chantier {
   id: string;
   name: string;
@@ -40,6 +52,7 @@ interface Chantier {
   endDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  resourceCosts?: ResourceCost[];
 }
 
 interface InvestResult {
@@ -93,10 +106,22 @@ export async function handleChantiersCommand(interaction: CommandInteraction) {
     // Ajouter une section pour chaque statut
     for (const [statut, listeChantiers] of Object.entries(chantiersParStatut)) {
       const chantiersText = listeChantiers
-        .map(
-          (chantier) =>
-            `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`
-        )
+        .map((chantier) => {
+          let text = `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`;
+
+          // Ajouter les ressources si présentes
+          if (chantier.resourceCosts && chantier.resourceCosts.length > 0) {
+            const resourcesText = chantier.resourceCosts
+              .map(
+                (rc) =>
+                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
+              )
+              .join(" ");
+            text += ` | ${resourcesText}`;
+          }
+
+          return text;
+        })
         .join("\n");
 
       embed.addFields({
@@ -277,6 +302,9 @@ export async function handleParticipateButton(interaction: any) {
         .setCustomId(`invest_modal_${selectedChantierId}`)
         .setTitle(`Investir dans ${selectedChantier.name}`);
 
+      const actionRows: ActionRowBuilder<ModalActionRowComponentBuilder>[] = [];
+
+      // Champ PA (toujours présent)
       const pointsInput = new TextInputBuilder()
         .setCustomId("points_input")
         .setLabel(
@@ -285,16 +313,43 @@ export async function handleParticipateButton(interaction: any) {
           } PA)`
         )
         .setStyle(TextInputStyle.Short)
-        .setRequired(true)
-        .setPlaceholder("Entrez le nombre de PA à investir")
+        .setRequired(false) // Optionnel si ressources requises
+        .setPlaceholder("Entrez le nombre de PA (ou 0)")
         .setMinLength(1)
-        .setMaxLength(2); // Max 2 chiffres (0-99)
+        .setMaxLength(2);
 
-      const firstActionRow =
+      actionRows.push(
         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
           pointsInput,
-        ]);
-      modal.addComponents(firstActionRow);
+        ])
+      );
+
+      // Ajouter champs pour les ressources requises (max 4 ressources)
+      if (selectedChantier.resourceCosts && selectedChantier.resourceCosts.length > 0) {
+        const resourceCosts = selectedChantier.resourceCosts.slice(0, 4); // Max 4 ressources (5 champs max - 1 pour PA)
+
+        for (const rc of resourceCosts) {
+          const remaining = rc.quantityRequired - rc.quantityContributed;
+          const resourceInput = new TextInputBuilder()
+            .setCustomId(`resource_${rc.resourceTypeId}`)
+            .setLabel(
+              `${rc.resourceType.emoji} ${rc.resourceType.name} (max: ${remaining})`
+            )
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setPlaceholder(`0-${remaining}`)
+            .setMinLength(1)
+            .setMaxLength(4);
+
+          actionRows.push(
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
+              resourceInput,
+            ])
+          );
+        }
+      }
+
+      modal.addComponents(...actionRows);
 
       await response.showModal(modal);
 
@@ -538,39 +593,70 @@ export async function handleInvestModalSubmit(
       return;
     }
 
-    let points = parseInt(
-      interaction.fields.getTextInputValue("points_input"),
-      10
-    );
-
-    // Validation des points avec gestion des décimales
+    // Parse PA input (now optional)
     const inputValue = interaction.fields.getTextInputValue("points_input");
-    if (!inputValue || inputValue.trim() === "") {
-      await interaction.reply({
-        content:
-          `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).`,
-        flags: ["Ephemeral"],
-      });
-      return;
+    let points = 0;
+
+    if (inputValue && inputValue.trim() !== "") {
+      // Vérifier si c'est un nombre décimal
+      if (inputValue.includes('.') || inputValue.includes(',')) {
+        await interaction.reply({
+          content:
+            `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
+
+      points = parseInt(inputValue, 10);
+
+      // Validation des points
+      if (isNaN(points) || points < 0) {
+        await interaction.reply({
+          content:
+            `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, 0 ou plus).`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
     }
 
-    // Vérifier si c'est un nombre décimal
-    if (inputValue.includes('.') || inputValue.includes(',')) {
-      await interaction.reply({
-        content:
-          `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
-        flags: ["Ephemeral"],
-      });
-      return;
+    // Parse resource contributions from modal
+    const resourceContributions: { resourceTypeId: number; quantity: number }[] = [];
+
+    if (chantier.resourceCosts && chantier.resourceCosts.length > 0) {
+      for (const rc of chantier.resourceCosts) {
+        try {
+          const fieldValue = interaction.fields.getTextInputValue(`resource_${rc.resourceTypeId}`);
+
+          if (fieldValue && fieldValue.trim() !== "") {
+            const quantity = parseInt(fieldValue.trim(), 10);
+
+            if (isNaN(quantity) || quantity < 0) {
+              await interaction.reply({
+                content: `${STATUS.ERROR} Quantité invalide pour ${rc.resourceType.name}`,
+                flags: ["Ephemeral"],
+              });
+              return;
+            }
+
+            if (quantity > 0) {
+              resourceContributions.push({
+                resourceTypeId: rc.resourceTypeId,
+                quantity,
+              });
+            }
+          }
+        } catch (error) {
+          // Field doesn't exist, skip
+        }
+      }
     }
 
-    points = parseInt(inputValue, 10);
-
-    // Validation des points
-    if (isNaN(points) || points <= 0) {
+    // Validation: at least PA or resources
+    if (points === 0 && resourceContributions.length === 0) {
       await interaction.reply({
-        content:
-          `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, supérieur à zéro).`,
+        content: `${STATUS.ERROR} Veuillez contribuer au moins des PA ou des ressources.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -683,41 +769,98 @@ export async function handleInvestModalSubmit(
       usedAllAvailablePA = true;
     }
 
-    // Vérification finale : si après ajustement il n'y a plus de PA à investir
-    if (points <= 0) {
-      await interaction.reply({
-        content: `${STATUS.ERROR} Vous n'avez pas de points d'action disponibles pour investir dans ce chantier.`,
-        flags: ["Ephemeral"],
-      });
-      return;
+    // Call appropriate API based on what's being contributed
+    let responseMessage = "";
+
+    // Case 1: Only resources (no PA)
+    if (points === 0 && resourceContributions.length > 0) {
+      const result = await apiService.chantiers.contributeResources(
+        chantierId,
+        activeCharacter.id,
+        resourceContributions
+      );
+
+      const resourcesText = resourceContributions
+        .map((rc) => {
+          const rcInfo = chantier.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
+          return `${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
+        })
+        .join(", ");
+
+      responseMessage = `${STATUS.SUCCESS} Vous avez contribué ${resourcesText} au chantier "${chantier.name}".`;
+
+      if (result.chantier.status === "COMPLETED") {
+        responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+
+        const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
+        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      }
     }
+    // Case 2: PA + possibly resources
+    else if (points > 0) {
+      // Adjust PA if needed
+      if (points > remainingPAForChantier) {
+        points = remainingPAForChantier;
+        adjustedForChantierLimit = true;
+      }
 
-    // Appeler l'API pour effectuer l'investissement
-    const result = (await apiService.chantiers.investInChantier(
-      activeCharacter.id,
-      chantierId,
-      points
-    )) as InvestResult;
+      if (activeCharacter.paTotal < points) {
+        points = activeCharacter.paTotal;
+        usedAllAvailablePA = true;
+      }
 
-    let responseMessage = `${STATUS.SUCCESS} Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
+      if (points <= 0 && resourceContributions.length === 0) {
+        await interaction.reply({
+          content: `${STATUS.ERROR} Vous n'avez pas de points d'action disponibles pour investir dans ce chantier.`,
+          flags: ["Ephemeral"],
+        });
+        return;
+      }
 
-    // Ajouter des informations sur les ajustements effectués
-    if (adjustedForChantierLimit) {
-      responseMessage += ` (ajusté aux PA restants nécessaires pour terminer le chantier)`;
-    } else if (usedAllAvailablePA) {
-      responseMessage += ` (tous vos PA disponibles ont été utilisés)`;
-    }
+      // Invest PA first
+      const paResult = (await apiService.chantiers.investInChantier(
+        activeCharacter.id,
+        chantierId,
+        points
+      )) as InvestResult;
 
-    if (result.isCompleted) {
-      responseMessage +=
-        `${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+      responseMessage = `${STATUS.SUCCESS} Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
 
-      // Envoyer un message dans le channel de logs
-      const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
-      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
-    } else {
-      const remainingPA = result.chantier.cost - result.chantier.spendOnIt;
-      responseMessage += `\n${STATUS.STATS} Progression : ${result.chantier.spendOnIt}/${result.chantier.cost} PA (${remainingPA} PA restants)`;
+      if (adjustedForChantierLimit) {
+        responseMessage += ` (ajusté aux PA restants nécessaires)`;
+      } else if (usedAllAvailablePA) {
+        responseMessage += ` (tous vos PA disponibles)`;
+      }
+
+      // Then contribute resources if any
+      if (resourceContributions.length > 0) {
+        const resourceResult = await apiService.chantiers.contributeResources(
+          chantierId,
+          activeCharacter.id,
+          resourceContributions
+        );
+
+        const resourcesText = resourceContributions
+          .map((rc) => {
+            const rcInfo = chantier.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
+            return `${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
+          })
+          .join(", ");
+
+        responseMessage += `\n+ ${resourcesText}`;
+
+        if (resourceResult.chantier.status === "COMPLETED") {
+          responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+
+          const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
+          await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+        }
+      } else if (paResult.isCompleted) {
+        responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+
+        const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
+        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      }
     }
 
     await interaction.reply({

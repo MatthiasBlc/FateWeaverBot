@@ -57,4 +57,19 @@ export class ChantierAPIService extends BaseAPIService {
     const { investInChantier: investInChantierSvc } = await import("../chantiers.service");
     return investInChantierSvc(characterId, chantierId, points);
   }
+
+  /**
+   * Contribue des ressources à un chantier
+   */
+  public async contributeResources(
+    chantierId: string,
+    characterId: string,
+    contributions: { resourceTypeId: number; quantity: number }[]
+  ) {
+    const response = await this.api.post(
+      `/chantiers/${chantierId}/contribute-resources`,
+      { characterId, contributions }
+    );
+    return response.data;
+  }
 }

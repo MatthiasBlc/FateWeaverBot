@@ -354,6 +354,7 @@ export class ExpeditionService {
         duration: expedition.duration,
         townId: expedition.townId,
         createdBy: expedition.createdBy,
+        pendingEmergencyReturn: expedition.pendingEmergencyReturn,
         createdAt: expedition.createdAt,
         updatedAt: expedition.updatedAt,
         returnAt: expedition.returnAt,
@@ -396,6 +397,7 @@ export class ExpeditionService {
       duration: expedition.duration,
       townId: expedition.townId,
       createdBy: expedition.createdBy,
+      pendingEmergencyReturn: expedition.pendingEmergencyReturn,
       createdAt: expedition.createdAt,
       updatedAt: expedition.updatedAt,
       returnAt: expedition.returnAt,
@@ -741,12 +743,7 @@ export class ExpeditionService {
         throw new Error("Can only vote for emergency return on DEPARTED expeditions");
       }
 
-      // Vérifier si l'utilisateur est membre de l'expédition
-      const isMember = expedition.members.some(
-        (member) => member.characterId && member.character // Will be loaded if needed
-      );
-
-      // Actually check userId properly via character relation
+      // Check userId properly via character relation
       const memberCharacters = await tx.character.findMany({
         where: {
           id: { in: expedition.members.map((m) => m.characterId) },
