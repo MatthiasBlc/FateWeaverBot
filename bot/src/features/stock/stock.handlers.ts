@@ -61,35 +61,63 @@ export async function handleViewStockCommand(interaction: any) {
 
     const resources = resourcesResponse as ResourceStock[];
 
-    // Trier les ressources par catégorie : nourriture/vivres d'abord, puis autres
-    const sortedResources = [...resources].sort((a, b) => {
-      const aName = a.resourceType.name.toLowerCase();
-      const bName = b.resourceType.name.toLowerCase();
-
-      // Nourriture et Vivres en premier
-      const isAFood = aName.includes('nourriture') || aName.includes('vivres');
-      const isBFood = bName.includes('nourriture') || bName.includes('vivres');
-
-      if (isAFood && !isBFood) return -1;
-      if (!isAFood && isBFood) return 1;
-
-      // Sinon, ordre alphabétique
-      return aName.localeCompare(bName);
-    });
+    // Définir l'ordre des groupes de ressources (brut, transformation)
+    const resourceOrder = [
+      ['Vivres', 'Nourriture'],
+      ['Bois', 'Planches'],
+      ['Minerai', 'Fer'],
+      ['Tissus', 'Vêtements']
+    ];
 
     // Créer l'embed d'information
-    const totalStock = sortedResources.reduce((sum, resource) => sum + resource.quantity, 0);
+    const totalStock = resources.reduce((sum, resource) => sum + resource.quantity, 0);
     const embed = createCustomEmbed({
       color: getStockColor(totalStock),
       title: `🏙️ Stock de la Ville : ${townResponse.name}`,
       timestamp: true,
     });
 
-    // Ajouter les ressources triées
+    // Construire l'affichage avec groupes et séparateurs
     const resourceLines: string[] = [];
 
-    for (const resource of sortedResources) {
-      resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+    for (let i = 0; i < resourceOrder.length; i++) {
+      const group = resourceOrder[i];
+      const groupResources: ResourceStock[] = [];
+
+      // Trouver les ressources de ce groupe
+      for (const resourceName of group) {
+        const found = resources.find(r =>
+          r.resourceType.name.toLowerCase() === resourceName.toLowerCase()
+        );
+        if (found) {
+          groupResources.push(found);
+        }
+      }
+
+      // Ajouter les ressources trouvées
+      for (const resource of groupResources) {
+        resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+      }
+
+      // Ajouter séparateur visuel entre groupes (sauf après le dernier)
+      if (i < resourceOrder.length - 1 && groupResources.length > 0) {
+        resourceLines.push(''); // Ligne vide pour espacement
+      }
+    }
+
+    // Ajouter les ressources non catégorisées (au cas où)
+    const categorizedNames = resourceOrder.flat().map(n => n.toLowerCase());
+    const uncategorized = resources.filter(r =>
+      !categorizedNames.includes(r.resourceType.name.toLowerCase())
+    );
+
+    if (uncategorized.length > 0) {
+      if (resourceLines.length > 0) {
+        resourceLines.push(''); // Séparateur avant non-catégorisées
+      }
+      for (const resource of uncategorized) {
+        resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+      }
     }
 
     if (resourceLines.length === 0) {
