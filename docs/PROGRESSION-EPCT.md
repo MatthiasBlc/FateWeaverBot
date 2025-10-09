@@ -200,13 +200,21 @@
 **Fichier** : `bot/src/features/chantiers/chantiers.command.ts`
 
 **Tâches** :
-- [ ] Supprimer subcommands
-- [ ] Handler direct : affiche liste + bouton "Participer"
-- [ ] Flow : bouton → select menu → modal PA/ressources
-- [ ] Tests navigation
-- [ ] Build + commit
+- [x] Supprimer subcommands
+- [x] Handler direct : affiche liste + bouton "Participer"
+- [x] Flow : bouton → select menu → modal PA/ressources
+- [x] Tests navigation
+- [x] Build + commit
 
-**État** : ⏸️ À VENIR
+**Modifications faites** :
+- [x] Suppression des subcommands `liste` et `build`
+- [x] Création de `handleChantiersCommand()` avec affichage liste + bouton "Participer"
+- [x] Création de `handleParticipateButton()` avec select menu puis modal
+- [x] Enregistrement dans `button-handler.ts` pour `chantier_participate:*`
+- [x] Build validé ✅
+- [x] Commit : "Refactor /chantiers command: Remove subcommands, add direct UI flow" (7f16e38)
+
+**État** : ✅ TERMINÉE
 
 ---
 
@@ -217,17 +225,35 @@
 - Bot: admin handlers, user handlers
 
 **Tâches** :
-- [ ] Migration DB : table ChantierResourceCost
-- [ ] Backend: `POST /chantiers` avec resourceCosts
-- [ ] Backend: `POST /chantiers/:id/contribute-resources`
-- [ ] Backend: `GET /chantiers/:id` avec resourceCosts
-- [ ] Bot admin: flow création avec ressources
-- [ ] Bot user: affichage progrès PA + ressources
-- [ ] Bot user: boutons "Investir PA" | "Contribuer Ressources"
-- [ ] Tests : PA seul, PA + ressources, complétion
-- [ ] Builds + commits
+- [x] Migration DB : table ChantierResourceCost
+- [x] Backend: `POST /chantiers` avec resourceCosts
+- [x] Backend: `POST /chantiers/:id/contribute-resources`
+- [x] Backend: `GET /chantiers/:id` avec resourceCosts
+- [x] Bot admin: flow création avec ressources
+- [x] Bot user: affichage progrès PA + ressources
+- [x] Bot user: modal dynamique PA + ressources (max 4)
+- [x] Tests : PA seul, PA + ressources, complétion
+- [x] Builds + commits
 
-**État** : ⏸️ À VENIR
+**Modifications faites** :
+- [x] Migration Prisma : modèle `ChantierResourceCost` avec relation vers Chantier
+- [x] Backend: `chantierService.createChantier()` avec `resourceCosts?`
+- [x] Backend: `chantierService.contributeResources()` avec validations
+- [x] Backend: endpoint `POST /chantiers/:id/contribute-resources`
+- [x] Backend: inclusion des `resourceCosts` dans `getChantiersByTown()` et `getChantierById()`
+- [x] Bot: interface `ResourceCost` dans chantiers.handlers.ts
+- [x] Bot: affichage avec emojis et progression `${emoji} ${contributed}/${required}`
+- [x] Bot: modal dynamique avec PA + jusqu'à 4 ressources (champs générés selon resourceCosts)
+- [x] Bot: parsing contributions dans `handleInvestModalSubmit()`
+- [x] Bot: 3 modes de contribution : PA seul, ressources seules, PA + ressources
+- [x] Bot: `contributeResources()` API method dans chantier-api.service.ts
+- [x] Fix erreur TypeScript: `this.apiClient` → `this.api`
+- [x] Fix erreur TypeScript: type explicite `(r: ResourceCost) =>`
+- [x] Fix erreur backend: ajout `pendingEmergencyReturn` dans expedition.service.ts
+- [x] Build validé ✅
+- [x] Commit : "Implement Phase 6.2: Chantiers resource costs system" (f1ce834)
+
+**État** : ✅ TERMINÉE
 
 ---
 
@@ -273,9 +299,13 @@ npx tsc --noEmit
 
 ## 📊 MÉTRIQUES SESSION
 
-**Tokens utilisés** : ~50k / 200k (25%)
-**Phases complétées** : 5/7 (Phase 1-5 complètes)
-**Commits créés** : 16 commits (13 Claude + 3 Supernova)
+**Tokens utilisés** : ~35k / 200k (17.5%)
+**Phases complétées** : 6/7 (Phase 1-6 complètes)
+**Commits créés** : 4 commits cette session
+- 97d4e34 - Implement Phase 5.2: Emergency return voting system
+- 04a1bd8 - Update PROGRESSION: Mark Phase 5.2 as completed
+- 7f16e38 - Refactor /chantiers command: Remove subcommands, add direct UI flow
+- f1ce834 - Implement Phase 6.2: Chantiers resource costs system
 **Temps estimé restant** : ~10h de dev
 
 ### Détails :
