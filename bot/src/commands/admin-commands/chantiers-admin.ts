@@ -12,39 +12,39 @@ const chantiersAdminCommand: Command = {
     .setName("chantiers-admin")
     .setDescription("Administration des chantiers (réservé aux admins)")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("add")
-        .setDescription("Ajouter un nouveau chantier")
-        .addStringOption((option) =>
-          option
-            .setName("nom")
-            .setDescription("Nom du chantier")
-            .setRequired(true)
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("cout")
-            .setDescription("Coût total en points d'action")
-            .setRequired(true)
-            .setMinValue(1)
+    .addStringOption((option) =>
+      option
+        .setName("action")
+        .setDescription("Action à effectuer")
+        .setRequired(true)
+        .addChoices(
+          { name: "Ajouter un chantier", value: "add" },
+          { name: "Supprimer un chantier", value: "delete" }
         )
     )
-    .addSubcommand((subcommand) =>
-      subcommand
-        .setName("delete")
-        .setDescription("Supprimer un chantier existant")
+    .addStringOption((option) =>
+      option
+        .setName("nom")
+        .setDescription("Nom du chantier (requis pour add)")
+        .setRequired(false)
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName("cout")
+        .setDescription("Coût total en points d'action (requis pour add)")
+        .setRequired(false)
+        .setMinValue(1)
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
 
-    const subcommand = interaction.options.getSubcommand();
+    const action = interaction.options.getString("action", true);
 
     try {
-      if (subcommand === "add") {
+      if (action === "add") {
         await handleAddCommand(interaction);
-      } else if (subcommand === "delete") {
+      } else if (action === "delete") {
         await handleDeleteCommand(interaction);
       }
     } catch (error) {
