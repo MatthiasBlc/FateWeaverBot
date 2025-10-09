@@ -518,52 +518,48 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
   }
 }
 
-export async function handleAddCommand(interaction: CommandInteraction) {
+/**
+ * Handler pour la commande /chantiers-admin add
+ * Ouvre un modal pour saisir nom et coût PA
+ */
+export async function handleAddChantierCommand(interaction: ChatInputCommandInteraction) {
   try {
-    // Vérifier que l'utilisateur est admin avant de créer un chantier
+    // Vérifier que l'utilisateur est admin
     const isUserAdmin = await checkAdmin(interaction);
     if (!isUserAdmin) return;
 
-    // Vérifier que c'est une commande slash avec options
-    if (!interaction.isChatInputCommand()) return;
+    // Créer le modal de création de chantier
+    const modal = new ModalBuilder()
+      .setCustomId("chantier_create_modal")
+      .setTitle("Créer un nouveau chantier");
 
-    const chatInputInteraction = interaction as ChatInputCommandInteraction;
+    const nameInput = new TextInputBuilder()
+      .setCustomId("chantier_name")
+      .setLabel("Nom du chantier")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(100)
+      .setPlaceholder("Ex: Construction du pont");
 
-    // Récupérer les options
-    const nom = chatInputInteraction.options.getString("nom");
-    const cout = chatInputInteraction.options.getInteger("cout");
+    const costInput = new TextInputBuilder()
+      .setCustomId("chantier_cost")
+      .setLabel("Coût en points d'action (PA)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(1)
+      .setMaxLength(4)
+      .setPlaceholder("Ex: 100");
 
-    // Vérifier que les options requises sont présentes
-    if (!nom || cout === null) {
-      await interaction.reply({
-        content:
-          `${STATUS.ERROR} Erreur: Les paramètres 'nom' et 'cout' sont requis pour créer un chantier.`,
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
-    // Créer le chantier
-    const result = await apiService.chantiers.createChantier(
-      {
-        name: nom,
-        cost: cout,
-        guildId: chatInputInteraction.guildId!,
-      },
-      interaction.user.id
+    modal.addComponents(
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(costInput)
     );
 
-    // Répondre avec le résultat
-    await chatInputInteraction.reply({
-      content: `✅ Chantier "${result.name}" créé avec succès !\n${STATUS.STATS} Coût: ${
-        result.cost
-      } PA\n📋 Statut: ${getStatusText(result.status)}`,
-      flags: ["Ephemeral"],
-    });
+    await interaction.showModal(modal);
   } catch (error) {
-    logger.error("Erreur lors de la création du chantier :", { error });
+    logger.error("Erreur lors de l'ouverture du modal de création:", { error });
     await interaction.reply({
-      content: "Une erreur est survenue lors de la création du chantier.",
+      content: "❌ Erreur lors de l'ouverture du formulaire de création.",
       flags: ["Ephemeral"],
     });
   }
@@ -789,11 +785,15 @@ export async function handleInvestModalSubmit(
 
       responseMessage = `${STATUS.SUCCESS} Vous avez contribué ${resourcesText} au chantier "${chantier.name}".`;
 
+      // Log contribution
+      const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${resourcesText} au chantier "**${chantier.name}**".`;
+      await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
+
       if (result.chantier.status === "COMPLETED") {
         responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
 
-        const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
-        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+        const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+        await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
       }
     }
     // Case 2: PA + possibly resources
@@ -849,17 +849,27 @@ export async function handleInvestModalSubmit(
 
         responseMessage += `\n+ ${resourcesText}`;
 
+        // Log contribution with PA + resources
+        const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${points} PA et ${resourcesText} au chantier "**${chantier.name}**".`;
+        await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
+
         if (resourceResult.chantier.status === "COMPLETED") {
           responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
 
-          const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
-          await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+          const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
         }
-      } else if (paResult.isCompleted) {
-        responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+      } else {
+        // Log contribution with only PA
+        const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${points} PA au chantier "**${chantier.name}**".`;
+        await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
-        const logMessage = `🏗️ Le chantier "**${chantier.name}**" a été terminé par **${activeCharacter.name}** !`;
-        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+        if (paResult.isCompleted) {
+          responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+
+          const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
+        }
       }
     }
 

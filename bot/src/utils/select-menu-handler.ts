@@ -222,6 +222,22 @@ export class SelectMenuHandler {
     // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
+
+    // Gestionnaire pour la sélection de ressource lors de la création de chantier
+    this.registerHandler("chantier_select_resource", async (interaction) => {
+      try {
+        const { handleResourceSelect } = await import(
+          "../features/chantiers/chantier-creation.js"
+        );
+        await handleResourceSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier select resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

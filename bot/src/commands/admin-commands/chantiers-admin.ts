@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteract
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
-  handleAddCommand,
+  handleAddChantierCommand,
   handleDeleteCommand,
 } from "../../features/chantiers/chantiers.handlers";
 
@@ -21,19 +21,6 @@ const chantiersAdminCommand: Command = {
           { name: "Ajouter un chantier", value: "add" },
           { name: "Supprimer un chantier", value: "delete" }
         )
-    )
-    .addStringOption((option) =>
-      option
-        .setName("nom")
-        .setDescription("Nom du chantier (requis pour add)")
-        .setRequired(false)
-    )
-    .addIntegerOption((option) =>
-      option
-        .setName("cout")
-        .setDescription("Coût total en points d'action (requis pour add)")
-        .setRequired(false)
-        .setMinValue(1)
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -43,7 +30,7 @@ const chantiersAdminCommand: Command = {
 
     try {
       if (action === "add") {
-        await handleAddCommand(interaction);
+        await handleAddChantierCommand(interaction);
       } else if (action === "delete") {
         await handleDeleteCommand(interaction);
       }

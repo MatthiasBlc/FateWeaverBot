@@ -250,3 +250,96 @@ Expedition info
 
 ✅Ajouter la liste des membres dans expédition-admin
 ✅Bouton gérer les membres expédition-admin
+
+## ✅ fichier config emoji (COMPLÉTÉ)
+
+✅ Regrouper les emoji dans un fichier de "config" pour que l'on puisse les changer partout tous d'un coup plus facilement
+-> Fichier créé : `bot/src/constants/emojis.ts`
+
+## Update des commandes
+
+### Commandes Utilisateurs
+
+✅ /help
+-> ✅ actualiser et rendre plus lisible avec des catégories etc (COMPLÉTÉ - Phase 3.2)
+
+✅ /profil (COMPLÉTÉ - Phase 4)
+-> ✅ un bouton "manger" et un "manger +". si faim <=0 ou >=4 alors on affiche ces boutons.
+
+    -> ✅ En Ville (pas dans une expédition avec status : DEPARTED)
+      -> ✅ le bouton "manger" fait manger 1 de nourriture venant de la ville, s'il n'y en a pas, il fait manger 1 vivre venant de la ville, s'il n'y en a pas erreur (plus rien à manger en ville).
+      -> ✅ le bouton "manger +" ouvre un message éphémère avec : état de la faim, état des stocks de vivres dans la ville et nourriture dans la ville avec une alerte de pénurie. La nourriture n'apparait que si la ressource nourriture existe dans le ResourceStock de la ville du character. Ce message propose 4 boutons:
+        -> ✅ manger 1 vivre (venant du stock de la ville)
+        -> ✅ manger 1 nourriture (venant du stock de la ville). Le bouton nourriture n'apparait que si le stock de nourriture >0 dans le ResourceStock de la ville du character
+        -> ✅ manger à sa faim des vivres (mange des vivres jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de vivre consommé. S'il faut consommer 3 vivres mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux vivres. Le bouton ne s'affiche que s'il faut consommer plus d'un seul vivre pour être à 4/4.
+        -> ✅ manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de la ville.
+    -> ✅ En Expédition avec status : DEPARTED
+      -> ✅ le bouton "manger" fait manger 1 de nourriture venant de l'Expédition, s'il n'y en a pas, il fait manger 1 vivre venant de l'Expédition, s'il n'y en a pas erreur (plus rien à manger dans l'Expédition).
+      -> ✅ le bouton "manger +" ouvre un message éphémère avec : état de la faim, état des stocks de vivres dans l'Expédition et nourriture dans l'Expédition avec une alerte de pénurie. La nourriture n'apparait que si la ressource nourriture existe dans le ResourceStock de l'Expédition du character. Ce message propose 4 boutons:
+        -> ✅ manger 1 vivre (venant du stock de l'Expédition)
+        -> ✅ manger 1 nourriture (venant du stock de l'Expédition). Le bouton nourriture n'apparait que si le stock de nourriture >0 dans le ResourceStock de l'Expédition du character
+        -> ✅ manger à sa faim des vivres (mange des vivres jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de vivre consommé. S'il faut consommer 3 vivres mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux vivres. Le bouton ne s'affiche que s'il faut consommer plus d'un seul vivre pour être à 4/4.
+        -> ✅ manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de l'Expédition.
+
+✅ /stock (COMPLÉTÉ - Phase 3.1)
+-> ✅ retirer 👤 Votre Personnage **character name** (**faim**)
+-> ✅ retirer le total de ressources
+-> ✅ retirer cette phrase : Stock actuel de toutes les ressources de la ville Owl's Lab City (ville de votre personnage ChatMot).
+-> ✅ trier les ressources par types : nourriture + vivres et le reste (tout de même groupé deux par deux, produit brut puis sa transformation)
+-> ✅ ok comme ça pour l'instant, semble fonctionner correctement
+
+✅ /foodstock (COMPLÉTÉ - Phase 1)
+-> ✅ Commande supprimée (plus utilisée)
+
+✅ /manger (COMPLÉTÉ - Phase 1)
+-> ✅ Commande supprimée (plus utilisée)
+
+✅ /ping (COMPLÉTÉ - Phase 1)
+-> ✅ Commande supprimée (plus utilisée)
+
+✅ /expedition (COMPLÉTÉ - Phases 5.1 + 5.2)
+-> ✅ Ne devrait plus avoir de sous commandes (tout est géré par la commande /expedition directement avec des boutons)
+
+-> ✅ lorsque l'on est dans une expédition qui n'est pas encore en status DEPARTED, un bouton "transferer la nourriture" doit ouvrir une modale avec deux champs et gérer les deux ressources en transfert. il doit aussi gérer de manière ergonomique le transfert de vivres et / ou nourriture vers la ville et inversement. Un second bouton quitter l'expédition doit être présent. (COMPLÉTÉ - Phase 5.1)
+-> ✅ lorsque l'on est dans une expédition en status DEPARTED, il devrait y avoir un bouton "retour de l'expédition en urgence".
+Ce bouton agit comme un togglable, si au moins la moitié des membres d'une expédition (hors isdead true ou agonie) appuie sur le bouton, alors l'expédition est retournée en urgence. Rappuyer sur le bouton doit annuler l'opt-in pour le retour en urgence. Un retour en urgence validé fait rentrer l'expédition lors du prochain cron avec le status RETURNED, a condition que tous les membres ne soient pas en isdead = true à ce moment là. (COMPLÉTÉ - Phase 5.2)
+
+✅ /chantiers (COMPLÉTÉ - Phases 6.1 + 6.2)
+-> ✅ actuellement la commande a deux sous commandes : liste et build.
+-> ✅ Remplacer par une commande sans sous commande : /chantier donne la liste des chantiers, un bouton "participer" renvoie sur l'ancien message de build : liste déroulante des chantiers, choix de celui pour lequel l'on veut participer, modale demandant le nombre de PA et gérant toutes les erreurs, investissement des PA dans le chantier.
+->-> ✅ Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources) (voir commande chantier-admin)
+
+✅ /chantiers-admin (COMPLÉTÉ - Phase 6.2)
+-> ✅ Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources)
+
+### ✅ Étape 2 – Refactor du bot (COMPLÉTÉE)
+
+- ✅ Composants modulaires et DRY
+- ✅ Services, utils et constantes regroupés
+- ✅ ARCHITECTURE.md créé
+
+### ✅ Étape 6 – Isolation contexte (COMPLÉTÉ)
+
+**Objectif** : Projet "Claude-friendly"
+
+**Réalisé :**
+
+- ✅ Système 3-tier créé (.claude/context-optimization.md)
+- ✅ CLAUDE.md optimisé (214 → 52 lignes, -75%)
+- ✅ Docs organisées (.claude/ + docs/archive/)
+- ✅ Économie ~1,050 tokens par session
+
+### 📘 Étape 8 – Documentation (COMPLÉTÉ)
+
+**Fichiers créés :**
+
+- ✅ bot/ARCHITECTURE.md
+- ✅ .claude/reference.md
+- ✅ .claude/collaboration.md
+- ✅ docs/refactoring-progress.md
+- ✅ docs/archive/README.md
+
+/chantiers EN COURS
+-> il faut un message log indiquant quel character a mis combienbien de pa et/ ou de ressources dans les chantiers.
+-> il faut un message log indiquant qu'un chantier est terminé.
+-> le cas ou un character termine une chantier, il faut les deux messages l'un après l'autre. Peut être que dans le message indiquant qu'un chantier est terminé il ne faut pas indiquer à nouveau par qui pour ne pas saturer l'information.

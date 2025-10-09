@@ -427,6 +427,38 @@ export class ButtonHandler {
         });
       }
     });
+
+    // Gestionnaire pour le bouton "Ajouter une ressource" lors de la création de chantier
+    this.registerHandler("chantier_add_resource", async (interaction) => {
+      try {
+        const { handleAddResourceButton } = await import(
+          "../features/chantiers/chantier-creation.js"
+        );
+        await handleAddResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier add resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Créer le chantier" (création finale)
+    this.registerHandler("chantier_create_final", async (interaction) => {
+      try {
+        const { handleCreateFinalButton } = await import(
+          "../features/chantiers/chantier-creation.js"
+        );
+        await handleCreateFinalButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier create final button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création du chantier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
   /**
    * Enregistre un gestionnaire pour tous les boutons commençant par un préfixe

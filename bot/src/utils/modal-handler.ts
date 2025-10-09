@@ -247,6 +247,43 @@ export class ModalHandler {
     // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
+
+    // Gestionnaire pour le modal de création de chantier
+    this.registerHandler("chantier_create_modal", async (interaction) => {
+      try {
+        const { handleChantierCreateModal } = await import(
+          "../features/chantiers/chantier-creation.js"
+        );
+        await handleChantierCreateModal(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier create modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création du chantier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de quantité de ressource pour chantier
+    this.registerHandler(
+      "chantier_resource_quantity_",
+      async (interaction) => {
+        try {
+          const { handleResourceQuantityModal } = await import(
+            "../features/chantiers/chantier-creation.js"
+          );
+          await handleResourceQuantityModal(interaction);
+        } catch (error) {
+          logger.error("Error handling chantier resource quantity modal:", {
+            error,
+          });
+          await interaction.reply({
+            content: "❌ Erreur lors de l'ajout de la ressource.",
+            flags: ["Ephemeral"],
+          });
+        }
+      }
+    );
   }
 
   /**

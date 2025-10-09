@@ -1,13 +1,9 @@
 ## Update des commandes
 
 ✅
-
 Point sur les CRON ????
 
 ### Commandes Utilisateurs
-
-✅ /help
-✅-> Parfait
 
 /profil (COMPLÉTÉ - Phase 4)
 -> un bouton "manger" et un "manger +". si faim <=0 ou >=4 alors on affiche ces boutons.
@@ -27,11 +23,6 @@ Point sur les CRON ????
         ->  manger à sa faim des vivres (mange des vivres jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de vivre consommé. S'il faut consommer 3 vivres mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux vivres. Le bouton ne s'affiche que s'il faut consommer plus d'un seul vivre pour être à 4/4.
         ->  manger à sa faim de la nourriture (mange des nourritures jusqu'a être a 4/4 en faim), entre parenthèse il doit y avoir le nombre de nourriture consommé. S'il faut consommer 3 nourritures mais qu'il en reste 2, alors mettre 2 entre parenthèse et ne consommer que deux nourritures. Le bouton ne s'affiche que s'il faut consommer plus d'une seule nourriture pour être à 4/4. le bouton ne s'affiche que s'il y a au minimum 2 nourriture en stock de l'Expédition.
 
-/stock
--> Les ressources sont groupées tout de même groupé deux par deux, produit brut puis sa transformation.
--> ajouter un petit espace ou un séparateur (fais une proposition ergonomique et esthétique) entre les groupes. cet espace / séparateur sera représenté "" dans la liste ci-dessous
--> lorsque tout les ressources sont dans la ville, la liste devrai être : vivres, nourriture, "" , bois, planches, "", minerai, fer, "", tissus
-
 /expedition (COMPLÉTÉ - Phases 5.1 + 5.2)
 -> Ne devrait plus avoir de sous commandes (tout est géré par la commande /expedition directement avec des boutons)
 -> ⚠️ le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer) - À INVESTIGUER
@@ -41,32 +32,7 @@ Ce bouton agit comme un togglable, si au moins la moitié des membres d'une exp�
 -> ⏸️ il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition. - À TESTER
 -> ⏸️ Nombreux tests de fonctionnalité à faire et de CRON. - PHASE 7
 
-/chantiers (COMPLÉTÉ - Phases 6.1 + 6.2)
--> actuellement la commande a deux sous commandes : liste et build.
--> Remplacer par une commande sans sous commande : /chantier donne la liste des chantiers, un bouton "participer" renvoie sur l'ancien message de build : liste déroulante des chantiers, choix de celui pour lequel l'on veut participer, modale demandant le nombre de PA et gérant toutes les erreurs, investissement des PA dans le chantier.
-->-> Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources) (voir commande chantier-admin)
-
 ### Commandes Administrateur
-
-/help-admin
--> Parfait
-
-/config-channel
-->rename en config-channel-admin
--> fonctionne bien
-
-/season-admin
--> fonctionne bien
-
-/character-admin
--> Bontons ajouter et retirer capacités ne fonctionnent plus "Échec de l'interaction"
-
-/stock-admin
--> fonctionne bien
 
 /expedition-admin
 -> A tester en profondeur
-
-/chantiers-admin (COMPLÉTÉ - Phase 6.2)
--> Passage en une seule comamnde avec plus de sous commandes.
--> Actuellement, un chantier a un nom et ne coute que des PA. Il faudrait qu'un chantier puisse avoir un cout supllémentaire dans nimporte quelle ressource. (une ou plusieurs ressources)

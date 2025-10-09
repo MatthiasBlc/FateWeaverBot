@@ -272,7 +272,7 @@ export async function handleCapabilitySelect(
       ? createSuccessEmbed('Ajout de capacités', results.join('\n')).setFooter({
           text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ajoutée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
         })
-      : createErrorEmbed('Suppression de capacités', results.join('\n')).setFooter({
+      : createSuccessEmbed('Suppression de capacités', results.join('\n')).setFooter({
           text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} retirée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
         });
 

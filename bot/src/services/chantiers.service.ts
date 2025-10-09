@@ -11,7 +11,12 @@ export async function getChantiersByServer(guildId: string) {
 }
 
 export async function createChantier(
-  chantierData: { name: string; cost: number; guildId: string },
+  chantierData: {
+    name: string;
+    cost: number;
+    guildId: string;
+    resourceCosts?: { resourceTypeId: number; quantity: number }[];
+  },
   userId: string
 ) {
   try {
