@@ -98,8 +98,7 @@ export async function handleEatButton(interaction: any, character: any) {
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
-      `🍽️ **${character.name || user.username}** a pris un repas, il reste **${
-        eatResult.town.foodStock
+      `🍽️ **${character.name || user.username}** a pris un repas, il reste **${eatResult.town.foodStock
       }** de vivres dans ${stockSource}`
     );
   } catch (error: any) {
@@ -171,7 +170,7 @@ export async function handleEatAlternativeButton(
     if (!character) {
       await interaction.editReply({
         content:
-          "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+          "❌ Vous devez d'abord créer un personnage avec la commande `/profil`.",
         components: [],
       });
       return;
@@ -211,10 +210,8 @@ export async function handleEatAlternativeButton(
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
-      `🍽️ **${
-        character.name || user.username
-      }** a mangé de la nourriture, il reste **${
-        eatResult.town.foodStock
+      `🍽️ **${character.name || user.username
+      }** a mangé de la nourriture, il reste **${eatResult.town.foodStock
       }** de ${eatResult.resourceTypeConsumed} dans ${stockSource}`
     );
   } catch (error: any) {

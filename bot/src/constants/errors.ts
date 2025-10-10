@@ -11,7 +11,7 @@ export const ERROR_MESSAGES = {
 
   // Character errors
   CHARACTER_NOT_FOUND: "Personnage non trouvé",
-  NO_ACTIVE_CHARACTER: "Vous devez d'abord créer un personnage avec la commande `/start`",
+  NO_ACTIVE_CHARACTER: "Vous devez d'abord créer un personnage avec la commande `/profil`",
   CHARACTER_CREATION_REQUIRED: "Vous devez créer un personnage pour utiliser cette commande",
 
   // User errors

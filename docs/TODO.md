@@ -1,6 +1,4 @@
 -------------------------Todo-------------------------
-Update the push
-
 Seul un personnage en vie en dépression a l'effet dépression.
 
 # Features, debug et tests
@@ -11,6 +9,9 @@ si le character a faim à 0 et agonie, il ne peut pas être soigné (bouton gris
 
 tomber en agnonie ne baisse pas pv et pm ????
 
+
+Automatiser conso de transformé puis normal ? 
+
 Update du système de faim :
 la faim diminue de 1 point toutes les 24h
 
@@ -20,6 +21,8 @@ Status :
 2 → faim
 1 → affamé ( regénère 1PA en moins lors de l'actualisation quotidienne. Cette action se fait lorsque l'on passe de 2(faim) à 1(affamé).)
 0 → agonie (passe directement le personnage en agonie, soit 1pv )
+
+revoir bouton manger
 
 Update du système de vie / PV:
 
@@ -43,11 +46,23 @@ Expéd
 2 PA/case/jour
 -> ⏸️ Nombreux tests de fonctionnalité à faire et de CRON. - PHASE 7
 
+Quand on crée une exped avec plus de ressources qu'il n'y en a en ville → message d'erreur
+Comme dans les Chantiers, ce serait cool si le stock Vivres/Repas apparaissait quand on crée
+Quand on transfère de la nourriture via les expeds, "Ville" apparaît au lieu de "Village (+ emote à changer 🏘️ ) (screen 2)
+Idem après le transfert (screen 3)
+
+
+
 /profil
 -> Pour toutes les actions de manger : nouveaux logs utilisants les nouveaux emojis "thorynest a mangé X **resourceType** , il reste YY de \*\*ResourceType dans la ville"
 
 /expedition-admin
 -> A tester en profondeur
+On peut dire qu'on ajoute + de nourriture qu'existant dans le village MAIS cette nourriture n'apparaît ni dans l'exped, ni dans le village
+Techniquement, c'est un bug mais je pense qu'on s'en fout, vu que ce n'est que pour nous et qu'on a pas trop de raison de faire ça (screen 1)
+la modif du temps d'exped fonctionne bien, mais pas le stock Nourriture (et ce n'est pas très clair si on leur ajoute de la nourriture ? Des vivres ? Quid des cataplasmes ?)
+On ne peut pas Gérer les membres s'il n'y en a qu'un (sûrement parce que retirer ce membre arrêterait l'exped)
+Expédition avec un mort ? 
 
 ##Tests urgents
 Tester les interractions d'expéditions avec plusieurs personnages
@@ -62,11 +77,29 @@ Capacité
 capacité hiver
 capacité en "+"
 
+Analyser : erreur ❌
+Auspice : erreur ❌
+Bûcheronner ✅
+Cartographier : erreur ❌
+Chasser ✅
+Cueillir ✅
+Cuisiner : erreur ❌
+Divertir ⚠️ ne fonctionne pas comme devrait
+Forger : erreur ❌
+Miner : erreur ❌
+Pêcher ✅  ⁉️ → comment utilise-t-on 2PA pour table bonus ?
+Soigner : erreur ❌
+Tisser : erreur ❌
+Travailler le bois : erreur ❌
+
 Artisanat
 Pour l’artisanat, tu veux probablement des stocks distincts dans la ville (minerai, tissu, métal, planches, etc.).
 → Il faudra élargir le modèle Foodstock ou créer un ResourceStock multi-type.
 
+Seules 4 s'affichent, Tout doit apparaitre
+
 Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
+Cataplasme : limite à 3 dans le monde (exped + ville)
 
 Instinct ?
 
@@ -101,6 +134,39 @@ Système de réapprovisionnement automatique des vivres via des chantiers ??
 logs de la création de personnages
 
 lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
+
+# Contenu / texte
+
+/help
+Le terme "Survie" me gêne un peu, c'est plus large mais j'ai pas mieux pour l'instant (et 🍖 → 🍞)
+"Aventure" → "Expéditions" non ? (plutôt 🏕️ )
+"Communauté" → "Chantiers"
+Après lecture de tout ça, je me demande si je ne ferais pas plutôt 
+👤 Perso
+Profil
+🏘️ Village 
+Stocks
+Chantiers
+🏕️ Expéditions
+Texte guilde à remplacer par serveur
+
+/profil
+retrait de l'img
+Ajout : classe métier, compétence, inventaire
+Revoir bouton manger 
+bouton cataplasme ?
+
+/chantier
+mettre le nombre présent en ville (et le max)
+synchro max et ce qui est cohérent (reste à mettre)
+S'il n'y a pas assez de ressources, le message n'est pas clair (screen 2).
+(note : les PA sont bien dépensées mais pas aucune ressource, même jusqu'au seuil)
+
+
+/season-admin
+changer l'emoji par saison
+
+personaliser message de mort
 
 # Optimisations
 

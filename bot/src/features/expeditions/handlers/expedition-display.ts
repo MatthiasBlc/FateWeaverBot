@@ -35,7 +35,7 @@ export async function handleExpeditionMainCommand(
     } catch (error: any) {
       if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.",
+          content: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/profil` pour créer un personnage.",
           flags: ["Ephemeral"],
         });
         return;
