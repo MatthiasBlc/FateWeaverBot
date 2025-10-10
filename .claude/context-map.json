@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Carte intelligente du contexte FateWeaverBot - Utilisé par context-helper.js",
+  "updated": "2025-10-08",
+
+  "always_load": {
+    "description": "Fichiers lus automatiquement à chaque session (contexte minimal)",
+    "files": [
+      "CLAUDE.md"
+    ],
+    "tokens_estimate": 350,
+    "why": "Point d'entrée essentiel, très léger, toujours pertinent"
+  },
+
+  "on_demand": {
+    "architecture": {
+      "description": "Architecture complète du bot et backend",
+      "patterns": [
+        ".claude/reference.md",
+        "bot/ARCHITECTURE.md"
+      ],
+      "tokens_estimate": 1500,
+      "triggers": [
+        "add feature",
+        "modify architecture",
+        "understand structure",
+        "new command",
+        "refactor",
+        "organize code"
+      ]
+    },
+
+    "collaboration": {
+      "description": "Protocole Supernova et collaboration",
+      "patterns": [
+        ".claude/collaboration.md"
+      ],
+      "tokens_estimate": 800,
+      "triggers": [
+        "supernova",
+        "repetitive task",
+        "multi-step",
+        "refactoring",
+        "migration",
+        "batch operations"
+      ]
+    },
+
+    "refactoring": {
+      "description": "État du refactoring et progression",
+      "patterns": [
+        "docs/refactoring-progress.md"
+      ],
+      "tokens_estimate": 600,
+      "triggers": [
+        "continue refactoring",
+        "refactoring status",
+        "what was done",
+        "phases completed"
+      ]
+    },
+
+    "tasks": {
+      "description": "Liste des tâches et TODOs",
+      "patterns": [
+        "docs/TODO.md"
+      ],
+      "tokens_estimate": 400,
+      "triggers": [
+        "what to do",
+        "next task",
+        "todo",
+        "roadmap",
+        "planned features"
+      ]
+    },
+
+    "context_system": {
+      "description": "Système de contexte optimisé (meta)",
+      "patterns": [
+        ".claude/context-optimization.md"
+      ],
+      "tokens_estimate": 500,
+      "triggers": [
+        "how context works",
+        "optimize tokens",
+        "context system"
+      ]
+    }
+  },
+
+  "code_contexts": {
+    "expeditions": {
+      "description": "Système d'expéditions",
+      "glob": "bot/src/features/expeditions/**/*.ts",
+      "exclude": ["**/*.test.ts", "**/dist/**", "**/node_modules/**"],
+      "key_files": [
+        "bot/src/features/expeditions/expedition.command.ts",
+        "bot/src/features/expeditions/handlers/"
+      ],
+      "related": ["utils", "api_service"],
+      "tokens_estimate": 3000
+    },
+
+    "chantiers": {
+      "description": "Système de chantiers communautaires",
+      "glob": "bot/src/features/chantiers/**/*.ts",
+      "exclude": ["**/*.test.ts", "**/dist/**"],
+      "key_files": [
+        "bot/src/features/chantiers/chantiers.command.ts",
+        "bot/src/features/chantiers/chantiers.handlers.ts"
+      ],
+      "related": ["utils", "api_service"],
+      "tokens_estimate": 2500
+    },
+
+    "admin": {
+      "description": "Features d'administration",
+      "glob": "bot/src/features/admin/**/*.ts",
+      "exclude": ["**/*.test.ts", "**/dist/**"],
+      "key_files": [
+        "bot/src/features/admin/character-admin.command.ts",
+        "bot/src/features/admin/stock-admin.command.ts",
+        "bot/src/features/admin/expedition-admin.handlers.ts"
+      ],
+      "related": ["utils", "api_service"],
+      "tokens_estimate": 2000
+    },
+
+    "hunger": {
+      "description": "Système de faim et nourriture",
+      "glob": "bot/src/features/hunger/**/*.ts",
+      "exclude": ["**/*.test.ts", "**/dist/**"],
+      "key_files": [
+        "bot/src/features/hunger/hunger.handlers.ts"
+      ],
+      "related": ["utils", "api_service"],
+      "tokens_estimate": 1500
+    },
+
+    "users": {
+      "description": "Profils utilisateurs et personnages",
+      "glob": "bot/src/features/users/**/*.ts",
+      "exclude": ["**/*.test.ts", "**/dist/**"],
+      "key_files": [
+        "bot/src/features/users/users.handlers.ts"
+      ],
+      "related": ["utils", "api_service"],
+      "tokens_estimate": 2500
+    },
+
+    "utils": {
+      "description": "Utilitaires partagés (embeds, validation, formatters)",
+      "glob": "bot/src/utils/*.ts",
+      "exclude": ["**/*.test.ts"],
+      "key_files": [
+        "bot/src/utils/embeds.ts",
+        "bot/src/utils/character-validation.ts",
+        "bot/src/utils/interaction-helpers.ts",
+        "bot/src/utils/discord-components.ts"
+      ],
+      "tokens_estimate": 2000
+    },
+
+    "handlers": {
+      "description": "Gestionnaires centralisés (buttons, modals, menus)",
+      "files": [
+        "bot/src/utils/button-handler.ts",
+        "bot/src/utils/modal-handler.ts",
+        "bot/src/utils/select-menu-handler.ts"
+      ],
+      "related": ["utils"],
+      "tokens_estimate": 1500
+    },
+
+    "api_service": {
+      "description": "Services API et communication backend",
+      "glob": "bot/src/services/**/*.ts",
+      "exclude": ["**/*.test.ts"],
+      "key_files": [
+        "bot/src/services/api/index.ts",
+        "bot/src/services/httpClient.ts",
+        "bot/src/services/logger.ts"
+      ],
+      "tokens_estimate": 1000
+    },
+
+    "backend": {
+      "description": "Backend API (si modification backend nécessaire)",
+      "patterns": [
+        "backend/src/controllers/**/*.ts",
+        "backend/src/routes/**/*.ts",
+        "backend/src/services/**/*.ts"
+      ],
+      "exclude": ["**/node_modules/**", "**/dist/**"],
+      "tokens_estimate": 5000
+    }
+  },
+
+  "common_scenarios": {
+    "fix_bug": {
+      "description": "Corriger un bug",
+      "load": ["always_load", "related_feature"],
+      "suggestion": "Identifie d'abord quelle feature est concernée"
+    },
+
+    "add_feature": {
+      "description": "Ajouter une nouvelle feature",
+      "load": ["always_load", "architecture", "utils", "handlers", "api_service"],
+      "suggestion": "Charge architecture pour comprendre les patterns"
+    },
+
+    "refactor": {
+      "description": "Refactoring code",
+      "load": ["always_load", "collaboration", "refactoring", "target_code"],
+      "suggestion": "Utilise Supernova pour tâches répétitives"
+    },
+
+    "debug": {
+      "description": "Débugger un problème",
+      "load": ["always_load", "related_feature", "utils", "api_service"],
+      "suggestion": "Concentre sur la feature spécifique + utils utilisés"
+    },
+
+    "continue_work": {
+      "description": "Continuer le travail précédent",
+      "load": ["always_load", "tasks", "last_modified_files"],
+      "suggestion": "Charge TODO.md + fichiers modifiés récemment"
+    }
+  },
+
+  "smart_rules": {
+    "description": "Règles intelligentes pour optimisation contexte",
+    "rules": [
+      {
+        "if": "file modified in last session",
+        "then": "suggest loading that feature context"
+      },
+      {
+        "if": "TODO.md mentions specific feature",
+        "then": "suggest loading that feature"
+      },
+      {
+        "if": "task contains 'all features' or 'global'",
+        "then": "suggest loading architecture + all code_contexts"
+      },
+      {
+        "if": "task mentions 'supernova' or 'repetitive'",
+        "then": "load collaboration.md"
+      },
+      {
+        "if": "task is 'continue' or 'resume'",
+        "then": "load last session context"
+      }
+    ]
+  },
+
+  "token_budget": {
+    "description": "Budget tokens recommandé par type de session",
+    "light": {
+      "tokens": 5000,
+      "load": ["always_load", "one code_context"]
+    },
+    "medium": {
+      "tokens": 15000,
+      "load": ["always_load", "architecture", "2-3 code_contexts"]
+    },
+    "heavy": {
+      "tokens": 30000,
+      "load": ["always_load", "architecture", "all related contexts"]
+    },
+    "full": {
+      "tokens": 50000,
+      "load": ["everything"],
+      "warning": "Utiliser seulement si absolument nécessaire"
+    }
+  }
+}
