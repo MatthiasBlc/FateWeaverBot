@@ -115,13 +115,14 @@ export class CharacterService {
 
   async createCharacter(data: CreateCharacterData): Promise<Character> {
     return await prisma.$transaction(async (tx) => {
-      // Désactiver tous les autres personnages actifs de cet utilisateur dans cette ville
+      // RÈGLE MÉTIER CRITIQUE : Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
+      // Désactiver TOUS les personnages actifs (morts ou vivants) avant de créer le nouveau
       await tx.character.updateMany({
         where: {
           userId: data.userId,
           townId: data.townId,
           isActive: true,
-          isDead: false,
+          // Pas de filtre isDead : on désactive TOUS les personnages actifs
         },
         data: { isActive: false },
       });

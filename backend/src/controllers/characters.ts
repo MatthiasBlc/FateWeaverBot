@@ -86,19 +86,22 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
         : [];
 
     const upsertedCharacter = await prisma.$transaction(async (tx) => {
+      // RÈGLE MÉTIER CRITIQUE : Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
+      // Désactiver TOUS les personnages actifs (morts ou vivants) sauf celui qu'on met à jour
       if (existingCharacter) {
         await tx.character.updateMany({
           where: {
             userId,
             townId,
             id: { not: existingCharacter.id },
-            isDead: false,
+            isActive: true,
+            // Pas de filtre isDead : on désactive TOUS les personnages actifs
           },
           data: { isActive: false },
         });
       } else {
         await tx.character.updateMany({
-          where: { userId, townId, isDead: false },
+          where: { userId, townId, isActive: true },
           data: { isActive: false },
         });
       }

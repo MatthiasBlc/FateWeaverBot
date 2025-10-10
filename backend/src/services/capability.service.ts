@@ -329,6 +329,10 @@ export class CapabilityService {
       include: { town: true },
     });
 
+    if (!character) {
+      throw new Error("Personnage non trouvé");
+    }
+
     const capability = await this.getCapabilityByName("Bûcheronner");
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -414,6 +418,10 @@ export class CapabilityService {
       include: { town: true },
     });
 
+    if (!character) {
+      throw new Error("Personnage non trouvé");
+    }
+
     const capability = await this.getCapabilityByName("Miner");
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -498,6 +506,10 @@ export class CapabilityService {
       where: { id: characterId },
       include: { town: true },
     });
+
+    if (!character) {
+      throw new Error("Personnage non trouvé");
+    }
 
     const capability = await this.getCapabilityByName("Pêcher");
     if (!capability) {

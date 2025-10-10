@@ -3,7 +3,29 @@
 
 un joueur ne peut avoir qu'un seul personnage actif,
 Lors de la création désactiver les anciens et activer le nouveau
+ ✅ Corrections appliquées avec succès !
 
+  📋 Résumé des modifications :
+
+  1. createCharacter() - backend/src/services/character.service.ts:117
+  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+  - ✅ Suppression du filtre isDead: false
+  - ✅ Commentaire ajouté pour documenter la règle métier
+
+  2. upsertCharacter() - backend/src/controllers/characters.ts:88
+  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+  - ✅ Logique corrigée dans les deux branches (existingCharacter ou non)
+  - ✅ Commentaire ajouté pour documenter la règle métier
+
+  🔒 Règle métier garantie :
+
+  Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
+  - À la création d'un personnage → tous les autres sont désactivés
+  - Un personnage mort reste actif jusqu'à ce que canReroll: true ET qu'un nouveau personnage soit créé
+  - Les commandes admin peuvent outrepasser cette règle (pour debug)
+-> A tester
+
+-> bug de push !!!!!!
 
 QUESTION :
 tomber en agnonie baisse pv à 1 et ne touche pas aux  pm
