@@ -66,13 +66,21 @@ L'utilisateur :
 2. Lance Supernova dans Windsurf
 3. Colle le prompt
 4. Laisse Supernova travailler
-5. Récupère le rapport final de Supernova
+5. **Supernova crée automatiquement un fichier de rapport** (pas de copier-coller)
+6. L'utilisateur informe Claude : "Terminé" (Claude connaît l'emplacement du fichier)
 
 ### Étape 6 : Validation (User → Claude Code)
-L'utilisateur colle le rapport de Supernova à Claude qui :
-1. Valide le travail (build, structure, métriques)
-2. Met à jour la documentation
-3. Prépare la suite ou termine
+L'utilisateur dit simplement "Terminé". Claude :
+1. Lit le fichier de rapport au chemin standardisé `docs/supernova-reports/supernova-report-[nom-tache]-[date].md`
+2. Lit **UNIQUEMENT** la section **RÉSUMÉ EXÉCUTIF** (≤300 tokens)
+3. Si le résumé indique tout OK → Valide et continue
+4. Si problèmes détectés → Lit les sections pertinentes du rapport détaillé
+5. Met à jour la documentation et prépare la suite
+
+**Économie de contexte maximale** :
+- Sans fichier : ~10k-50k tokens copiés-collés
+- Avec fichier + résumé : ~300 tokens lus (95% des cas)
+- **Économie : ~97% de tokens sur la validation**
 
 ---
 
@@ -95,19 +103,26 @@ L'utilisateur colle le rapport de Supernova à Claude qui :
 
 ### Exemple : Refactoring FateWeaverBot (Phases 1-5)
 
-**Avec Supernova** :
-- Claude : ~105k tokens (analyse, planning, validation)
+**Avec Supernova + Fichiers de rapport** :
+- Claude : ~85k tokens (analyse, planning, validation via résumés uniquement)
+- Supernova : ~150k tokens (exécution)
+- **Total : ~235k tokens**
+
+**Avec Supernova + Rapports copiés-collés** (ancien système) :
+- Claude : ~105k tokens (analyse, planning, validation en lisant rapports complets)
 - Supernova : ~150k tokens (exécution)
 - **Total : ~255k tokens**
 
 **Sans Supernova** (estimation) :
 - Claude seul : ~400k+ tokens
-- **Économie : ~36% de tokens**
+- **Économie : ~41% de tokens avec le nouveau système**
 
 ### Pourquoi ces économies ?
 1. **Pas de lecture répétée** : Claude lit 1 fois, Supernova exécute N fois
 2. **Pas de contexte dupliqué** : Un seul prompt détaillé vs multiples échanges
 3. **Exécution parallèle** : Supernova ne compte pas dans le quota Claude
+4. **Rapports en fichiers** : Pas de copier-coller massif de rapports
+5. **Résumés courts** : Claude lit 300 tokens au lieu de 5k-10k par rapport (95% des cas)
 
 ---
 
@@ -152,13 +167,48 @@ Lis et exécute : `/chemin/absolu/vers/docs/supernova-prompt-X.md`
 - **JAMAIS** → Supprimer le fichier et le recréer
 
 ### 📊 RAPPORT FINAL OBLIGATOIRE
-Tu DOIS fournir un rapport détaillé à la fin avec :
-- ✅ Fichiers modifiés (liste complète avec nombre de lignes)
-- ✅ Commits créés (liste avec messages)
-- ✅ Builds réussis (backend + bot si applicable)
-- ✅ Erreurs rencontrées et résolues
-- ⚠️ Problèmes NON résolus (si bloqué)
-- 📈 Métriques : Temps estimé, lignes ajoutées/supprimées
+
+Tu DOIS créer un fichier de rapport avec cette structure EXACTE :
+
+**Emplacement** : `docs/supernova-reports/supernova-report-[nom-tache]-[YYYYMMDD].md`
+
+**Structure du fichier** :
+
+```markdown
+# 📊 RÉSUMÉ EXÉCUTIF (≤300 tokens)
+
+**Statut** : ✅ Succès complet | ⚠️ Succès partiel | ❌ Échec
+**Tâches complétées** : X/Y
+**Builds** : ✅ Backend OK | ✅ Bot OK (ou ❌ si erreurs)
+**Commits** : X commits créés
+**Problèmes bloquants** : Aucun | [Liste courte]
+
+**Résumé** : [2-3 phrases décrivant ce qui a été fait et résultat global]
+
+---
+
+# 📋 RAPPORT DÉTAILLÉ
+
+## 📁 Fichiers Modifiés
+[Liste complète avec lignes ajoutées/supprimées]
+
+## 💾 Commits Créés
+[Liste avec hashes et messages]
+
+## ✅ Builds Réussis
+[Détails des builds]
+
+## 🔧 Erreurs Résolues
+[Liste détaillée]
+
+## ⚠️ Problèmes Non Résolus
+[Si applicable]
+
+## 📈 Métriques
+[Temps, lignes, taux de succès]
+```
+
+**RÈGLE CRITIQUE** : Le RÉSUMÉ EXÉCUTIF doit tenir en 300 tokens MAX (Claude le lira toujours, le reste seulement si nécessaire)
 
 ## 🎯 TÂCHES
 [Liste courte des tâches principales]
@@ -169,7 +219,7 @@ Lis le prompt détaillé et commence !
 
 ---
 
-**Action pour toi :** Copie ce prompt et donne-le à Supernova dans Windsurf. Tu me colleras son rapport quand il aura terminé ! 🎯
+**Action pour toi :** Copie ce prompt et donne-le à Supernova dans Windsurf. Dis-moi juste "Terminé" quand il aura fini (il créera un fichier de rapport que je lirai) ! 🎯
 ```
 
 ### Template Prompt Détaillé (docs/supernova-prompt-X.md)
@@ -363,22 +413,23 @@ Quand tu (Claude Code) vois une tâche volumineuse/répétitive :
 1. **Pense Supernova IMMÉDIATEMENT** : "Est-ce que Supernova peut faire ça ?"
 2. **Propose SYSTÉMATIQUEMENT** : Si >3 fichiers OU >100 lignes OU répétitif → Proposer Supernova
 3. **Laisse le choix** : "Je te propose de déléguer à Supernova pour économiser des crédits. Veux-tu que je le fasse, ou préfères-tu que je m'en charge ?"
-4. **Si validation → Crée le prompt IMMÉDIATEMENT** : Prompt copier-coller ready
-5. **DEMANDE SYSTÉMATIQUEMENT le rapport** : "Colle-moi le rapport de Supernova pour que je vérifie"
+4. **Si validation → Crée le prompt IMMÉDIATEMENT** : Prompt copier-coller ready avec instruction de créer un fichier de rapport
+5. **ATTENDS "Terminé"** : Puis lis le fichier de rapport (résumé d'abord, détails si nécessaire)
 
 ### 🎯 Réflexes Automatiques
 
 **TOUJOURS** quand tu délègues à Supernova :
 1. ✅ Créer un prompt copier-coller ready
-2. ✅ Inclure : "À la fin, fais-moi un rapport détaillé avec [métriques]"
-3. ✅ Dire à l'utilisateur : "Colle-moi le rapport de Supernova ensuite"
-4. ✅ Attendre le rapport avant de valider/continuer
+2. ✅ Inclure : "Crée un fichier de rapport à `docs/supernova-reports/supernova-report-[nom]-[date].md`"
+3. ✅ Spécifier que le rapport doit avoir un **RÉSUMÉ EXÉCUTIF ≤300 tokens** en première section
+4. ✅ Dire à l'utilisateur : "Dis-moi juste 'Terminé' quand c'est fait"
+5. ✅ Quand terminé : Lire le fichier de rapport (résumé d'abord, détails si nécessaire)
 
 **JAMAIS** :
 - ❌ Oublier de proposer Supernova pour une tâche volumineuse/répétitive
 - ❌ Valider l'utilisation de Supernova sans fournir un prompt copier-coller
-- ❌ Oublier de demander le rapport final
-- ❌ Valider sans voir le rapport de Supernova
+- ❌ Demander à l'utilisateur de copier-coller le rapport (c'est un fichier maintenant !)
+- ❌ Lire le rapport détaillé complet si le résumé indique que tout est OK
 
 ### 📏 Seuils de Décision
 
@@ -407,4 +458,4 @@ Quand tu (Claude Code) vois une tâche volumineuse/répétitive :
 
 ---
 
-**Dernière mise à jour** : 2025-10-08
+**Dernière mise à jour** : 2025-10-10

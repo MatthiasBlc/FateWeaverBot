@@ -34,6 +34,15 @@ export async function handleViewStockCommand(interaction: any) {
     try {
       character = await getActiveCharacterForUser(interaction.user.id, interaction.guildId!);
       validateCharacterAlive(character);
+
+      // Vérifier si le personnage est en expédition DEPARTED
+      const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+      const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
+
+      if (inDepartedExpedition) {
+        await replyEphemeral(interaction, "❌ Vous êtes en expédition et ne pouvez pas voir les stocks de la ville. Utilisez `/expedition` pour voir vos ressources d'expédition.");
+        return;
+      }
     } catch (error: any) {
       if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
         await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.");

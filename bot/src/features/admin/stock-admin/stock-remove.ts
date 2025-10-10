@@ -13,6 +13,7 @@ import { getActiveCharacterFromCommand } from "../../../utils/character";
 import { createSuccessEmbed, createErrorEmbed, createInfoEmbed } from "../../../utils/embeds";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
 import { checkAdmin } from "../../../utils/admin";
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 
 /**
@@ -83,8 +84,7 @@ export async function handleStockAdminRemoveButton(interaction: any) {
   } catch (error) {
     logger.error("Error in stock admin remove button:", { error });
     await interaction.editReply({
-      content:
-        "❌ Une erreur est survenue lors de la préparation du retrait de ressources.",
+      content: ERROR_MESSAGES.ADMIN_STOCK_REMOVE_PREP_ERROR,
       embeds: [],
       components: [],
     });
@@ -148,8 +148,7 @@ export async function handleStockAdminRemoveSelect(
   } catch (error) {
     logger.error("Error in stock admin remove select:", { error });
     await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la sélection de la ressource.",
+      content: ERROR_MESSAGES.ADMIN_STOCK_RESOURCE_SELECT_ERROR,
       flags: ["Ephemeral"],
     });
   }

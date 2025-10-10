@@ -1,14 +1,12 @@
 -------------------------Todo-------------------------
-Seul un personnage en vie en dépression a l'effet dépression.
-
 # Features, debug et tests
 
-agonie 48h (fin de journée en cours + journée suivante) puis mort.
+un joueur ne peut avoir qu'un seul personnage actif,
+Lors de la création désactiver les anciens et activer le nouveau
 
-si le character a faim à 0 et agonie, il ne peut pas être soigné (bouton grisé) tant qu'il n'a pas remonté sa faim au moins à 1
 
-tomber en agnonie ne baisse pas pv et pm ????
-
+QUESTION :
+tomber en agnonie baisse pv à 1 et ne touche pas aux  pm
 
 Automatiser conso de transformé puis normal ? 
 
@@ -20,7 +18,9 @@ Status :
 3 → faim
 2 → faim
 1 → affamé ( regénère 1PA en moins lors de l'actualisation quotidienne. Cette action se fait lorsque l'on passe de 2(faim) à 1(affamé).)
-0 → agonie (passe directement le personnage en agonie, soit 1pv )
+0 → Meurt de faim -> (passe directement le personnage en agonie, soit 1pv )
+
+si le character a faim à 0 et agonie, il ne peut pas être soigné (bouton grisé) tant qu'il n'a pas remonté sa faim au moins à 1 ou alerte etc 
 
 revoir bouton manger
 
@@ -30,17 +30,23 @@ Update du système de vie / PV:
 1 - Agonie (ne peut plus utiliser de PA)
 0 - Mort (passe isdead à true)
 
+agonie 48h (fin de journée en cours + journée suivante) puis mort.
+
+cataplasme (utilisation) bug
+
 Update du système de PM:
 
 2 à 5 - rien de spécial
-1 - Déprime → (ne peut plus utiliser de PA)
-0 - Dépression → (chaque jour, un joueur dans le même lieu qui n'est pas déjà en Dépression, même ville si en ville ou même expédition si dans une expédition Status DEPARTED, perd 1 PM)
+1 - Déprime → (ne peut utiliser qu'une PA par jour)
+0 - Dépression → (Déprime + chaque jour, un joueur dans le même lieu qui n'est pas déjà en Dépression, même ville si en ville ou même expédition si dans une expédition Status DEPARTED, perd 1 PM)
 
-Autre:
-Un personnage dans une expédition DEPARTED n'a pas accès aux stocks ou aux chantiers de la ville.
+Dans le profil, créer une catégorie (liste à puces) status :
+voir liste sur discord
 
-/expedition
--> ⚠️ le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer) - À INVESTIGUER
+Dans le profil, si pa >=3/4 juste un petit paneau Attention à côté
+
+
+/expedition:
 -> ⏸️ il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition. - À TESTER
 Expéd
 2 PA/case/jour
@@ -51,12 +57,12 @@ Comme dans les Chantiers, ce serait cool si le stock Vivres/Repas apparaissait q
 Quand on transfère de la nourriture via les expeds, "Ville" apparaît au lieu de "Village (+ emote à changer 🏘️ ) (screen 2)
 Idem après le transfert (screen 3)
 
+donner une direction au formulaire ? voir règles
 
-
-/profil
+/profil:
 -> Pour toutes les actions de manger : nouveaux logs utilisants les nouveaux emojis "thorynest a mangé X **resourceType** , il reste YY de \*\*ResourceType dans la ville"
 
-/expedition-admin
+/expedition-admin:
 -> A tester en profondeur
 On peut dire qu'on ajoute + de nourriture qu'existant dans le village MAIS cette nourriture n'apparaît ni dans l'exped, ni dans le village
 Techniquement, c'est un bug mais je pense qu'on s'en fout, vu que ce n'est que pour nous et qu'on a pas trop de raison de faire ça (screen 1)
@@ -66,7 +72,7 @@ Expédition avec un mort ?
 
 ##Tests urgents
 Tester les interractions d'expéditions avec plusieurs personnages
-Commandes users non visibles par les users sur le server A Tale of a Star
+
 
 Lister ce qui peut être fait en ville et en expédition, et ce qui ne peut pas être fait si l'on est pas dans l'une ou l'autre des situations
 
@@ -77,12 +83,16 @@ Capacité
 capacité hiver
 capacité en "+"
 
-Analyser : erreur ❌
+Artisanat a revoir
+
+
+
+Analyser : erreur ❌ n'existe pas 
 Auspice : erreur ❌
 Bûcheronner ✅
 Cartographier : erreur ❌
-Chasser ✅
-Cueillir ✅
+Chasser ❌ vérifier été hiver
+Cueillir ❌ vérifier été hiver
 Cuisiner : erreur ❌
 Divertir ⚠️ ne fonctionne pas comme devrait
 Forger : erreur ❌

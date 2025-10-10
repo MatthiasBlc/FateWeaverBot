@@ -329,10 +329,6 @@ export class CapabilityService {
       include: { town: true },
     });
 
-    if (!character) {
-      throw new Error("Personnage non trouvé");
-    }
-
     const capability = await this.getCapabilityByName("Bûcheronner");
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -342,6 +338,18 @@ export class CapabilityService {
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
       throw new Error("Le personnage ne possède pas cette capacité");
+    }
+
+    // Vérifier que le personnage n'est pas en expédition DEPARTED
+    const departedExpedition = await this.prisma.expeditionMember.findFirst({
+      where: {
+        characterId,
+        expedition: { status: "DEPARTED" }
+      }
+    });
+
+    if (departedExpedition) {
+      throw new Error("Impossible de Bûcheronner en expédition DEPARTED");
     }
 
     // Vérifier les PA
@@ -406,10 +414,6 @@ export class CapabilityService {
       include: { town: true },
     });
 
-    if (!character) {
-      throw new Error("Personnage non trouvé");
-    }
-
     const capability = await this.getCapabilityByName("Miner");
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -419,6 +423,18 @@ export class CapabilityService {
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
       throw new Error("Le personnage ne possède pas cette capacité");
+    }
+
+    // Vérifier que le personnage n'est pas en expédition DEPARTED
+    const departedExpedition = await this.prisma.expeditionMember.findFirst({
+      where: {
+        characterId,
+        expedition: { status: "DEPARTED" }
+      }
+    });
+
+    if (departedExpedition) {
+      throw new Error("Impossible de Miner en expédition DEPARTED");
     }
 
     // Vérifier les PA
@@ -483,10 +499,6 @@ export class CapabilityService {
       include: { town: true },
     });
 
-    if (!character) {
-      throw new Error("Personnage non trouvé");
-    }
-
     const capability = await this.getCapabilityByName("Pêcher");
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -498,10 +510,19 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < paSpent) {
-      throw new Error("Pas assez de points d'action");
+    // Vérifier que le personnage n'est pas en expédition DEPARTED
+    const departedExpedition = await this.prisma.expeditionMember.findFirst({
+      where: {
+        characterId,
+        expedition: { status: "DEPARTED" }
+      }
+    });
+
+    if (departedExpedition) {
+      throw new Error("Impossible de Pêcher en expédition DEPARTED");
     }
+
+    // Vérifier les PA
 
     // Sélectionner la table de loot appropriée
     const lootTable = paSpent === 1 ? FISH_LOOT_1PA : FISH_LOOT_2PA;

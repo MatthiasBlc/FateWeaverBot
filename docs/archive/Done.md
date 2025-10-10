@@ -365,3 +365,10 @@ actuellement il y a une erreur car dans ce cas on me propose la modale de reroll
   ligne 136 (createRerollModal()) ?
   -> très probablement, elle y ressemeble mais je ne peux pas confirmer à 100%
 
+
+
+/expedition
+-> ⚠️ le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer)
+
+
+Commandes users non visibles par les users sur le server A Tale of a Star

@@ -69,6 +69,7 @@ import { checkAdmin } from "../../utils/roles.js";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
 import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis.js";
+import { ERROR_MESSAGES } from "../../constants/messages.js";
 
 /**
  * Nouvelle commande /chantiers unifiée - Affiche liste + bouton Participer
@@ -153,7 +154,7 @@ export async function handleChantiersCommand(interaction: CommandInteraction) {
   } catch (error) {
     logger.error("Erreur lors de la récupération des chantiers :", { error });
     await interaction.reply({
-      content: "Une erreur est survenue lors de la récupération des chantiers.",
+      content: ERROR_MESSAGES.CHANTIER_FETCH_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -209,7 +210,7 @@ export async function handleListCommand(interaction: CommandInteraction) {
   } catch (error) {
     logger.error("Erreur lors de la récupération des chantiers :", { error });
     await interaction.reply({
-      content: "Une erreur est survenue lors de la récupération des chantiers.",
+      content: ERROR_MESSAGES.CHANTIER_FETCH_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -370,13 +371,13 @@ export async function handleParticipateButton(interaction: any) {
     if (!interaction.replied) {
       await interaction.reply({
         content:
-          "Une erreur est survenue lors de la préparation de la participation.",
+          ERROR_MESSAGES.CHANTIER_PARTICIPATE_ERROR,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
         content:
-          "Une erreur est survenue lors de la préparation de la participation.",
+          ERROR_MESSAGES.CHANTIER_PARTICIPATE_ERROR,
         flags: ["Ephemeral"],
       });
     }
@@ -505,13 +506,13 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
     if (!interaction.replied) {
       await interaction.reply({
         content:
-          "Une erreur est survenue lors de la préparation de l'investissement.",
+          ERROR_MESSAGES.CHANTIER_INVEST_ERROR,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
         content:
-          "Une erreur est survenue lors de la préparation de l'investissement.",
+          ERROR_MESSAGES.CHANTIER_INVEST_ERROR,
         flags: ["Ephemeral"],
       });
     }
@@ -905,7 +906,7 @@ export async function handleInvestModalSubmit(
 
     await interaction.reply({
       content:
-        "❌ Une erreur est survenue lors du traitement de votre investissement. Veuillez réessayer.",
+ERROR_MESSAGES.CHANTIER_PROCESSING_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -1004,13 +1005,13 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
     if (!interaction.replied) {
       await interaction.reply({
         content:
-          "Une erreur est survenue lors de la préparation de la suppression.",
+          ERROR_MESSAGES.CHANTIER_DELETE_PREP_ERROR,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
         content:
-          "Une erreur est survenue lors de la préparation de la suppression.",
+          ERROR_MESSAGES.CHANTIER_DELETE_PREP_ERROR,
         flags: ["Ephemeral"],
       });
     }

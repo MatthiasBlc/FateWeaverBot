@@ -13,6 +13,7 @@ import { createInfoEmbed, createSuccessEmbed } from "../../../utils/embeds";
 import { createActionButtons } from "../../../utils/discord-components";
 import { Expedition } from "../../../types/entities";
 import { getStatusEmoji } from "../expedition-utils";
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
 
@@ -44,7 +45,7 @@ export async function handleExpeditionMainCommand(
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 
@@ -299,7 +300,7 @@ export async function handleExpeditionInfoCommand(
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 

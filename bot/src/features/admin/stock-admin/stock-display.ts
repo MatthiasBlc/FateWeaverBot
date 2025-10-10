@@ -12,6 +12,7 @@ import { getActiveCharacterFromCommand } from "../../../utils/character";
 import { createCustomEmbed, getStockColor, createInfoEmbed } from "../../../utils/embeds";
 import { createActionButtons } from "../../../utils/discord-components";
 import { checkAdmin } from "../../../utils/admin";
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 
 /**
@@ -112,7 +113,7 @@ export async function handleStockAdminCommand(
   } catch (error) {
     logger.error("Error in stock admin command:", { error });
     await interaction.reply({
-      content: "❌ Une erreur est survenue lors de l'affichage de l'interface.",
+      content: ERROR_MESSAGES.ADMIN_STOCK_DISPLAY_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -186,8 +187,7 @@ export async function handleStockAdminViewButton(interaction: any) {
   } catch (error) {
     logger.error("Error in stock admin view button:", { error });
     await interaction.editReply({
-      content:
-        "❌ Une erreur est survenue lors de la récupération des ressources.",
+      content: ERROR_MESSAGES.ADMIN_STOCK_FETCH_ERROR,
       embeds: [],
       components: [],
     });

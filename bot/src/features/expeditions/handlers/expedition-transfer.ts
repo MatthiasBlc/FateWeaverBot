@@ -12,10 +12,7 @@ import { getActiveCharacterFromCommand, getActiveCharacterFromModal } from "../.
 import { createExpeditionTransferModal, createExpeditionTransferAmountModal } from "../../../modals/expedition-modals";
 import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { getStatusEmoji } from "../expedition-utils";
-
-/**
- * Gestionnaire pour le bouton "Transférer nourriture"
- */
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 export async function handleExpeditionTransferButton(interaction: any) {
   try {
     // Get user's active character
@@ -368,7 +365,7 @@ export async function handleExpeditionTransferModal(
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Aucun personnage actif trouvé.",
+        content: ERROR_MESSAGES.NO_CHARACTER,
         flags: ["Ephemeral"],
       });
       return;

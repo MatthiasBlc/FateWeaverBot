@@ -36,3 +36,9 @@ Ce bouton agit comme un togglable, si au moins la moitié des membres d'une exp�
 
 /expedition-admin
 -> A tester en profondeur
+
+1. Seul un personnage en vie en dépression a l'effet dépression.
+2. confirme moi q'"Un personnage dans une expédition DEPARTED n'a pas accès aux stocks ou aux chantiers de la ville." est vrai.
+3. Est-ce que les messages d'erreur sont harmonisés ? est-ce qu'il en reste qui n'utilise pas le système global ?
+4. Est-ce que les emoji's sont harmonisés ? le fichier global ?
+5. Les messages de log devraient tous apparaitrent dans le channel programmé par la commande /config-channel-admin. s'il n'y a pas de channel programmé, ignorer les messages de log.

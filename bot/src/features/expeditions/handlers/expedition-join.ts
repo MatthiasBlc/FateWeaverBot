@@ -14,6 +14,7 @@ import { getStatusEmoji, canJoinExpedition } from "../expedition-utils";
 import { Expedition } from "../../../types/entities";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 
 /**
  * Gestionnaire pour le bouton "Rejoindre une expédition"
@@ -81,7 +82,7 @@ export async function handleExpeditionJoinCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
+        await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
         return;
       }
       // Re-throw other errors
@@ -89,7 +90,7 @@ export async function handleExpeditionJoinCommand(
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 
@@ -145,7 +146,7 @@ export async function handleExpeditionJoinCommand(
     await replyEphemeral(interaction, "Choisissez une expédition à rejoindre:");
   } catch (error) {
     logger.error("Error in expedition join command:", { error });
-    await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la recherche des expéditions.");
+    await replyEphemeral(interaction, ERROR_MESSAGES.EXPEDITION_FETCH_ERROR);
   }
 }
 
@@ -165,7 +166,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
+        await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
         return;
       }
       // Re-throw other errors
@@ -173,7 +174,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 

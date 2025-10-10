@@ -1,4 +1,5 @@
 import { CHARACTER, HUNGER, STATUS, CAPABILITIES, RESOURCES } from "../../constants/emojis.js";
+import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
   ActionRowBuilder,
@@ -8,6 +9,7 @@ import {
 } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
+import { sendLogMessage } from "../../utils/channels";
 import {
   checkAndPromptReroll,
   createRerollModal,
@@ -201,8 +203,7 @@ export async function handleProfileCommand(interaction: any) {
         return;
       } else if (characterStatus.canReroll) {
         await interaction.reply({
-          content:
-            `${STATUS.WARNING} Votre personnage est mort. Utilisez la commande de reroll pour créer un nouveau personnage.`,
+          content: INFO_MESSAGES.REROLL_PROMPT,
           flags: ["Ephemeral"],
         });
         return;
@@ -218,7 +219,7 @@ export async function handleProfileCommand(interaction: any) {
     // Si on arrive ici, c'est qu'il y a un problème avec le statut du personnage
     await interaction.reply({
       content:
-        "❌ Impossible de déterminer l'état de votre personnage. Veuillez contacter un administrateur.",
+        INFO_MESSAGES.CHARACTER_STATUS_UNKNOWN,
       flags: ["Ephemeral"],
     });
   } catch (error) {
@@ -230,7 +231,7 @@ export async function handleProfileCommand(interaction: any) {
 
     await interaction.reply({
       content:
-        "❌ Une erreur est survenue lors de l'affichage de votre profil.",
+        INFO_MESSAGES.PROFILE_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -618,8 +619,12 @@ export async function handleProfileButtonInteraction(interaction: any) {
       const result = response.data;
 
       // Afficher le résultat
-      if (result.publicMessage && interaction.channel) {
-        await interaction.channel.send(result.publicMessage);
+      if (result.publicMessage && interaction.guildId) {
+        await sendLogMessage(
+          interaction.guildId,
+          interaction.client,
+          result.publicMessage
+        );
       }
 
       await interaction.editReply({

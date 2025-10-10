@@ -17,6 +17,7 @@ import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../
 import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
+import { ERROR_MESSAGES } from "../../../constants/messages.js";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -83,7 +84,7 @@ export async function handleExpeditionStartCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
+        await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
         return;
       }
       // Re-throw other errors
@@ -91,7 +92,7 @@ export async function handleExpeditionStartCommand(
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 
@@ -150,7 +151,7 @@ export async function handleExpeditionCreationModal(
     // Get character ID from modal interaction
     const character = await getActiveCharacterFromModal(interaction);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Aucun personnage actif trouvé.");
+      await replyEphemeral(interaction, ERROR_MESSAGES.NO_CHARACTER);
       return;
     }
 
@@ -352,21 +353,17 @@ export async function handleExpeditionCreationModal(
       }
     }
 
-    // Send public embed to log channel
+    // Send public embed to log channel using standardized method
     try {
-      const guild = await apiService.getGuildByDiscordId(interaction.guildId!) as { logChannelId?: string } | null;
-      if (guild?.logChannelId) {
-        const logChannel = interaction.client.channels.cache.get(guild.logChannelId) as TextChannel;
-        if (logChannel) {
-          await logChannel.send({ embeds: [publicEmbed] });
-        }
-      }
+      const logMessage = `🏕️ **Nouvelle expédition créée**\n**${newExpedition.data.name}** créée par **${character.name}**\n📦 Stock nourriture : ${foodStock}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        logMessage
+      );
     } catch (error) {
       logger.warn("Could not send public embed to log channel:", error);
     }
-
-    // Send old format log message for backward compatibility
-    const logMessage = `🏕️ Nouvelle expédition créée : "**${newExpedition.data.name}**" par **${character.name}**\n📦 Stock nourriture : ${foodStock}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
 
     logger.info("Expedition created via Discord", {
       expeditionId: newExpedition.data.id,
