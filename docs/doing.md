@@ -21,5 +21,14 @@ Mort 💀
 
 retirer la photo
 retirer le nom 
-retirer les rôles (métier? )
+retirer les rôles (métier?)
 
+
+
+Problème faim : 
+
+4 Satiété ✅ 
+3 Faim (virer "État normal")
+2 Faim (virer "État normal")
+1 Agonie → Meurt de faim - -1PA / jour
+0 → Mort

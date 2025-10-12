@@ -237,6 +237,49 @@ export async function handleProfileCommand(interaction: any) {
   }
 }
 
+function createStatusDisplay(character: any): string | null {
+  const statuses: string[] = [];
+
+  // Si le personnage est mort, afficher uniquement "Mort"
+  if (character.hp <= 0 || character.isDead) {
+    return `${HUNGER.DEAD} **Mort**`;
+  }
+
+  // Satiété (niveau 4)
+  if (character.hungerLevel === 4) {
+    statuses.push(`${HUNGER.FED} **Satiété** : +1 ❤️ / jour`);
+  }
+
+  // Agonie (niveau 1)
+  if (character.hungerLevel === 1) {
+    statuses.push(`${CHARACTER.HP_BANDAGED} **Agonie** : 0 PA utilisables`);
+  }
+
+  // Déprime (PM = 1)
+  if (character.pm === 1) {
+    statuses.push(`${CHARACTER.MP_DEPRESSED} **Déprime** : 1 seul PA utilisable / jour`);
+  }
+
+  // Dépression (PM = 0)
+  if (character.pm === 0) {
+    statuses.push(`${CHARACTER.MP_DEPRESSION} **Dépression** : 1 seul PA utilisable / jour + contamination`);
+  }
+
+  // Affamé (niveau 2)
+  if (character.hungerLevel === 2) {
+    statuses.push(`${HUNGER.STARVING} **Affamé** : -1 PA / jour`);
+  }
+
+  // Meurt de faim (niveau 0, mais déjà géré par mort)
+  // Si niveau 0 et pas mort (mais normalement niveau 0 = mort)
+  if (character.hungerLevel === 0 && !character.isDead) {
+    statuses.push(`${HUNGER.AGONY} **Meurt de faim** : Agonie ${CHARACTER.HP_BANDAGED}`);
+  }
+
+  // Retourner la liste des statuts ou null si vide
+  return statuses.length > 0 ? statuses.join('\n') : null;
+}
+
 function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
@@ -280,7 +323,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ' '}`.trim(),
+      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ' '}`.trim(),
       inline: true,
     },
     {
@@ -299,11 +342,18 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       inline: true, // Essayer inline pour rester avec les autres
     },
   ];
-
-  // Ajouter la section capacités si elles existent
+  // Créer le bloc Status
+  const statusDisplay = createStatusDisplay(data.character);
+  if (statusDisplay) {
+    fields.push({
+      name: "${CHARACTER.STATUS} **STATUS**",
+      value: statusDisplay,
+      inline: false,
+    });
+  }
   if (data.character.capabilities && data.character.capabilities.length > 0) {
     fields.push({
-      name: "🔮 **CAPACITÉS CONNUES**",
+      name: "${CAPACITIES.GENERIC} **CAPACITÉS CONNUES**",
       value: createCapabilitiesDisplay(data.character.capabilities),
       inline: false,
     });
@@ -390,15 +440,15 @@ function getHungerLevelText(level: number): string {
 function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return "💀";
+      return "${HUNGER.STARVATION}";
     case 1:
-      return "😰";
+      return "${HUNGER.STARVING}";
     case 2:
-      return "😕";
+      return "${HUNGER.HUNGRY}";
     case 3:
-      return "🤤";
+      return "${HUNGER.APPETITE}";
     case 4:
-      return "😊";
+      return "${HUNGER.FED}";
     default:
       return "❓";
   }
