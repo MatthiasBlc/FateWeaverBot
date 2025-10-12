@@ -247,7 +247,7 @@ function createStatusDisplay(character: any): string | null {
 
   // Satiété (niveau 4)
   if (character.hungerLevel === 4) {
-    statuses.push(`${HUNGER.FED} **Satiété** : +1 ❤️ / jour`);
+    statuses.push(`${HUNGER.FED} **Satiété** : +1 ${CHARACTER.HP_FULL} / jour`);
   }
 
   // Agonie (niveau 1)
@@ -304,7 +304,8 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       : "Aucun rôle";
 
   // Formatage avancé de l'état de faim
-  const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
+  const hungerEmoji = getHungerEmoji(data.character.hungerLevel);
+  const hungerText = getHungerLevelText(data.character.hungerLevel);
 
   // Panneau d'attention pour les PA élevés (3 ou 4) - Supprimé, intégré dans l'affichage des PA
   // Ancienne logique supprimée ici
@@ -337,8 +338,8 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       inline: true,
     },
     {
-      name: `Faim : ${hungerDisplay.text.split('\n')[0]}`,
-      value: hungerDisplay.text.split('\n')[1] || "",
+      name: `Faim`,
+      value: `${hungerEmoji} **${hungerText}**`,
       inline: true, // Essayer inline pour rester avec les autres
     },
   ];
@@ -423,15 +424,15 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
 function getHungerLevelText(level: number): string {
   switch (level) {
     case 0:
-      return "Mort";
+      return "Meurt de faim";
     case 1:
-      return "Agonie";
-    case 2:
       return "Affamé";
-    case 3:
+    case 2:
       return "Faim";
+    case 3:
+      return "Petit creux";
     case 4:
-      return "En bonne santé";
+      return "Satiété ";
     default:
       return "Inconnu";
   }
@@ -454,46 +455,6 @@ function getHungerEmoji(level: number): string {
   }
 }
 
-function createAdvancedHungerDisplay(level: number): {
-  text: string;
-  emoji: string;
-} {
-  const baseEmoji = getHungerEmoji(level);
-  const baseText = getHungerLevelText(level);
-
-  switch (level) {
-    case 0:
-      return {
-        text: `${baseEmoji} **${baseText}**\nHP à 1 !`,
-        emoji: baseEmoji,
-      };
-    case 1:
-      return {
-        text: `${baseEmoji} **${baseText}**\n+1 PA au lieu de +2`,
-        emoji: baseEmoji,
-      };
-    case 2:
-      return {
-        text: `${baseEmoji} **Faim**\nÉtat normal`,
-        emoji: baseEmoji,
-      };
-    case 3:
-      return {
-        text: `${baseEmoji} **Faim**\nÉtat normal`,
-        emoji: baseEmoji,
-      };
-    case 4:
-      return {
-        text: `${baseEmoji} **Satiété**\nSoigne 1 PV/jour`,
-        emoji: baseEmoji,
-      };
-    default:
-      return {
-        text: `${baseEmoji} **État inconnu**`,
-        emoji: baseEmoji,
-      };
-  }
-}
 
 function createHeartDisplay(current: number, max: number, filledEmoji = '❤️', emptyEmoji = '🖤'): string {
   const hearts = [];

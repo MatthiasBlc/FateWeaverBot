@@ -24,6 +24,7 @@ export const CHARACTER = {
   PA: '⚡',
   PA_ALT: '🎯',
   PROFILE: '📋',
+  STATUS: '❗',
   PERSON: '👤',
   GROUP: '👥',
 } as const;
@@ -32,8 +33,10 @@ export const CHARACTER = {
 export const HUNGER = {
   DEAD: '💀',
   AGONY: '😰',
-  STARVING: '😕',
-  HUNGRY: '🤤',
+  STARVATION: '😫',
+  STARVING: ' 😰',
+  HUNGRY: ' 😕',
+  APPETITE: '🤤',
   FED: '😊',
   UNKNOWN: '❓',
   ICON: '🍞',
@@ -80,9 +83,9 @@ export const CHANTIER = {
 
 // Locations
 export const LOCATION = {
-  CITY: '🏙️',
+  CITY: '🏘️',
   CITY_ALT: '🏘️',
-  TOWN: '🏛️',  // NOUVEAU - Très utilisé pour ville
+  TOWN: '🏘️',  // NOUVEAU - Très utilisé pour ville
   EXPEDITION: '🏕️',
 } as const;
 
@@ -117,7 +120,7 @@ export const SYSTEM = {
 export const RESOURCES_EXTENDED = {
   GENERIC: '📦',
   BREAD: '🍞',
-  FOOD: '🥞',
+  FOOD: '🌾',
   FORK_KNIFE: '🍴',  // NOUVEAU - Menu avancé manger
   BANDAGE: '🩹',
 } as const;
