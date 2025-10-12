@@ -372,3 +372,6 @@ actuellement il y a une erreur car dans ce cas on me propose la modale de reroll
 
 
 Commandes users non visibles par les users sur le server A Tale of a Star
+
+
+tomber en agnonie baisse pv à 1 et ne touche pas aux  pm

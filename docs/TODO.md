@@ -1,11 +1,9 @@
 -------------------------Todo-------------------------
 # Features, debug et tests
 QUESTION :
-tomber en agnonie baisse pv à 1 et ne touche pas aux  pm
 
 Automatiser conso de transformé puis normal ? 
 
-cataplasme (utilisation) bug
 
 
 Dans le profil, créer une catégorie (liste à puces) status :
@@ -53,6 +51,7 @@ capacité en "+"
 
 Artisanat a revoir
 
+cataplasme (utilisation) bug
 
 
 Analyser : erreur ❌ n'existe pas 

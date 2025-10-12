@@ -78,3 +78,5 @@ Lors de la création désactiver les anciens et activer le nouveau
   5. ✅ Déprime limite 1PA/jour - Système complet avec compteur quotidien
 
   Le bot est maintenant conforme à toutes les spécifications ! 🎉
+
+  
