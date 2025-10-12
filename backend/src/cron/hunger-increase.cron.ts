@@ -27,9 +27,13 @@ async function increaseAllCharactersHunger() {
 
       const updateData: any = { hungerLevel: newLevel };
 
-      // When hunger reaches 0, set HP to 1 (Agonie) instead of killing
+      // When hunger reaches 0, set HP to 1 (Agonie) and mark agonySince if not already set
       if (newLevel === 0) {
         updateData.hp = 1;
+        // Mark agony start date if not already in agony
+        if (character.hp !== 1 || !character.agonySince) {
+          updateData.agonySince = new Date();
+        }
       }
 
       await prisma.character.update({

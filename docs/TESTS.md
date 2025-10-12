@@ -42,3 +42,39 @@ Ce bouton agit comme un togglable, si au moins la moitié des membres d'une exp�
 3. Est-ce que les messages d'erreur sont harmonisés ? est-ce qu'il en reste qui n'utilise pas le système global ?
 4. Est-ce que les emoji's sont harmonisés ? le fichier global ?
 5. Les messages de log devraient tous apparaitrent dans le channel programmé par la commande /config-channel-admin. s'il n'y a pas de channel programmé, ignorer les messages de log.
+
+
+
+un joueur ne peut avoir qu'un seul personnage actif,
+Lors de la création désactiver les anciens et activer le nouveau
+ ✅ Corrections appliquées avec succès !
+
+  📋 Résumé des modifications :
+
+  1. createCharacter() - backend/src/services/character.service.ts:117
+  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+  - ✅ Suppression du filtre isDead: false
+  - ✅ Commentaire ajouté pour documenter la règle métier
+
+  2. upsertCharacter() - backend/src/controllers/characters.ts:88
+  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+  - ✅ Logique corrigée dans les deux branches (existingCharacter ou non)
+  - ✅ Commentaire ajouté pour documenter la règle métier
+
+  🔒 Règle métier garantie :
+
+  Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
+  - À la création d'un personnage → tous les autres sont désactivés
+  - Un personnage mort reste actif jusqu'à ce que canReroll: true ET qu'un nouveau personnage soit créé
+  - Les commandes admin peuvent outrepasser cette règle (pour debug)
+-> A tester
+
+
+
+  1. ✅ Système de faim - Déjà fonctionnel
+  2. ✅ Heal bloqué si agonie affamé - Implémenté
+  3. ✅ Mort après 2 jours d'agonie - Implémenté avec tracking agonySince
+  4. ✅ Agonie bloque PA - Validation ajoutée
+  5. ✅ Déprime limite 1PA/jour - Système complet avec compteur quotidien
+
+  Le bot est maintenant conforme à toutes les spécifications ! 🎉

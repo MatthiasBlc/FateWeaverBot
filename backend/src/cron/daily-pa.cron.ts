@@ -33,6 +33,28 @@ async function updateAllCharactersActionPoints() {
         deathCount++;
       }
 
+      // STEP 2.5: Check agony duration (2 days = death)
+      if (character.hp === 1 && character.agonySince) {
+        const daysSinceAgony = Math.floor(
+          (now.getTime() - character.agonySince.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysSinceAgony >= 2) {
+          updateData.isDead = true;
+          updateData.hp = 0;
+          deathCount++;
+        }
+      }
+
+      // STEP 2.6: Reset agonySince if character has recovered from agony
+      if (character.hp > 1 && character.agonySince) {
+        updateData.agonySince = null;
+      }
+
+      // STEP 2.7: Reset PA counter daily (pour déprime)
+      updateData.paUsedToday = 0;
+      updateData.lastPaReset = now;
+
       // STEP 3: Update PA (only if alive and time has passed)
       const lastUpdate = character.lastPaUpdate;
       const daysSinceLastUpdate = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));

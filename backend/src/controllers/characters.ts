@@ -878,6 +878,11 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "PV déjà au maximum");
     }
 
+    // Vérifier si le personnage est en agonie affamé (hungerLevel=0 ET hp=1)
+    if (character.hungerLevel === 0 && character.hp === 1) {
+      throw createHttpError(400, "Impossible d'utiliser un cataplasme sur un personnage en agonie affamé");
+    }
+
     // Determine location (city or DEPARTED expedition)
     const departedExpedition = character.expeditionMembers.find(
       (em) => em.expedition.status === "DEPARTED"

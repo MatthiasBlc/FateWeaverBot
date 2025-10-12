@@ -4,6 +4,7 @@ import {
   CapabilityCategory,
 } from "@prisma/client";
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
+import { consumePA, validateCanUsePA } from "../util/character-validators";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -294,6 +295,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: capability.costPA * (luckyRoll ? 2 : 1) },
+          paUsedToday: { increment: capability.costPA * (luckyRoll ? 2 : 1) }
         },
       }),
       // Ajouter les vivres au stock de la ville
@@ -379,6 +381,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: capability.costPA },
+          paUsedToday: { increment: capability.costPA },
         },
       }),
       // Ajouter le bois au stock de la ville
@@ -468,6 +471,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: capability.costPA },
+          paUsedToday: { increment: capability.costPA },
         },
       }),
       // Ajouter le minerai au stock de la ville
@@ -547,6 +551,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: paSpent },
+          paUsedToday: { increment: paSpent },
         },
       });
 
@@ -570,6 +575,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: paSpent },
+          paUsedToday: { increment: paSpent },
         },
       }),
       this.prisma.resourceStock.upsert({
@@ -744,6 +750,7 @@ export class CapabilityService {
         where: { id: characterId },
         data: {
           paTotal: { decrement: paSpent },
+          paUsedToday: { increment: paSpent },
         },
       });
     });
@@ -801,6 +808,11 @@ export class CapabilityService {
         throw new Error("La cible a déjà tous ses PV");
       }
 
+      // Vérifier si la cible est en agonie affamé (hungerLevel=0 ET hp=1)
+      if (target.hungerLevel === 0 && target.hp === 1) {
+        throw new Error("Impossible de soigner un personnage en agonie affamé. Il doit d'abord manger.");
+      }
+
       // Vérifier les PA (1 PA pour le mode heal)
       if (character.paTotal < 1) {
         throw new Error("Pas assez de points d'action");
@@ -810,6 +822,9 @@ export class CapabilityService {
         where: { id: targetCharacterId },
         data: { hp: Math.min(5, target.hp + 1) }
       });
+
+      // Consommer le PA du soigneur
+      await consumePA(characterId, 1, this.prisma);
 
       return {
         success: true,
@@ -849,6 +864,9 @@ export class CapabilityService {
           quantity: 1,
         },
       });
+
+      // Consommer les PA
+      await consumePA(characterId, 2, this.prisma);
 
       return {
         success: true,
@@ -930,6 +948,9 @@ export class CapabilityService {
     if (character.paTotal < paSpent) {
       throw new Error("Pas assez de points d'action");
     }
+
+    // Consommer les PA
+    await consumePA(characterId, paSpent, this.prisma);
 
     const infoCount = paSpent === 1 ? 1 : 3;
 
@@ -1052,7 +1073,11 @@ export class CapabilityService {
       // Not ready for spectacle yet
       await this.prisma.character.update({
         where: { id: characterId },
-        data: { divertCounter: newCounter }
+        data: {
+          divertCounter: newCounter,
+          paTotal: { decrement: capability.costPA },
+          paUsedToday: { increment: capability.costPA }
+        }
       });
 
       return {
@@ -1063,10 +1088,14 @@ export class CapabilityService {
     } else {
       // Spectacle ready! +1 PM to all city characters (not in DEPARTED expeditions)
       await this.prisma.$transaction(async (tx) => {
-        // Reset counter
+        // Reset counter and consume PA
         await tx.character.update({
           where: { id: characterId },
-          data: { divertCounter: 0 }
+          data: {
+            divertCounter: 0,
+            paTotal: { decrement: capability.costPA },
+            paUsedToday: { increment: capability.costPA }
+          }
         });
 
         // +1 PM to all characters in the same city (not in DEPARTED expeditions)

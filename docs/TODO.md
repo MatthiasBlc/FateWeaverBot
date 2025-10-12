@@ -1,66 +1,12 @@
 -------------------------Todo-------------------------
 # Features, debug et tests
-
-un joueur ne peut avoir qu'un seul personnage actif,
-Lors de la création désactiver les anciens et activer le nouveau
- ✅ Corrections appliquées avec succès !
-
-  📋 Résumé des modifications :
-
-  1. createCharacter() - backend/src/services/character.service.ts:117
-  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
-  - ✅ Suppression du filtre isDead: false
-  - ✅ Commentaire ajouté pour documenter la règle métier
-
-  2. upsertCharacter() - backend/src/controllers/characters.ts:88
-  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
-  - ✅ Logique corrigée dans les deux branches (existingCharacter ou non)
-  - ✅ Commentaire ajouté pour documenter la règle métier
-
-  🔒 Règle métier garantie :
-
-  Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
-  - À la création d'un personnage → tous les autres sont désactivés
-  - Un personnage mort reste actif jusqu'à ce que canReroll: true ET qu'un nouveau personnage soit créé
-  - Les commandes admin peuvent outrepasser cette règle (pour debug)
--> A tester
-
--> bug de push !!!!!!
-
 QUESTION :
 tomber en agnonie baisse pv à 1 et ne touche pas aux  pm
 
 Automatiser conso de transformé puis normal ? 
 
-Update du système de faim :
-la faim diminue de 1 point toutes les 24h
-
-Status :
-4 → satiété ( soigne 1pv lors de l'actualisation quotidienne. cette action se fait avant que la faim ne décroisse.)
-3 → faim
-2 → faim
-1 → affamé ( regénère 1PA en moins lors de l'actualisation quotidienne. Cette action se fait lorsque l'on passe de 2(faim) à 1(affamé).)
-0 → Meurt de faim -> (passe directement le personnage en agonie, soit 1pv )
-
-si le character a faim à 0 et agonie, il ne peut pas être soigné (bouton grisé) tant qu'il n'a pas remonté sa faim au moins à 1 ou alerte etc 
-
-revoir bouton manger
-
-Update du système de vie / PV:
-
-2 à 5 -> rien de spécial
-1 - Agonie (ne peut plus utiliser de PA)
-0 - Mort (passe isdead à true)
-
-agonie 48h (fin de journée en cours + journée suivante) puis mort.
-
 cataplasme (utilisation) bug
 
-Update du système de PM:
-
-2 à 5 - rien de spécial
-1 - Déprime → (ne peut utiliser qu'une PA par jour)
-0 - Dépression → (Déprime + chaque jour, un joueur dans le même lieu qui n'est pas déjà en Dépression, même ville si en ville ou même expédition si dans une expédition Status DEPARTED, perd 1 PM)
 
 Dans le profil, créer une catégorie (liste à puces) status :
 voir liste sur discord
