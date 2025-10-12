@@ -328,7 +328,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       data.actionPoints.points || 0 // Ajouter les PA actuels du personnage
     );
     if (capabilityButtons) {
-      components.push(capabilityButtons);
+      components.push(...capabilityButtons); // Étendre le tableau
     }
   }
 
@@ -668,43 +668,51 @@ function createCapabilityButtons(
   userId: string,
   characterId: string,
   currentPA: number
-): ActionRowBuilder<ButtonBuilder> | null {
+): ActionRowBuilder<ButtonBuilder>[] | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
   }
 
-  // Limiter à 4 boutons maximum (limite Discord)
-  const buttonsToShow = capabilities.slice(0, 4);
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  const maxButtonsPerRow = 5; // Limite par ligne (Discord : 5 max)
+  const maxRows = 4; // Limiter à 4 lignes pour laisser de la place pour d'autres boutons
 
-  const buttons = buttonsToShow.map(cap => {
-    // Déterminer l'emoji selon le nom de la capacité
-    const getEmojiForCapability = (name: string): string => {
-      switch (name.toLowerCase()) {
-        case 'chasser': return '🏹';
-        case 'cueillir': return '🌿';
-        case 'pêcher': return '🎣';
-        case 'divertir': return '🎭';
-        default: return '🔮';
+  // Diviser les capacités en groupes de 4
+  for (let i = 0; i < capabilities.length && rows.length < maxRows; i += maxButtonsPerRow) {
+    const group = capabilities.slice(i, i + maxButtonsPerRow);
+    const buttons = group.map(cap => {
+      // Déterminer l'emoji selon le nom de la capacité
+      const getEmojiForCapability = (name: string): string => {
+        switch (name.toLowerCase()) {
+          case 'chasser': return '🏹';
+          case 'cueillir': return '🌿';
+          case 'pêcher': return '🎣';
+          case 'divertir': return '🎭';
+          default: return '🔮';
+        }
+      };
+
+      // Vérifier si le personnage a assez de PA pour cette capacité
+      const hasEnoughPA = currentPA >= cap.costPA;
+      const buttonStyle = hasEnoughPA ? ButtonStyle.Primary : ButtonStyle.Secondary;
+
+      const button = new ButtonBuilder()
+        .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
+        .setLabel(`${cap.name} (${cap.costPA}PA)`)
+        .setStyle(buttonStyle)
+        .setEmoji(getEmojiForCapability(cap.name));
+
+      // Désactiver le bouton si pas assez de PA
+      if (!hasEnoughPA) {
+        button.setDisabled(true);
       }
-    };
 
-    // Vérifier si le personnage a assez de PA pour cette capacité
-    const hasEnoughPA = currentPA >= cap.costPA;
-    const buttonStyle = hasEnoughPA ? ButtonStyle.Primary : ButtonStyle.Secondary;
+      return button;
+    });
 
-    const button = new ButtonBuilder()
-      .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
-      .setLabel(`${cap.name} (${cap.costPA}PA)`)
-      .setStyle(buttonStyle)
-      .setEmoji(getEmojiForCapability(cap.name));
+    // Créer une nouvelle ligne avec les boutons
+    rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons));
+  }
 
-    // Désactiver le bouton si pas assez de PA
-    if (!hasEnoughPA) {
-      button.setDisabled(true);
-    }
-
-    return button;
-  });
-
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
+  return rows.length > 0 ? rows : null;
 }

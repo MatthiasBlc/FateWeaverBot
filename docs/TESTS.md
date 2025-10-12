@@ -80,3 +80,9 @@ Lors de la création désactiver les anciens et activer le nouveau
   Le bot est maintenant conforme à toutes les spécifications ! 🎉
 
   
+Changement du message de PA:
+  Avant : Un panneau séparé avec "⚠️ ATTENTION" et un message pour PA >= 3.
+Après : Affichage inline comme "3/4 ⚠️" ou "4/4 ⚠️" si PA >= 3, sinon juste "3/4" ou "4/4".
+Constante Utilisée : STATUS.WARNING de 
+emojis.ts
+ (⚠️).

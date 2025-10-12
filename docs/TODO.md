@@ -5,10 +5,7 @@ QUESTION :
 Automatiser conso de transformé puis normal ? 
 
 
-Dans le profil, créer une catégorie (liste à puces) status :
-voir liste sur discord
 
-Dans le profil, si pa >=3/4 juste un petit paneau Attention à côté
 
 
 /expedition:
