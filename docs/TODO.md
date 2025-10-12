@@ -5,7 +5,6 @@ QUESTION :
 Automatiser conso de transformé puis normal ? 
 
 
-
 Dans le profil, créer une catégorie (liste à puces) status :
 voir liste sur discord
 

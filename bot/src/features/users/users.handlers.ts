@@ -264,15 +264,8 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
   // Formatage avancé de l'état de faim
   const hungerDisplay = createAdvancedHungerDisplay(data.character.hungerLevel);
 
-  // Panneau d'attention pour les PA élevés (3 ou 4)
-  const attentionPanel =
-    data.actionPoints.points >= 3
-      ? {
-        name: "⚠️ **ATTENTION**",
-        value: `Vous avez **${data.actionPoints.points} PA** ! Pensez à les utiliser avant la prochaine régénération.`,
-        inline: false,
-      }
-      : null;
+  // Panneau d'attention pour les PA élevés (3 ou 4) - Supprimé, intégré dans l'affichage des PA
+  // Ancienne logique supprimée ici
 
   // Ajout des champs d'information
   const fields = [
@@ -289,7 +282,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
 
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4**`,
+      value: `**${data.actionPoints.points || 0}/4** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ''}`.trim(),
       inline: true,
     },
     {
@@ -321,11 +314,6 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       value: createCapabilitiesDisplay(data.character.capabilities),
       inline: false,
     });
-  }
-
-  // Ajouter le panneau d'attention s'il y en a un
-  if (attentionPanel) {
-    fields.splice(3, 0, attentionPanel);
   }
 
   embed.addFields(fields);
