@@ -4,8 +4,9 @@ QUESTION :
 
 Automatiser conso de transformé puis normal ? 
 
+CAPACITE DIVERTIR DANS FICHE PERSO == BUG
 
-
+Bouton manger, gestion des erreurs (exemple manger aors que l'on a pas faim)
 
 
 /expedition:
