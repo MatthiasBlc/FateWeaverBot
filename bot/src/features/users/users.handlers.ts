@@ -240,10 +240,9 @@ export async function handleProfileCommand(interaction: any) {
 function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
-    title: `📋 Profil de ${data.character.name || "Sans nom"}`,
-    thumbnail: data.user.displayAvatarURL,
+    title: `📋 ${data.character.name || "Sans nom"}`,
     footer: {
-      text: `Profil de: ${data.character.name}`,
+      text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(data.timeUntilUpdate)} avant reset`,
       iconURL: data.user.displayAvatarURL,
     },
     timestamp: true,
@@ -270,40 +269,34 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
   // Ajout des champs d'information
   const fields = [
     {
-      name: "Nom",
-      value: data.character.name || "Non défini",
-      inline: true,
-    },
-    {
-      name: "Rôles",
+      name: "Métier",
       value: discordRolesText,
       inline: true,
     },
-
+    {
+      name: " ",
+      value: " ",
+      inline: true,
+    },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ''}`.trim(),
+      value: `**${data.actionPoints.points || 0}/4** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ' '}`.trim(),
       inline: true,
     },
     {
-      name: "Points de vie (PV)",
-      value: createPVDisplay(data.character.hp, 5),
+      name: " ",
+      value: `Vie (PV) : ${createPVDisplay(data.character.hp, 5)}`,
       inline: true,
     },
     {
-      name: "Points mentaux (PM)",
-      value: createPMDisplay(data.character.pm, 5),
+      name: " ",
+      value: `Mental (PM) : ${createPMDisplay(data.character.pm, 5)}`,
       inline: true,
     },
     {
-      name: "État de Faim",
-      value: hungerDisplay.text,
-      inline: true,
-    },
-    {
-      name: "Prochaine mise à jour",
-      value: formatTimeUntilUpdate(data.timeUntilUpdate),
-      inline: true,
+      name: `Faim: ${hungerDisplay.text.split('\n')[0]}`,
+      value: hungerDisplay.text.split('\n')[1] || "",
+      inline: true, // Essayer inline pour rester avec les autres
     },
   ];
 
@@ -421,27 +414,27 @@ function createAdvancedHungerDisplay(level: number): {
   switch (level) {
     case 0:
       return {
-        text: `${baseEmoji} **${baseText}** - HP à 1 !`,
+        text: `${baseEmoji} **${baseText}**\nHP à 1 !`,
         emoji: baseEmoji,
       };
     case 1:
       return {
-        text: `${baseEmoji} **${baseText}** - +1 PA au lieu de +2`,
+        text: `${baseEmoji} **${baseText}**\n+1 PA au lieu de +2`,
         emoji: baseEmoji,
       };
     case 2:
       return {
-        text: `${baseEmoji} **Faim** - État normal`,
+        text: `${baseEmoji} **Faim**\nÉtat normal`,
         emoji: baseEmoji,
       };
     case 3:
       return {
-        text: `${baseEmoji} **Faim** - État normal`,
+        text: `${baseEmoji} **Faim**\nÉtat normal`,
         emoji: baseEmoji,
       };
     case 4:
       return {
-        text: `${baseEmoji} **Satiété** - Soigne 1 PV/jour`,
+        text: `${baseEmoji} **Satiété**\nSoigne 1 PV/jour`,
         emoji: baseEmoji,
       };
     default:
@@ -677,7 +670,7 @@ function createCapabilityButtons(
   const maxButtonsPerRow = 5; // Limite par ligne (Discord : 5 max)
   const maxRows = 4; // Limiter à 4 lignes pour laisser de la place pour d'autres boutons
 
-  // Diviser les capacités en groupes de 4
+  // Diviser les capacités en groupes de 5
   for (let i = 0; i < capabilities.length && rows.length < maxRows; i += maxButtonsPerRow) {
     const group = capabilities.slice(i, i + maxButtonsPerRow);
     const buttons = group.map(cap => {
@@ -698,7 +691,7 @@ function createCapabilityButtons(
 
       const button = new ButtonBuilder()
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
-        .setLabel(`${cap.name} (${cap.costPA}PA)`)
+        .setLabel(`${cap.name} (${cap.costPA}PA)`) // Label original sans padding
         .setStyle(buttonStyle)
         .setEmoji(getEmojiForCapability(cap.name));
 

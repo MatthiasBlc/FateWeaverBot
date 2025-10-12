@@ -86,3 +86,5 @@ Après : Affichage inline comme "3/4 ⚠️" ou "4/4 ⚠️" si PA >= 3, sinon j
 Constante Utilisée : STATUS.WARNING de 
 emojis.ts
  (⚠️).
+
+Dans profil s'il y a plus de 4 capacités, les boutons ne s'affichent pas 
