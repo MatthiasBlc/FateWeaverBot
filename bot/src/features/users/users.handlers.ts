@@ -284,17 +284,17 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
       inline: true,
     },
     {
-      name: " ",
-      value: `Vie (PV) : ${createPVDisplay(data.character.hp, 5)}`,
+      name: "Vie (PV)",
+      value: `${createPVDisplay(data.character.hp, 5)}`,
       inline: true,
     },
     {
-      name: " ",
-      value: `Mental (PM) : ${createPMDisplay(data.character.pm, 5)}`,
+      name: "Mental (PM)",
+      value: `${createPMDisplay(data.character.pm, 5)}`,
       inline: true,
     },
     {
-      name: `Faim: ${hungerDisplay.text.split('\n')[0]}`,
+      name: `Faim : ${hungerDisplay.text.split('\n')[0]}`,
       value: hungerDisplay.text.split('\n')[1] || "",
       inline: true, // Essayer inline pour rester avec les autres
     },
