@@ -441,15 +441,15 @@ function getHungerLevelText(level: number): string {
 function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return "${HUNGER.STARVATION}";
+      return HUNGER.STARVATION;
     case 1:
-      return "${HUNGER.STARVING}";
+      return HUNGER.STARVING;
     case 2:
-      return "${HUNGER.HUNGRY}";
+      return HUNGER.HUNGRY;
     case 3:
-      return "${HUNGER.APPETITE}";
+      return HUNGER.APPETITE;
     case 4:
-      return "${HUNGER.FED}";
+      return HUNGER.FED;
     default:
       return "❓";
   }
