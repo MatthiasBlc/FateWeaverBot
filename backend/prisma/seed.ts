@@ -14,87 +14,101 @@ async function main() {
     const capabilities = [
       {
         name: 'Chasser',
+        emojiTag: 'HUNT',
         category: CapabilityCategory.HARVEST,
         costPA: 2,
         description: 'Chasser du gibier pour obtenir des vivres. Plus efficace en été.'
       },
       {
         name: 'Cueillir',
+        emojiTag: 'GATHER',
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: 'Cueillir des baies et des plantes comestibles. Plus efficace en été.'
+        description: 'Cueillir des plantes comestibles pour obtenir des vivres. Plus efficace en été.'
       },
       {
         name: 'Pêcher',
+        emojiTag: 'FISH',
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: 'Pêcher du poisson. Peut utiliser 2 PA pour un lancer chanceux.'
+        description: 'Pêcher du poisson pour obtenir des Vivres. Peut utiliser 2 PA pour un lancer chanceux.'
       },
       {
         name: 'Bûcheronner',
+        emojiTag: 'CHOPPING',
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: 'Récolte 2-3 bois'
+        description: 'Récolter du bois'
       },
       {
         name: 'Miner',
+        emojiTag: 'MINING',
         category: CapabilityCategory.HARVEST,
         costPA: 2,
-        description: 'Récolte 2-6 minerai'
+        description: 'Récolter du minerai'
       },
       {
         name: 'Tisser',
+        emojiTag: 'WEAVING',
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: 'Bois → Tissu (formule aléatoire)'
+        description: 'Multiplier du Bois en Tissu'
       },
       {
         name: 'Forger',
+        emojiTag: 'FORGING',
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: 'Minerai → Fer (formule aléatoire)'
+        description: 'Multiplier du Minerai en Métal'
       },
       {
         name: 'Travailler le bois',
+        emojiTag: 'WOODWORKING',
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: 'Bois → Planches (formule aléatoire)'
+        description: 'Multiplier du Bois en Planches'
       },
       {
         name: 'Cuisiner',
+        emojiTag: 'COOKING',
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: 'Vivres → Nourriture (formule aléatoire)'
+        description: 'Multiplier des Vivres en Repas'
       },
       {
         name: 'Soigner',
+        emojiTag: 'HEALING',
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
-        description: '1 PA = +1 PV cible, 2 PA = 1 cataplasme'
+        description: 'Rendre 1 PV à 1 personne OU utiliser 2 PA pour créer 1 Cataplasme'
       },
       {
-        name: 'Analyser',
+        name: 'Rechercher',
+        emojiTag: 'RESEARCHING',
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
-        description: 'Recherche (admin)'
+        description: 'Analyser un objet/lieu/créature pour obtenir des informations dessus'
       },
       {
         name: 'Cartographier',
+        emojiTag: 'CARTOGRAPHING',
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
-        description: 'Exploration (admin)'
+        description: 'Analyser les alentours pour révéler de nouvelles cases sur la carte'
       },
       {
         name: 'Auspice',
+        emojiTag: 'AUGURING',
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
-        description: 'Divination (admin)'
+        description: 'Analyser les cieux pour anticiper la météo des prochains jours'
       },
       {
         name: 'Divertir',
+        emojiTag: 'ENTERTAIN',
         category: CapabilityCategory.SPECIAL,
         costPA: 1,
-        description: 'Divertir la ville. Tous les 5 usages, tout le monde gagne 1 PM (max 5).'
+        description: 'Divertir le village pour faire regagner des PM. Tous les 5 usages, tout le monde autour gagne 1 PM.'
       }
     ];
 

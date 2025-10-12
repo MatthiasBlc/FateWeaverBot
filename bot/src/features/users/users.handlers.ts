@@ -1,4 +1,4 @@
-import { CHARACTER, HUNGER, STATUS, CAPABILITIES, RESOURCES } from "../../constants/emojis.js";
+import { CHARACTER, HUNGER, STATUS, CAPABILITIES, RESOURCES, RESOURCES_EXTENDED } from "../../constants/emojis.js";
 import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
@@ -163,6 +163,7 @@ export async function handleProfileCommand(interaction: any) {
               name: cap.name,
               description: cap.description,
               costPA: cap.costPA,
+              emojiTag: cap.emojiTag,
             })),
           },
           actionPoints: {
@@ -283,7 +284,7 @@ function createStatusDisplay(character: any): string | null {
 function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
-    title: `📋 ${data.character.name || "Sans nom"}`,
+    title: `📋 ###${data.character.name || "Sans nom"}`,
     footer: {
       text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(data.timeUntilUpdate)} avant reset`,
       iconURL: data.user.displayAvatarURL,
@@ -347,14 +348,14 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
   const statusDisplay = createStatusDisplay(data.character);
   if (statusDisplay) {
     fields.push({
-      name: "${CHARACTER.STATUS} **STATUS**",
+      name: `${CHARACTER.STATUS} **STATUTS**`,
       value: statusDisplay,
       inline: false,
     });
   }
   if (data.character.capabilities && data.character.capabilities.length > 0) {
     fields.push({
-      name: "${CAPACITIES.GENERIC} **CAPACITÉS CONNUES**",
+      name: `**CAPACITÉS**`,
       value: createCapabilitiesDisplay(data.character.capabilities),
       inline: false,
     });
@@ -381,24 +382,24 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
     const buttons = [];
 
-    // Bouton pour les vivres (toujours affiché si personnage peut manger)
-    const vivresButton = new ButtonBuilder()
-      .setCustomId(`eat_food:${data.character.id}`)
-      .setLabel("Manger 🍞 (1)")
-      .setStyle(ButtonStyle.Primary);
-    buttons.push(vivresButton);
+    // // Bouton pour les vivres (toujours affiché si personnage peut manger)
+    // const vivresButton = new ButtonBuilder()
+    //   .setCustomId(`eat_food:${data.character.id}`)
+    //   .setLabel("Manger 🍞 (1)")
+    //   .setStyle(ButtonStyle.Primary);
+    // buttons.push(vivresButton);
 
-    // Bouton pour la nourriture (toujours affiché si personnage peut manger)
-    const nourritureButton = new ButtonBuilder()
-      .setCustomId(`eat_nourriture:${data.character.id}`)
-      .setLabel("Manger 🍽️ (1)")
-      .setStyle(ButtonStyle.Secondary);
-    buttons.push(nourritureButton);
+    // // Bouton pour la nourriture (toujours affiché si personnage peut manger)
+    // const nourritureButton = new ButtonBuilder()
+    //   .setCustomId(`eat_nourriture:${data.character.id}`)
+    //   .setLabel("Manger 🍽️ (1)")
+    //   .setStyle(ButtonStyle.Secondary);
+    // buttons.push(nourritureButton);
 
     // Bouton "Manger +" pour accéder au menu avancé
     const eatMoreButton = new ButtonBuilder()
       .setCustomId(`eat_more:${data.character.id}`)
-      .setLabel("Manger + 🍴")
+      .setLabel(`${RESOURCES_EXTENDED.FORK_KNIFE} Manger`)
       .setStyle(ButtonStyle.Success);
     buttons.push(eatMoreButton);
 
@@ -646,29 +647,47 @@ export async function handleProfileButtonInteraction(interaction: any) {
   }
 }
 
-function createCapabilitiesDisplay(capabilities: Array<{ name: string; description?: string; costPA: number; }> | undefined): string {
+function createCapabilitiesDisplay(capabilities: Array<{ name: string; description?: string; costPA: number; emojiTag?: string; }> | undefined): string {
   if (!capabilities || capabilities.length === 0) {
     return "Aucune capacité connue";
   }
 
-  // Déterminer l'emoji selon le nom de la capacité
-  const getEmojiForCapability = (name: string): string => {
-    switch (name.toLowerCase()) {
-      case 'chasser': return '🏹';
-      case 'cueillir': return '🌿';
-      case 'pêcher': return '🎣';
-      case 'divertir': return '🎭';
-      default: return '🔮';
+  // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
+  const getEmojiForCapability = (emojiTag?: string): string => {
+    console.log('getEmojiForCapability - emojiTag reçu:', emojiTag);
+    if (!emojiTag) {
+      console.log('Aucun emojiTag fourni, utilisation de CAPABILITIES.GENERIC');
+      return CAPABILITIES.GENERIC;
     }
+    
+    const upperEmojiTag = emojiTag.toUpperCase();
+    console.log('Recherche de la clé dans CAPABILITIES:', upperEmojiTag);
+    
+    // Vérifier si l'emojiTag existe comme clé dans CAPABILITIES
+    const capabilityKey = Object.keys(CAPABILITIES).find(
+      key => key === upperEmojiTag
+    ) as keyof typeof CAPABILITIES | undefined;
+    
+    console.log('Clé trouvée dans CAPABILITIES:', capabilityKey);
+    
+    if (capabilityKey) {
+      const emoji = CAPABILITIES[capabilityKey];
+      console.log(`Emoji trouvé pour ${capabilityKey}:`, emoji);
+      return emoji;
+    }
+    
+    console.warn(`EmojiTag inconnu: ${emojiTag}`);
+    console.log('CAPABILITIES disponibles:', Object.entries(CAPABILITIES));
+    return CAPABILITIES.GENERIC;
   };
 
   return capabilities.map(cap =>
-    `${getEmojiForCapability(cap.name)} **${cap.name}** (${cap.costPA} PA)${cap.description ? `\n   ${cap.description}` : ''}`
+    `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${cap.costPA} PA)${cap.description ? ` • ${cap.description}` : ''}`
   ).join('\n');
 }
 
 function createCapabilityButtons(
-  capabilities: Array<{ id: string; name: string; costPA: number; }>,
+  capabilities: Array<{ id: string; name: string; costPA: number; emojiTag?: string; }>,
   userId: string,
   characterId: string,
   currentPA: number
@@ -685,15 +704,10 @@ function createCapabilityButtons(
   for (let i = 0; i < capabilities.length && rows.length < maxRows; i += maxButtonsPerRow) {
     const group = capabilities.slice(i, i + maxButtonsPerRow);
     const buttons = group.map(cap => {
-      // Déterminer l'emoji selon le nom de la capacité
-      const getEmojiForCapability = (name: string): string => {
-        switch (name.toLowerCase()) {
-          case 'chasser': return '🏹';
-          case 'cueillir': return '🌿';
-          case 'pêcher': return '🎣';
-          case 'divertir': return '🎭';
-          default: return '🔮';
-        }
+      // Déterminer l'emoji selon l'emojiTag de la capacité
+      const getEmojiForCapability = (emojiTag?: string): string => {
+        if (!emojiTag) return CAPABILITIES.GENERIC;
+        return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] || CAPABILITIES.GENERIC;
       };
 
       // Vérifier si le personnage a assez de PA pour cette capacité
@@ -704,7 +718,7 @@ function createCapabilityButtons(
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
         .setLabel(`${cap.name} (${cap.costPA}PA)`) // Label original sans padding
         .setStyle(buttonStyle)
-        .setEmoji(getEmojiForCapability(cap.name));
+        .setEmoji(getEmojiForCapability(cap.emojiTag));
 
       // Désactiver le bouton si pas assez de PA
       if (!hasEnoughPA) {

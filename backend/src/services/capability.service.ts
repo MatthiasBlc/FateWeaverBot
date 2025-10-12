@@ -92,6 +92,7 @@ export class CapabilityService {
     category: CapabilityCategory;
     costPA: number;
     description?: string;
+    emojiTag: string;
   }): Promise<PrismaCapability> {
     return this.prisma.capability.create({
       data: {
@@ -99,6 +100,7 @@ export class CapabilityService {
         category: data.category,
         costPA: data.costPA,
         description: data.description,
+        emojiTag: data.emojiTag,
       },
     });
   }

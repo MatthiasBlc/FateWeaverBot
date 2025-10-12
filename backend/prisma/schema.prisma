@@ -135,6 +135,7 @@ model Chantier {
 model Capability {
   id          String                @id @default(cuid())
   name        String                @unique
+  emojiTag    String
   category    CapabilityCategory
   costPA      Int                   @map("cost_pa")
   description String?
