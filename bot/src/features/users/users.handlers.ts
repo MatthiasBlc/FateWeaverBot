@@ -659,23 +659,23 @@ function createCapabilitiesDisplay(capabilities: Array<{ name: string; descripti
       console.log('Aucun emojiTag fourni, utilisation de CAPABILITIES.GENERIC');
       return CAPABILITIES.GENERIC;
     }
-    
+
     const upperEmojiTag = emojiTag.toUpperCase();
     console.log('Recherche de la clé dans CAPABILITIES:', upperEmojiTag);
-    
+
     // Vérifier si l'emojiTag existe comme clé dans CAPABILITIES
     const capabilityKey = Object.keys(CAPABILITIES).find(
       key => key === upperEmojiTag
     ) as keyof typeof CAPABILITIES | undefined;
-    
+
     console.log('Clé trouvée dans CAPABILITIES:', capabilityKey);
-    
+
     if (capabilityKey) {
       const emoji = CAPABILITIES[capabilityKey];
       console.log(`Emoji trouvé pour ${capabilityKey}:`, emoji);
       return emoji;
     }
-    
+
     console.warn(`EmojiTag inconnu: ${emojiTag}`);
     console.log('CAPABILITIES disponibles:', Object.entries(CAPABILITIES));
     return CAPABILITIES.GENERIC;

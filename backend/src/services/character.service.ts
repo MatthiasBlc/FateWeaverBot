@@ -663,9 +663,8 @@ export class CharacterService {
     return {
       success: true,
       message,
-      publicMessage: `🎭 ${character.name} a donné un spectacle !${
-        pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
-      }`,
+      publicMessage: `🎭 ${character.name} a donné un spectacle !${pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
+        }`,
       divertCounter: newDivertCounter,
       pmGained,
     };
