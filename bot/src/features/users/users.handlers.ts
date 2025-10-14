@@ -284,7 +284,7 @@ function createStatusDisplay(character: any): string | null {
 function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
-    title: `📋 ###${data.character.name || "Sans nom"}`,
+    title: `${CHARACTER.PROFILE} ###${data.character.name || "Sans nom"}`,
     footer: {
       text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(data.timeUntilUpdate)} avant reset`,
       iconURL: data.user.displayAvatarURL,
@@ -412,7 +412,7 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
   if (data.character.hp < 5 && data.character.hp > 0) {
     const cataplasmeButton = new ButtonBuilder()
       .setCustomId(`use_cataplasme:${data.character.id}`)
-      .setLabel("Utiliser Cataplasme 🩹")
+      .setLabel(`Utiliser Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
       .setStyle(ButtonStyle.Danger);
 
     const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(cataplasmeButton);
@@ -452,12 +452,12 @@ function getHungerEmoji(level: number): string {
     case 4:
       return HUNGER.FED;
     default:
-      return "❓";
+      return HUNGER.UNKNOWN;
   }
 }
 
 
-function createHeartDisplay(current: number, max: number, filledEmoji = '❤️', emptyEmoji = '🖤'): string {
+function createHeartDisplay(current: number, max: number, filledEmoji = CHARACTER.HP_FULL, emptyEmoji = CHARACTER.HP_EMPTY): string {
   const hearts = [];
 
   for (let i = 0; i < max; i++) {
@@ -474,11 +474,11 @@ function createHeartDisplay(current: number, max: number, filledEmoji = '❤️'
 function createPVDisplay(current: number, max: number): string {
   // Cas spécial : 1 seul PV restant = cœur pansé
   if (current === 1) {
-    const hearts = ['❤️‍🩹']; // Cœur avec pansement
+    const hearts: string[] = [CHARACTER.HP_BANDAGED]; // Cœur avec pansement
 
     // Ajouter les cœurs vides restants
     for (let i = 1; i < max; i++) {
-      hearts.push('🖤');
+      hearts.push(CHARACTER.HP_EMPTY);
     }
 
     return hearts.join(' ');
@@ -547,7 +547,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
           actual: interaction.user.id
         });
         await interaction.reply({
-          content: "❌ Vous ne pouvez utiliser que vos propres capacités.",
+          content: `${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`,
           flags: ["Ephemeral"]
         });
         return;
@@ -560,7 +560,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
       const selectedCapability = capabilities.find(cap => cap.id === capabilityId);
 
       if (!selectedCapability) {
-        await interaction.editReply("❌ Capacité non trouvée.");
+        await interaction.editReply(`${STATUS.ERROR} Capacité non trouvée.`);
         return;
       }
 
@@ -569,7 +569,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
       const character = await characterService.getCharacterById(characterId);
 
       if (!character) {
-        await interaction.editReply("❌ Personnage non trouvé.");
+        await interaction.editReply(`${STATUS.ERROR} Personnage non trouvé.`);
         return;
       }
 
@@ -581,20 +581,20 @@ export async function handleProfileButtonInteraction(interaction: any) {
           expectedUserId: userId,
           actualUserId: interaction.user.id
         });
-        await interaction.editReply("❌ Vous ne pouvez utiliser que vos propres capacités.");
+        await interaction.editReply(`${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`);
         return;
       }
 
       // Vérifier que le personnage n'est pas mort
       if (character.isDead) {
-        await interaction.editReply("❌ Vous ne pouvez pas utiliser de capacités avec un personnage mort.");
+        await interaction.editReply(`${STATUS.ERROR} Vous ne pouvez pas utiliser de capacités avec un personnage mort.`);
         return;
       }
 
       // Vérifier les PA
       if (character.paTotal < selectedCapability.costPA) {
         await interaction.editReply(
-          `❌ Vous n'avez pas assez de PA (${character.paTotal}/${selectedCapability.costPA} requis).`
+          `${STATUS.ERROR} Vous n'avez pas assez de PA (${character.paTotal}/${selectedCapability.costPA} requis).`
         );
         return;
       }
@@ -641,7 +641,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       await interaction.editReply({
-        content: `❌ ${errorMessage}`
+        content: `${STATUS.ERROR} ${errorMessage}`
       });
     }
   }

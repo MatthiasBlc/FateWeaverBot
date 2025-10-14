@@ -128,98 +128,21 @@ L'utilisateur dit simplement "Terminé". Claude :
 
 ## 📝 Templates de Prompts
 
-### Template Prompt Court (pour l'utilisateur)
+### Template Prompt Court (pour l'utilisateur) - ⚠️ GARDER ULTRA-COURT
+
+**RÈGLE CRITIQUE** : Le prompt copier-coller doit être ≤50 tokens. TOUT le détail va dans le fichier .md
+
 ```markdown
 ## 🚀 PROMPT POUR SUPERNOVA - [Nom Tâche]
 
-Copie le contenu ci-dessous et donne-le à **Code Supernova** dans Windsurf :
+Copie et colle ceci à Supernova :
 
-\`\`\`markdown
-# MISSION : [Nom de la tâche]
-
-Tu es **Code Supernova**, agent d'exécution pour [projet].
-
-## 📄 INSTRUCTIONS COMPLÈTES
-Lis et exécute : `/chemin/absolu/vers/docs/supernova-prompt-X.md`
-
-## ⚠️ RÈGLES CRITIQUES - IMPÉRATIF
-
-### 🚫 INTERDICTIONS ABSOLUES
-1. **NE JAMAIS supprimer un fichier** sans avoir essayé au moins 3 corrections différentes
-2. **NE JAMAIS considérer un fichier "corrompu"** - les fichiers ont juste des erreurs TypeScript à corriger
-3. **NE JAMAIS tourner en boucle** - Si même erreur après 2 tentatives, STOP et documente le problème
-4. **NE JAMAIS committer sans build** - Le build DOIT passer avant chaque commit
-
-### ✅ PROCÉDURE OBLIGATOIRE
-
-**Après CHAQUE modification de fichier :**
-1. `cd /chemin/absolu && npm run build` (backend OU bot selon le fichier)
-2. Si erreur TypeScript → **CORRIGER dans le même fichier** (pas de suppression)
-3. Si même erreur 2 fois → **STOP, documenter, passer à la tâche suivante**
-4. Si build OK → `git add . && git commit -m "message descriptif"`
-5. Continuer avec la tâche suivante
-
-**Gestion des erreurs TypeScript :**
-- Erreur de syntaxe → Corriger la syntaxe (accolade, parenthèse, etc.)
-- Import manquant → Ajouter l'import
-- Type incorrect → Ajuster le type
-- Variable non utilisée → Supprimer ou utiliser la variable
-- **JAMAIS** → Supprimer le fichier et le recréer
-
-### 📊 RAPPORT FINAL OBLIGATOIRE
-
-Tu DOIS créer un fichier de rapport avec cette structure EXACTE :
-
-**Emplacement** : `docs/supernova-reports/supernova-report-[nom-tache]-[YYYYMMDD].md`
-
-**Structure du fichier** :
-
-```markdown
-# 📊 RÉSUMÉ EXÉCUTIF (≤300 tokens)
-
-**Statut** : ✅ Succès complet | ⚠️ Succès partiel | ❌ Échec
-**Tâches complétées** : X/Y
-**Builds** : ✅ Backend OK | ✅ Bot OK (ou ❌ si erreurs)
-**Commits** : X commits créés
-**Problèmes bloquants** : Aucun | [Liste courte]
-
-**Résumé** : [2-3 phrases décrivant ce qui a été fait et résultat global]
-
----
-
-# 📋 RAPPORT DÉTAILLÉ
-
-## 📁 Fichiers Modifiés
-[Liste complète avec lignes ajoutées/supprimées]
-
-## 💾 Commits Créés
-[Liste avec hashes et messages]
-
-## ✅ Builds Réussis
-[Détails des builds]
-
-## 🔧 Erreurs Résolues
-[Liste détaillée]
-
-## ⚠️ Problèmes Non Résolus
-[Si applicable]
-
-## 📈 Métriques
-[Temps, lignes, taux de succès]
-```
-
-**RÈGLE CRITIQUE** : Le RÉSUMÉ EXÉCUTIF doit tenir en 300 tokens MAX (Claude le lira toujours, le reste seulement si nécessaire)
-
-## 🎯 TÂCHES
-[Liste courte des tâches principales]
-
-## 🚀 COMMENCE
-Lis le prompt détaillé et commence !
+\`\`\`
+Lis `/chemin/absolu/docs/supernova-prompt-X.md` et exécute.
+Crée rapport : `docs/supernova-reports/supernova-report-X-[date].md` avec résumé ≤300 tokens.
 \`\`\`
 
----
-
-**Action pour toi :** Copie ce prompt et donne-le à Supernova dans Windsurf. Dis-moi juste "Terminé" quand il aura fini (il créera un fichier de rapport que je lirai) ! 🎯
+Dis-moi "Terminé" quand c'est fait ! 🎯
 ```
 
 ### Template Prompt Détaillé (docs/supernova-prompt-X.md)
