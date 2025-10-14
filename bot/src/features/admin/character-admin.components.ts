@@ -11,6 +11,7 @@ import {
 } from "discord.js";
 import type { Character } from "./character-admin.types";
 import { getHungerLevelText } from "../../utils/hunger";
+import { STATUS, HUNGER, CHARACTER, ACTIONS } from "../../constants/emojis";
 
 // --- Custom IDs --- //
 export const CHARACTER_ADMIN_CUSTOM_IDS = {
@@ -48,9 +49,9 @@ export function createCharacterSelectMenu(characters: Character[]) {
             }`
           )
           .setDescription(
-            `Actif: ${char.isActive ? "✅" : "❌"} | Mort: ${
-              char.isDead ? "💀" : "❤️"
-            } | Reroll: ${char.canReroll ? "✅" : "❌"}`
+            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${
+              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
+            } | Reroll: ${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR}`
           )
           .setValue(char.id)
       )
@@ -205,9 +206,9 @@ export function createAdvancedStatsModal(character: Character) {
 export function createCharacterDetailsContent(character: Character): string {
   return (
     `**${character.name}**\n` +
-    `Actif: ${character.isActive ? "✅" : "❌"}\n` +
-    `Mort: ${character.isDead ? "💀" : "❤️"}\n` +
-    `Reroll autorisé: ${character.canReroll ? "✅" : "❌"}\n` +
+    `Actif: ${character.isActive ? STATUS.SUCCESS : STATUS.ERROR}\n` +
+    `Mort: ${character.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL}\n` +
+    `Reroll autorisé: ${character.canReroll ? STATUS.SUCCESS : STATUS.ERROR}\n` +
     `PA: ${character.paTotal} | Faim: ${getHungerLevelText(
       character.hungerLevel
     )} | PV: ${character.hp} | PM: ${character.pm}\n\n` +
@@ -278,12 +279,12 @@ export function createCapabilityActionButtons(
   return createActionButtons([
     {
       customId: `capability_admin_add:${characterId}`,
-      label: "➕ Ajouter Capacités",
+      label: `${ACTIONS.ADD} Ajouter Capacités`,
       style: ButtonStyle.Success,
     },
     {
       customId: `capability_admin_remove:${characterId}`,
-      label: "➖ Retirer Capacités",
+      label: `${ACTIONS.REMOVE} Retirer Capacités`,
       style: ButtonStyle.Danger,
     },
   ]);
