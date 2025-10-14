@@ -15,6 +15,7 @@ import {
 } from "../character-admin.components";
 import { getCharacterCapabilities } from "../../../services/capability.service";
 import { httpClient } from "../../../services/httpClient";
+import { CAPABILITIES } from "@/constants/emojis";
 
 /**
  * Gestionnaire pour le bouton "Gérer Capacités".
@@ -31,7 +32,7 @@ export async function handleCapabilitiesButton(
     const currentCapabilities = await getCharacterCapabilities(character.id);
 
     // Créer la liste des capacités formatée
-    let content = `## 🔮 Capacités de ${character.name}\n`;
+    let content = `## ${CAPABILITIES.GENERIC} Capacités de ${character.name}\n`;
 
     if (currentCapabilities.length === 0) {
       content += "*Aucune capacité pour le moment.*\n\n";
@@ -183,7 +184,7 @@ export async function handleViewCapabilities(
 
     if (capabilities.length === 0) {
       await interaction.reply({
-        content: `🔮 **${character.name}** ne connaît aucune capacité.`,
+        content: `${CAPABILITIES.GENERIC} **${character.name}** ne connaît aucune capacité.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -194,7 +195,7 @@ export async function handleViewCapabilities(
       .join('\n');
 
     const embed = createInfoEmbed(
-      `🔮 Capacités de ${character.name}`,
+      `${CAPABILITIES.GENERIC} Capacités de ${character.name}`,
       capabilitiesList
     ).setFooter({
       text: `${capabilities.length} capacité${capabilities.length > 1 ? 's' : ''} connue${capabilities.length > 1 ? 's' : ''}`,
@@ -270,11 +271,11 @@ export async function handleCapabilitySelect(
 
     const embed = action === 'add'
       ? createSuccessEmbed('Ajout de capacités', results.join('\n')).setFooter({
-          text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ajoutée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
-        })
+        text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} ajoutée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
+      })
       : createSuccessEmbed('Suppression de capacités', results.join('\n')).setFooter({
-          text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} retirée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
-        });
+        text: `${selectedCapabilityIds.length} capacité${selectedCapabilityIds.length > 1 ? 's' : ''} retirée${selectedCapabilityIds.length > 1 ? 's' : ''}`,
+      });
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

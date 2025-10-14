@@ -14,6 +14,38 @@ export const getAllCapabilities: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const createCapability: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, emojiTag, category, costPA, description } = req.body;
+
+    if (!name || !emojiTag || !category || !costPA) {
+      throw createHttpError(400, "name, emojiTag, category et costPA sont requis");
+    }
+
+    if (!["HARVEST", "CRAFT", "SCIENCE", "SPECIAL"].includes(category)) {
+      throw createHttpError(400, "category doit être HARVEST, CRAFT, SCIENCE ou SPECIAL");
+    }
+
+    if (costPA < 1 || costPA > 4) {
+      throw createHttpError(400, "costPA doit être entre 1 et 4");
+    }
+
+    const capability = await prisma.capability.create({
+      data: {
+        name,
+        emojiTag,
+        category,
+        costPA,
+        description: description || null,
+      },
+    });
+
+    res.status(201).json(capability);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const executeBûcheronner: RequestHandler = async (req, res, next) => {
   try {
     const { characterId } = req.params;

@@ -333,3 +333,26 @@ export const getAllResourceTypes: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const createResourceType: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, emoji, category, description } = req.body;
+
+    if (!name || !emoji || !category) {
+      throw createHttpError(400, "name, emoji et category sont requis");
+    }
+
+    const resourceType = await prisma.resourceType.create({
+      data: {
+        name,
+        emoji,
+        category,
+        description: description || null,
+      },
+    });
+
+    res.status(201).json(resourceType);
+  } catch (error) {
+    next(error);
+  }
+};

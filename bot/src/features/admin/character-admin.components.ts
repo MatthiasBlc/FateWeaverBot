@@ -11,7 +11,7 @@ import {
 } from "discord.js";
 import type { Character } from "./character-admin.types";
 import { getHungerLevelText } from "../../utils/hunger";
-import { STATUS, HUNGER, CHARACTER, ACTIONS } from "../../constants/emojis";
+import { STATUS, HUNGER, CHARACTER, ACTIONS, CAPABILITIES } from "../../constants/emojis";
 
 // --- Custom IDs --- //
 export const CHARACTER_ADMIN_CUSTOM_IDS = {
@@ -40,17 +40,15 @@ export function createCharacterSelectMenu(characters: Character[]) {
       characters.map((char) =>
         new StringSelectMenuOptionBuilder()
           .setLabel(
-            `${char.name}${
-              char.user?.globalName
-                ? ` - ${char.user.globalName}`
-                : char.user?.username
+            `${char.name}${char.user?.globalName
+              ? ` - ${char.user.globalName}`
+              : char.user?.username
                 ? ` - ${char.user.username}`
                 : ""
             }`
           )
           .setDescription(
-            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${
-              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
+            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
             } | Reroll: ${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR}`
           )
           .setValue(char.id)
@@ -106,7 +104,7 @@ export function createCharacterActionButtons(character: Character) {
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX}${character.id}`,
     label: "Gérer Capacités",
     style: ButtonStyle.Secondary,
-    emoji: "🔮",
+    emoji: CAPABILITIES.GENERIC,
   });
 
   return createActionButtons(buttons);
@@ -241,8 +239,8 @@ export function createCapabilitySelectMenu(
   const currentIds = new Set(currentCapabilities.map((cap) => cap.id));
 
   // Créer un ID personnalisé qui inclut l'ID du personnage s'il est fourni
-  const customId = characterId 
-    ? `capability_admin_select:${characterId}` 
+  const customId = characterId
+    ? `capability_admin_select:${characterId}`
     : "capability_admin_select";
 
   const selectMenu = new StringSelectMenuBuilder()

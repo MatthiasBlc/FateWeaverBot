@@ -27,6 +27,8 @@ import { ChantierAPIService } from "./api/chantier-api.service";
 import { ExpeditionAPIService } from "./api/expedition-api.service";
 import { TownsAPIService } from "./api/towns-api.service";
 import { Town } from "../types/entities";
+import { CapabilityAPIService } from "./api/capability-api.service";
+import { ResourceAPIService } from "./api/resource-api.service";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -41,6 +43,8 @@ class APIService {
   public readonly chantiers: ChantierAPIService;
   public readonly expeditions: ExpeditionAPIService;
   public readonly towns: TownsAPIService;
+  public readonly capabilities: CapabilityAPIService;
+  public readonly resources: ResourceAPIService;
 
   private constructor() {
     // Use shared HTTP client
@@ -52,6 +56,8 @@ class APIService {
     this.chantiers = new ChantierAPIService(this.api);
     this.expeditions = new ExpeditionAPIService(this.api);
     this.towns = new TownsAPIService(this.api);
+    this.capabilities = new CapabilityAPIService(this.api);
+    this.resources = new ResourceAPIService(this.api);
   }
 
   public static getInstance(): APIService {

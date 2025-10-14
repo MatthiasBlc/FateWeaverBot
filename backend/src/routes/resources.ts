@@ -7,9 +7,19 @@ import {
   removeResource,
   transferResource,
   getAllResourceTypes,
+  createResourceType,
 } from "../controllers/resources";
 
 const router = Router();
+
+// Récupérer tous les types de ressources disponibles
+router.get("/types", requireAuthOrInternal, getAllResourceTypes);
+
+// Route dédiée pour accès direct aux ResourceType (pour plus de clarté)
+router.get("/resource-types", requireAuthOrInternal, getAllResourceTypes);
+
+// Créer un nouveau type de ressource
+router.post("/types", requireAuthOrInternal, createResourceType);
 
 // Récupérer les ressources d'un lieu (ville ou expédition)
 router.get("/:locationType/:locationId", requireAuthOrInternal, getResources);
@@ -25,11 +35,5 @@ router.delete("/:locationType/:locationId/:resourceTypeId", requireAuthOrInterna
 
 // Transférer des ressources entre deux lieux
 router.post("/:fromLocationType/:fromLocationId/:toLocationType/:toLocationId/:resourceTypeId/transfer", requireAuthOrInternal, transferResource);
-
-// Récupérer tous les types de ressources disponibles
-router.get("/types", requireAuthOrInternal, getAllResourceTypes);
-
-// Route dédiée pour accès direct aux ResourceType (pour plus de clarté)
-router.get("/resource-types", requireAuthOrInternal, getAllResourceTypes);
 
 export default router;

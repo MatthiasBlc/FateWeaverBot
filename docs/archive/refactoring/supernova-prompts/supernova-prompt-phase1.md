@@ -131,7 +131,7 @@ const embed = createSuccessEmbed(
 ```typescript
 const embed = new EmbedBuilder()
   .setColor(0x0099ff)
-  .setTitle(`🔮 Capacités de ${character.name}`)
+  .setTitle(`${CAPABILITIES.GENERIC} Capacités de ${character.name}`)
   .setDescription(...)
   .setFooter(...)
   .setTimestamp();
@@ -140,7 +140,7 @@ const embed = new EmbedBuilder()
 **Remplacer par :**
 ```typescript
 const embed = createInfoEmbed(
-  `🔮 Capacités de ${character.name}`,
+  `${CAPABILITIES.GENERIC} Capacités de ${character.name}`,
   capabilitiesList
 ).setFooter({ text: `${capabilities.length} capacité(s)` });
 ```
