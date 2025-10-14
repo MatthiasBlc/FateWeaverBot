@@ -41,8 +41,8 @@ services:
 
   backenddev:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: backenddev
     restart: unless-stopped
     environment:
@@ -76,8 +76,8 @@ services:
 
   discord-botdev:
     build:
-      context: ./bot
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./bot/Dockerfile
       args:
         - NODE_ENV=development
     container_name: discord-botdev
@@ -114,8 +114,8 @@ services:
 
   discord-bot-deploy:
     build:
-      context: ./bot
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./bot/Dockerfile
       args:
         - NODE_ENV=development
     container_name: discord-bot-deploy

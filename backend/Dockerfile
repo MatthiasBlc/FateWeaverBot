@@ -4,10 +4,13 @@ FROM node:18.18-alpine3.17 AS builder
 # Création des dossiers nécessaires
 WORKDIR /app
 
+# Copie du dossier shared (dépendances communes)
+COPY ./shared /shared
+
 # Copie des fichiers de configuration et de dépendances
-COPY package*.json ./
-COPY prisma ./prisma/
-COPY tsconfig.json ./
+COPY ./backend/package*.json ./
+COPY ./backend/prisma ./prisma/
+COPY ./backend/tsconfig.json ./
 
 # Installation des dépendances
 RUN npm ci
@@ -16,7 +19,7 @@ RUN npm ci
 RUN npx prisma generate
 
 # Copie du code source
-COPY . .
+COPY ./backend .
 
 # Construction de l'application
 RUN npm run build
@@ -34,6 +37,9 @@ RUN npm prune --production
 FROM node:18.18-alpine3.17
 
 WORKDIR /app
+
+# Copie du dossier shared
+COPY --from=builder /shared /shared
 
 # Copie des fichiers nécessaires depuis le builder
 COPY --from=builder /app/package*.json ./

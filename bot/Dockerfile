@@ -2,16 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Copy shared folder
+COPY ./shared /shared
+
 # Install dependencies as root first
-COPY package.json package-lock.json ./
+COPY ./bot/package.json ./bot/package-lock.json ./
 RUN npm ci && npm install -g tsx
 
 # Create logs directory and set permissions
 RUN mkdir -p /app/logs && \
-    chown -R node:node /app
+    chown -R node:node /app && \
+    chown -R node:node /shared
 
 # Copy source code
-COPY --chown=node:node . .
+COPY --chown=node:node ./bot .
 
 # Switch to non-root user
 USER node

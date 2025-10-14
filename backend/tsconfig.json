@@ -12,9 +12,10 @@
 
     /* Modules */
     "moduleResolution": "node",                    /* Specify how TypeScript looks up a file from a given module specifier. */
-    "baseUrl": "./src",                            /* Specify the base directory to resolve non-relative module names. */
+    "baseUrl": ".",                                /* Specify the base directory to resolve non-relative module names. */
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["src/*"],
+      "@shared/*": ["../shared/*"]
     },
     "typeRoots": [
       "node_modules/@types",
@@ -25,7 +26,6 @@
 
     /* Emit */
     "outDir": "./dist" /* Redirect output structure to the directory. */,
-    "rootDir": "./src" /* Specify the root folder within your source files. */,
     // "declaration": true,                          /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     // "sourceMap": true,                            /* Create source map files for emitted JavaScript files. */
 
@@ -42,7 +42,7 @@
     /* Completeness */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../shared/**/*"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "files": true,

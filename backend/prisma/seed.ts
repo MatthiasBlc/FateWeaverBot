@@ -1,5 +1,5 @@
 import { PrismaClient, CapabilityCategory, SeasonType } from '@prisma/client';
-import { RESOURCES, RESOURCES_EXTENDED } from '../../bot/src/constants/emojis';
+import { RESOURCES, RESOURCES_EXTENDED } from '../../shared/constants/emojis';
 
 const prisma = new PrismaClient();
 
