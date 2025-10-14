@@ -1,4 +1,5 @@
 import { PrismaClient, CapabilityCategory, SeasonType } from '@prisma/client';
+import { RESOURCES, RESOURCES_EXTENDED } from '../../bot/src/constants/emojis';
 
 const prisma = new PrismaClient();
 
@@ -141,14 +142,14 @@ async function main() {
     console.log('🏗️ Création des types de ressources...');
 
     const resourceTypes = [
-      { name: "Vivres", emoji: "🍞", category: "base", description: "Ressource brute de survie" },
-      { name: "Bois", emoji: "🌲", category: "base", description: "Matériau brut" },
-      { name: "Minerai", emoji: "⛏️", category: "base", description: "Matériau brut" },
-      { name: "Métal", emoji: "⚙️", category: "transformé", description: "Produit du minerai" },
-      { name: "Tissu", emoji: "🧵", category: "transformé", description: "Produit du bois" },
-      { name: "Planches", emoji: "🪵", category: "transformé", description: "Produit du bois" },
-      { name: "Nourriture", emoji: "🍖", category: "transformé", description: "Produit des vivres" },
-      { name: "Cataplasme", emoji: "🩹", category: "science", description: "Soin médical (max 3 par ville)" },
+      { name: "Vivres", emoji: RESOURCES_EXTENDED.BREAD, category: "base", description: "Ressource brute de survie" },
+      { name: "Bois", emoji: RESOURCES.WOOD, category: "base", description: "Matériau brut" },
+      { name: "Minerai", emoji: RESOURCES.MINERAL, category: "base", description: "Matériau brut" },
+      { name: "Métal", emoji: RESOURCES.METAL, category: "transformé", description: "Produit du minerai" },
+      { name: "Tissu", emoji: RESOURCES.FABRIC, category: "transformé", description: "Produit du bois" },
+      { name: "Planches", emoji: RESOURCES.PLANKS, category: "transformé", description: "Produit du bois" },
+      { name: "Nourriture", emoji: RESOURCES.PREPARED_FOOD, category: "transformé", description: "Produit des vivres" },
+      { name: "Cataplasme", emoji: RESOURCES.CATAPLASM, category: "science", description: "Soin médical (max 3 par ville)" },
     ];
 
     for (const resourceType of resourceTypes) {

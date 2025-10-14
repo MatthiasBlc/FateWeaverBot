@@ -254,10 +254,8 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < capability.costPA) {
-      throw new Error("Pas assez de points d'action");
-    }
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, capability.costPA);
 
     // Calculer la récolte en fonction de la capacité et de la saison
     let foodGained = 0;
@@ -360,10 +358,8 @@ export class CapabilityService {
       throw new Error("Impossible de Bûcheronner en expédition DEPARTED");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < capability.costPA) {
-      throw new Error("Pas assez de points d'action");
-    }
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, capability.costPA);
 
     // Calculer le rendement (2-3 bois)
     const woodGained = Math.floor(Math.random() * 2) + 2; // 2 or 3
@@ -450,10 +446,8 @@ export class CapabilityService {
       throw new Error("Impossible de Miner en expédition DEPARTED");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < capability.costPA) {
-      throw new Error("Pas assez de points d'action");
-    }
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, capability.costPA);
 
     // Calculer le rendement (2-6 minerai)
     const oreGained = Math.floor(Math.random() * 5) + 2; // 2-6
@@ -540,7 +534,8 @@ export class CapabilityService {
       throw new Error("Impossible de Pêcher en expédition DEPARTED");
     }
 
-    // Vérifier les PA
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, paSpent);
 
     // Sélectionner la table de loot appropriée
     const lootTable = paSpent === 1 ? FISH_LOOT_1PA : FISH_LOOT_2PA;
@@ -636,6 +631,9 @@ export class CapabilityService {
     if (departedExpedition) {
       throw new Error("Impossible de crafter en expédition DEPARTED");
     }
+
+    // Vérifier les PA et les restrictions (Agonie, Déprime) AVANT de check le craft type
+    validateCanUsePA(character, paSpent);
 
     // Configuration des crafts
     const CRAFT_CONFIGS: Record<string, { inputResource: string; outputResource: string; verb: string }> = {
@@ -815,10 +813,8 @@ export class CapabilityService {
         throw new Error("Impossible de soigner un personnage en agonie affamé. Il doit d'abord manger.");
       }
 
-      // Vérifier les PA (1 PA pour le mode heal)
-      if (character.paTotal < 1) {
-        throw new Error("Pas assez de points d'action");
-      }
+      // Vérifier les PA et les restrictions (Agonie, Déprime) - 1 PA pour heal
+      validateCanUsePA(character, 1);
 
       await this.prisma.character.update({
         where: { id: targetCharacterId },
@@ -836,10 +832,8 @@ export class CapabilityService {
     } else {
       // Mode 2: Craft cataplasme
 
-      // Vérifier les PA (2 PA pour le mode craft)
-      if (character.paTotal < 2) {
-        throw new Error("Pas assez de points d'action");
-      }
+      // Vérifier les PA et les restrictions (Agonie, Déprime) - 2 PA pour craft
+      validateCanUsePA(character, 2);
 
       // Check cataplasme limit (max 3 per town including expeditions)
       const cataplasmeCount = await this.getCataplasmeCount(character.townId);
@@ -946,10 +940,8 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < paSpent) {
-      throw new Error("Pas assez de points d'action");
-    }
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, paSpent);
 
     // Consommer les PA
     await consumePA(characterId, paSpent, this.prisma);
@@ -1064,10 +1056,8 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
-    // Vérifier les PA
-    if (character.paTotal < capability.costPA) {
-      throw new Error("Pas assez de points d'action");
-    }
+    // Vérifier les PA et les restrictions (Agonie, Déprime)
+    validateCanUsePA(character, capability.costPA);
 
     const newCounter = character.divertCounter + 1;
 

@@ -11,10 +11,11 @@ export function validateCanUsePA(character: Character, paRequired: number): void
     throw new Error("Personnage en agonie : impossible d'utiliser des PA");
   }
 
-  // Déprime (PM=1) : max 1 PA/jour
-  if (character.pm === 1) {
+  // Déprime (PM=1) ou Dépression (PM=0) : max 1 PA/jour
+  if (character.pm <= 1) {
     if (character.paUsedToday + paRequired > 1) {
-      throw new Error("Déprime : vous ne pouvez utiliser qu'1 PA par jour");
+      const status = character.pm === 1 ? "Déprime" : "Dépression";
+      throw new Error(`${status} : vous ne pouvez utiliser qu'1 PA par jour`);
     }
   }
 

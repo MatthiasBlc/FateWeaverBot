@@ -40,10 +40,9 @@ class ActionPointService {
         throw new Error("Vous êtes en agonie et ne pouvez pas utiliser de PA");
       }
 
-      // Block PA usage if PM ≤ 1 (Déprime or Dépression)
-      if (character.pm <= 1) {
-        throw new Error("Votre moral est trop bas pour utiliser des PA");
-      }
+      // PM ≤ 1 (Déprime or Dépression): limit to 1 PA/day
+      // This check is now handled by paUsedToday counter in character-validators.ts
+      // No need to block here, just let the daily limit apply
 
       if (character.paTotal <= 0) {
         throw new Error("Pas assez de points d'action disponibles");

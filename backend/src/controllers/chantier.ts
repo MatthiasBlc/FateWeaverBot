@@ -3,6 +3,7 @@ import { prisma } from "../util/db";
 import { actionPointService } from "../services/action-point.service";
 import { chantierService } from "../services/chantier.service";
 import { logger } from "../services/logger";
+import { validateCanUsePA } from "../util/character-validators";
 
 export const createChantier = async (req: Request, res: Response) => {
   try {
@@ -198,10 +199,20 @@ export const investInChantier = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Impossible d'investir" });
     }
 
+    // Validate PA usage restrictions (Agonie, Déprime, Dépression)
+    try {
+      validateCanUsePA(updatedCharacter, pointsToInvest);
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       await tx.character.update({
         where: { id: characterId },
-        data: { paTotal: { decrement: pointsToInvest } },
+        data: {
+          paTotal: { decrement: pointsToInvest },
+          paUsedToday: { increment: pointsToInvest },
+        },
       });
 
       // Check if all resources are complete
