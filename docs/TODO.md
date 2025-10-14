@@ -1,13 +1,50 @@
 -------------------------Todo-------------------------
+
+## CapacitéV2
+
+beaucoup de trucs
+Capacité
+capacité hiver
+capacité en "+"
+
+Artisanat a revoir
+
+cataplasme (utilisation) bug
+
+Bûcheronner ✅
+Chasser ❌ vérifier été hiver
+Cueillir ❌ vérifier été hiver
+
+Analyser : erreur ❌ n'existe pas
+Auspice : erreur ❌
+Cartographier : erreur ❌
+Cuisiner : erreur ❌
+Divertir ⚠️ ne fonctionne pas comme devrait
+Forger : erreur ❌
+Miner : erreur ❌
+Pêcher ✅ ⁉️ → comment utilise-t-on 2PA pour table bonus ?
+Soigner : erreur ❌
+Tisser : erreur ❌
+Travailler le bois : erreur ❌
+
+Artisanat
+Pour l’artisanat, tu veux probablement des stocks distincts dans la ville (minerai, tissu, métal, planches, etc.).
+→ Il faudra élargir le modèle Foodstock ou créer un ResourceStock multi-type.
+
+Seules 4 s'affichent, Tout doit apparaitre
+
+Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
+Cataplasme : limite à 3 dans le monde (exped + ville)
+
+Instinct ?
+
 # Features, debug et tests
+
 QUESTION :
 
-Automatiser conso de transformé puis normal ? 
+# Automatiser conso de transformé puis normal ?
 
-CAPACITE DIVERTIR DANS FICHE PERSO == BUG
-
-Bouton manger, gestion des erreurs (exemple manger aors que l'on a pas faim)
-
+Bouton manger, gestion des erreurs (exemple manger alors que l'on a pas faim)
 
 /expedition:
 -> ⏸️ il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition. - À TESTER
@@ -31,51 +68,12 @@ On peut dire qu'on ajoute + de nourriture qu'existant dans le village MAIS cette
 Techniquement, c'est un bug mais je pense qu'on s'en fout, vu que ce n'est que pour nous et qu'on a pas trop de raison de faire ça (screen 1)
 la modif du temps d'exped fonctionne bien, mais pas le stock Nourriture (et ce n'est pas très clair si on leur ajoute de la nourriture ? Des vivres ? Quid des cataplasmes ?)
 On ne peut pas Gérer les membres s'il n'y en a qu'un (sûrement parce que retirer ce membre arrêterait l'exped)
-Expédition avec un mort ? 
+Expédition avec un mort ?
 
 ##Tests urgents
 Tester les interractions d'expéditions avec plusieurs personnages
 
-
 Lister ce qui peut être fait en ville et en expédition, et ce qui ne peut pas être fait si l'on est pas dans l'une ou l'autre des situations
-
-## CapacitéV2
-
-beaucoup de trucs
-Capacité
-capacité hiver
-capacité en "+"
-
-Artisanat a revoir
-
-cataplasme (utilisation) bug
-
-
-Analyser : erreur ❌ n'existe pas 
-Auspice : erreur ❌
-Bûcheronner ✅
-Cartographier : erreur ❌
-Chasser ❌ vérifier été hiver
-Cueillir ❌ vérifier été hiver
-Cuisiner : erreur ❌
-Divertir ⚠️ ne fonctionne pas comme devrait
-Forger : erreur ❌
-Miner : erreur ❌
-Pêcher ✅  ⁉️ → comment utilise-t-on 2PA pour table bonus ?
-Soigner : erreur ❌
-Tisser : erreur ❌
-Travailler le bois : erreur ❌
-
-Artisanat
-Pour l’artisanat, tu veux probablement des stocks distincts dans la ville (minerai, tissu, métal, planches, etc.).
-→ Il faudra élargir le modèle Foodstock ou créer un ResourceStock multi-type.
-
-Seules 4 s'affichent, Tout doit apparaitre
-
-Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
-Cataplasme : limite à 3 dans le monde (exped + ville)
-
-Instinct ?
 
 ## Daily messages:
 
@@ -115,19 +113,18 @@ lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
 Le terme "Survie" me gêne un peu, c'est plus large mais j'ai pas mieux pour l'instant (et 🍖 → 🍞)
 "Aventure" → "Expéditions" non ? (plutôt 🏕️ )
 "Communauté" → "Chantiers"
-Après lecture de tout ça, je me demande si je ne ferais pas plutôt 
+Après lecture de tout ça, je me demande si je ne ferais pas plutôt
 👤 Perso
 Profil
-🏘️ Village 
+🏘️ Village
 Stocks
 Chantiers
 🏕️ Expéditions
 Texte guilde à remplacer par serveur
 
 /profil
-retrait de l'img
 Ajout : classe métier, compétence, inventaire
-Revoir bouton manger 
+Revoir bouton manger
 bouton cataplasme ?
 
 /chantier
@@ -135,7 +132,6 @@ mettre le nombre présent en ville (et le max)
 synchro max et ce qui est cohérent (reste à mettre)
 S'il n'y a pas assez de ressources, le message n'est pas clair (screen 2).
 (note : les PA sont bien dépensées mais pas aucune ressource, même jusqu'au seuil)
-
 
 /season-admin
 changer l'emoji par saison

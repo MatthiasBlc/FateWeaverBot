@@ -344,34 +344,51 @@ Ce bouton agit comme un togglable, si au moins la moitié des membres d'une exp�
 -> il faut un message log indiquant qu'un chantier est terminé.
 -> le cas ou un character termine une chantier, il faut les deux messages l'un après l'autre. Peut être que dans le message indiquant qu'un chantier est terminé il ne faut pas indiquer à nouveau par qui pour ne pas saturer l'information.
 
-
 Un personnage a plusieurs status : isdead, canreroll, isactive.
 J'ai un personnage.
 Il meurt. Isdead devient true.
 je fais /profil, puisque canreroll est de base à false mais que mon personnage actif est toujours ce personnage, je vois son profil en status "mort".
 actuellement il y a une erreur car dans ce cas on me propose la modale de reroll or, je suis toujours en canreroll false.
 
-
 1. Quand canReroll passe-t-il de false à true ? Est-ce géré par
    un système temporel (X heures après la mort) ou par une action
    admin ?
    -> Action admin, c'est un bouton "canreroll" dans la commande character-admin en sélectionnant le personnage mort dans la liste de tous les personnages.
-  2. Dans votre cas précis, quand vous faites /profil avec un
-  personnage mort (isDead=true, canReroll=false, isActive=true) :
+2. Dans votre cas précis, quand vous faites /profil avec un
+   personnage mort (isDead=true, canReroll=false, isActive=true) :
+
+
     - Est-ce que vous voyez le profil mort (lignes 70-115) ?
     - Ou est-ce que la modale s'affiche directement ?
     -> la modale d'affiche directement
-  3. La modale qui s'affiche, c'est bien celle déclenchée par la
-  ligne 136 (createRerollModal()) ?
-  -> très probablement, elle y ressemeble mais je ne peux pas confirmer à 100%
 
-
+3. La modale qui s'affiche, c'est bien celle déclenchée par la
+   ligne 136 (createRerollModal()) ?
+   -> très probablement, elle y ressemeble mais je ne peux pas confirmer à 100%
 
 /expedition
 -> ⚠️ le bouton pour créer une expédition a disparu. (voir les docs ce que l'on peut en tirer)
 
-
 Commandes users non visibles par les users sur le server A Tale of a Star
 
+tomber en agnonie baisse pv à 1 et ne touche pas aux pm
 
-tomber en agnonie baisse pv à 1 et ne touche pas aux  pm
+Dans le profil, créer une catégorie (liste à puces) status :
+voir liste sur discord
+
+La catégorie n'apparait que si elle n'est pas vide.
+Statuts
+😊 Satiété : +1 ❤️ / jour
+❤️‍🩹 Agonie : 0 PA utilisables
+
+🥺 Déprime : 1 seul PA utilisable / jour
+😶‍🌫️ Dépression : 1 seul PA utilisable / jour + contamination
+
+Affamé : - 1 PA / jour
+Meurt de faim : Agonie ❤️‍🩹
+
+Mort 💀
+
+retirer la photo
+retirer le nom
+retirer les rôles (métier?)

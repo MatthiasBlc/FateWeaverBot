@@ -1,34 +1,24 @@
-Dans le profil, créer une catégorie (liste à puces) status :
-voir liste sur discord
+1 - Point sur le système de faim:
 
-La catégorie n'apparait que si elle n'est pas vide.
+Satiété = 4 , ici le character gagne 1 pv / jour (normalement déjà en place)
+Petit creux = 3
+Faim = 2
+Affamé = 1 , Au lieu de gagner 2 PA / jour, il ne gagnera plus qu'1 PA / jour.
+Meurt de faim = 0 (passe directement en status Agonie)
 
+2 - Agonie doit être géré indépendemment (mais il me semble que c'est fait, à confirmer)
+en Agonie, le character ne peut plus utiliser de PA d'aucune manière que ce soit
 
+3 - Comment fonctionne l'agonie dans le code actuellement ?
 
-Statuts
-😊   Satiété : +1 ❤️ / jour
-❤️‍🩹 Agonie  : 0 PA utilisables
+4 - Point sur les points de mental :
 
-🥺  Déprime : 1 seul PA utilisable / jour
-😶‍🌫️ Dépression : 1 seul PA utilisable / jour + contamination 
+5 - Dans la db resourceTypes emoji, il faudrait remplacer l'emoji par sa référence dans le fichier emojis.ts.
+le changement doit aussi être appliqué dans le seed en réponse.
 
-Affamé : - 1 PA / jour
-Meurt de faim : Agonie ❤️‍🩹 
+6 - Pour chaque emoji présent dans le bot, il faudrait s'assurer qu'il fait référence à un emoji dans le fichier emojis.ts.
 
-Mort 💀 
-
-
-
-retirer la photo
-retirer le nom 
-retirer les rôles (métier?)
-
-
-
-Problème faim : 
-
-4 Satiété ✅ 
-3 Faim (virer "État normal")
-2 Faim (virer "État normal")
-1 Agonie → Meurt de faim - -1PA / jour
-0 → Mort
+7 - Création d'une nouvelle commande admin:
+/new-element-admin
+Ajouter une nouvelle capacité
+Ajouter une nouvelle ressource
