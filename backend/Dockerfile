@@ -28,7 +28,7 @@ RUN npm run build
 RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
 
 # Vérification de la structure du build
-# RUN find /app/dist -type f -print
+RUN echo "=== Contenu de /app/dist ===" && ls -la /app/dist/ && echo "=== Fichiers dans dist ===" && find /app/dist -type f -name "*.js" | head -20
 
 # Suppression des dépendances de développement
 RUN npm prune --production
