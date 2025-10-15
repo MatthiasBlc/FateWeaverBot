@@ -501,6 +501,87 @@ export class ButtonHandler {
         });
       }
     });
+
+    // =================== PROJECTS HANDLERS ===================
+    // Gestionnaire pour le bouton "Participer" des projets
+    this.registerHandler("project_participate", async (interaction) => {
+      try {
+        const { handleParticipateButton } = await import(
+          "../features/projects/projects.handlers.js"
+        );
+        await handleParticipateButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project participate button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la participation au projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton de sélection de craft types lors de création de projet
+    this.registerHandler("project_select_craft_types", async (interaction) => {
+      try {
+        const { handleSelectCraftTypesButton } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleSelectCraftTypesButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project select craft types button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection des types d'artisanat.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton de sélection de ressource de sortie
+    this.registerHandler("project_select_output", async (interaction) => {
+      try {
+        const { handleSelectOutputButton } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleSelectOutputButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project select output button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton d'ajout de ressource requise pour projet
+    this.registerHandler("project_add_resource", async (interaction) => {
+      try {
+        const { handleAddResourceButton } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleAddResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project add resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource requise.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Créer le projet" (création finale)
+    this.registerHandler("project_create_final", async (interaction) => {
+      try {
+        const { handleCreateFinalButton } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleCreateFinalButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project create final button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création du projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
   /**
    * Enregistre un gestionnaire pour tous les boutons commençant par un préfixe

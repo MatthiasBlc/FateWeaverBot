@@ -284,6 +284,69 @@ export class ModalHandler {
         }
       }
     );
+
+    // =================== PROJECTS HANDLERS ===================
+    // Gestionnaire pour le modal de création de projet
+    this.registerHandler("project_create_modal", async (interaction) => {
+      try {
+        const { handleProjectCreateModal } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleProjectCreateModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project create modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création du projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les modals d'investissement dans les projets
+    this.registerHandler("invest_project_modal_", async (interaction) => {
+      try {
+        const { handleInvestModalSubmit } = await import(
+          "../features/projects/projects.handlers.js"
+        );
+        await handleInvestModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling invest project modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content:
+              "❌ Erreur lors du traitement du formulaire d'investissement.",
+            ephemeral: true,
+          });
+        } else if (interaction.deferred) {
+          await interaction.followUp({
+            content:
+              "❌ Erreur lors du traitement du formulaire d'investissement.",
+            ephemeral: true,
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour le modal de quantité de ressource pour projet
+    this.registerHandler(
+      "project_resource_quantity_",
+      async (interaction) => {
+        try {
+          const { handleResourceQuantityModal } = await import(
+            "../features/projects/project-creation.js"
+          );
+          await handleResourceQuantityModal(interaction);
+        } catch (error) {
+          logger.error("Error handling project resource quantity modal:", {
+            error,
+          });
+          await interaction.reply({
+            content: "❌ Erreur lors de l'ajout de la ressource.",
+            flags: ["Ephemeral"],
+          });
+        }
+      }
+    );
   }
 
   /**

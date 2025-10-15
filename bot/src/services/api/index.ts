@@ -3,6 +3,7 @@ export { BaseAPIService } from './base-api.service';
 export { CharacterAPIService } from './character-api.service';
 export { GuildAPIService } from './guild-api.service';
 export { ChantierAPIService } from './chantier-api.service';
+export { ProjectAPIService } from './project-api.service';
 export { CapabilityAPIService } from './capability-api.service';
 export { ResourceAPIService } from './resource-api.service';
 

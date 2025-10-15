@@ -267,3 +267,42 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
     }
   }
 };
+
+export const executeHarvest: RequestHandler = async (req, res, next) => {
+  try {
+    const { characterId } = req.params;
+    const { capabilityName, paSpent } = req.body;
+
+    if (!characterId) {
+      throw createHttpError(400, "characterId requis");
+    }
+
+    if (!capabilityName) {
+      throw createHttpError(400, "capabilityName requis (Chasser ou Cueillir)");
+    }
+
+    const seasonService = await import('../services/season.service');
+    const isSummer = await seasonService.SeasonService.isSummer();
+
+    const result = await capabilityService.executeHarvestCapacity(
+      characterId,
+      capabilityName,
+      isSummer,
+      paSpent === 2
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("non trouvé")) {
+        next(createHttpError(404, error.message));
+      } else if (error.message.includes("Pas assez")) {
+        next(createHttpError(400, error.message));
+      } else {
+        next(createHttpError(500, error.message));
+      }
+    } else {
+      next(createHttpError(500, "Erreur inconnue"));
+    }
+  }
+};

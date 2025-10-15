@@ -25,6 +25,7 @@ import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
 import capabilitiesRoutes from "./routes/capabilities";
 import seasonsRoutes from "./routes/seasons";
 import resourcesRoutes from "./routes/resources";
+import projectsRoutes from "./routes/projects";
 
 const app = express();
 
@@ -110,6 +111,7 @@ app.use("/api/expeditions", expeditionRoutes);
 app.use("/api/resources", resourcesRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
 app.use("/api/seasons", seasonsRoutes);
+app.use("/api/projects", projectsRoutes);
 
 // Routes admin
 app.use("/api/admin/expeditions", expeditionAdminRoutes);

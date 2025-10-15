@@ -238,6 +238,58 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== PROJECTS HANDLERS ===================
+    // NOTE: select_project_invest et select_project_delete sont gérés via awaitMessageComponent
+    // dans projects.handlers.ts et project-creation.ts respectivement, donc pas de handlers ici
+
+    // Gestionnaire pour la sélection des types d'artisanat lors de création de projet
+    this.registerHandler("project_craft_type_select", async (interaction) => {
+      try {
+        const { handleCraftTypeSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleCraftTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project craft type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection des types d'artisanat.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de la ressource de sortie
+    this.registerHandler("project_output_select", async (interaction) => {
+      try {
+        const { handleOutputSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleOutputSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project output select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource requise lors de création de projet
+    this.registerHandler("project_select_resource", async (interaction) => {
+      try {
+        const { handleResourceSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleResourceSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project select resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource requise.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

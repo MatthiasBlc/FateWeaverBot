@@ -197,4 +197,11 @@ export class CharacterAPIService extends BaseAPIService {
     logger.info("Updating character stats", { characterId, stats });
     return this.patch(`/characters/${characterId}/stats`, stats);
   }
+
+  /**
+   * Récupère les capacités d'un personnage
+   */
+  public async getCharacterCapabilities(characterId: string) {
+    return this.get(`/characters/${characterId}/capabilities`);
+  }
 }

@@ -2,7 +2,18 @@
 
 ## CapacitéV2
 
+pécher grigri => mettre après 3/3/3
 
+remplacer nourriture en repas ? 
+
+Modifier projets pour que lorsqu'il est terminé, il puisse être recommencé et ce, à l'infini. (potentiellement moins cher à partir de la seconde fois ??)
+
+
+capacité en "+"
+cataplasme (utilisation) bug
+
+Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
+Cataplasme : limite à 3 dans le monde (exped + ville)
 
 Instinct ?
 

@@ -40,6 +40,7 @@ model Town {
   guildId        String          @unique @map("guild_id") // Chaque serveur a exactement une ville
   characters     Character[] // Relation avec les personnages de la ville
   chantiers      Chantier[]
+  projects       Project[] // Projets d'artisanat de la ville
   expeditions    Expedition[] // Relation avec les expéditions de la ville
   // Relations vers les stocks de ressources
   resourceStocks ResourceStock[]
@@ -109,6 +110,17 @@ enum CapabilityCategory {
   SCIENCE // NEW
 }
 
+enum CraftType {
+  TISSER
+  FORGER
+  TRAVAILLER_LE_BOIS
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+}
+
 enum SeasonType {
   SUMMER
   WINTER
@@ -130,6 +142,53 @@ model Chantier {
 
   @@unique([name, townId], name: "chantier_name_town_unique")
   @@map("chantiers")
+}
+
+model Project {
+  id                   String                @id @default(cuid())
+  name                 String // Nom du projet
+  paRequired           Int                   @map("pa_required") // Coût total en PA
+  paContributed        Int                   @default(0) @map("pa_contributed") // PA déjà investis
+  outputResourceTypeId Int                   @map("output_resource_type_id") // Ressource produite
+  outputQuantity       Int                   @map("output_quantity") // Quantité produite
+  status               ProjectStatus         @default(ACTIVE)
+  town                 Town                  @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId               String                @map("town_id")
+  createdBy            String                @map("created_by") // ID Discord de l'utilisateur qui a créé le projet
+  craftTypes           ProjectCraftType[] // Types d'artisanat pouvant réaliser ce projet
+  resourceCosts        ProjectResourceCost[] // Coûts en ressources optionnels
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+
+  @@unique([name, townId], name: "project_name_town_unique")
+  @@map("projects")
+}
+
+model ProjectCraftType {
+  id         String    @id @default(cuid())
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  String    @map("project_id")
+  craftType  CraftType @map("craft_type")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@unique([projectId, craftType], name: "project_craft_type_unique")
+  @@map("project_craft_types")
+}
+
+model ProjectResourceCost {
+  id                  String       @id @default(cuid())
+  project             Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId           String       @map("project_id")
+  resourceType        ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId      Int          @map("resource_type_id")
+  quantityRequired    Int          @map("quantity_required") // Quantité totale nécessaire
+  quantityContributed Int          @default(0) @map("quantity_contributed") // Quantité déjà contribuée
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@unique([projectId, resourceTypeId], name: "project_resource_unique")
+  @@map("project_resource_costs")
 }
 
 model Capability {
@@ -264,6 +323,7 @@ model ResourceType {
   description   String?
   stocks        ResourceStock[]        @relation("ResourceTypeToResourceStock")
   chantierCosts ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
+  projectCosts  ProjectResourceCost[] // Projets qui nécessitent cette ressource
   createdAt     DateTime               @default(now()) @map("created_at")
   updatedAt     DateTime               @updatedAt @map("updated_at")
 

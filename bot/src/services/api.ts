@@ -29,6 +29,7 @@ import { TownsAPIService } from "./api/towns-api.service";
 import { Town } from "../types/entities";
 import { CapabilityAPIService } from "./api/capability-api.service";
 import { ResourceAPIService } from "./api/resource-api.service";
+import { ProjectAPIService } from "./api/project-api.service";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -41,6 +42,7 @@ class APIService {
   public readonly characters: CharacterAPIService;
   public readonly guilds: GuildAPIService;
   public readonly chantiers: ChantierAPIService;
+  public readonly projects: ProjectAPIService;
   public readonly expeditions: ExpeditionAPIService;
   public readonly towns: TownsAPIService;
   public readonly capabilities: CapabilityAPIService;
@@ -54,6 +56,7 @@ class APIService {
     this.characters = new CharacterAPIService(this.api);
     this.guilds = new GuildAPIService(this.api);
     this.chantiers = new ChantierAPIService(this.api);
+    this.projects = new ProjectAPIService(this.api);
     this.expeditions = new ExpeditionAPIService(this.api);
     this.towns = new TownsAPIService(this.api);
     this.capabilities = new CapabilityAPIService(this.api);

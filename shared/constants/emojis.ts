@@ -126,6 +126,14 @@ export const CHANTIER = {
   CELEBRATION: "🎉",
 } as const;
 
+// Projects (Artisanat)
+export const PROJECT = {
+  ACTIVE: "🔧",
+  COMPLETED: "✅",
+  ICON: "🛠️",
+  CELEBRATION: "🎉",
+} as const;
+
 // Locations
 export const LOCATION = {
   CITY: "🏘️",
