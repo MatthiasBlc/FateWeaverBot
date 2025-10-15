@@ -48,18 +48,18 @@ jobs:
       - name: Build and push Backend image
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
-          push: true
+          context: .
           file: ./backend/Dockerfile
+          push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/backend:latest
 
       - name: Build and push Discord Bot image
         uses: docker/build-push-action@v4
         with:
-          context: ./bot
-          push: true
+          context: .
           file: ./bot/Dockerfile
+          push: true
           tags: |
             ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/bot:latest
 

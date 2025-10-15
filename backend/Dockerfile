@@ -4,7 +4,7 @@ FROM node:18.18-alpine3.17 AS builder
 # Création des dossiers nécessaires
 WORKDIR /app
 
-# Copie du dossier shared (dépendances communes)
+# Copie du dossier shared d'abord
 COPY ./shared /shared
 
 # Copie des fichiers de configuration et de dépendances
