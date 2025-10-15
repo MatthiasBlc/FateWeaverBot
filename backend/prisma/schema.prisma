@@ -157,6 +157,14 @@ model Project {
   createdBy            String                @map("created_by") // ID Discord de l'utilisateur qui a créé le projet
   craftTypes           ProjectCraftType[] // Types d'artisanat pouvant réaliser ce projet
   resourceCosts        ProjectResourceCost[] // Coûts en ressources optionnels
+  // Blueprint fields
+  isBlueprint               Boolean   @default(false)
+  originalProjectId         String?
+  paBlueprintRequired       Int?
+  blueprintResourceCosts    ProjectBlueprintResourceCost[]
+
+  originalProject           Project?  @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
+  blueprintCopies           Project[] @relation("ProjectBlueprint")
   createdAt            DateTime              @default(now()) @map("created_at")
   updatedAt            DateTime              @updatedAt @map("updated_at")
 
@@ -189,6 +197,20 @@ model ProjectResourceCost {
 
   @@unique([projectId, resourceTypeId], name: "project_resource_unique")
   @@map("project_resource_costs")
+}
+
+model ProjectBlueprintResourceCost {
+  id               Int          @id @default(autoincrement())
+  projectId        String
+  resourceTypeId   Int
+  quantityRequired Int
+  quantityProvided Int          @default(0)
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resourceType ResourceType @relation(fields: [resourceTypeId], references: [id])
+
+  @@unique([projectId, resourceTypeId])
+  @@map("project_blueprint_resource_costs")
 }
 
 model Capability {
@@ -324,6 +346,7 @@ model ResourceType {
   stocks        ResourceStock[]        @relation("ResourceTypeToResourceStock")
   chantierCosts ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
   projectCosts  ProjectResourceCost[] // Projets qui nécessitent cette ressource
+  blueprintCosts ProjectBlueprintResourceCost[]
   createdAt     DateTime               @default(now()) @map("created_at")
   updatedAt     DateTime               @updatedAt @map("updated_at")
 

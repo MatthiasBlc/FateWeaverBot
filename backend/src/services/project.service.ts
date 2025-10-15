@@ -14,6 +14,12 @@ interface CreateProjectInput {
     resourceTypeId: number;
     quantityRequired: number;
   }>;
+  // Blueprint fields
+  paBlueprintRequired?: number;
+  blueprintResourceCosts?: Array<{
+    resourceTypeId: number;
+    quantityRequired: number;
+  }>;
 }
 
 interface ContributeToProjectInput {
@@ -28,7 +34,7 @@ interface ContributeToProjectInput {
 
 export const ProjectService = {
   async createProject(input: CreateProjectInput) {
-    const { name, paRequired, outputResourceTypeId, outputQuantity, townId, createdBy, craftTypes, resourceCosts } = input;
+    const { name, paRequired, outputResourceTypeId, outputQuantity, townId, createdBy, craftTypes, resourceCosts, paBlueprintRequired, blueprintResourceCosts } = input;
 
     const existingProject = await prisma.project.findFirst({
       where: { name, townId },
@@ -58,6 +64,7 @@ export const ProjectService = {
         outputQuantity,
         townId,
         createdBy,
+        paBlueprintRequired,
         craftTypes: {
           create: craftTypes.map(craftType => ({ craftType })),
         },
@@ -80,7 +87,123 @@ export const ProjectService = {
       },
     });
 
+    // Create blueprint resource costs if provided
+    if (blueprintResourceCosts && blueprintResourceCosts.length > 0) {
+      await prisma.projectBlueprintResourceCost.createMany({
+        data: blueprintResourceCosts.map((cost) => ({
+          projectId: project.id,
+          resourceTypeId: cost.resourceTypeId,
+          quantityRequired: cost.quantityRequired,
+          quantityProvided: 0,
+        })),
+      });
+    }
+
     return project;
+  },
+
+  async convertToBlueprint(projectId: string): Promise<void> {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { isBlueprint: true },
+    });
+  },
+
+  async restartBlueprint(
+    blueprintId: string,
+    createdBy: string
+  ): Promise<any> {
+    return await prisma.$transaction(async (tx) => {
+      // Get the blueprint project
+      const blueprint = await tx.project.findUnique({
+        where: { id: blueprintId },
+        include: {
+          outputResourceType: true,
+          craftTypes: {
+            include: { craftType: true },
+          },
+          blueprintResourceCosts: {
+            include: { resourceType: true },
+          },
+        },
+      });
+
+      if (!blueprint) {
+        throw new Error("Blueprint not found");
+      }
+
+      if (!blueprint.isBlueprint) {
+        throw new Error("This project is not a blueprint");
+      }
+
+      // Use blueprint costs if available, otherwise use original costs
+      const paRequired = blueprint.paBlueprintRequired ?? blueprint.paRequired;
+
+      // Create new project from blueprint
+      const newProject = await tx.project.create({
+        data: {
+          name: blueprint.name,
+          paRequired,
+          paContributed: 0,
+          outputResourceTypeId: blueprint.outputResourceTypeId,
+          outputQuantity: blueprint.outputQuantity,
+          status: ProjectStatus.ACTIVE,
+          townId: blueprint.townId,
+          createdBy,
+          originalProjectId: blueprintId,
+          paBlueprintRequired: blueprint.paBlueprintRequired,
+        },
+      });
+
+      // Copy craft types
+      await tx.projectCraftType.createMany({
+        data: blueprint.craftTypes.map((ct) => ({
+          projectId: newProject.id,
+          craftTypeId: ct.craftTypeId,
+        })),
+      });
+
+      // Use blueprint resource costs if available
+      if (blueprint.blueprintResourceCosts.length > 0) {
+        // Copy blueprint costs as regular costs
+        await tx.projectResourceCost.createMany({
+          data: blueprint.blueprintResourceCosts.map((cost) => ({
+            projectId: newProject.id,
+            resourceTypeId: cost.resourceTypeId,
+            quantityRequired: cost.quantityRequired,
+            quantityProvided: 0,
+          })),
+        });
+
+        // Also create blueprint costs for the new project
+        await tx.projectBlueprintResourceCost.createMany({
+          data: blueprint.blueprintResourceCosts.map((cost) => ({
+            projectId: newProject.id,
+            resourceTypeId: cost.resourceTypeId,
+            quantityRequired: cost.quantityRequired,
+            quantityProvided: 0,
+          })),
+        });
+      } else {
+        // No blueprint costs defined, use original costs from ProjectResourceCost
+        const originalCosts = await tx.projectResourceCost.findMany({
+          where: { projectId: blueprintId },
+        });
+
+        if (originalCosts.length > 0) {
+          await tx.projectResourceCost.createMany({
+            data: originalCosts.map((cost) => ({
+              projectId: newProject.id,
+              resourceTypeId: cost.resourceTypeId,
+              quantityRequired: cost.quantityRequired,
+              quantityProvided: 0,
+            })),
+          });
+        }
+      }
+
+      return newProject;
+    });
   },
 
   async getActiveProjectsForCraftType(townId: string, craftType: CraftType) {
@@ -116,6 +239,11 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
+          include: {
+            resourceType: true,
+          },
+        },
+        blueprintResourceCosts: {
           include: {
             resourceType: true,
           },
@@ -282,6 +410,11 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
+          include: {
+            resourceType: true,
+          },
+        },
+        blueprintResourceCosts: {
           include: {
             resourceType: true,
           },

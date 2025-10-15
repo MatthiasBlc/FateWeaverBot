@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { consumePA, validateCanUsePA } from "../util/character-validators";
+import { dailyEventLogService } from "./daily-event-log.service";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -319,6 +320,16 @@ export class CapabilityService {
       }),
     ]);
 
+    // Log resource gathering
+    await dailyEventLogService.logResourceGathered(
+      characterId,
+      character.name,
+      character.townId,
+      "Vivres",
+      foodGained,
+      capabilityName
+    );
+
     return { success: true, foodGained, message };
   }
 
@@ -402,6 +413,16 @@ export class CapabilityService {
         },
       }),
     ]);
+
+    // Log resource gathering
+    await dailyEventLogService.logResourceGathered(
+      characterId,
+      character.name,
+      character.townId,
+      "Bois",
+      woodGained,
+      "Bûcheronner"
+    );
 
     return {
       success: true,
@@ -490,6 +511,16 @@ export class CapabilityService {
         },
       }),
     ]);
+
+    // Log resource gathering
+    await dailyEventLogService.logResourceGathered(
+      characterId,
+      character.name,
+      character.townId,
+      "Minerai",
+      oreGained,
+      "Miner"
+    );
 
     return {
       success: true,
@@ -594,6 +625,18 @@ export class CapabilityService {
         },
       }),
     ]);
+
+    // Log resource gathering (skip for GRIGRI case)
+    if (loot.resource !== "GRIGRI") {
+      await dailyEventLogService.logResourceGathered(
+        characterId,
+        character.name,
+        character.townId,
+        loot.resource,
+        loot.quantity,
+        "Pêcher"
+      );
+    }
 
     return {
       success: true,
@@ -754,6 +797,16 @@ export class CapabilityService {
         },
       });
     });
+
+    // Log resource gathering (crafting counts as gathering)
+    await dailyEventLogService.logResourceGathered(
+      characterId,
+      character.name,
+      character.townId,
+      config.outputResource,
+      outputAmount,
+      craftType.charAt(0).toUpperCase() + craftType.slice(1)
+    );
 
     return {
       success: true,

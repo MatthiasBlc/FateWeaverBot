@@ -1,6 +1,7 @@
 import { PrismaClient, ChantierStatus, Prisma } from "@prisma/client";
 import type { Chantier } from "@prisma/client";
 import { logger } from "./logger";
+import { dailyEventLogService } from "./daily-event-log.service";
 
 const prisma = new PrismaClient();
 
@@ -276,6 +277,13 @@ export class ChantierService {
           where: { id: chantierId },
           data: { status: ChantierStatus.COMPLETED },
         });
+
+        // Log chantier completion
+        await dailyEventLogService.logChantierCompleted(
+          parseInt(chantierId),
+          chantier.name,
+          chantier.townId
+        );
       }
 
       logger.info("chantier_event", {

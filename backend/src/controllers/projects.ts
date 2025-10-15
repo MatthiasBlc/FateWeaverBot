@@ -106,3 +106,24 @@ export const deleteProject = async (req: Request, res: Response) => {
     return res.status(400).json({ error: error.message });
   }
 };
+
+export const restartBlueprint = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const { createdBy } = req.body;
+
+    if (!createdBy) {
+      return res.status(400).json({ error: "Created by is required" });
+    }
+
+    const newProject = await ProjectService.restartBlueprint(
+      projectId,
+      createdBy
+    );
+
+    return res.status(201).json(newProject);
+  } catch (error: any) {
+    console.error("Error restarting blueprint:", error);
+    return res.status(500).json({ error: error.message || "Internal server error" });
+  }
+};

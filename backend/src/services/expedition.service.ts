@@ -1,6 +1,7 @@
-import { PrismaClient, ExpeditionStatus, Prisma } from "@prisma/client";
+import { PrismaClient, ExpeditionStatus, Prisma, Direction } from "@prisma/client";
 import type { Expedition, ExpeditionMember } from "@prisma/client";
 import { logger } from "./logger";
+import { dailyEventLogService } from "./daily-event-log.service";
 
 const prisma = new PrismaClient();
 
@@ -10,6 +11,7 @@ export interface CreateExpeditionData {
   initialResources: { resourceTypeName: string; quantity: number }[]; // Remplacement de foodStock par ressources génériques
   duration: number; // in days (minimum 1)
   createdBy: string; // Discord user ID
+  initialDirection?: string; // "NORD", "SUD_EST", etc.
 }
 
 export interface ExpeditionWithDetails extends Expedition {
@@ -33,6 +35,11 @@ export interface ExpeditionWithDetails extends Expedition {
   _count?: {
     members: number;
   };
+  initialDirection: Direction;
+  path: Direction[];
+  currentDayDirection: Direction | null;
+  directionSetBy: string | null;
+  directionSetAt: Date | null;
 }
 
 export class ExpeditionService {
@@ -277,8 +284,12 @@ export class ExpeditionService {
           },
         });
 
-        if (!townStock || townStock.quantity < resource.quantity) {
-          throw new Error(`Not enough ${resource.resourceTypeName} in town`);
+        const availableQuantity = townStock?.quantity || 0;
+
+        if (!townStock || availableQuantity < resource.quantity) {
+          throw new Error(
+            `Ressources insuffisantes : ${resource.resourceTypeName} (demandé: ${resource.quantity}, disponible: ${availableQuantity})`
+          );
         }
       }
 
@@ -291,6 +302,7 @@ export class ExpeditionService {
           createdBy: data.createdBy,
           status: ExpeditionStatus.PLANNING,
           returnAt: null,
+          initialDirection: (data.initialDirection as any) || "UNKNOWN",
         },
       });
 
@@ -358,6 +370,11 @@ export class ExpeditionService {
         createdAt: expedition.createdAt,
         updatedAt: expedition.updatedAt,
         returnAt: expedition.returnAt,
+        initialDirection: expedition.initialDirection,
+        path: expedition.path,
+        currentDayDirection: expedition.currentDayDirection,
+        directionSetBy: expedition.directionSetBy,
+        directionSetAt: expedition.directionSetAt,
       };
     });
   }
@@ -401,6 +418,11 @@ export class ExpeditionService {
       createdAt: expedition.createdAt,
       updatedAt: expedition.updatedAt,
       returnAt: expedition.returnAt,
+      initialDirection: expedition.initialDirection,
+      path: expedition.path,
+      currentDayDirection: expedition.currentDayDirection,
+      directionSetBy: expedition.directionSetBy,
+      directionSetAt: expedition.directionSetAt,
       town: expedition.town,
       members: expedition.members,
       _count: expedition._count,
@@ -629,7 +651,7 @@ export class ExpeditionService {
     return await prisma.$transaction(async (tx) => {
       const expedition = await tx.expedition.findUnique({
         where: { id: expeditionId },
-        select: { id: true, status: true, name: true, duration: true },
+        select: { id: true, status: true, name: true, duration: true, townId: true },
       });
 
       if (!expedition) {
@@ -657,6 +679,19 @@ export class ExpeditionService {
         expeditionName: expedition.name,
         returnAt: returnAt.toISOString(),
       });
+
+      // Log expedition departure
+      const memberCount = await tx.expeditionMember.count({
+        where: { expeditionId },
+      });
+
+      await dailyEventLogService.logExpeditionDeparted(
+        expeditionId,
+        expedition.name,
+        expedition.townId,
+        memberCount,
+        expedition.duration
+      );
 
       return updatedExpedition;
     });
@@ -704,6 +739,30 @@ export class ExpeditionService {
           },
         }),
       ]);
+
+      // Get expedition resources for logging
+      const expeditionResources = await tx.resourceStock.findMany({
+        where: {
+          locationType: "EXPEDITION",
+          locationId: expeditionId,
+        },
+        include: {
+          resourceType: true,
+        },
+      });
+
+      const resourcesSummary = expeditionResources.map(r => ({
+        resourceName: r.resourceType.name,
+        quantity: r.quantity,
+      }));
+
+      // Log expedition return
+      await dailyEventLogService.logExpeditionReturned(
+        expeditionId,
+        expedition.name,
+        expedition.townId,
+        resourcesSummary
+      );
 
       logger.info("expedition_event", {
         event: "returned",
@@ -846,6 +905,20 @@ export class ExpeditionService {
         await prisma.expeditionEmergencyVote.deleteMany({
           where: { expeditionId: expedition.id },
         });
+
+        // Log emergency return
+        const exp = await prisma.expedition.findUnique({
+          where: { id: expedition.id },
+          select: { townId: true },
+        });
+
+        if (exp) {
+          await dailyEventLogService.logExpeditionEmergencyReturn(
+            expedition.id,
+            expedition.name,
+            exp.townId
+          );
+        }
 
         logger.info("expedition_emergency_return_executed", {
           expeditionId: expedition.id,
@@ -1117,6 +1190,65 @@ export class ExpeditionService {
         expeditionId,
         expeditionName: expedition.name,
         characterId,
+      });
+    });
+  }
+
+  async setNextDirection(
+    expeditionId: string,
+    direction: string,
+    characterId: string
+  ): Promise<void> {
+    return await prisma.$transaction(async (tx) => {
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: {
+          id: true,
+          status: true,
+          currentDayDirection: true,
+          townId: true
+        },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      if (expedition.status !== ExpeditionStatus.DEPARTED) {
+        throw new Error("Can only set direction for DEPARTED expeditions");
+      }
+
+      if (expedition.currentDayDirection) {
+        throw new Error("Direction already set for today");
+      }
+
+      // Verify character is member of expedition
+      const member = await tx.expeditionMember.findFirst({
+        where: {
+          expeditionId,
+          characterId,
+        },
+      });
+
+      if (!member) {
+        throw new Error("Character is not a member of this expedition");
+      }
+
+      // Set direction
+      await tx.expedition.update({
+        where: { id: expeditionId },
+        data: {
+          currentDayDirection: direction as any,
+          directionSetBy: characterId,
+          directionSetAt: new Date(),
+        },
+      });
+
+      logger.info("expedition_event", {
+        event: "direction_set",
+        expeditionId,
+        direction,
+        setBy: characterId,
       });
     });
   }

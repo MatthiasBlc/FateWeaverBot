@@ -19,7 +19,7 @@ async function lockExpeditionsDue() {
         status: "PLANNING",
         createdAt: { lt: midnightToday }
       },
-      select: { id: true, name: true }
+      select: { id: true, name: true, initialDirection: true }
     });
 
     logger.info(`Found ${expeditionsToLock.length} expeditions to lock`);
@@ -28,6 +28,15 @@ async function lockExpeditionsDue() {
     for (const expedition of expeditionsToLock) {
       try {
         await expeditionService.lockExpedition(expedition.id);
+
+        // Set UNKNOWN direction if not set
+        if (!expedition.initialDirection || expedition.initialDirection === "UNKNOWN") {
+          await prisma.expedition.update({
+            where: { id: expedition.id },
+            data: { initialDirection: "UNKNOWN" },
+          });
+        }
+
         lockedCount++;
       } catch (error) {
         logger.error(`Failed to lock expedition ${expedition.id}:`, { error });
@@ -49,7 +58,7 @@ async function departExpeditionsDue() {
       where: {
         status: "LOCKED"
       },
-      select: { id: true, name: true }
+      select: { id: true, name: true, initialDirection: true }
     });
 
     logger.info(`Found ${expeditionsToDepart.length} expeditions to depart`);
@@ -58,6 +67,15 @@ async function departExpeditionsDue() {
     for (const expedition of expeditionsToDepart) {
       try {
         await expeditionService.departExpedition(expedition.id);
+
+        // Initialize path with initial direction
+        await prisma.expedition.update({
+          where: { id: expedition.id },
+          data: {
+            path: [expedition.initialDirection],
+          },
+        });
+
         departedCount++;
       } catch (error) {
         logger.error(`Failed to depart expedition ${expedition.id}:`, { error });
@@ -103,6 +121,45 @@ async function returnExpeditionsDue() {
   }
 }
 
+async function appendDailyDirections() {
+  try {
+    const expeditions = await prisma.expedition.findMany({
+      where: {
+        status: "DEPARTED",
+        currentDayDirection: { not: null },
+      },
+      select: { id: true, name: true, path: true, currentDayDirection: true },
+    });
+
+    for (const exp of expeditions) {
+      if (exp.currentDayDirection) {
+        // Append direction to path
+        const newPath = [...exp.path, exp.currentDayDirection];
+
+        await prisma.expedition.update({
+          where: { id: exp.id },
+          data: {
+            path: newPath,
+            currentDayDirection: null,
+            directionSetBy: null,
+            directionSetAt: null,
+          },
+        });
+
+        console.log(
+          `Appended direction ${exp.currentDayDirection} to expedition ${exp.name}`
+        );
+      }
+    }
+
+    console.log(
+      `Appended directions for ${expeditions.length} expedition(s)`
+    );
+  } catch (error) {
+    console.error("Error appending daily directions:", error);
+  }
+}
+
 async function processEmergencyReturns() {
   try {
     logger.debug("Starting emergency return check");
@@ -118,6 +175,15 @@ async function processEmergencyReturns() {
 }
 
 export function setupExpeditionJobs() {
+  // Append daily directions (runs at 00:00:05 - after PA consumption, before lock)
+  const appendDirectionsJob = new CronJob(
+    "5 0 * * *", // 00:00:05 every day
+    appendDailyDirections,
+    null,
+    true,
+    "Europe/Paris"
+  );
+
   // Lock expeditions at midnight (00:00)
   const lockJob = new CronJob("0 0 * * *", lockExpeditionsDue, null, true, "Europe/Paris");
   logger.info("Expedition lock job scheduled for midnight daily");
@@ -138,6 +204,7 @@ export function setupExpeditionJobs() {
     lockJob,
     departJob,
     returnJob,
-    emergencyJob
+    emergencyJob,
+    appendDirectionsJob
   };
 }

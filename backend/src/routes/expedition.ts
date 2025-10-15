@@ -10,6 +10,7 @@ import {
   leaveExpedition,
   transferExpeditionResource,
   toggleEmergencyVote,
+  setExpeditionDirection, // NOUVEAU
 } from "../controllers/expedition";
 
 const router = Router();
@@ -47,5 +48,8 @@ router.post("/:id/transfer", requireAuthOrInternal, transferExpeditionResource);
 
 // Toggle vote pour retour d'urgence
 router.post("/:id/emergency-vote", requireAuthOrInternal, toggleEmergencyVote);
+
+// Définir la direction d'une expédition
+router.post("/:id/set-direction", requireAuthOrInternal, setExpeditionDirection);
 
 export default router;

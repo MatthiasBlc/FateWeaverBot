@@ -379,3 +379,51 @@ export const toggleEmergencyVote = async (req: Request, res: Response) => {
     }
   }
 };
+
+/**
+ * Set expedition direction for the day
+ * POST /expeditions/:id/set-direction
+ */
+export const setExpeditionDirection = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { direction, characterId } = req.body;
+
+    if (!direction) {
+      res.status(400).json({ error: "Direction is required" });
+      return;
+    }
+
+    if (!characterId) {
+      res.status(400).json({ error: "Character ID is required" });
+      return;
+    }
+
+    const validDirections = [
+      "NORD",
+      "NORD_EST",
+      "EST",
+      "SUD_EST",
+      "SUD",
+      "SUD_OUEST",
+      "OUEST",
+      "NORD_OUEST",
+    ];
+
+    if (!validDirections.includes(direction)) {
+      res.status(400).json({ error: "Invalid direction" });
+      return;
+    }
+
+    const expedition = new ExpeditionService();
+    await expedition.setNextDirection(id, direction, characterId);
+
+    res.status(200).json({ message: "Direction set successfully" });
+  } catch (error: any) {
+    console.error("Error setting expedition direction:", error);
+    res.status(500).json({ error: error.message || "Internal server error" });
+  }
+};
