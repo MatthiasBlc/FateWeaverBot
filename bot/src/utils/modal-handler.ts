@@ -347,6 +347,23 @@ export class ModalHandler {
         }
       }
     );
+
+    // =================== BLUEPRINT PROJECTS HANDLERS ===================
+    // Gestionnaire pour le modal de sélection de coût blueprint
+    this.registerHandler("project_blueprint_cost_quantity:", async (interaction) => {
+      try {
+        const { handleBlueprintCostQuantityModal } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleBlueprintCostQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling blueprint cost quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du coût blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

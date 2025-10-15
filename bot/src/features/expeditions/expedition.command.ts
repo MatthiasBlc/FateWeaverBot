@@ -7,7 +7,7 @@
 export { handleExpeditionMainCommand, handleExpeditionInfoCommand } from "./handlers/expedition-display";
 
 // Create
-export { handleExpeditionCreateNewButton, handleExpeditionStartCommand, handleExpeditionCreationModal } from "./handlers/expedition-create";
+export { handleExpeditionCreateNewButton, handleExpeditionStartCommand, handleExpeditionCreationModal, handleExpeditionDirectionSelect } from "./handlers/expedition-create";
 
 // Join
 export { handleExpeditionJoinExistingButton, handleExpeditionJoinCommand, handleExpeditionJoinSelect } from "./handlers/expedition-join";
@@ -20,3 +20,6 @@ export { handleExpeditionTransferButton, handleExpeditionTransferDirectionSelect
 
 // Emergency return
 export { handleEmergencyReturnButton } from "./handlers/expedition-emergency";
+
+// Direction
+export { handleExpeditionChooseDirection, handleExpeditionSetDirection } from "./handlers/expedition-display";

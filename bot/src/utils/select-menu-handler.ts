@@ -290,6 +290,56 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== BLUEPRINT PROJECTS HANDLERS ===================
+    // Gestionnaire pour la sélection de coût blueprint
+    this.registerHandler("project_blueprint_cost_select", async (interaction) => {
+      try {
+        const { handleBlueprintCostSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleBlueprintCostSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project blueprint cost select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de coût blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== EXPEDITION DIRECTION HANDLERS ===================
+    // Gestionnaire pour la sélection de direction lors de la création d'expédition
+    this.registerHandler("expedition_direction", async (interaction) => {
+      try {
+        const { handleExpeditionDirectionSelect } = await import(
+          "../features/expeditions/expedition.command.js"
+        );
+        await handleExpeditionDirectionSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition direction select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de direction d'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de direction quotidienne pendant l'expédition
+    this.registerHandlerByPrefix("expedition_set_direction:", async (interaction) => {
+      try {
+        const { handleExpeditionSetDirection } = await import(
+          "../features/expeditions/expedition.command.js"
+        );
+        await handleExpeditionSetDirection(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition set direction select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la définition de direction d'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

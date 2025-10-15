@@ -80,6 +80,11 @@ export class ButtonHandler {
           "../features/expeditions/expedition.command.js"
         );
         await handleEmergencyReturnButton(interaction);
+      } else if (customId.startsWith("expedition_choose_direction:")) {
+        const { handleExpeditionChooseDirection } = await import(
+          "../features/expeditions/expedition.command.js"
+        );
+        await handleExpeditionChooseDirection(interaction);
       }
     });
 
@@ -578,6 +583,39 @@ export class ButtonHandler {
         logger.error("Error handling project create final button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la création du projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== BLUEPRINT PROJECTS HANDLERS ===================
+    // Gestionnaire pour les boutons de redémarrage de blueprints
+    this.registerHandlerByPrefix("project_restart:", async (interaction) => {
+      try {
+        const { handleRestartBlueprintButton } = await import(
+          "../features/projects/projects.handlers.js"
+        );
+        await handleRestartBlueprintButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project restart blueprint button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du redémarrage du blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton d'ajout de coûts blueprint
+    this.registerHandler("project_add_blueprint_costs", async (interaction) => {
+      try {
+        const { handleAddBlueprintCostButton } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleAddBlueprintCostButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project add blueprint costs button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de coûts blueprint.",
           flags: ["Ephemeral"],
         });
       }

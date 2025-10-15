@@ -211,6 +211,19 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
             text += ` | ${resourcesText}`;
           }
 
+          // Show blueprint info if applicable
+          if ((project as any).isBlueprint) {
+            const blueprintPA = (project as any).paBlueprintRequired ?? project.paRequired;
+            text += `\n📋 **Blueprint** - Peut être recommencé pour ${blueprintPA} PA`;
+
+            if ((project as any).blueprintResourceCosts && (project as any).blueprintResourceCosts.length > 0) {
+              text += "\n**Coûts Blueprint:**\n";
+              (project as any).blueprintResourceCosts.forEach((cost: any) => {
+                text += `  • ${cost.quantityRequired} ${cost.resourceType.name}\n`;
+              });
+            }
+          }
+
           return text;
         })
         .join("\n");
@@ -224,6 +237,8 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 
     // Bouton "Participer" si au moins un projet ACTIVE
     const activeProjects = uniqueProjects.filter((p) => p.status === "ACTIVE");
+    const blueprintProjects = uniqueProjects.filter((p) => (p as any).isBlueprint);
+
     const components = [];
 
     if (activeProjects.length > 0) {
@@ -234,6 +249,24 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
           .setStyle(ButtonStyle.Primary)
       );
       components.push(buttonRow);
+    }
+
+    // Add restart buttons for blueprints (up to 5 buttons per row)
+    if (blueprintProjects.length > 0) {
+      const restartButtons = blueprintProjects.slice(0, 5).map((project) =>
+        new ButtonBuilder()
+          .setCustomId(`project_restart:${project.id}`)
+          .setLabel(`🔄 ${project.name}`)
+          .setStyle(ButtonStyle.Success)
+      );
+
+      // Group buttons in rows of up to 5
+      for (let i = 0; i < restartButtons.length; i += 5) {
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          ...restartButtons.slice(i, i + 5)
+        );
+        components.push(row);
+      }
     }
 
     await interaction.reply({
@@ -669,6 +702,53 @@ export async function handleInvestModalSubmit(
 
     await interaction.reply({
       content: "❌ Erreur lors du traitement de votre contribution.",
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Handler pour le bouton "Recommencer" des blueprints
+ */
+export async function handleRestartBlueprintButton(interaction: ButtonInteraction): Promise<void> {
+  try {
+    const projectId = interaction.customId.split(":")[1];
+
+    // Récupérer l'utilisateur
+    const user = await apiService.getOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.discriminator
+    );
+
+    if (!user) {
+      await interaction.reply({
+        content: "❌ Vous devez avoir un personnage actif.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Restart blueprint
+    const newProject = await apiService.projects.restartBlueprint(
+      parseInt(projectId),
+      interaction.user.id
+    );
+
+    await interaction.reply({
+      content: `✅ Blueprint **${newProject.name}** redémarré avec succès !`,
+      flags: ["Ephemeral"],
+    });
+
+    // Optionally refresh the project list
+    await interaction.followUp({
+      content: "🔄 Projet redémarré ! Utilisez `/projets` pour voir la liste mise à jour.",
+      flags: ["Ephemeral"],
+    });
+  } catch (error: any) {
+    console.error("Error restarting blueprint:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }

@@ -29,6 +29,11 @@ export interface Project {
     name: string;
     emoji: string;
   };
+  // Blueprint fields
+  isBlueprint?: boolean;
+  originalProjectId?: number;
+  paBlueprintRequired?: number;
+  blueprintResourceCosts?: ResourceCost[];
 }
 
 export interface CreateProjectData {
@@ -39,6 +44,9 @@ export interface CreateProjectData {
   outputResourceTypeId: number;
   outputQuantity: number;
   resourceCosts?: { resourceTypeId: number; quantityRequired: number }[];
+  // Blueprint fields
+  paBlueprintRequired?: number;
+  blueprintResourceCosts?: { resourceTypeId: number; quantityRequired: number }[];
 }
 
 export interface InvestResult {

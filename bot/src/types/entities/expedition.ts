@@ -13,6 +13,11 @@ export interface Expedition {
   foodStock?: number; // Optional field for compatibility
   startedAt?: string | null;
   endsAt?: string | null;
+  initialDirection?: string;
+  path?: string[];
+  currentDayDirection?: string | null;
+  directionSetBy?: string | null;
+  directionSetAt?: string | null;
   town?: {
     id: string;
     name: string;

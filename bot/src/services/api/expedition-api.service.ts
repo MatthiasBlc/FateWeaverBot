@@ -121,4 +121,15 @@ export class ExpeditionAPIService {
       throw error;
     }
   }
+
+  async setExpeditionDirection(
+    expeditionId: string,
+    direction: string,
+    characterId: string
+  ): Promise<void> {
+    await this.api.post(`${this.basePath}/${expeditionId}/set-direction`, {
+      direction,
+      characterId,
+    });
+  }
 }

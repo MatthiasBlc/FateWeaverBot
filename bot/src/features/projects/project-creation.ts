@@ -28,6 +28,9 @@ interface ProjectDraft {
   outputResourceTypeId: number | null;
   outputQuantity: number;
   resourceCosts: { resourceTypeId: number; quantity: number; name: string; emoji: string }[];
+  // Blueprint fields
+  paBlueprintRequired?: number;
+  blueprintResourceCosts?: { resourceTypeId: number; resourceTypeName: string; quantityRequired: number }[];
 }
 
 const projectDrafts = new Map<string, ProjectDraft>();
@@ -67,10 +70,18 @@ export async function handleAddProjectCommand(interaction: ChatInputCommandInter
       .setMaxLength(3)
       .setPlaceholder("Ex: 10");
 
+    const paBlueprintInput = new TextInputBuilder()
+      .setCustomId("paBlueprintRequired")
+      .setLabel("PA requis pour les blueprints (optionnel)")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("Ex: 5 (si vide, même coût que l'original)")
+      .setRequired(false);
+
     modal.addComponents(
       new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(nameInput),
       new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(paInput),
-      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(outputQtyInput)
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(outputQtyInput),
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(paBlueprintInput)
     );
 
     await interaction.showModal(modal);
@@ -88,6 +99,7 @@ export async function handleProjectCreateModal(interaction: ModalSubmitInteracti
     const name = interaction.fields.getTextInputValue("project_name").trim();
     const paInput = interaction.fields.getTextInputValue("project_pa").trim();
     const outputQtyInput = interaction.fields.getTextInputValue("output_quantity").trim();
+    const paBlueprintInput = interaction.fields.getTextInputValue("paBlueprintRequired").trim();
 
     const paRequired = parseInt(paInput, 10);
     if (isNaN(paRequired) || paRequired <= 0) {
@@ -107,6 +119,15 @@ export async function handleProjectCreateModal(interaction: ModalSubmitInteracti
       return;
     }
 
+    const paBlueprintRequired = paBlueprintInput ? parseInt(paBlueprintInput, 10) : undefined;
+    if (paBlueprintInput && (isNaN(paBlueprintRequired!) || paBlueprintRequired! <= 0)) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} PA blueprint invalide.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
     const draft: ProjectDraft = {
       name,
       paRequired,
@@ -116,6 +137,7 @@ export async function handleProjectCreateModal(interaction: ModalSubmitInteracti
       outputResourceTypeId: null,
       outputQuantity,
       resourceCosts: [],
+      paBlueprintRequired,
     };
 
     projectDrafts.set(interaction.user.id, draft);
@@ -383,15 +405,22 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
       quantityRequired: rc.quantity,
     }));
 
+    const blueprintResourceCosts = draft.blueprintResourceCosts?.map((rc) => ({
+      resourceTypeId: rc.resourceTypeId,
+      quantityRequired: rc.quantityRequired,
+    }));
+
     const result = await apiService.projects.createProject(
       {
         name: draft.name,
         paRequired: draft.paRequired,
         townId: town.id,
         craftTypes: draft.craftTypes,
-        outputResourceTypeId: draft.outputResourceTypeId,
+        outputResourceTypeId: draft.outputResourceTypeId!,
         outputQuantity: draft.outputQuantity,
         resourceCosts: resourceCosts.length > 0 ? resourceCosts : undefined,
+        paBlueprintRequired: draft.paBlueprintRequired,
+        blueprintResourceCosts: blueprintResourceCosts && blueprintResourceCosts.length > 0 ? blueprintResourceCosts : undefined,
       },
       draft.userId
     );
@@ -502,6 +531,16 @@ function createProjectButtons(draft: ProjectDraft): ActionRowBuilder<ButtonBuild
       .setCustomId("project_add_resource")
       .setLabel("➕ Req")
       .setStyle(ButtonStyle.Secondary),
+    // Add blueprint costs button (only if not already added)
+    ...(draft.blueprintResourceCosts === undefined || draft.blueprintResourceCosts.length === 0
+      ? [
+          new ButtonBuilder()
+            .setCustomId("project_add_blueprint_costs")
+            .setLabel("📋 Blueprint")
+            .setEmoji("📋")
+            .setStyle(ButtonStyle.Secondary),
+        ]
+      : []),
     new ButtonBuilder()
       .setCustomId("project_create_final")
       .setLabel("✅ Créer")
@@ -534,4 +573,150 @@ function formatProjectDraft(draft: ProjectDraft): string {
   }
 
   return message;
+}
+
+// Blueprint cost handlers
+export async function handleAddBlueprintCostButton(interaction: ButtonInteraction): Promise<void> {
+  try {
+    const draft = projectDrafts.get(interaction.user.id);
+    if (!draft) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Session expirée.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const allResources = (await apiService.getAllResourceTypes()) || [];
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("project_blueprint_cost_select")
+      .setPlaceholder("Choisissez une ressource pour le blueprint...")
+      .addOptions(
+        allResources.map((r: any) => ({
+          label: r.name,
+          value: r.id.toString(),
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    await interaction.reply({
+      content: "Quelle ressource sera nécessaire pour le blueprint ?",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
+  } catch (error: any) {
+    console.error("Error showing blueprint cost menu:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleBlueprintCostSelect(interaction: StringSelectMenuInteraction): Promise<void> {
+  try {
+    const resourceTypeId = parseInt(interaction.values[0]);
+
+    const resources = (await apiService.getAllResourceTypes()) || [];
+    const selectedResource = resources.find((r: any) => r.id === resourceTypeId);
+
+    if (!selectedResource) {
+      await interaction.reply({
+        content: "❌ Ressource non trouvée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(`project_blueprint_cost_quantity:${resourceTypeId}`)
+      .setTitle(`Quantité - ${selectedResource.name} (Blueprint)`);
+
+    const quantityInput = new TextInputBuilder()
+      .setCustomId("quantity")
+      .setLabel("Quantité requise pour le blueprint")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("Ex: 10")
+      .setRequired(true);
+
+    const row = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(quantityInput);
+
+    modal.addComponents(row);
+
+    await interaction.showModal(modal);
+  } catch (error: any) {
+    console.error("Error showing blueprint quantity modal:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitInteraction): Promise<void> {
+  try {
+    const resourceTypeId = parseInt(interaction.customId.split(":")[1]);
+    const quantity = parseInt(interaction.fields.getTextInputValue("quantity"));
+
+    if (isNaN(quantity) || quantity <= 0) {
+      await interaction.reply({
+        content: "❌ La quantité doit être un nombre positif.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const resources = (await apiService.getAllResourceTypes()) || [];
+    const selectedResource = resources.find((r: any) => r.id === resourceTypeId);
+
+    if (!selectedResource) {
+      await interaction.reply({
+        content: "❌ Ressource non trouvée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const draft = projectDrafts.get(interaction.user.id);
+    if (!draft) {
+      await interaction.reply({
+        content: "❌ Session expirée.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (!draft.blueprintResourceCosts) {
+      draft.blueprintResourceCosts = [];
+    }
+
+    draft.blueprintResourceCosts.push({
+      resourceTypeId,
+      resourceTypeName: selectedResource.name,
+      quantityRequired: quantity,
+    });
+
+    projectDrafts.set(interaction.user.id, draft);
+
+    await interaction.reply({
+      content: `✅ Coût blueprint ajouté : ${quantity} ${selectedResource.name}`,
+      flags: ["Ephemeral"],
+    });
+
+    // Update the main message with new draft
+    const buttons = createProjectButtons(draft);
+    await interaction.followUp({
+      content: formatProjectDraft(draft),
+      components: [buttons],
+      flags: ["Ephemeral"],
+    });
+  } catch (error: any) {
+    console.error("Error adding blueprint cost:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
 }

@@ -9,4 +9,5 @@ export interface CreateExpeditionDto {
   duration: number; // in days
   createdBy: string;
   characterId: string;
+  initialDirection?: string;
 }

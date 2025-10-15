@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  StringSelectMenuBuilder,
   TextChannel,
   type GuildMember,
   type ModalSubmitInteraction,
@@ -197,165 +198,114 @@ export async function handleExpeditionCreationModal(
       initialResources.push({ resourceTypeName: "Nourriture", quantity: nourritureAmount });
     }
 
-    const newExpedition = await apiService.expeditions.createExpedition({
-      name,
-      initialResources,
-      duration: durationDays,
-      townId: townResponse.id,
-      characterId: character.id, // Add character ID for auto-joining
-      createdBy: interaction.user.id, // Discord user ID
-    });
+    // Show direction selection menu
+    const directionMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_direction:${JSON.stringify({
+        name,
+        townId: townResponse.id,
+        initialResources,
+        duration: durationDays,
+      })}`)
+      .setPlaceholder("Choisissez la direction initiale...")
+      .addOptions([
+        {
+          label: "Nord",
+          value: "NORD",
+          emoji: "⬆️",
+        },
+        {
+          label: "Nord-Est",
+          value: "NORD_EST",
+          emoji: "↗️",
+        },
+        {
+          label: "Est",
+          value: "EST",
+          emoji: "➡️",
+        },
+        {
+          label: "Sud-Est",
+          value: "SUD_EST",
+          emoji: "↘️",
+        },
+        {
+          label: "Sud",
+          value: "SUD",
+          emoji: "⬇️",
+        },
+        {
+          label: "Sud-Ouest",
+          value: "SUD_OUEST",
+          emoji: "↙️",
+        },
+        {
+          label: "Ouest",
+          value: "OUEST",
+          emoji: "⬅️",
+        },
+        {
+          label: "Nord-Ouest",
+          value: "NORD_OUEST",
+          emoji: "↖️",
+        },
+      ]);
 
-    logger.debug("Expedition created successfully", {
-      expeditionId: newExpedition.data?.id,
-      expeditionName: newExpedition.data?.name,
-    });
-
-    // Join the creator to the expedition
-    let joinSuccess = false;
-    try {
-      const joinResponse = await apiService.expeditions.joinExpedition(
-        newExpedition.data.id,
-        character.id
-      );
-      joinSuccess = true;
-      logger.info("Expedition creator auto-joined expedition", {
-        expeditionId: newExpedition.data.id,
-        characterId: character.id,
-        createdBy: interaction.user.id,
-        response: joinResponse,
-      });
-    } catch (error) {
-      logger.error("Error auto-joining expedition creator:", {
-        error,
-        expeditionId: newExpedition.data.id,
-        characterId: character.id,
-        createdBy: interaction.user.id,
-      });
-      // Continue anyway, expedition is created
-    }
-
-    // Get updated expedition data with correct member count
-    let memberCount = 0;
-    let expeditionMembers: any[] = [];
-    try {
-      const updatedExpedition = await apiService.expeditions.getExpeditionById(
-        newExpedition.data.id
-      );
-      memberCount = updatedExpedition?.members?.length || 0;
-      expeditionMembers = updatedExpedition?.members || [];
-
-      // Log detailed member information
-      logger.info("Expedition members after creation:", {
-        expeditionId: newExpedition.data.id,
-        memberCount,
-        members: expeditionMembers.map((m) => ({
-          id: m.id,
-          characterId: m.character?.id,
-          characterName: m.character?.name,
-          userId: m.character?.user?.discordId,
-        })),
-      });
-
-      // If no members but join was successful, set to 1
-      if (memberCount === 0 && joinSuccess) {
-        memberCount = 1;
-      }
-    } catch (error) {
-      logger.error("Error fetching updated expedition data:", {
-        error,
-        expeditionId: newExpedition.data.id,
-      });
-      memberCount = joinSuccess ? 1 : 0; // Set to 1 only if join was successful
-    }
-
-    // Récupérer les ressources détaillées de la nouvelle expédition
-    let expeditionResources: any[] = [];
-    try {
-      expeditionResources = await apiService.getResources("EXPEDITION", newExpedition.data.id);
-    } catch (error) {
-      logger.warn("Could not fetch expedition resources after creation:", error);
-      // Continue without detailed resources if API call fails
-    }
-
-    // Create embed
-    const embed = createSuccessEmbed(
-      `🏕️ Expédition créée : ${newExpedition.data.name}`,
-      `Vous avez créé une nouvelle expédition avec succès !`
-    )
-    .addFields(
-      {
-        name: "⏱️ Durée",
-        value: `${durationDays} jours`,
-        inline: true,
-      },
-      {
-        name: "📍 Statut",
-        value: "🔄 PLANIFICATION",
-        inline: true,
-      },
-      {
-        name: "👥 Membres",
-        value: memberCount.toString(),
-        inline: true,
-      },
-      { name: " ", value: " ", inline: true }
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      directionMenu
     );
-
-    // Add detailed resources if available
-    if (expeditionResources && expeditionResources.length > 0) {
-      const resourceDetails = expeditionResources
-        .filter(resource => resource.quantity > 0)
-        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
-        .join("\n");
-
-      if (resourceDetails) {
-        embed.addFields({
-          name: "📦 Ressources détaillées",
-          value: resourceDetails,
-          inline: false,
-        });
-      }
-    }
 
     await interaction.reply({
-      embeds: [embed],
-      flags: ["Ephemeral"],
+      content: `📍 Choisissez la direction initiale de l'expédition **${name}** :`,
+      components: [row],
+      ephemeral: true,
     });
+  } catch (error) {
+    logger.error("Error in expedition creation modal:", { error });
+    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+  }
+}
 
-    // Send public log message to configured log channel
-    const publicEmbed = createSuccessEmbed(
-      `🏕️ Nouvelle expédition créée`,
-      `**${newExpedition.data.name}** créée par **${character.name}**`
-    )
-    .addFields(
-      {
-        name: "⏱️ Durée",
-        value: `${durationDays} jours`,
-        inline: true,
-      },
-      { name: " ", value: " ", inline: true }
-    );
+export async function handleExpeditionDirectionSelect(
+  interaction: any
+): Promise<void> {
+  try {
+    const direction = interaction.values[0];
+    const expeditionData = JSON.parse(interaction.customId.split(":")[1]);
 
-    // Add detailed resources to public message if available
-    if (expeditionResources && expeditionResources.length > 0) {
-      const resourceDetails = expeditionResources
-        .filter(resource => resource.quantity > 0)
-        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
-        .join("\n");
+    const character = await getActiveCharacterFromModal(interaction);
 
-      if (resourceDetails) {
-        publicEmbed.addFields({
-          name: "📦 Ressources détaillées",
-          value: resourceDetails,
-          inline: false,
-        });
-      }
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Vous devez avoir un personnage actif pour créer une expédition.",
+        ephemeral: true,
+      });
+      return;
     }
 
-    // Send public embed to log channel using standardized method
+    // Create expedition with direction
+    const createData = {
+      ...expeditionData,
+      initialDirection: direction,
+      createdBy: interaction.user.id,
+      characterId: character.id,
+    };
+
+    const expedition = await apiService.expeditions.createExpedition(createData);
+
+    // Auto-join creator
+    await apiService.expeditions.joinExpedition(
+      expedition.data.id,
+      character.id
+    );
+
+    await interaction.update({
+      content: `✅ Expédition **${expedition.data.name}** créée avec succès !\nDirection initiale : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
+      components: [],
+    });
+
+    // Send public log message
     try {
-      const logMessage = `🏕️ **Nouvelle expédition créée**\n**${newExpedition.data.name}** créée par **${character.name}**\n📦 Stock nourriture : ${foodStock}\n⏱️ Durée : ${durationDays} jours\n🏛️ Ville : ${townResponse.name}`;
+      const logMessage = `🏕️ **Nouvelle expédition créée**\n**${expedition.data.name}** créée par **${character.name}**\n📦 Ressources : ${expeditionData.initialResources.map((r: any) => `${r.quantity} ${r.resourceTypeName}`).join(", ")}\n⏱️ Durée : ${expeditionData.duration} jours\n🧭 Direction : ${getDirectionText(direction)}\n🏛️ Ville : ${character.town?.name || "Inconnue"}`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,
@@ -365,22 +315,51 @@ export async function handleExpeditionCreationModal(
       logger.warn("Could not send public embed to log channel:", error);
     }
 
-    logger.info("Expedition created via Discord", {
-      expeditionId: newExpedition.data.id,
-      name: newExpedition.data.name,
+    logger.info("Expedition created via Discord with direction", {
+      expeditionId: expedition.data.id,
+      name: expedition.data.name,
       createdBy: interaction.user.id,
       guildId: interaction.guildId,
       characterId: character.id,
       characterName: character.name,
-      townId: townResponse.id,
-      townName: townResponse.name,
-      foodStock: foodStock,
-      duration: durationDays,
-      memberCount: memberCount,
-      autoJoinSuccess: joinSuccess,
+      initialDirection: direction,
+      duration: expeditionData.duration,
     });
-  } catch (error) {
-    logger.error("Error in expedition creation modal:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+  } catch (error: any) {
+    console.error("Error in expedition direction select:", error);
+    await interaction.reply({
+      content: `❌ Erreur lors de la création : ${error.message}`,
+      ephemeral: true,
+    });
   }
+}
+
+function getDirectionEmoji(direction: string): string {
+  const emojis: Record<string, string> = {
+    NORD: "⬆️",
+    NORD_EST: "↗️",
+    EST: "➡️",
+    SUD_EST: "↘️",
+    SUD: "⬇️",
+    SUD_OUEST: "↙️",
+    OUEST: "⬅️",
+    NORD_OUEST: "↖️",
+    UNKNOWN: "❓",
+  };
+  return emojis[direction] || "❓";
+}
+
+function getDirectionText(direction: string): string {
+  const texts: Record<string, string> = {
+    NORD: "Nord",
+    NORD_EST: "Nord-Est",
+    EST: "Est",
+    SUD_EST: "Sud-Est",
+    SUD: "Sud",
+    SUD_OUEST: "Sud-Ouest",
+    OUEST: "Ouest",
+    NORD_OUEST: "Nord-Ouest",
+    UNKNOWN: "Inconnue",
+  };
+  return texts[direction] || "Inconnue";
 }

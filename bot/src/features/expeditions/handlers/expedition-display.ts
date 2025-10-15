@@ -3,6 +3,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  StringSelectMenuBuilder,
   type GuildMember,
   type ChatInputCommandInteraction,
 } from "discord.js";
@@ -374,6 +375,34 @@ export async function handleExpeditionInfoCommand(
       }
     }
 
+    // Direction info
+    if (currentExpedition.initialDirection) {
+      embed.addFields({
+        name: "📍 Direction initiale",
+        value: `${getDirectionEmoji(currentExpedition.initialDirection)} ${getDirectionText(currentExpedition.initialDirection)}`,
+        inline: true,
+      });
+    }
+
+    if (currentExpedition.path && currentExpedition.path.length > 0) {
+      const pathString = currentExpedition.path
+        .map((d) => getDirectionEmoji(d))
+        .join(" → ");
+      embed.addFields({
+        name: "🗺️ Chemin parcouru",
+        value: pathString,
+        inline: false,
+      });
+    }
+
+    if (currentExpedition.status === "DEPARTED" && currentExpedition.currentDayDirection) {
+      embed.addFields({
+        name: "🧭 Direction choisie pour demain",
+        value: `${getDirectionEmoji(currentExpedition.currentDayDirection)} ${getDirectionText(currentExpedition.currentDayDirection)}`,
+        inline: true,
+      });
+    }
+
     // Add member list if there are members
     if (currentExpedition.members && currentExpedition.members.length > 0) {
       const memberList = currentExpedition.members
@@ -412,6 +441,18 @@ export async function handleExpeditionInfoCommand(
           .setLabel("🚨 Voter retour d'urgence")
           .setStyle(ButtonStyle.Secondary)
       );
+
+      // Add direction button if DEPARTED and no direction set
+      if (!currentExpedition.currentDayDirection) {
+        const directionButton = new ButtonBuilder()
+          .setCustomId(`expedition_choose_direction:${currentExpedition.id}`)
+          .setLabel("Choisir Direction")
+          .setEmoji("🧭")
+          .setStyle(ButtonStyle.Primary);
+
+        buttonRow.addComponents(directionButton);
+      }
+
       components.push(buttonRow);
     }
 
@@ -423,5 +464,110 @@ export async function handleExpeditionInfoCommand(
   } catch (error) {
     logger.error("Error in expedition info command:", { error });
     await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la récupération des informations d'expédition.");
+  }
+}
+
+function getDirectionEmoji(direction: string): string {
+  const emojis: Record<string, string> = {
+    NORD: "⬆️",
+    NORD_EST: "↗️",
+    EST: "➡️",
+    SUD_EST: "↘️",
+    SUD: "⬇️",
+    SUD_OUEST: "↙️",
+    OUEST: "⬅️",
+    NORD_OUEST: "↖️",
+    UNKNOWN: "❓",
+  };
+  return emojis[direction] || "❓";
+}
+
+function getDirectionText(direction: string): string {
+  const texts: Record<string, string> = {
+    NORD: "Nord",
+    NORD_EST: "Nord-Est",
+    EST: "Est",
+    SUD_EST: "Sud-Est",
+    SUD: "Sud",
+    SUD_OUEST: "Sud-Ouest",
+    OUEST: "Ouest",
+    NORD_OUEST: "Nord-Ouest",
+    UNKNOWN: "Inconnue",
+  };
+  return texts[direction] || "Inconnue";
+}
+
+export async function handleExpeditionChooseDirection(
+  interaction: any
+): Promise<void> {
+  try {
+    const expeditionId = interaction.customId.split(":")[1];
+
+    const character = await getActiveCharacterFromCommand(interaction);
+
+    if (!character) {
+      await interaction.reply({
+        content: "❌ Vous devez avoir un personnage actif.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Show direction menu
+    const directionMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_set_direction:${expeditionId}:${character.id}`)
+      .setPlaceholder("Choisissez la prochaine direction...")
+      .addOptions([
+        { label: "Nord", value: "NORD", emoji: "⬆️" },
+        { label: "Nord-Est", value: "NORD_EST", emoji: "↗️" },
+        { label: "Est", value: "EST", emoji: "➡️" },
+        { label: "Sud-Est", value: "SUD_EST", emoji: "↘️" },
+        { label: "Sud", value: "SUD", emoji: "⬇️" },
+        { label: "Sud-Ouest", value: "SUD_OUEST", emoji: "↙️" },
+        { label: "Ouest", value: "OUEST", emoji: "⬅️" },
+        { label: "Nord-Ouest", value: "NORD_OUEST", emoji: "↖️" },
+      ]);
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      directionMenu
+    );
+
+    await interaction.reply({
+      content: "🧭 Choisissez la prochaine direction de l'expédition :",
+      components: [row],
+      ephemeral: true,
+    });
+  } catch (error: any) {
+    console.error("Error showing direction menu:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      ephemeral: true,
+    });
+  }
+}
+
+export async function handleExpeditionSetDirection(
+  interaction: any
+): Promise<void> {
+  try {
+    const [, expeditionId, characterId] = interaction.customId.split(":");
+    const direction = interaction.values[0];
+
+    await apiService.expeditions.setExpeditionDirection(
+      expeditionId,
+      direction,
+      characterId
+    );
+
+    await interaction.update({
+      content: `✅ Direction définie : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
+      components: [],
+    });
+  } catch (error: any) {
+    console.error("Error setting direction:", error);
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      ephemeral: true,
+    });
   }
 }
