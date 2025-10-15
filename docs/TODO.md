@@ -1,5 +1,8 @@
 -------------------------Todo-------------------------
 
+Daily message
+Idée : serait-il possible de se connecter en mcp ou api à un agent IA (OpenAI, Mistral ou autre?) gratuit pour rédiger de manière un peu plus vivante les différents récapitulatifs (actions, chantiers, projets, sotck expédition, etc).
+
 ## CapacitéV2
 
 beaucoup de trucs
@@ -52,12 +55,13 @@ Expéd
 2 PA/case/jour
 -> ⏸️ Nombreux tests de fonctionnalité à faire et de CRON. - PHASE 7
 
+donner une direction au formulaire ? voir règles
+
+-> ⏸️ Nombreux tests de fonctionnalité à faire et de CRON. - PHASE 7
 Quand on crée une exped avec plus de ressources qu'il n'y en a en ville → message d'erreur
 Comme dans les Chantiers, ce serait cool si le stock Vivres/Repas apparaissait quand on crée
 Quand on transfère de la nourriture via les expeds, "Ville" apparaît au lieu de "Village (+ emote à changer 🏘️ ) (screen 2)
 Idem après le transfert (screen 3)
-
-donner une direction au formulaire ? voir règles
 
 /profil:
 -> Pour toutes les actions de manger : nouveaux logs utilisants les nouveaux emojis "thorynest a mangé X **resourceType** , il reste YY de \*\*ResourceType dans la ville"
