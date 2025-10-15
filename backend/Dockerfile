@@ -25,7 +25,7 @@ COPY ./backend .
 RUN npm run build
 
 # Compilation du fichier de seeding
-RUN npx tsc prisma/seed.ts --outDir prisma --module commonjs --target es2020 --moduleResolution node --allowJs
+RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
 
 # Vérification de la structure du build
 # RUN find /app/dist -type f -print
