@@ -281,8 +281,9 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "capabilityName requis (Chasser ou Cueillir)");
     }
 
-    const seasonService = await import('../services/season.service');
-    const isSummer = await seasonService.SeasonService.isSummer();
+    const { SeasonService } = await import('../services/season.service');
+    const seasonServiceInstance = new SeasonService(prisma);
+    const isSummer = await seasonServiceInstance.isSummer();
 
     const result = await capabilityService.executeHarvestCapacity(
       characterId,

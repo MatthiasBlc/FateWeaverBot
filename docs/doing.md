@@ -2,7 +2,7 @@
 
 Le système de projet doit légèrement évoluer.
 Un projet devient un blueprint une fois qu'il a été terminé une première fois.
-la fabrication de la version blueprint d'un projet a des couts différents (généralement inférieur), du coup du projet d'origine mais demande les mêmes matériaux.
+la fabrication de la version blueprint d'un projet a des couts différents (généralement inférieur), du cout du projet d'origine mais demande les mêmes matériaux.
 Lors de la création d'un projet, il faut désormais lui définir ses couts en PA et Ressources pour sa première construction mais également pour les suivante une fois en mode blueprint.
 Les règles de construction des blueprints sont les mêmes que les projets, ils partagent également leurs interfaces.
 Lorsqu'une blueprint est terminée, elle peut être recommencée autant de fois que l'on le souhaite.
@@ -21,6 +21,7 @@ Le mercredi deuxière jour se passe de la même manière, le jeudi troisième jo
 ->Quand on crée une expedition avec plus de ressources qu'il n'y en a en ville, il doit y avoir un message d'erreur explicite.
 
 ->Lors de la création d'une expédition, l'utilisateur doit voir apparaitre également un menu déroulant pour choisir la direction. les directions possibles sont [Nord,Nord-Est,Est,Sud-Est,Sud,Sud-Ouest,Ouest,Nord-Ouest]. Cette valeur est définitive pour l'expédition et ne peut pas être changée une fois le formulaire validé.
+->Si a minuit, aucune destination n'est choisie, remplir la destivation avec Unknown. Les admininstrateurs s'occuperons de décider ou va l'expédition.
 -> Une fois l'expédition DEPARTED, un membre de l'expéition doit choisir la prochaine direction avec le même menu déroulant. Une fois que quelqu'un l'a choisie, le menu ne doit plus être disponible pour les autres. La direction choisie doit être affichée dans la fiche de l'expédition.
 La direction choisie est celle de la destination du lendemain.
 Donc dans une expédition créer le lundi pour une durée de 3 jours, le Lundi on définit la direction du mardi, l'expédition passe en DEPARTED le mardi, le mardi on définit la direction du mercredi, le mercredi la direction du jeudi. En revanche puisque l'expédition rentre le vendredi, le jeudi on ne défini pas de direction.
@@ -42,7 +43,7 @@ Un array été, un array hiver, un array pour le premier jour de l'été, un arr
 Chaque jour, le cron va prendre un message aléatoire dans l'array correspondant à la saison et le jour de la semaine. Pour les array hiver et été, un même message ne peut pas apparaitre deux fois dans la même saison (tant que la saison n'a pas changé donc).
 
 Il faut une commande admin permettant de proposer un message "Météo" pour le lendemain.
-Si un message set paramétré par ce système, c'est ce Message qui sera pris pour la partie Météo. Une fois le message envoyé, nous reprennons le système classique les jours suivants.
+Si un message est paramétré par ce système, c'est ce Message qui sera pris pour la partie Météo. Une fois le message envoyé, nous reprennons le système classique les jours suivants.
 
 # Objets et inventaires.
 
@@ -64,13 +65,11 @@ Un projet d'artisanat (/bluerpint) peut fabriquer une resource (dans ce cas elle
 Dans /character-admin, les admins doivent avoir un nouveau bouton permettant de donner ou de retirer un (ou plusieurs) objet à un personnage.
 Un personnage peut tout à fait avoir plusieurs fois le même objet dans son inventaire.
 
-Le grigri que le pếcheur peut trouver est maintenant un objet "grigri".
-Lorsqu'il est péché par un des pécheur de la ville, il va dans son inventaire directement et est retiré du tableau de possibilité comme prévu. (remplacé par un 3 minerai, 3 bois et 3 vivres)
-
 # évolution pêche
 
-dans le tableau de récompenses à 2PA, le dernier champ est "un grigri".
-Le grigri est un élément unique, lorsque ce dernier est péché, il doit être retiré du tableau de possibilité. A la place, il doit être remplacé par "3 minerai, 3 de bois et 3 vivres".
+
+Pour le pécheur dans le tableau de récompenses à 2PA, le dernier champ est "un grigri", le "grigri" est un objet.
+Lorsque ce dernier est péché, par un des pécheur de la ville, il va dans son inventaire directement et est retiré du tableau de possibilité comme prévu. A la place, il doit être remplacé par "3 minerai, 3 de bois et 3 vivres".
 
 # Compétences
 
@@ -115,3 +114,8 @@ Une fois le métier choisi, il doit choisir parmi XXXXXX.
 Si c'est le personnalisé qui est choisi alors .....
 
 En réponse sa fiche profil s'affiche alors.
+
+
+# création objet admin + compétence admin
+
+# changer grigri en coquillage

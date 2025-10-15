@@ -165,12 +165,12 @@ model Project {
 }
 
 model ProjectCraftType {
-  id         String    @id @default(cuid())
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId  String    @map("project_id")
-  craftType  CraftType @map("craft_type")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id        String    @id @default(cuid())
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String    @map("project_id")
+  craftType CraftType @map("craft_type")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@unique([projectId, craftType], name: "project_craft_type_unique")
   @@map("project_craft_types")
