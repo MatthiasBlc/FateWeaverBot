@@ -1,5 +1,6 @@
 import express from "express";
 import * as CharacterController from "../controllers/characters";
+import { objectsController } from "../controllers/objects";
 
 const router = express.Router();
 
@@ -54,5 +55,11 @@ router.get("/:id/available-capabilities", CharacterController.getAvailableCapabi
 router.post("/:id/capabilities/use", CharacterController.useCharacterCapability);
 router.post("/:id/capabilities/:capabilityId", CharacterController.addCharacterCapability);
 router.delete("/:id/capabilities/:capabilityId", CharacterController.removeCharacterCapability);
+
+// Inventory routes
+router.get("/:id/inventory", objectsController.getCharacterInventory);
+router.post("/:id/inventory/add", objectsController.addObjectToCharacter);
+router.delete("/:id/inventory/:slotId", objectsController.removeObjectFromCharacter);
+router.post("/:id/inventory/transfer", objectsController.transferObject);
 
 export default router;

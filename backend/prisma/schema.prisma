@@ -46,6 +46,7 @@ model Town {
   resourceStocks        ResourceStock[]
   dailyEventLogs        DailyEventLog[]
   dailyMessageOverrides DailyMessageOverride[]
+  grigriFound           Boolean                @default(false) @map("grigri_found") // NOUVEAU
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
 
@@ -88,6 +89,7 @@ model Character {
   paUsedToday       Int                   @default(0) @map("pa_used_today") // PA dépensés aujourd'hui
   lastPaReset       DateTime              @default(now()) @map("last_pa_reset") // Dernière réinitialisation
   capabilities      CharacterCapability[] // Capacités connues par le personnage
+  inventory         CharacterInventory? // NOUVEAU
   createdAt         DateTime              @default(now()) @map("created_at")
   updatedAt         DateTime              @updatedAt @map("updated_at")
 
@@ -115,7 +117,7 @@ enum CapabilityCategory {
 enum CraftType {
   TISSER
   FORGER
-  TRAVAILLER_LE_BOIS
+  MENUISER
 }
 
 enum ProjectStatus {
@@ -126,6 +128,13 @@ enum ProjectStatus {
 enum SeasonType {
   SUMMER
   WINTER
+}
+
+enum CapacityBonusType {
+  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+
+  HEAL_EXTRA // Soigner+
+  ENTERTAIN_BURST // Divertir+
+  ADMIN_INTERPRETED // Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+
 }
 
 model Chantier {
@@ -151,8 +160,9 @@ model Project {
   name                   String // Nom du projet
   paRequired             Int                            @map("pa_required") // Coût total en PA
   paContributed          Int                            @default(0) @map("pa_contributed") // PA déjà investis
-  outputResourceTypeId   Int                            @map("output_resource_type_id") // Ressource produite
+  outputResourceTypeId   Int?                           @map("output_resource_type_id") // Ressource produite
   outputQuantity         Int                            @map("output_quantity") // Quantité produite
+  outputObjectTypeId     Int?                           @map("output_object_type_id") // NOUVEAU
   status                 ProjectStatus                  @default(ACTIVE)
   town                   Town                           @relation(fields: [townId], references: [id], onDelete: Cascade)
   townId                 String                         @map("town_id")
@@ -165,10 +175,11 @@ model Project {
   paBlueprintRequired    Int?
   blueprintResourceCosts ProjectBlueprintResourceCost[]
 
-  originalProject Project?  @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
-  blueprintCopies Project[] @relation("ProjectBlueprint")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  originalProject  Project?    @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
+  blueprintCopies  Project[]   @relation("ProjectBlueprint")
+  outputObjectType ObjectType? @relation("ProjectObjectOutput", fields: [outputObjectTypeId], references: [id])
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
 
   @@unique([name, townId], name: "project_name_town_unique")
   @@map("projects")
@@ -216,15 +227,17 @@ model ProjectBlueprintResourceCost {
 }
 
 model Capability {
-  id          String                @id @default(cuid())
-  name        String                @unique
-  emojiTag    String
-  category    CapabilityCategory
-  costPA      Int                   @map("cost_pa")
-  description String?
-  characters  CharacterCapability[]
-  createdAt   DateTime              @default(now()) @map("created_at")
-  updatedAt   DateTime              @updatedAt @map("updated_at")
+  id                    String                @id @default(cuid())
+  name                  String                @unique
+  emojiTag              String
+  category              CapabilityCategory
+  costPA                Int                   @map("cost_pa")
+  description           String?
+  characters            CharacterCapability[]
+  objectSkillBonuses    ObjectSkillBonus[] // NOUVEAU
+  objectCapacityBonuses ObjectCapacityBonus[] // NOUVEAU
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
 
   @@map("capabilities")
 }
@@ -358,17 +371,18 @@ model ExpeditionEmergencyVote {
 }
 
 model ResourceType {
-  id             Int                            @id @default(autoincrement())
-  name           String                         @unique
-  emoji          String
-  category       String // 'base', 'transformé'
-  description    String?
-  stocks         ResourceStock[]                @relation("ResourceTypeToResourceStock")
-  chantierCosts  ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
-  projectCosts   ProjectResourceCost[] // Projets qui nécessitent cette ressource
-  blueprintCosts ProjectBlueprintResourceCost[]
-  createdAt      DateTime                       @default(now()) @map("created_at")
-  updatedAt      DateTime                       @updatedAt @map("updated_at")
+  id                Int                            @id @default(autoincrement())
+  name              String                         @unique
+  emoji             String
+  category          String // 'base', 'transformé'
+  description       String?
+  stocks            ResourceStock[]                @relation("ResourceTypeToResourceStock")
+  chantierCosts     ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
+  projectCosts      ProjectResourceCost[] // Projets qui nécessitent cette ressource
+  blueprintCosts    ProjectBlueprintResourceCost[]
+  objectConversions ObjectResourceConversion[] // NOUVEAU
+  createdAt         DateTime                       @default(now()) @map("created_at")
+  updatedAt         DateTime                       @updatedAt @map("updated_at")
 
   @@map("resource_types")
 }
@@ -475,4 +489,101 @@ model DailyMessageOverride {
 
   @@unique([townId, date])
   @@map("daily_message_overrides")
+}
+
+model ObjectType {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  // Relations
+  inventorySlots      CharacterInventorySlot[]
+  skillBonuses        ObjectSkillBonus[]
+  capacityBonuses     ObjectCapacityBonus[]
+  resourceConversions ObjectResourceConversion[]
+  projectOutputs      Project[]                  @relation("ProjectObjectOutput")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("object_types")
+}
+
+model CharacterInventory {
+  id          String                   @id @default(cuid())
+  characterId String                   @unique @map("character_id")
+  character   Character                @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  slots       CharacterInventorySlot[]
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+
+  @@map("character_inventories")
+}
+
+model CharacterInventorySlot {
+  id           String             @id @default(cuid())
+  inventoryId  String             @map("inventory_id")
+  inventory    CharacterInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  objectTypeId Int                @map("object_type_id")
+  objectType   ObjectType         @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@index([inventoryId])
+  @@map("character_inventory_slots")
+}
+
+model ObjectSkillBonus {
+  id           String     @id @default(cuid())
+  objectTypeId Int        @map("object_type_id")
+  objectType   ObjectType @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  capabilityId String     @map("capability_id")
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, capabilityId])
+  @@map("object_skill_bonuses")
+}
+
+model ObjectCapacityBonus {
+  id           String            @id @default(cuid())
+  objectTypeId Int               @map("object_type_id")
+  objectType   ObjectType        @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  capabilityId String            @map("capability_id")
+  capability   Capability        @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  bonusType    CapacityBonusType @map("bonus_type")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, capabilityId])
+  @@map("object_capacity_bonuses")
+}
+
+model ObjectResourceConversion {
+  id             String       @id @default(cuid())
+  objectTypeId   Int          @map("object_type_id")
+  objectType     ObjectType   @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId Int          @map("resource_type_id")
+  resourceType   ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  quantity       Int
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, resourceTypeId])
+  @@map("object_resource_conversions")
+}
+
+model FishingLootEntry {
+  id           String   @id @default(cuid())
+  paTable      Int      @map("pa_table") // 1 ou 2
+  resourceName String   @map("resource_name") // Nom de la ressource ou "GRIGRI"
+  quantity     Int
+  isActive     Boolean  @default(true) @map("is_active")
+  orderIndex   Int      @map("order_index") // Pour maintenir l'ordre
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([paTable, isActive])
+  @@map("fishing_loot_entries")
 }

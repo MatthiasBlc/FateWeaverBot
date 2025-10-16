@@ -690,7 +690,7 @@ export class CapabilityService {
         outputResource: "Fer",
         verb: "forgé"
       },
-      travailler_le_bois: {
+      menuiser: {
         inputResource: "Bois",
         outputResource: "Planches",
         verb: "travaillé"

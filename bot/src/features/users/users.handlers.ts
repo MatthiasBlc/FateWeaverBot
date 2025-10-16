@@ -110,7 +110,7 @@ export async function handleProfileCommand(interaction: any) {
         };
 
         // Créer l'embed du profil avec les valeurs à 0
-        const { embed } = createProfileEmbed(profileData);
+        const { embed } = await createProfileEmbed(profileData);
 
         await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
         return;
@@ -192,7 +192,7 @@ export async function handleProfileCommand(interaction: any) {
         };
 
         // Créer l'embed du profil
-        const { embed, components } = createProfileEmbed(profileData);
+        const { embed, components } = await createProfileEmbed(profileData);
 
         await interaction.reply({ embeds: [embed], components, flags: ["Ephemeral"] });
         return;
@@ -281,7 +281,7 @@ function createStatusDisplay(character: any): string | null {
   return statuses.length > 0 ? statuses.join('\n') : null;
 }
 
-function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
+async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] }> {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
     title: `${CHARACTER.PROFILE} ###${data.character.name || "Sans nom"}`,
@@ -361,7 +361,26 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
     });
   }
 
-  embed.addFields(fields);
+  // Ajouter l'inventaire (nouveau)
+  try {
+    const inventoryResponse = await httpClient.get(`/api/characters/${data.character.id}/inventory`);
+    const inventory = inventoryResponse.data;
+
+    if (inventory && inventory.slots && inventory.slots.length > 0) {
+      const inventoryText = inventory.slots.map((slot: any) =>
+        `${slot.objectType.name}${slot.objectType.description ? ` • ${slot.objectType.description}` : ''}`
+      ).join('\n');
+
+      fields.push({
+        name: `📦 **Inventaire**`,
+        value: inventoryText,
+        inline: false,
+      });
+    }
+  } catch (error) {
+    // Silencieusement ignorer les erreurs d'inventaire pour ne pas casser le profil
+    logger.debug('Erreur lors de la récupération de l\'inventaire:', error);
+  }
 
   // Créer les composants (boutons d'action rapide) si le personnage a des capacités
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
@@ -417,6 +436,25 @@ function createProfileEmbed(data: ProfileData): { embed: EmbedBuilder; component
 
     const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(cataplasmeButton);
     components.push(cataplasmeRow);
+  }
+
+  // Ajouter le bouton "Donner un objet" si le personnage a des objets dans son inventaire
+  try {
+    const inventoryResponse = await httpClient.get(`/api/characters/${data.character.id}/inventory`);
+    const inventory = inventoryResponse.data;
+
+    if (inventory && inventory.slots && inventory.slots.length > 0) {
+      const giveObjectButton = new ButtonBuilder()
+        .setCustomId(`give_object:${data.character.id}`)
+        .setLabel(`🎁 Donner un objet`)
+        .setStyle(ButtonStyle.Secondary);
+
+      const giveObjectRow = new ActionRowBuilder<ButtonBuilder>().addComponents(giveObjectButton);
+      components.push(giveObjectRow);
+    }
+  } catch (error) {
+    // Silencieusement ignorer les erreurs
+    logger.debug('Erreur lors de la vérification de l\'inventaire pour le bouton donner:', error);
   }
 
   return { embed, components };

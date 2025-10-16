@@ -26,7 +26,7 @@ export function getCraftTypeEmoji(craftType: string): string {
       return '🧵';
     case 'FORGER':
       return '🔨';
-    case 'TRAVAILLER_LE_BOIS':
+    case 'MENUISER':
       return '🪚';
     default:
       return '🛠️';

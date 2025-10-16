@@ -25,8 +25,7 @@ import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
 import capabilitiesRoutes from "./routes/capabilities";
 import seasonsRoutes from "./routes/seasons";
-import resourcesRoutes from "./routes/resources";
-import projectsRoutes from "./routes/projects";
+import objectsRoutes from "./routes/objects";
 
 const app = express();
 
@@ -110,12 +109,7 @@ app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
-app.use("/api/chantiers", chantierRoutes);
-app.use("/api/expeditions", expeditionRoutes);
-app.use("/api/resources", resourcesRoutes);
-app.use("/api/capabilities", capabilitiesRoutes);
-app.use("/api/seasons", seasonsRoutes);
-app.use("/api/projects", projectsRoutes);
+app.use("/api/objects", objectsRoutes);
 
 // Routes admin
 app.use("/api/admin/expeditions", expeditionAdminRoutes);

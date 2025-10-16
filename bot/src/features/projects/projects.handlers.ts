@@ -126,7 +126,7 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 
     // Filtrer les capacités craft
     const craftCapabilities = capabilities.filter((cap: Capability) =>
-      ["Tisser", "Forger", "Travailler le bois"].includes(cap.name)
+      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
     );
 
     if (craftCapabilities.length === 0) {
@@ -140,7 +140,7 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     const craftTypeMap: Record<string, string> = {
       "Tisser": "TISSER",
       "Forger": "FORGER",
-      "Travailler le bois": "TRAVAILLER_LE_BOIS"
+      "Menuiser": "MENUISER"
     };
 
     // Récupérer tous les projets pour chaque craft type
@@ -328,7 +328,7 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     // Récupérer les capacités craft du personnage
     const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
     const craftCapabilities = capabilities.filter((cap: Capability) =>
-      ["Tisser", "Forger", "Travailler le bois"].includes(cap.name)
+      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
     );
 
     if (craftCapabilities.length === 0) {
@@ -342,7 +342,7 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     const craftTypeMap: Record<string, string> = {
       "Tisser": "TISSER",
       "Forger": "FORGER",
-      "Travailler le bois": "TRAVAILLER_LE_BOIS"
+      "Menuiser": "MENUISER"
     };
 
     // Récupérer tous les projets ACTIVE

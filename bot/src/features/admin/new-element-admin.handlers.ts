@@ -42,9 +42,15 @@ export async function handleNewElementAdminCommand(
       .setLabel("➕ Nouvelle Ressource")
       .setStyle(ButtonStyle.Success);
 
+    const objectButton = new ButtonBuilder()
+      .setCustomId("new_element_object")
+      .setLabel("➕ Nouvel Objet")
+      .setStyle(ButtonStyle.Secondary);
+
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       capabilityButton,
-      resourceButton
+      resourceButton,
+      objectButton
     );
 
     await interaction.reply({
@@ -308,6 +314,91 @@ export async function handleResourceModalSubmit(interaction: ModalSubmitInteract
     });
   } catch (error: any) {
     logger.error("Erreur lors de la création du type de ressource", {
+      error: error instanceof Error ? error.message : error,
+      name,
+      userId: interaction.user.id,
+    });
+
+    const errorMessage =
+      error.response?.data?.error ||
+      error.message ||
+      "Erreur inconnue";
+
+    await interaction.editReply({
+      content: `${STATUS.ERROR} Erreur lors de la création : ${errorMessage}`,
+    });
+  }
+}
+
+/**
+ * Gère le clic sur le bouton "Nouvel Objet"
+ */
+export async function handleNewObjectButton(interaction: ButtonInteraction) {
+  try {
+    // Créer le modal pour l'objet
+    const modal = new ModalBuilder()
+      .setCustomId("new_object_modal")
+      .setTitle("Créer un nouvel objet");
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId("object_name")
+      .setLabel("Nom de l'objet")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(100);
+
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId("object_description")
+      .setLabel("Description (optionnel)")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(500);
+
+    const rows = [
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput),
+    ];
+
+    modal.addComponents(...rows);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error("Erreur dans handleNewObjectButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+  }
+}
+
+/**
+ * Gère la soumission du modal d'objet
+ */
+export async function handleObjectModalSubmit(interaction: ModalSubmitInteraction) {
+  const name = interaction.fields.getTextInputValue("object_name");
+  const description = interaction.fields.getTextInputValue("object_description") || undefined;
+
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Appeler l'API backend pour créer l'objet
+    const response = await apiService.objects.createObjectType({
+      name,
+      description,
+    });
+
+    logger.info("Nouvel objet créé", {
+      name,
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+    });
+
+    await interaction.editReply({
+      content: `${STATUS.SUCCESS} **Objet créé avec succès !**\n\n` +
+        `**Nom** : ${name}\n` +
+        (description ? `**Description** : ${description}` : ""),
+    });
+  } catch (error: any) {
+    logger.error("Erreur lors de la création de l'objet", {
       error: error instanceof Error ? error.message : error,
       name,
       userId: interaction.user.id,

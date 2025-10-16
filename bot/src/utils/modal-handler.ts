@@ -397,6 +397,22 @@ export class ModalHandler {
         });
       }
     });
+
+    // Gestionnaire pour le modal de création d'objet
+    this.registerHandler("new_object_modal", async (interaction) => {
+      try {
+        const { handleObjectModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling new object modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

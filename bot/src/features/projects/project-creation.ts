@@ -177,7 +177,7 @@ export async function handleSelectCraftTypesButton(interaction: ButtonInteractio
       .addOptions([
         { label: "Tisser", value: "TISSER", emoji: "🧵" },
         { label: "Forger", value: "FORGER", emoji: "🔨" },
-        { label: "Travailler le bois", value: "TRAVAILLER_LE_BOIS", emoji: "🪚" },
+        { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
       ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);

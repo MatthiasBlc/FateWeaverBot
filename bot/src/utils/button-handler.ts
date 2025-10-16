@@ -621,6 +621,22 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Nouvel Objet"
+    this.registerHandler("new_element_object", async (interaction) => {
+      try {
+        const { handleNewObjectButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleNewObjectButton(interaction);
+      } catch (error) {
+        logger.error("Error handling new object button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du formulaire d'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== BLUEPRINT PROJECTS HANDLERS ===================
     // Gestionnaire pour les boutons de redémarrage de blueprints
     this.registerHandlerByPrefix("project_restart:", async (interaction) => {

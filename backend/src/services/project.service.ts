@@ -374,25 +374,29 @@ export const ProjectService = {
           data: { status: ProjectStatus.COMPLETED },
         });
 
-        await tx.resourceStock.upsert({
-          where: {
-            locationType_locationId_resourceTypeId: {
+        // Si le projet produit une ressource (et non un objet)
+        if (updatedProject!.outputResourceTypeId !== null) {
+          await tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: 'CITY',
+                locationId: character.townId,
+                resourceTypeId: updatedProject!.outputResourceTypeId,
+              },
+            },
+            update: {
+              quantity: { increment: updatedProject!.outputQuantity },
+            },
+            create: {
               locationType: 'CITY',
               locationId: character.townId,
               resourceTypeId: updatedProject!.outputResourceTypeId,
+              quantity: updatedProject!.outputQuantity,
+              townId: character.townId,
             },
-          },
-          update: {
-            quantity: { increment: updatedProject!.outputQuantity },
-          },
-          create: {
-            locationType: 'CITY',
-            locationId: character.townId,
-            resourceTypeId: updatedProject!.outputResourceTypeId,
-            quantity: updatedProject!.outputQuantity,
-            townId: character.townId,
-          },
-        });
+          });
+        }
+        // TODO: Si outputObjectTypeId !== null, ajouter l'objet à l'inventaire du créateur
 
         return { ...updatedProject, completed: true };
       }

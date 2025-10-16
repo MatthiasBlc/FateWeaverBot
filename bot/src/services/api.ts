@@ -30,6 +30,7 @@ import { Town } from "../types/entities";
 import { CapabilityAPIService } from "./api/capability-api.service";
 import { ResourceAPIService } from "./api/resource-api.service";
 import { ProjectAPIService } from "./api/project-api.service";
+import { ObjectAPIService } from "./api/object-api.service";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -47,6 +48,7 @@ class APIService {
   public readonly towns: TownsAPIService;
   public readonly capabilities: CapabilityAPIService;
   public readonly resources: ResourceAPIService;
+  public readonly objects: ObjectAPIService;
 
   private constructor() {
     // Use shared HTTP client
@@ -61,6 +63,7 @@ class APIService {
     this.towns = new TownsAPIService(this.api);
     this.capabilities = new CapabilityAPIService(this.api);
     this.resources = new ResourceAPIService(this.api);
+    this.objects = new ObjectAPIService(this.api);
   }
 
   public static getInstance(): APIService {
