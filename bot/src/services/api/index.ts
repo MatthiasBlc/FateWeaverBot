@@ -6,6 +6,7 @@ export { ChantierAPIService } from './chantier-api.service';
 export { ProjectAPIService } from './project-api.service';
 export { CapabilityAPIService } from './capability-api.service';
 export { ResourceAPIService } from './resource-api.service';
+export { SkillAPIService } from './skill-api.service';
 
 // Export de l'instance API principale
 export { apiService } from '../api';

@@ -742,13 +742,230 @@ export async function handleRestartBlueprintButton(interaction: ButtonInteractio
 
     // Optionally refresh the project list
     await interaction.followUp({
-      content: "🔄 Projet redémarré ! Utilisez `/projets` pour voir la liste mise à jour.",
+      content: "🔄 Projet redémarré ! Consultez le bouton 'Projets' dans votre profil pour voir la liste mise à jour.",
       flags: ["Ephemeral"],
     });
   } catch (error: any) {
     console.error("Error restarting blueprint:", error);
     await interaction.reply({
       content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Handler pour le bouton "Voir les projets" depuis le profil
+ * Réutilise la logique de handleProjectsCommand
+ */
+export async function handleViewProjectsFromProfile(interaction: ButtonInteraction) {
+  try {
+    // Extraire les IDs du customId
+    const [, characterId, userId] = interaction.customId.split(":");
+
+    // Vérifier que l'utilisateur qui clique est bien le propriétaire
+    if (interaction.user.id !== userId) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Vous ne pouvez voir que vos propres projets.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Récupérer l'utilisateur
+    const user = await apiService.getOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.discriminator
+    );
+
+    if (!user) {
+      throw new Error("Impossible de créer ou récupérer l'utilisateur");
+    }
+
+    // Récupérer la ville du serveur
+    const townResponse = await apiService.guilds.getTownByGuildId(
+      interaction.guildId!
+    );
+    const town = townResponse as unknown as Town;
+
+    if (!town || !town.id) {
+      throw new Error("Ville non trouvée pour cette guilde");
+    }
+
+    // Récupérer le personnage actif
+    const townCharacters = (await apiService.characters.getTownCharacters(
+      town.id
+    )) as any[];
+    const userCharacters = townCharacters.filter(
+      (char: any) => char.user?.discordId === interaction.user.id
+    );
+    const activeCharacter = userCharacters.find((char: any) => char.isActive) as ActiveCharacter | undefined;
+
+    if (!activeCharacter) {
+      return interaction.reply({
+        content: `${STATUS.ERROR} Vous devez avoir un personnage actif pour voir les projets artisanaux.`,
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Récupérer les capacités du personnage
+    const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
+
+    // Filtrer les capacités craft
+    const craftCapabilities = capabilities.filter((cap: Capability) =>
+      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
+    );
+
+    if (craftCapabilities.length === 0) {
+      return interaction.reply({
+        content: "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Mapper les capacités aux CraftTypes
+    const craftTypeMap: Record<string, string> = {
+      "Tisser": "TISSER",
+      "Forger": "FORGER",
+      "Menuiser": "MENUISER"
+    };
+
+    // Récupérer tous les projets pour chaque craft type
+    let allProjects: Project[] = [];
+    for (const cap of craftCapabilities) {
+      const craftType = craftTypeMap[cap.name];
+      if (craftType) {
+        const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
+        allProjects = allProjects.concat(projects);
+      }
+    }
+
+    // Dédupliquer (un projet peut avoir plusieurs craft types)
+    const uniqueProjects = Array.from(
+      new Map(allProjects.map(p => [p.id, p])).values()
+    );
+
+    if (uniqueProjects.length === 0) {
+      return interaction.reply({
+        content: "Aucun projet artisanal n'a encore été créé pour vos capacités.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const embed = createInfoEmbed(
+      `🛠️ Projets artisanaux`,
+      "Voici les projets disponibles pour vos capacités :"
+    );
+
+    // Grouper par statut
+    const projectsParStatut = uniqueProjects.reduce<Record<string, Project[]>>(
+      (acc, project) => {
+        if (!acc[project.status]) {
+          acc[project.status] = [];
+        }
+        acc[project.status].push(project);
+        return acc;
+      },
+      {}
+    );
+
+    // Ajouter une section pour chaque statut
+    for (const [statut, listeProjects] of Object.entries(projectsParStatut)) {
+      const projectsText = listeProjects
+        .map((project) => {
+          // Craft types emojis
+          const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
+
+          // Output resource
+          const outputText = project.outputResourceType
+            ? `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`
+            : "";
+
+          let text = `${craftEmojis} **${project.name}** - ${project.paContributed}/${project.paRequired} PA`;
+
+          if (outputText) {
+            text += ` → ${outputText}`;
+          }
+
+          // Ressources requises
+          if (project.resourceCosts && project.resourceCosts.length > 0) {
+            const resourcesText = project.resourceCosts
+              .map(
+                (rc) =>
+                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
+              )
+              .join(" ");
+            text += ` | ${resourcesText}`;
+          }
+
+          // Show blueprint info if applicable
+          if ((project as any).isBlueprint) {
+            const blueprintPA = (project as any).paBlueprintRequired ?? project.paRequired;
+            text += `\n📋 **Blueprint** - Peut être recommencé pour ${blueprintPA} PA`;
+
+            if ((project as any).blueprintResourceCosts && (project as any).blueprintResourceCosts.length > 0) {
+              text += "\n**Coûts Blueprint:**\n";
+              (project as any).blueprintResourceCosts.forEach((cost: any) => {
+                text += `  • ${cost.quantityRequired} ${cost.resourceType.name}\n`;
+              });
+            }
+          }
+
+          return text;
+        })
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
+        value: projectsText || "Aucun projet dans cette catégorie",
+        inline: false,
+      });
+    }
+
+    // Bouton "Participer" si au moins un projet ACTIVE
+    const activeProjects = uniqueProjects.filter((p) => p.status === "ACTIVE");
+    const blueprintProjects = uniqueProjects.filter((p) => (p as any).isBlueprint);
+
+    const components = [];
+
+    if (activeProjects.length > 0) {
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId("project_participate")
+          .setLabel("🛠️ Participer")
+          .setStyle(ButtonStyle.Primary)
+      );
+      components.push(buttonRow);
+    }
+
+    // Add restart buttons for blueprints (up to 5 buttons per row)
+    if (blueprintProjects.length > 0) {
+      const restartButtons = blueprintProjects.slice(0, 5).map((project) =>
+        new ButtonBuilder()
+          .setCustomId(`project_restart:${project.id}`)
+          .setLabel(`🔄 ${project.name}`)
+          .setStyle(ButtonStyle.Success)
+      );
+
+      // Group buttons in rows of up to 5
+      for (let i = 0; i < restartButtons.length; i += 5) {
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          ...restartButtons.slice(i, i + 5)
+        );
+        components.push(row);
+      }
+    }
+
+    await interaction.reply({
+      embeds: [embed],
+      components,
+      flags: ["Ephemeral"]
+    });
+  } catch (error) {
+    logger.error("Erreur lors de l'affichage des projets depuis le profil :", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de l'affichage des projets.",
       flags: ["Ephemeral"],
     });
   }

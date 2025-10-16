@@ -11,7 +11,7 @@ export const objectService = {
       include: {
         skillBonuses: {
           include: {
-            capability: true
+            skill: true
           }
         },
         capacityBonuses: {
@@ -40,7 +40,7 @@ export const objectService = {
       include: {
         skillBonuses: {
           include: {
-            capability: true
+            skill: true
           }
         },
         capacityBonuses: {
@@ -82,7 +82,7 @@ export const objectService = {
               include: {
                 skillBonuses: {
                   include: {
-                    capability: true
+                    skill: true
                   }
                 },
                 capacityBonuses: {

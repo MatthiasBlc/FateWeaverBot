@@ -23,6 +23,8 @@ export const CHARACTER_ADMIN_CUSTOM_IDS = {
   TOGGLE_REROLL_BUTTON_PREFIX: "character_admin_reroll_btn_",
   CAPABILITIES_BUTTON_PREFIX: "character_admin_capabilities_btn_",
   CAPABILITIES_MODAL_PREFIX: "character_admin_capabilities_modal_",
+  OBJECTS_BUTTON_PREFIX: "character_admin_objects_btn_",
+  SKILLS_BUTTON_PREFIX: "character_admin_skills_btn_",
   STATS_MODAL_PREFIX: "character_admin_stats_modal_",
   ADVANCED_STATS_MODAL_PREFIX: "character_admin_advanced_modal_",
 };
@@ -105,6 +107,20 @@ export function createCharacterActionButtons(character: Character) {
     label: "Gérer Capacités",
     style: ButtonStyle.Secondary,
     emoji: CAPABILITIES.GENERIC,
+  });
+
+  // Bouton Gérer Objets
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.OBJECTS_BUTTON_PREFIX}${character.id}`,
+    label: "Gérer Objets",
+    style: ButtonStyle.Secondary,
+  });
+
+  // Bouton Gérer Compétences
+  buttons.push({
+    customId: `${CHARACTER_ADMIN_CUSTOM_IDS.SKILLS_BUTTON_PREFIX}${character.id}`,
+    label: "Gérer Compétences",
+    style: ButtonStyle.Secondary,
   });
 
   return createActionButtons(buttons);
@@ -283,6 +299,152 @@ export function createCapabilityActionButtons(
     {
       customId: `capability_admin_remove:${characterId}`,
       label: `${ACTIONS.REMOVE} Retirer Capacités`,
+      style: ButtonStyle.Danger,
+    },
+  ]);
+}
+
+/**
+ * Interface pour la gestion des objets d'un personnage.
+ */
+export interface ObjectType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/**
+ * Crée l'interface de sélection multiple des objets disponibles.
+ * @param availableObjects Liste des objets disponibles
+ * @param currentObjects Liste des objets actuels (pour marquer les sélections)
+ * @param placeholder Texte du placeholder (optionnel)
+ * @param characterId ID du personnage
+ */
+export function createObjectSelectMenu(
+  availableObjects: ObjectType[],
+  currentObjects: ObjectType[] = [],
+  placeholder: string = "Sélectionnez les objets à ajouter/retirer",
+  characterId?: string
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  const currentIds = new Set(currentObjects.map((obj) => obj.id));
+
+  const customId = characterId
+    ? `object_admin_select:${characterId}`
+    : "object_admin_select";
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(customId)
+    .setPlaceholder(placeholder)
+    .setMinValues(0)
+    .setMaxValues(availableObjects.length)
+    .addOptions(
+      availableObjects.map((object) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(object.name)
+          .setDescription(
+            object.description
+              ? object.description.substring(0, 100)
+              : "Aucune description"
+          )
+          .setValue(object.id)
+          .setDefault(currentIds.has(object.id))
+      )
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
+}
+
+/**
+ * Crée les boutons d'action pour la gestion des objets.
+ * @param characterId L'ID du personnage
+ */
+export function createObjectActionButtons(
+  characterId: string
+): ActionRowBuilder<ButtonBuilder> {
+  return createActionButtons([
+    {
+      customId: `object_admin_add:${characterId}`,
+      label: `${ACTIONS.ADD} Ajouter Objets`,
+      style: ButtonStyle.Success,
+    },
+    {
+      customId: `object_admin_remove:${characterId}`,
+      label: `${ACTIONS.REMOVE} Retirer Objets`,
+      style: ButtonStyle.Danger,
+    },
+  ]);
+}
+
+/**
+ * Interface pour la gestion des compétences d'un personnage.
+ */
+export interface Skill {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/**
+ * Crée l'interface de sélection multiple des compétences disponibles.
+ * @param availableSkills Liste des compétences disponibles
+ * @param currentSkills Liste des compétences actuelles (pour marquer les sélections)
+ * @param placeholder Texte du placeholder (optionnel)
+ * @param characterId ID du personnage
+ */
+export function createSkillSelectMenu(
+  availableSkills: Skill[],
+  currentSkills: Skill[] = [],
+  placeholder: string = "Sélectionnez les compétences à ajouter/retirer",
+  characterId?: string
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  const currentIds = new Set(currentSkills.map((skill) => skill.id));
+
+  const customId = characterId
+    ? `skill_admin_select:${characterId}`
+    : "skill_admin_select";
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(customId)
+    .setPlaceholder(placeholder)
+    .setMinValues(0)
+    .setMaxValues(availableSkills.length)
+    .addOptions(
+      availableSkills.map((skill) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(skill.name)
+          .setDescription(
+            skill.description
+              ? skill.description.substring(0, 100)
+              : "Aucune description"
+          )
+          .setValue(skill.id)
+          .setDefault(currentIds.has(skill.id))
+      )
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
+}
+
+/**
+ * Crée les boutons d'action pour la gestion des compétences.
+ * @param characterId L'ID du personnage
+ */
+export function createSkillActionButtons(
+  characterId: string
+): ActionRowBuilder<ButtonBuilder> {
+  return createActionButtons([
+    {
+      customId: `skill_admin_add:${characterId}`,
+      label: `${ACTIONS.ADD} Ajouter Compétences`,
+      style: ButtonStyle.Success,
+    },
+    {
+      customId: `skill_admin_remove:${characterId}`,
+      label: `${ACTIONS.REMOVE} Retirer Compétences`,
       style: ButtonStyle.Danger,
     },
   ]);

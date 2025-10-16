@@ -413,6 +413,71 @@ export class ModalHandler {
         });
       }
     });
+
+    // Gestionnaire pour le modal de création de compétence
+    this.registerHandler("new_skill_modal", async (interaction) => {
+      try {
+        const { handleSkillModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleSkillModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling new skill modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== OBJECT BONUS MODALS HANDLERS ===================
+    // Gestionnaire pour le modal de bonus de compétence sur objet
+    this.registerHandler("object_skill_bonus_modal:", async (interaction) => {
+      try {
+        const { handleObjectSkillBonusModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectSkillBonusModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill bonus modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de bonus de capacité sur objet
+    this.registerHandler("object_capability_bonus_modal:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityBonusModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectCapabilityBonusModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability bonus modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de conversion en ressource sur objet
+    this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
+      try {
+        const { handleObjectResourceConversionModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectResourceConversionModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling object resource conversion modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

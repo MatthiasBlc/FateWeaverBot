@@ -37,9 +37,12 @@ export class ProjectAPIService extends BaseAPIService {
       paRequired: number;
       townId: string;
       craftTypes: string[];
-      outputResourceTypeId: number;
+      outputResourceTypeId?: number;
+      outputObjectTypeId?: number; // NOUVEAU: Support pour objets en sortie
       outputQuantity: number;
       resourceCosts?: { resourceTypeId: number; quantityRequired: number }[];
+      paBlueprintRequired?: number; // NOUVEAU: PA requis pour blueprints
+      blueprintResourceCosts?: { resourceTypeId: number; quantityRequired: number }[]; // NOUVEAU: Coûts blueprint
     },
     userId: string
   ) {

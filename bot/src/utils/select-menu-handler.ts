@@ -259,7 +259,55 @@ export class SelectMenuHandler {
       }
     });
 
-    // Gestionnaire pour la sélection de la ressource de sortie
+    // Gestionnaire pour la sélection du TYPE de sortie (ressource ou objet)
+    this.registerHandler("project_output_type_select", async (interaction) => {
+      try {
+        const { handleOutputTypeSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleOutputTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project output type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une RESSOURCE de sortie
+    this.registerHandler("project_output_resource_select", async (interaction) => {
+      try {
+        const { handleOutputResourceSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleOutputResourceSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project output resource select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un OBJET de sortie
+    this.registerHandler("project_output_object_select", async (interaction) => {
+      try {
+        const { handleOutputObjectSelect } = await import(
+          "../features/projects/project-creation.js"
+        );
+        await handleOutputObjectSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project output object select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // DEPRECATED - Gardé pour compatibilité
     this.registerHandler("project_output_select", async (interaction) => {
       try {
         const { handleOutputSelect } = await import(

@@ -320,6 +320,38 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour les boutons de gestion des objets
+    this.registerHandlerByPrefix("object_admin_", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling object admin button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la gestion des objets.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les boutons de gestion des compétences
+    this.registerHandlerByPrefix("skill_admin_", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling skill admin button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la gestion des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les boutons du profil utilisateur (capacités, etc.)
     this.registerHandlerByPrefix("use_capability", async (interaction) => {
       try {
@@ -637,6 +669,87 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Nouvelle Compétence"
+    this.registerHandler("new_element_skill", async (interaction) => {
+      try {
+        const { handleNewSkillButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleNewSkillButton(interaction);
+      } catch (error) {
+        logger.error("Error handling new skill button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du formulaire de compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== OBJECT BONUS HANDLERS ===================
+    // Gestionnaire pour le bouton "Terminé" après création d'objet
+    this.registerHandlerByPrefix("object_done:", async (interaction) => {
+      try {
+        const { handleObjectDoneButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectDoneButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object done button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la finalisation de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Ajouter bonus Compétence"
+    this.registerHandlerByPrefix("object_add_skill_bonus:", async (interaction) => {
+      try {
+        const { handleObjectAddSkillBonusButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectAddSkillBonusButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object add skill bonus button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Ajouter bonus Capacité"
+    this.registerHandlerByPrefix("object_add_capability_bonus:", async (interaction) => {
+      try {
+        const { handleObjectAddCapabilityBonusButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectAddCapabilityBonusButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object add capability bonus button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Conversion en Ressource"
+    this.registerHandlerByPrefix("object_add_resource_conversion:", async (interaction) => {
+      try {
+        const { handleObjectAddResourceConversionButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectAddResourceConversionButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object add resource conversion button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== BLUEPRINT PROJECTS HANDLERS ===================
     // Gestionnaire pour les boutons de redémarrage de blueprints
     this.registerHandlerByPrefix("project_restart:", async (interaction) => {
@@ -665,6 +778,22 @@ export class ButtonHandler {
         logger.error("Error handling project add blueprint costs button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de l'ajout de coûts blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Voir les projets" depuis le profil
+    this.registerHandlerByPrefix("view_projects:", async (interaction) => {
+      try {
+        const { handleViewProjectsFromProfile } = await import(
+          "../features/projects/projects.handlers.js"
+        );
+        await handleViewProjectsFromProfile(interaction);
+      } catch (error) {
+        logger.error("Error handling view projects button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage des projets.",
           flags: ["Ephemeral"],
         });
       }

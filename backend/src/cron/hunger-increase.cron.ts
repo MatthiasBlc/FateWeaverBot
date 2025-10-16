@@ -20,14 +20,23 @@ async function increaseAllCharactersHunger() {
     );
 
     let updatedCount = 0;
+    let healedCount = 0;
     const deaths = [];
 
     for (const character of characters) {
+      const updateData: any = {};
+
+      // STEP 1: Heal HP if hungerLevel = 4 (Satiété) BEFORE decreasing hunger
+      if (character.hungerLevel === 4 && character.hp < 5) {
+        updateData.hp = Math.min(5, character.hp + 1);
+        healedCount++;
+      }
+
+      // STEP 2: Decrease hunger level
       const newLevel = Math.max(0, character.hungerLevel - 1);
+      updateData.hungerLevel = newLevel;
 
-      const updateData: any = { hungerLevel: newLevel };
-
-      // When hunger reaches 0, set HP to 1 (Agonie) and mark agonySince if not already set
+      // STEP 3: When hunger reaches 0, set HP to 1 (Agonie) and mark agonySince if not already set
       if (newLevel === 0) {
         updateData.hp = 1;
         // Mark agony start date if not already in agony
@@ -54,9 +63,10 @@ async function increaseAllCharactersHunger() {
     console.log(
       `Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`
     );
+    console.log(`  - ${healedCount} personnages soignés (Satiété avant hunger decrease)`);
 
     if (deaths.length > 0) {
-      console.log(`💀 ${deaths.length} personnages sont morts de faim:`);
+      console.log(`💀 ${deaths.length} personnages en agonie (hunger=0):`);
       deaths.forEach((death) => {
         console.log(`  - ${death.name} (${death.guild})`);
       });

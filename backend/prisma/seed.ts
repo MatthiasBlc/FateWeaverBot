@@ -174,22 +174,10 @@ async function main() {
         description: "Matériau brut",
       },
       {
-        name: "Métal",
-        emoji: RESOURCES.METAL,
-        category: "transformé",
-        description: "Produit du minerai",
-      },
-      {
         name: "Tissu",
         emoji: RESOURCES.FABRIC,
         category: "transformé",
-        description: "Produit du bois",
-      },
-      {
-        name: "Planches",
-        emoji: RESOURCES.PLANKS,
-        category: "transformé",
-        description: "Produit du bois",
+        description: " ",
       },
       {
         name: "Nourriture",
@@ -250,6 +238,37 @@ async function main() {
     }
   }
 
+  // Créer les compétences (skills)
+  const existingSkills = await prisma.skill.findMany();
+  if (existingSkills.length === 0) {
+    console.log("🎯 Création des compétences (skills)...");
+
+    const skills = [
+      { name: "Combat distance", description: "Permet d'attaquer à distance" },
+      { name: "Cultiver", description: "Permet de cultiver des plantes" },
+      { name: "Vision nocturne", description: "Voir dans l'obscurité" },
+      { name: "Plonger", description: "Plonger en profondeur" },
+      { name: "Noeuds", description: "Maîtrise des nœuds" },
+      { name: "Réparer", description: "Réparer des objets" },
+      { name: "Porter", description: "Porter de lourdes charges" },
+      { name: "Réconforter", description: "Réconforter les autres" },
+      { name: "Déplacement rapide", description: "Se déplacer rapidement" },
+      { name: "Herboristerie", description: "Connaissance des plantes" },
+      { name: "Assommer", description: "Assommer un adversaire" },
+      { name: "Vision lointaine", description: "Voir très loin" },
+      { name: "Camouflage", description: "Se camoufler" },
+    ];
+
+    for (const skill of skills) {
+      await prisma.skill.create({
+        data: skill,
+      });
+      console.log(`✅ Compétence créée : ${skill.name}`);
+    }
+  } else {
+    console.log(`✅ ${existingSkills.length} compétences déjà présentes`);
+  }
+
   // Créer les types d'objets
   const existingObjectTypes = await prisma.objectType.findMany();
   if (existingObjectTypes.length === 0) {
@@ -259,6 +278,11 @@ async function main() {
     const capabilities = await prisma.capability.findMany();
     const getCapId = (emojiTag: string) =>
       capabilities.find((c) => c.emojiTag === emojiTag)?.id || "";
+
+    // Récupérer les skills pour les relations
+    const skills = await prisma.skill.findMany();
+    const getSkillId = (name: string) =>
+      skills.find((s) => s.name === name)?.id || "";
 
     // 1. Objets simples (sans bonus)
     const simpleObjects = [
@@ -364,13 +388,13 @@ async function main() {
       });
 
       // Créer les relations ObjectSkillBonus
-      for (const skillTag of obj.skills) {
-        const capId = getCapId(skillTag);
-        if (capId) {
+      for (const skillName of obj.skills) {
+        const skillId = getSkillId(skillName);
+        if (skillId) {
           await prisma.objectSkillBonus.create({
             data: {
               objectTypeId: objectType.id,
-              capabilityId: capId,
+              skillId: skillId,
             },
           });
         }
@@ -410,6 +434,27 @@ async function main() {
         ],
       },
       {
+        name: "Quenouille",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "WEAVING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
+        ],
+      },
+      {
+        name: "Enclume",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "FORGING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
+        ],
+      },
+      {
+        name: "Mètre",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "WOODWORKING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
+        ],
+      },
+      {
         name: "Sel",
         description: "----",
         bonuses: [
@@ -421,16 +466,6 @@ async function main() {
         description: "----",
         bonuses: [
           { capabilityTag: "HEALING", bonusType: CapacityBonusType.HEAL_EXTRA },
-        ],
-      },
-      {
-        name: "instrument",
-        description: "----",
-        bonuses: [
-          {
-            capabilityTag: "ENTERTAIN",
-            bonusType: CapacityBonusType.ENTERTAIN_BURST,
-          },
         ],
       },
       {
@@ -460,6 +495,16 @@ async function main() {
           {
             capabilityTag: "AUGURING",
             bonusType: CapacityBonusType.ADMIN_INTERPRETED,
+          },
+        ],
+      },
+      {
+        name: "instrument",
+        description: "----",
+        bonuses: [
+          {
+            capabilityTag: "ENTERTAIN",
+            bonusType: CapacityBonusType.ENTERTAIN_BURST,
           },
         ],
       },
@@ -546,11 +591,10 @@ async function main() {
     }
 
     console.log(
-      `✅ Total: ${
-        simpleObjects.length +
-        skillBonusObjects.length +
-        capacityBonusObjects.length +
-        resourceBagObjects.length
+      `✅ Total: ${simpleObjects.length +
+      skillBonusObjects.length +
+      capacityBonusObjects.length +
+      resourceBagObjects.length
       } objets créés`
     );
   } else {
@@ -613,8 +657,7 @@ async function main() {
     }
 
     console.log(
-      `✅ ${
-        lootTablePA1.length + lootTablePA2.length
+      `✅ ${lootTablePA1.length + lootTablePA2.length
       } entrées de loot de pêche créées`
     );
   } else {

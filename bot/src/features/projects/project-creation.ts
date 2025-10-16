@@ -26,6 +26,7 @@ interface ProjectDraft {
   userId: string;
   craftTypes: string[];
   outputResourceTypeId: number | null;
+  outputObjectTypeId: number | null; // NOUVEAU: Support pour objets en sortie
   outputQuantity: number;
   resourceCosts: { resourceTypeId: number; quantity: number; name: string; emoji: string }[];
   // Blueprint fields
@@ -135,6 +136,7 @@ export async function handleProjectCreateModal(interaction: ModalSubmitInteracti
       userId: interaction.user.id,
       craftTypes: [],
       outputResourceTypeId: null,
+      outputObjectTypeId: null, // NOUVEAU
       outputQuantity,
       resourceCosts: [],
       paBlueprintRequired,
@@ -216,24 +218,19 @@ export async function handleSelectOutputButton(interaction: ButtonInteraction) {
     const draft = projectDrafts.get(interaction.user.id);
     if (!draft) return;
 
-    const allResources = (await apiService.getAllResourceTypes()) || [];
-    if (allResources.length === 0) return;
-
+    // Choix entre ressource ou objet
     const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId("project_output_select")
-      .setPlaceholder("Ressource de sortie")
-      .addOptions(
-        allResources.slice(0, 25).map((resource: any) => ({
-          label: resource.name,
-          value: resource.id.toString(),
-          emoji: resource.emoji || undefined,
-        }))
-      );
+      .setCustomId("project_output_type_select")
+      .setPlaceholder("Type de sortie")
+      .addOptions([
+        { label: "Ressource", value: "resource", emoji: "📦" },
+        { label: "Objet", value: "object", emoji: "🔧" },
+      ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
     await interaction.reply({
-      content: "Sélectionnez la ressource produite :",
+      content: "Que produit ce projet ?",
       components: [row],
       flags: ["Ephemeral"],
     });
@@ -242,6 +239,113 @@ export async function handleSelectOutputButton(interaction: ButtonInteraction) {
   }
 }
 
+// Handler pour le choix du type de sortie (ressource ou objet)
+export async function handleOutputTypeSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const draft = projectDrafts.get(interaction.user.id);
+    if (!draft) return;
+
+    const outputType = interaction.values[0];
+
+    if (outputType === "resource") {
+      // Afficher la liste des ressources
+      const allResources = (await apiService.getAllResourceTypes()) || [];
+      if (allResources.length === 0) return;
+
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId("project_output_resource_select")
+        .setPlaceholder("Ressource de sortie")
+        .addOptions(
+          allResources.slice(0, 25).map((resource: any) => ({
+            label: resource.name,
+            value: resource.id.toString(),
+            emoji: resource.emoji || undefined,
+          }))
+        );
+
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+      await interaction.update({
+        content: "Sélectionnez la ressource produite :",
+        components: [row],
+      });
+    } else if (outputType === "object") {
+      // Afficher la liste des objets
+      const allObjects = (await apiService.objects.getAllObjectTypes()) || [];
+      if (allObjects.length === 0) {
+        await interaction.update({
+          content: `${STATUS.ERROR} Aucun objet disponible. Ajoutez des objets d'abord !`,
+          components: [],
+        });
+        return;
+      }
+
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId("project_output_object_select")
+        .setPlaceholder("Objet de sortie")
+        .addOptions(
+          allObjects.slice(0, 25).map((object: any) => ({
+            label: object.name,
+            value: object.id.toString(),
+            description: object.description?.substring(0, 100) || undefined,
+          }))
+        );
+
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+      await interaction.update({
+        content: "Sélectionnez l'objet produit :",
+        components: [row],
+      });
+    }
+  } catch (error) {
+    logger.error("Erreur output type select:", { error });
+  }
+}
+
+// Handler pour la sélection d'une ressource en sortie
+export async function handleOutputResourceSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const draft = projectDrafts.get(interaction.user.id);
+    if (!draft) return;
+
+    draft.outputResourceTypeId = parseInt(interaction.values[0], 10);
+    draft.outputObjectTypeId = null; // Reset object si resource sélectionnée
+    projectDrafts.set(interaction.user.id, draft);
+
+    const buttons = createProjectButtons(draft);
+
+    await interaction.update({
+      content: formatProjectDraft(draft),
+      components: [buttons],
+    });
+  } catch (error) {
+    logger.error("Erreur output resource select:", { error });
+  }
+}
+
+// Handler pour la sélection d'un objet en sortie
+export async function handleOutputObjectSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const draft = projectDrafts.get(interaction.user.id);
+    if (!draft) return;
+
+    draft.outputObjectTypeId = parseInt(interaction.values[0], 10);
+    draft.outputResourceTypeId = null; // Reset resource si object sélectionné
+    projectDrafts.set(interaction.user.id, draft);
+
+    const buttons = createProjectButtons(draft);
+
+    await interaction.update({
+      content: formatProjectDraft(draft),
+      components: [buttons],
+    });
+  } catch (error) {
+    logger.error("Erreur output object select:", { error });
+  }
+}
+
+// DEPRECATED - Gardé pour compatibilité mais ne devrait plus être utilisé
 export async function handleOutputSelect(interaction: StringSelectMenuInteraction) {
   try {
     const draft = projectDrafts.get(interaction.user.id);
@@ -382,9 +486,18 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
     const draft = projectDrafts.get(interaction.user.id);
     if (!draft) return;
 
-    if (draft.craftTypes.length === 0 || !draft.outputResourceTypeId) {
+    // Validation: craft types et sortie (ressource OU objet)
+    if (draft.craftTypes.length === 0) {
       await interaction.reply({
-        content: `${STATUS.ERROR} Sélectionnez craft types ET ressource de sortie.`,
+        content: `${STATUS.ERROR} Sélectionnez au moins un type d'artisanat.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    if (!draft.outputResourceTypeId && !draft.outputObjectTypeId) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Sélectionnez une sortie (ressource ou objet).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -416,9 +529,12 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
         paRequired: draft.paRequired,
         townId: town.id,
         craftTypes: draft.craftTypes,
-        outputResourceTypeId: draft.outputResourceTypeId!,
+        outputResourceTypeId: draft.outputResourceTypeId || undefined,
+        outputObjectTypeId: draft.outputObjectTypeId || undefined, // NOUVEAU
         outputQuantity: draft.outputQuantity,
         resourceCosts: resourceCosts.length > 0 ? resourceCosts : undefined,
+        paBlueprintRequired: draft.paBlueprintRequired,
+        blueprintResourceCosts: blueprintResourceCosts && blueprintResourceCosts.length > 0 ? blueprintResourceCosts : undefined,
       },
       draft.userId
     );
@@ -514,7 +630,8 @@ export async function handleDeleteProjectCommand(interaction: ChatInputCommandIn
 }
 
 function createProjectButtons(draft: ProjectDraft): ActionRowBuilder<ButtonBuilder> {
-  const canCreate = draft.craftTypes.length > 0 && draft.outputResourceTypeId !== null;
+  // Peut créer si: craft types ET (ressource OU objet)
+  const canCreate = draft.craftTypes.length > 0 && (draft.outputResourceTypeId !== null || draft.outputObjectTypeId !== null);
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -553,21 +670,33 @@ function formatProjectDraft(draft: ProjectDraft): string {
   message += `${STATUS.STATS} **PA:** ${draft.paRequired}\n`;
   message += `📦 **Qté produite:** ${draft.outputQuantity}\n`;
 
+  if (draft.paBlueprintRequired) {
+    message += `📋 **PA Blueprint:** ${draft.paBlueprintRequired}\n`;
+  }
+
   if (draft.craftTypes.length > 0) {
     message += `\n🛠️ **Types:** ${draft.craftTypes.map(getCraftTypeEmoji).join(" ")}\n`;
   } else {
     message += `\n⚠️ *Aucun type sélectionné*\n`;
   }
 
+  // Sortie (ressource OU objet)
   if (draft.outputResourceTypeId) {
-    message += `✅ *Ressource sortie OK*\n`;
+    message += `✅ *Ressource de sortie configurée*\n`;
+  } else if (draft.outputObjectTypeId) {
+    message += `✅ *Objet de sortie configuré*\n`;
   } else {
-    message += `⚠️ *Ressource sortie manquante*\n`;
+    message += `⚠️ *Sortie manquante (ressource ou objet)*\n`;
   }
 
   if (draft.resourceCosts.length > 0) {
     message += `\n📦 **Ressources requises:**\n`;
     message += draft.resourceCosts.map((rc) => `  • ${rc.emoji} ${rc.quantity} ${rc.name}`).join("\n");
+  }
+
+  if (draft.blueprintResourceCosts && draft.blueprintResourceCosts.length > 0) {
+    message += `\n📋 **Coûts Blueprint:**\n`;
+    message += draft.blueprintResourceCosts.map((rc) => `  • ${rc.quantityRequired} ${rc.resourceTypeName}`).join("\n");
   }
 
   return message;

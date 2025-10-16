@@ -89,6 +89,7 @@ model Character {
   paUsedToday       Int                   @default(0) @map("pa_used_today") // PA dépensés aujourd'hui
   lastPaReset       DateTime              @default(now()) @map("last_pa_reset") // Dernière réinitialisation
   capabilities      CharacterCapability[] // Capacités connues par le personnage
+  skills            CharacterSkill[] // Compétences du personnage
   inventory         CharacterInventory? // NOUVEAU
   createdAt         DateTime              @default(now()) @map("created_at")
   updatedAt         DateTime              @updatedAt @map("updated_at")
@@ -234,8 +235,7 @@ model Capability {
   costPA                Int                   @map("cost_pa")
   description           String?
   characters            CharacterCapability[]
-  objectSkillBonuses    ObjectSkillBonus[] // NOUVEAU
-  objectCapacityBonuses ObjectCapacityBonus[] // NOUVEAU
+  objectCapacityBonuses ObjectCapacityBonus[]
   createdAt             DateTime              @default(now()) @map("created_at")
   updatedAt             DateTime              @updatedAt @map("updated_at")
 
@@ -533,16 +533,40 @@ model CharacterInventorySlot {
   @@map("character_inventory_slots")
 }
 
+model Skill {
+  id            String             @id @default(cuid())
+  name          String             @unique
+  description   String?
+  characters    CharacterSkill[]
+  objectBonuses ObjectSkillBonus[]
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@map("skills")
+}
+
+model CharacterSkill {
+  characterId String    @map("character_id")
+  skillId     String    @map("skill_id")
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@id([characterId, skillId])
+  @@map("character_skills")
+}
+
 model ObjectSkillBonus {
   id           String     @id @default(cuid())
   objectTypeId Int        @map("object_type_id")
   objectType   ObjectType @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
-  capabilityId String     @map("capability_id")
-  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  skillId      String     @map("skill_id")
+  skill        Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  @@unique([objectTypeId, capabilityId])
+  @@unique([objectTypeId, skillId])
   @@map("object_skill_bonuses")
 }
 

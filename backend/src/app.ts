@@ -28,6 +28,7 @@ import seasonsRoutes from "./routes/seasons";
 import objectsRoutes from "./routes/objects";
 import projectsRoutes from "./routes/projects";
 import resourcesRoutes from "./routes/resources";
+import skillsRoutes from "./routes/skills";
 
 const app = express();
 
@@ -110,6 +111,7 @@ app.use("/api/guilds", guildRoutes);
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
+app.use("/api/skills", skillsRoutes);
 app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/objects", objectsRoutes);

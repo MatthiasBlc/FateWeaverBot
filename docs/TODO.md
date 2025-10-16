@@ -1,16 +1,72 @@
 ------------------------------TRUC A Corriger------------------- -------------
 
-1- Bug dans le seed des skills et dans le seed des objets skills
-2- Projets dans une commande ? devraient être dans un bouton pour les personnes concernées !
-3 - new element admin -> nouvelle ressource catégorie base c'est quoi ? utilisé ou ? (science en particulier)
-4 - new element admin -> nouvel objet c'est incomplet
-5 - new element admin -> Il manque nouvelle compétence(skill) ?
-5 - Character admin -> ajouter / retirer objet, ajouter/ retirer compétence(skill) ?
-6 - projets admin, manque des champs (resource blueprint?, corps d'artisanat requis ?)
+
+------------------------------CRON JOB------------------- -------------
+
+> Append Directions devrait faire partie de Daily PA Update (à la suite directement). Daily PA 
+Update Expédition devrait également être dans la même suite de process. 
+Dans Daily PA Update - Expédition, il y a "Give +2 PA first (daily regeneration)", cela ne 
+devrait pas exister, c'est clairement un doublon de logique avec "STEP 5: Regenerate PA (hunger 
+penalty if hungerLevel≤1)" 
+
+If no + catastrophic conditions → Remove from expedition
+       (catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
+
+Morning, première étape retour d'expédition ? (departed -> returned)
+
+Pourquoi toutes les 10 minutes sur les autres ? 
+
+## 🐛 Known Issues & TODOs
+
+### TODO Items
+
+1. **Daily Messages Integration:**
+   - Implement Discord webhook/API call
+   - Currently only logs to console
+
+2. **Season Change Notifications:**
+   - Add Discord notification when season changes
+   - Currently only logs to console
+
+### Known Limitations
+
+1. **Race Conditions:**
+   - Multiple jobs start at 00:00:00 simultaneously
+   - 10-second delay mitigates PA race condition
+   - Hunger job ensures atomicity by combining heal + hunger decrease
+   - May need transaction isolation for other concurrent updates
+
+2. **Expedition PA Logic:**
+   - Assumes +2 PA regeneration in expedition job
+   - Should read actual regeneration amount from main job result
+   - Works because expedition job runs 10s after main job
+
+3. **HP Healing Logic:**
+   - HP healing moved from PA job to hunger job for atomicity
+   - This ensures hunger=4 characters get healed before hunger drops to 3
+   - Both jobs run at 00:00:00 but healing is now guaranteed to happen first
+
+------------------------------TRUC A Corriger------------------- -------------
+
+
+
+
+
+
+
+
+
+
+
+(Commandes add objet et add compétences)
+
+Mettre une différence entre resources de base et resources de craft dans les resourcesTypes
+
+Seed Messages type dans daily messages
+
 
 -------------------------Todo-------------------------
-
-Messages type dans daily messages
+Finir HistoriqueChat
 
 #Objets /compétence métiers :
 
@@ -42,17 +98,16 @@ Si c'est le personnalisé qui est choisi alors .....
 
 Implémenter les mssages météo
 
-Commandes add objet et add compétences
-
 Update Docs, Update Backend
 
 ------------------------------TRUC------------------- -------------
 
-## CapacitéV2
+New-element-admin
+  3. Optionnel : Créer des commandes séparées pour gérer les relations complexes d'objets
+  (ajouter des bonus à un objet existant)
 
 remplacer nourriture en repas ?
 
-capacité en "+"
 cataplasme (utilisation) bug
 
 Cataplasme : limite à 3 dans le monde (exped + ville)
@@ -60,10 +115,6 @@ Cataplasme : limite à 3 dans le monde (exped + ville)
 Instinct ?
 
 # Features, debug et tests
-
-QUESTION :
-
-# Automatiser conso de transformé puis normal ?
 
 Bouton manger, gestion des erreurs (exemple manger alors que l'on a pas faim)
 
@@ -103,7 +154,7 @@ Gestion des pénuries ?? Alerte etc ?
 
 Système de réapprovisionnement automatique des vivres via des chantiers ??
 
-lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
+lors de l'ajout / retrait de ressources dans les stocks par les admins ?
 
 # Contenu / texte
 
@@ -136,7 +187,7 @@ changer l'emoji par saison
 
 personaliser message de mort
 
-# Optimisations
+---------------------------------- Optimisations ----------------------------------
 
 ## 🎯 Prochaines Étapes
 
@@ -191,15 +242,11 @@ Aide-moi à créer un script d’initialisation pour tes futures sessions, afin 
 
 Faire le point sur les CRON task
 
-sélectionner fil ?
-
 Développer les TESTS
 
 #log update
 
 lors de la mort d'un personnage écrire la raison
-
-# Pouvoir faire manger les copains ? ou admin peuvent faire manger un joueur ?
 
 Actions des charactes :
 

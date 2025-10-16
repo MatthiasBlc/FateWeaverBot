@@ -203,6 +203,30 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     return handleCapabilitiesButton(interaction, character);
   }
 
+  // Vérifier si c'est un bouton de gestion des objets
+  if (
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.OBJECTS_BUTTON_PREFIX)
+  ) {
+    const characterId = customId.replace(CHARACTER_ADMIN_CUSTOM_IDS.OBJECTS_BUTTON_PREFIX, '');
+    const { handleObjectsButton } = await import(
+      "./character-admin/character-objects"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleObjectsButton(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton de gestion des compétences
+  if (
+    customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.SKILLS_BUTTON_PREFIX)
+  ) {
+    const characterId = customId.replace(CHARACTER_ADMIN_CUSTOM_IDS.SKILLS_BUTTON_PREFIX, '');
+    const { handleSkillsButton } = await import(
+      "./character-admin/character-skills"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleSkillsButton(interaction, character);
+  }
+
   // Vérifier si c'est un bouton d'ajout de capacités
   if (customId.startsWith("capability_admin_add:")) {
     const characterId = customId.replace("capability_admin_add:", '');
@@ -238,17 +262,17 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     const { handleCapabilitySelect } = await import(
       "./character-admin/character-capabilities"
     );
-    
+
     // Extraire l'ID du personnage depuis le customId (format: capability_admin_select:characterId)
     let characterId = null;
     if (customId.includes(':')) {
       characterId = customId.split(':')[1];
     }
-    
+
     // Si on n'a pas trouvé l'ID dans le customId, essayer de le récupérer depuis le message
     if (!characterId) {
       characterId = extractCharacterIdFromMessage(interaction.message);
-      
+
       // Si toujours pas trouvé, essayer depuis l'interaction du message
       if (!characterId && interaction.message.interaction) {
         const buttonId = interaction.message.interaction.customId;
@@ -261,18 +285,18 @@ export async function handleCharacterAdminInteraction(interaction: any) {
         }
       }
     }
-    
+
     if (!characterId) {
       return interaction.reply({
         content: "❌ Impossible de déterminer le personnage cible.",
         flags: ["Ephemeral"],
       });
     }
-    
+
     // Déterminer si c'est une action d'ajout ou de suppression
     let action: 'add' | 'remove';
     const messageContent = interaction.message.content || '';
-    
+
     if (messageContent.includes("Ajouter") || messageContent.includes("ajouter")) {
       action = 'add';
     } else if (messageContent.includes("Retirer") || messageContent.includes("retirer")) {
@@ -281,9 +305,145 @@ export async function handleCharacterAdminInteraction(interaction: any) {
       // Par défaut, on considère que c'est un ajout
       action = 'add';
     }
-    
+
     const character = await getCharacterById(characterId, interaction);
     return handleCapabilitySelect(interaction, character, action);
+  }
+
+  // Vérifier si c'est un bouton d'ajout d'objets
+  if (customId.startsWith("object_admin_add:")) {
+    const characterId = customId.replace("object_admin_add:", '');
+    const { handleAddObjects } = await import(
+      "./character-admin/character-objects"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleAddObjects(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton de suppression d'objets
+  if (customId.startsWith("object_admin_remove:")) {
+    const characterId = customId.replace("object_admin_remove:", '');
+    const { handleRemoveObjects } = await import(
+      "./character-admin/character-objects"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleRemoveObjects(interaction, character);
+  }
+
+  // Vérifier si c'est une sélection d'objets
+  if (customId.startsWith("object_admin_select")) {
+    const { handleObjectSelect } = await import(
+      "./character-admin/character-objects"
+    );
+
+    let characterId = null;
+    if (customId.includes(':')) {
+      characterId = customId.split(':')[1];
+    }
+
+    if (!characterId) {
+      characterId = extractCharacterIdFromMessage(interaction.message);
+
+      if (!characterId && interaction.message.interaction) {
+        const buttonId = interaction.message.interaction.customId;
+        if (buttonId) {
+          if (buttonId.startsWith('object_admin_add:')) {
+            characterId = buttonId.replace('object_admin_add:', '');
+          } else if (buttonId.startsWith('object_admin_remove:')) {
+            characterId = buttonId.replace('object_admin_remove:', '');
+          }
+        }
+      }
+    }
+
+    if (!characterId) {
+      return interaction.reply({
+        content: "❌ Impossible de déterminer le personnage cible.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    let action: 'add' | 'remove';
+    const messageContent = interaction.message.content || '';
+
+    if (messageContent.includes("Ajouter") || messageContent.includes("ajouter")) {
+      action = 'add';
+    } else if (messageContent.includes("Retirer") || messageContent.includes("retirer")) {
+      action = 'remove';
+    } else {
+      action = 'add';
+    }
+
+    const character = await getCharacterById(characterId, interaction);
+    return handleObjectSelect(interaction, character, action);
+  }
+
+  // Vérifier si c'est un bouton d'ajout de compétences
+  if (customId.startsWith("skill_admin_add:")) {
+    const characterId = customId.replace("skill_admin_add:", '');
+    const { handleAddSkills } = await import(
+      "./character-admin/character-skills"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleAddSkills(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton de suppression de compétences
+  if (customId.startsWith("skill_admin_remove:")) {
+    const characterId = customId.replace("skill_admin_remove:", '');
+    const { handleRemoveSkills } = await import(
+      "./character-admin/character-skills"
+    );
+    const character = await getCharacterById(characterId, interaction);
+    return handleRemoveSkills(interaction, character);
+  }
+
+  // Vérifier si c'est une sélection de compétences
+  if (customId.startsWith("skill_admin_select")) {
+    const { handleSkillSelect } = await import(
+      "./character-admin/character-skills"
+    );
+
+    let characterId = null;
+    if (customId.includes(':')) {
+      characterId = customId.split(':')[1];
+    }
+
+    if (!characterId) {
+      characterId = extractCharacterIdFromMessage(interaction.message);
+
+      if (!characterId && interaction.message.interaction) {
+        const buttonId = interaction.message.interaction.customId;
+        if (buttonId) {
+          if (buttonId.startsWith('skill_admin_add:')) {
+            characterId = buttonId.replace('skill_admin_add:', '');
+          } else if (buttonId.startsWith('skill_admin_remove:')) {
+            characterId = buttonId.replace('skill_admin_remove:', '');
+          }
+        }
+      }
+    }
+
+    if (!characterId) {
+      return interaction.reply({
+        content: "❌ Impossible de déterminer le personnage cible.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    let action: 'add' | 'remove';
+    const messageContent = interaction.message.content || '';
+
+    if (messageContent.includes("Ajouter") || messageContent.includes("ajouter")) {
+      action = 'add';
+    } else if (messageContent.includes("Retirer") || messageContent.includes("retirer")) {
+      action = 'remove';
+    } else {
+      action = 'add';
+    }
+
+    const character = await getCharacterById(characterId, interaction);
+    return handleSkillSelect(interaction, character, action);
   }
 
   // Vérifier si c'est une soumission de modale pour les statistiques

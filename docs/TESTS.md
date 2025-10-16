@@ -388,3 +388,45 @@ Sac de Tissu -> 10 tissu
 ferraille -> 10 minerai
 Planches -> 20 bois
 Jambon -> 10 nourriture
+
+
+1- Bug dans le seed des skills et dans le seed des objets skills
+2- Projets dans une commande ? devraient être dans un bouton pour les personnes concernées !
+3 - ✅ RÉSOLU : Catégorie "science" pour ressources = ressources produites par capacités SCIENCE (ex: Cataplasme)
+4 - ✅ RÉSOLU : Formulaire nouvel objet amélioré - propose maintenant d'ajouter bonus après création de base
+5 - ✅ RÉSOLU : Bouton "Nouvelle Compétence" ajouté dans /new-element-admin
+6 - ✅ RÉSOLU : Commande Character admin - Boutons ajouter/retirer objet et compétence
+
+**Nouvelles fonctionnalités ajoutées :**
+- ✅ Bouton "Nouvelle Compétence (Skill)" dans /new-element-admin
+- ✅ Modal de création de compétence (nom + description)
+- ✅ Endpoint backend POST /api/skills pour créer des compétences
+- ✅ Service API bot pour les skills (SkillAPIService)
+- ✅ Formulaire objet maintenant affiche des boutons après création pour ajouter :
+  - Bonus de compétence (ObjectSkillBonus)
+  - Bonus de capacité (ObjectCapacityBonus)
+  - Conversion en ressource (ObjectResourceConversion)
+
+**Handlers d'ajout de bonus sur objets - TERMINÉ :**
+- ✅ Implémentation des handlers pour les boutons d'ajout de bonus sur objets
+  - `object_add_skill_bonus:${objectId}` - Ajoute un bonus de compétence à un objet
+  - `object_add_capability_bonus:${objectId}` - Ajoute un bonus de capacité à un objet
+  - `object_add_resource_conversion:${objectId}` - Ajoute une conversion en ressource à un objet
+  - `object_done:${objectId}` - Termine la configuration d'un objet
+- ✅ Modals pour saisir les informations de bonus
+- ✅ Enregistrement dans button-handler.ts et modal-handler.ts
+- ✅ Méthodes API ajoutées dans ObjectAPIService
+
+**Gestion des objets et compétences dans Character Admin - TERMINÉ :**
+- ✅ Boutons "Gérer Objets" et "Gérer Compétences" ajoutés dans /character-admin
+- ✅ Handlers pour afficher les objets/compétences d'un personnage
+- ✅ Boutons pour ajouter/retirer des objets à un personnage
+- ✅ Boutons pour ajouter/retirer des compétences à un personnage
+- ✅ Menus de sélection pour choisir les objets/compétences
+- ✅ Fichiers créés :
+  - `character-objects.ts` - Gestion des objets
+  - `character-skills.ts` - Gestion des compétences
+- ✅ Intégration dans character-admin.handlers.ts
+- ✅ Enregistrement dans button-handler.ts
+
+6 - projets admin, manque des champs (resource blueprint?, corps d'artisanat requis ?)

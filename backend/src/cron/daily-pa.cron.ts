@@ -4,17 +4,32 @@ import { CronJob } from "cron";
 const prisma = new PrismaClient();
 
 export function setupDailyPaJob() {
-  // Main PA regeneration job at 00:00:00
-  const mainJob = new CronJob("0 0 * * *", updateAllCharactersActionPoints, null, true, "Europe/Paris");
+  // Single unified PA job at 00:00:00
+  const mainJob = new CronJob("0 0 * * *", dailyPaUpdate, null, true, "Europe/Paris");
 
-  // Expedition PA deduction job at 00:00:10
-  const expeditionJob = new CronJob("10 0 * * *", deductExpeditionPA, null, true, "Europe/Paris");
+  console.log("Job CRON pour la mise à jour quotidienne des PA configuré");
+  console.log("  - Job unifié: 00:00:00 (régénération PA + directions + expéditions)");
 
-  console.log("Jobs CRON pour la mise à jour quotidienne des PA configurés");
-  console.log("  - Job principal: 00:00:00 (régénération PA)");
-  console.log("  - Job expéditions: 00:00:10 (déduction PA expéditions)");
+  return { mainJob };
+}
 
-  return { mainJob, expeditionJob };
+async function dailyPaUpdate() {
+  try {
+    console.log("=== Début de la mise à jour quotidienne des PA ===");
+
+    // STEP 1-5: Update all characters (PA, death, agony, etc.)
+    await updateAllCharactersActionPoints();
+
+    // STEP 6: Append daily expedition directions
+    await appendDailyDirections();
+
+    // STEP 7: Deduct PA for expeditions
+    await deductExpeditionPA();
+
+    console.log("=== Mise à jour quotidienne des PA terminée ===");
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour quotidienne des PA:", error);
+  }
 }
 
 async function updateAllCharactersActionPoints() {
@@ -28,7 +43,6 @@ async function updateAllCharactersActionPoints() {
 
     console.log(`${characters.length} personnages à traiter`);
     let updatedCount = 0;
-    let healedCount = 0;
     let deathCount = 0;
 
     for (const character of characters) {
@@ -43,10 +57,10 @@ async function updateAllCharactersActionPoints() {
         lastPaUpdate?: Date;
       } = {};
 
-      // STEP 1: Heal HP if hungerLevel = 4 (Satiété)
-      if (character.hungerLevel === 4 && character.hp < 5) {
-        updateData.hp = Math.min(5, character.hp + 1);
-        healedCount++;
+      // STEP 1: Reset agonySince if character has recovered from agony (hp > 1)
+      // This must happen BEFORE agony duration check to handle healed characters
+      if (character.hp > 1 && character.agonySince) {
+        updateData.agonySince = null;
       }
 
       // STEP 2: Check for death (HP = 0)
@@ -55,7 +69,8 @@ async function updateAllCharactersActionPoints() {
         deathCount++;
       }
 
-      // STEP 2.5: Check agony duration (2 days = death)
+      // STEP 3: Check agony duration (2 days = death)
+      // Only for characters still in agony (hp=1) who haven't recovered
       if (character.hp === 1 && character.agonySince) {
         const daysSinceAgony = Math.floor(
           (now.getTime() - character.agonySince.getTime()) / (1000 * 60 * 60 * 24)
@@ -68,16 +83,11 @@ async function updateAllCharactersActionPoints() {
         }
       }
 
-      // STEP 2.6: Reset agonySince if character has recovered from agony
-      if (character.hp > 1 && character.agonySince) {
-        updateData.agonySince = null;
-      }
-
-      // STEP 2.7: Reset PA counter daily (pour déprime)
+      // STEP 4: Reset PA counter daily (pour déprime)
       updateData.paUsedToday = 0;
       updateData.lastPaReset = now;
 
-      // STEP 3: Update PA (only if alive and time has passed)
+      // STEP 5: Update PA (only if alive and time has passed)
       const lastUpdate = character.lastPaUpdate;
       const daysSinceLastUpdate = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -110,16 +120,52 @@ async function updateAllCharactersActionPoints() {
     }
 
     console.log(`Mise à jour terminée. ${updatedCount} personnages mis à jour.`);
-    console.log(`  - ${healedCount} personnages soignés (Satiété)`);
-    console.log(`  - ${deathCount} personnages décédés (HP=0)`);
+    console.log(`  - ${deathCount} personnages décédés (HP=0 ou agonie 2j)`);
   } catch (error) {
     console.error("Erreur lors de la mise à jour quotidienne des PA:", error);
   }
 }
 
+async function appendDailyDirections() {
+  try {
+    console.log("\n--- STEP 6: Append daily expedition directions ---");
+
+    const expeditions = await prisma.expedition.findMany({
+      where: {
+        status: "DEPARTED",
+        currentDayDirection: { not: null },
+      },
+      select: { id: true, name: true, path: true, currentDayDirection: true },
+    });
+
+    for (const exp of expeditions) {
+      if (exp.currentDayDirection) {
+        // Append direction to path
+        const newPath = [...exp.path, exp.currentDayDirection];
+
+        await prisma.expedition.update({
+          where: { id: exp.id },
+          data: {
+            path: newPath,
+            currentDayDirection: null,
+            directionSetBy: null,
+            directionSetAt: null,
+          },
+        });
+
+        console.log(`  - Appended direction ${exp.currentDayDirection} to expedition ${exp.name}`);
+      }
+    }
+
+    console.log(`Appended directions for ${expeditions.length} expedition(s)`);
+  } catch (error) {
+    console.error("Error appending daily directions:", error);
+  }
+}
+
 async function deductExpeditionPA() {
   try {
-    console.log("Début de la déduction des PA pour les expéditions...");
+    console.log("\n--- STEP 7: Deduct PA for expeditions ---");
 
     // Get all expedition members from DEPARTED expeditions
     const expeditionMembers = await prisma.expeditionMember.findMany({
@@ -159,24 +205,22 @@ async function deductExpeditionPA() {
 
       // Skip if expedition has pending emergency return
       if (expedition.pendingEmergencyReturn) {
-        console.log(`Expédition ${expedition.name} en attente de retour d'urgence - pas de déduction PA pour ${character.name}`);
+        console.log(`  - Expédition ${expedition.name} en attente de retour d'urgence - skip ${character.name}`);
         continue;
       }
 
-      // Give +2 PA first (normal daily regeneration)
-      const newPaTotal = character.paTotal + 2;
-
-      // Check if character can afford the expedition cost (needs PA >= 2 after regeneration)
-      const canAffordExpedition = newPaTotal >= 2;
+      // Check if character can afford the expedition cost (needs PA >= 2)
+      // PA has already been regenerated in STEP 5 (with hunger penalties applied)
+      const canAffordExpedition = character.paTotal >= 2;
 
       if (canAffordExpedition) {
         // Deduct 2 PA for expedition
         await prisma.character.update({
           where: { id: character.id },
-          data: { paTotal: newPaTotal - 2 }
+          data: { paTotal: { decrement: 2 } }
         });
         deductedCount++;
-        console.log(`${character.name} : +2 PA → ${newPaTotal - 2} PA (expédition)`);
+        console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition)`);
       } else {
         // Check catastrophic return conditions
         const shouldCatastrophicReturn =
@@ -199,11 +243,10 @@ async function deductExpeditionPA() {
           await service.removeMemberCatastrophic(expedition.id, character.id, reason);
 
           catastrophicReturns++;
-          console.log(`${character.name} : Retrait catastrophique (${reason})`);
+          console.log(`  - ${character.name}: Retrait catastrophique (${reason})`);
         } else {
           // Cannot afford expedition but doesn't meet catastrophic conditions
-          // This shouldn't happen in normal gameplay, but handle gracefully
-          console.warn(`${character.name} : Impossible de payer l'expédition mais ne remplit pas les conditions de retrait catastrophique`);
+          console.warn(`  - ${character.name}: PA insuffisant (${character.paTotal}) mais pas de conditions catastrophiques`);
         }
       }
     }

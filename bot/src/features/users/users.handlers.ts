@@ -523,6 +523,23 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     );
   }
 
+  // Ajouter le bouton "Projets" si le personnage a une capacité craft
+  const craftCapabilities = data.character.capabilities?.filter((cap) =>
+    ["Tisser", "Forger", "Menuiser"].includes(cap.name)
+  );
+
+  if (craftCapabilities && craftCapabilities.length > 0) {
+    const projectsButton = new ButtonBuilder()
+      .setCustomId(`view_projects:${data.character.id}:${data.user.discordId}`)
+      .setLabel(`🛠️ Projets`)
+      .setStyle(ButtonStyle.Primary);
+
+    const projectsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      projectsButton
+    );
+    components.push(projectsRow);
+  }
+
   return { embed, components };
 }
 
