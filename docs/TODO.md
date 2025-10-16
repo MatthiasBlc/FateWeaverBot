@@ -15,7 +15,7 @@ Voici la liste des couples métiers / capacités de départ:
 - Mineuse -> Miner
 - Tisserand -> Tisser
 - Forgeronne -> Forger
-- Menuisier -> Travailler le bois
+- Menuisier -> Menuiser
 - Cuisinière-> Cuisiner
 - Guérisseur -> Soigner
 - Érudit-> Rechercher
@@ -33,14 +33,26 @@ Un personnage ne peut avoir qu'un seul métier.
 
 Dans /new-element-admin, il faut ajouter un bouton permettant de créer un nouveau métier.
 
-#objets capacité +:
-Lié à un objet ?
-lié à une compétence ?
-lié aux deux ?
-Si objet perdu ?
-
 #Objets /compétence métiers :
-blablaba(insérer ici les objets etc à choisir).
+
+Chaque métier peut avoir une liste d'objets de départs possibles.
+Cette table propose de lier N objets à 1 Métier.
+un character qui a le métier en question n'a pas par défaut les objets en question, c'est une table d'objets recommandés.
+Voici ce qu'il faut seed pour chaque métiers: (vérifier que les objets en question sont déjà seed avant)
+
+- Chasseuse -> Arc / Couteau de chasse / Appeau
+- Cueilleur -> Serpe / Herbier / Graines
+- Pêcheur-> Matériel de plongée / Filet / Nasse
+- Mineuse -> Pioche / Lanterne / Canari
+- Tisserand -> Corde / Tissu / Quenouille
+- Forgeronne -> Marteau / Enclume / ferraille
+- Menuisier -> Harnais / Mètre / Planches
+- Cuisinière-> Marmite / Jambon / Sel
+- Guérisseur -> Fioles / Bandages / Somnifère
+- Érudit-> Grimoire vierge / Loupe / Bougie
+- Cartographe -> Boussole / Bottes / Compas
+- Météorologue -> Grenouille / Anémomètre / Longue-vue
+- L'Artiste -> Maquillage / Couronne de fleurs / Instrument
 
 # Création de personnage.
 
@@ -54,8 +66,6 @@ En réponse sa fiche profil s'affiche alors.
 logs de la création de personnages
 
 # création objet admin + compétence admin
-
-# changer grigri en coquillage
 
 Implémenter les mssages météo
 
