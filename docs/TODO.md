@@ -1,6 +1,7 @@
 -------------------------Todo-------------------------
+Messages type dans daily messages
 
-# métier (classe ?)
+# métiers
 
 Il faut ajouter un système de métier.
 Un métier est défini par un nom, il peut avoir une une description, une capacité de départ, une capacité optionnelle (vide pour les premiers métiers).
@@ -70,6 +71,8 @@ logs de la création de personnages
 Implémenter les mssages météo
 
 Commandes add objet et add compétences
+
+Update Docs, Update Backend
 
 ------------------------------TRUC------------------- -------------
 
