@@ -3,70 +3,26 @@
 
 ------------------------------CRON JOB------------------- -------------
 
-> Append Directions devrait faire partie de Daily PA Update (à la suite directement). Daily PA 
-Update Expédition devrait également être dans la même suite de process. 
-Dans Daily PA Update - Expédition, il y a "Give +2 PA first (daily regeneration)", cela ne 
-devrait pas exister, c'est clairement un doublon de logique avec "STEP 5: Regenerate PA (hunger 
-penalty if hungerLevel≤1)" 
+Comment passer les messages perso meteo 
++ Seed Messages type dans daily messages
 
-If no + catastrophic conditions → Remove from expedition
-       (catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
 
-Morning, première étape retour d'expédition ? (departed -> returned)
 
-Pourquoi toutes les 10 minutes sur les autres ? 
-
-## 🐛 Known Issues & TODOs
-
-### TODO Items
-
-1. **Daily Messages Integration:**
-   - Implement Discord webhook/API call
-   - Currently only logs to console
-
-2. **Season Change Notifications:**
-   - Add Discord notification when season changes
-   - Currently only logs to console
-
-### Known Limitations
-
-1. **Race Conditions:**
-   - Multiple jobs start at 00:00:00 simultaneously
-   - 10-second delay mitigates PA race condition
-   - Hunger job ensures atomicity by combining heal + hunger decrease
-   - May need transaction isolation for other concurrent updates
-
-2. **Expedition PA Logic:**
-   - Assumes +2 PA regeneration in expedition job
-   - Should read actual regeneration amount from main job result
-   - Works because expedition job runs 10s after main job
-
-3. **HP Healing Logic:**
-   - HP healing moved from PA job to hunger job for atomicity
-   - This ensures hunger=4 characters get healed before hunger drops to 3
-   - Both jobs run at 00:00:00 but healing is now guaranteed to happen first
 
 ------------------------------TRUC A Corriger------------------- -------------
 
+est-ce que la fonction getParisTime set encore à quelquechose ?  (/profil)
 
-
-
-
-
-
-
-
-
-
-(Commandes add objet et add compétences)
-
+Vérifier si existe (Commandes add objet et add compétences char et db)
 Mettre une différence entre resources de base et resources de craft dans les resourcesTypes
 
-Seed Messages type dans daily messages
 
 
 -------------------------Todo-------------------------
 Finir HistoriqueChat
+
+LIRE README DISCORD dans SERVICES SRC
+Nouveau point CRON + TESTS CRON ?
 
 #Objets /compétence métiers :
 

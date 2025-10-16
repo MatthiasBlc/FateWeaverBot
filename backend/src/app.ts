@@ -34,9 +34,8 @@ const app = express();
 
 // Démarrer les jobs CRON
 if (process.env.NODE_ENV !== "test") {
-  const { mainJob, expeditionJob } = setupDailyPaJob();
+  const { mainJob } = setupDailyPaJob();
   mainJob.start();
-  expeditionJob.start();
   setupHungerIncreaseJob();
   setupDailyPmJob();
   setupExpeditionJobs();

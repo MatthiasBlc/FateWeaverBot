@@ -430,3 +430,36 @@ Jambon -> 10 nourriture
 - ✅ Enregistrement dans button-handler.ts
 
 6 - projets admin, manque des champs (resource blueprint?, corps d'artisanat requis ?)
+
+------------------------------CRON JOB------------------- -------------
+
+> Append Directions devrait faire partie de Daily PA Update (à la suite directement). Daily PA 
+Update Expédition devrait également être dans la même suite de process. 
+Dans Daily PA Update - Expédition, il y a "Give +2 PA first (daily regeneration)", cela ne 
+devrait pas exister, c'est clairement un doublon de logique avec "STEP 5: Regenerate PA (hunger 
+penalty if hungerLevel≤1)" 
+
+If no + catastrophic conditions → Remove from expedition
+       (catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
+
+       
+Morning, première étape retour d'expédition ? (departed -> returned)
+
+Pourquoi toutes les 10 minutes sur les autres ? 
+
+
+## 🐛 Known Issues & TODOs
+
+### TODO Items
+
+1. **Daily Messages Integration:**
+   - Implement Discord webhook/API call
+   - Currently only logs to console
+
+2. **Season Change Notifications:**
+   - Add Discord notification when season changes
+   - Currently only logs to console
+
+
+Nous avons actuellement avec config-channel-admin, la possibilité de choisir un channel pour les notifications d'évènement.
+Serait-il possible d'ajouter à cette commande la sélection d'un nouveau channel (ce peut être le même channel ou un autre) pour le message quotidien (+changement de saison ?) ?

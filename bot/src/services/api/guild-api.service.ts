@@ -67,17 +67,17 @@ export class GuildAPIService extends BaseAPIService {
         `/guilds/${discordGuildId}/log-channel`,
         { logChannelId }
       );
-      
-      logger.info("Successfully updated guild log channel", { 
-        discordGuildId, 
+
+      logger.info("Successfully updated guild log channel", {
+        discordGuildId,
         logChannelId,
-        response: response 
+        response: response
       });
-      
+
       return response;
     } catch (error) {
-      logger.error("Error updating guild log channel:", { 
-        discordGuildId, 
+      logger.error("Error updating guild log channel:", {
+        discordGuildId,
         logChannelId,
         error: error instanceof Error ? {
           message: error.message,
@@ -85,6 +85,64 @@ export class GuildAPIService extends BaseAPIService {
           name: error.name,
         } : error,
       });
+      throw error;
+    }
+  }
+
+  /**
+   * Met à jour le canal des messages quotidiens d'une guilde
+   * @param discordGuildId L'ID Discord de la guilde
+   * @param dailyMessageChannelId L'ID du canal des messages quotidiens (ou null pour désactiver)
+   */
+  public async updateGuildDailyMessageChannel(
+    discordGuildId: string,
+    dailyMessageChannelId: string | null
+  ) {
+    try {
+      logger.info("Updating guild daily message channel", { discordGuildId, dailyMessageChannelId });
+      const response = await this.patch<{ dailyMessageChannelId: string | null }>(
+        `/guilds/${discordGuildId}/daily-message-channel`,
+        { dailyMessageChannelId }
+      );
+
+      logger.info("Successfully updated guild daily message channel", {
+        discordGuildId,
+        dailyMessageChannelId,
+        response: response
+      });
+
+      return response;
+    } catch (error) {
+      logger.error("Error updating guild daily message channel:", {
+        discordGuildId,
+        dailyMessageChannelId,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère toutes les guildes avec leurs villes associées
+   */
+  public async getAllGuilds() {
+    try {
+      logger.info("Fetching all guilds");
+      const response = await this.get<Array<{
+        id: string;
+        discordGuildId: string;
+        name: string;
+        logChannelId: string | null;
+        dailyMessageChannelId: string | null;
+        town: Town | null;
+      }>>("/guilds");
+      return response;
+    } catch (error) {
+      logger.error("Error fetching all guilds:", { error });
       throw error;
     }
   }

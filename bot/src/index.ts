@@ -189,6 +189,19 @@ client.once("clientReady", async () => {
   logger.info(
     "✅ Bot prêt. Les commandes sont déployées via le script deploy-commands.ts"
   );
+
+  // Initialize cron jobs
+  try {
+    const { setupDailyMessagesJob } = await import("./cron/daily-messages.cron.js");
+    const { setupSeasonChangeJob } = await import("./cron/season-change.cron.js");
+
+    setupDailyMessagesJob(client);
+    setupSeasonChangeJob(client);
+
+    logger.info("✅ Cron jobs initialized successfully");
+  } catch (error) {
+    logger.error("❌ Failed to initialize cron jobs:", { error });
+  }
 });
 
 // Listen for interactions (slash commands and buttons)

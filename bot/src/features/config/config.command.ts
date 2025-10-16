@@ -7,11 +7,11 @@ import type { Command } from "../../types/command.js";
 import { logger } from "../../services/logger.js";
 import { handleConfigChannelCommand } from "./config.handlers";
 
-// Commande pour configurer le salon de logs
+// Commande pour configurer les salons de logs et messages quotidiens
 const configChannelCommand: Command = {
   data: new SlashCommandBuilder()
     .setName("config-channel-admin")
-    .setDescription("Configure le salon pour les logs automatiques")
+    .setDescription("Configure les salons pour les logs et messages automatiques")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction: ChatInputCommandInteraction) {

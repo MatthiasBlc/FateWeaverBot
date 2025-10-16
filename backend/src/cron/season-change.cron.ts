@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { CronJob } from 'cron';
 import { SeasonService } from '../services/season.service';
+import { discordNotificationService } from '../services/discord-notification.service';
+import { logger } from '../services/logger';
 
 const prisma = new PrismaClient();
 
@@ -10,25 +12,52 @@ const prisma = new PrismaClient();
  */
 async function checkAndUpdateSeason() {
   try {
-    console.log('Vérification du changement de saison...');
-    
+    logger.info('Vérification du changement de saison...');
+
     const seasonService = new SeasonService(prisma);
     await seasonService.initialize();
-    
+
     const result = await seasonService.checkAndUpdateSeason();
-    
-    if (result.changed) {
-      console.log(`La saison a changé pour : ${result.newSeason?.name}`);
-      
-      // Envoyer une notification dans le canal de logs si configuré
-      // (à implémenter avec le système de logs du bot)
+
+    if (result.changed && result.newSeason) {
+      logger.info(`La saison a changé pour : ${result.newSeason.name}`);
+
+      // Envoyer une notification Discord à tous les guilds configurés
+      const guilds = await prisma.guild.findMany({
+        where: { logChannelId: { not: null } },
+        select: { logChannelId: true, name: true }
+      });
+
+      const seasonEmoji = result.newSeason.name === 'SUMMER' ? '☀️' : '❄️';
+      let notificationsSent = 0;
+
+      for (const guild of guilds) {
+        if (guild.logChannelId) {
+          try {
+            const sent = await discordNotificationService.sendSeasonChangeNotification(
+              guild.logChannelId,
+              result.newSeason.name,
+              seasonEmoji
+            );
+
+            if (sent) {
+              notificationsSent++;
+              logger.info(`Season change notification sent to ${guild.name}`);
+            }
+          } catch (error) {
+            logger.error(`Failed to send season notification to ${guild.name}:`, { error });
+          }
+        }
+      }
+
+      logger.info(`Season change notifications sent to ${notificationsSent} guilds`);
     } else {
-      console.log('Aucun changement de saison nécessaire');
+      logger.info('Aucun changement de saison nécessaire');
     }
-    
+
     return result;
   } catch (error) {
-    console.error('Erreur lors de la vérification du changement de saison :', error);
+    logger.error('Erreur lors de la vérification du changement de saison :', error);
     throw error;
   }
 }

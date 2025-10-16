@@ -6,6 +6,7 @@ import {
   getAllGuilds,
   deleteGuild,
   updateGuildLogChannel,
+  updateGuildDailyMessageChannel,
 } from "../controllers/guilds";
 import { requireAuthOrInternal } from "../middleware/auth";
 
@@ -25,6 +26,13 @@ router.patch(
   "/:discordId/log-channel",
   requireAuthOrInternal,
   updateGuildLogChannel
+);
+
+// Met à jour le salon des messages quotidiens d'une guilde
+router.patch(
+  "/:discordId/daily-message-channel",
+  requireAuthOrInternal,
+  updateGuildDailyMessageChannel
 );
 
 // Récupère toutes les guildes

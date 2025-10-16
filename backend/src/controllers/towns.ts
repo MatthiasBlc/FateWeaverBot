@@ -328,3 +328,131 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
   }
 };
 
+/**
+ * Récupère la météo du jour pour une ville
+ * TODO: Pour l'instant, retourne un message basique basé sur la saison
+ */
+export const getTownWeather: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const town = await prisma.town.findUnique({ where: { id } });
+
+    if (!town) {
+      throw createHttpError(404, "Ville non trouvée");
+    }
+
+    // TODO: Implémenter un système de météo dynamique basé sur la saison actuelle
+    const weather = "Temps clair et ensoleillé ☀️";
+
+    res.status(200).json({ weather });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Récupère le récapitulatif des activités de la veille pour une ville
+ * TODO: Implémenter un système de logs d'activités
+ */
+export const getTownActionsRecap: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const town = await prisma.town.findUnique({ where: { id } });
+
+    if (!town) {
+      throw createHttpError(404, "Ville non trouvée");
+    }
+
+    // TODO: Récupérer les actions des dernières 24h depuis une table de logs
+    const recap = "Aucune activité notable pour le moment.";
+
+    res.status(200).json({ recap });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Récupère un résumé des stocks de la ville
+ */
+export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const town = await prisma.town.findUnique({
+      where: { id },
+      include: {
+        resourceStocks: {
+          include: { resourceType: true },
+          orderBy: { resourceType: { name: "asc" } }
+        }
+      }
+    });
+
+    if (!town) {
+      throw createHttpError(404, "Ville non trouvée");
+    }
+
+    if (town.resourceStocks.length === 0) {
+      res.status(200).json({ summary: "Aucune ressource en stock." });
+      return;
+    }
+
+    // Créer un résumé lisible des stocks
+    const summary = town.resourceStocks
+      .map(stock => `${stock.resourceType.emoji || "📦"} **${stock.resourceType.name}**: ${stock.quantity}`)
+      .join("\n");
+
+    res.status(200).json({ summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Récupère un résumé des expéditions en cours pour une ville
+ */
+export const getTownExpeditionsSummary: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const town = await prisma.town.findUnique({ where: { id } });
+
+    if (!town) {
+      throw createHttpError(404, "Ville non trouvée");
+    }
+
+    // Récupérer les expéditions en cours (non retournées)
+    const activeExpeditions = await prisma.expedition.findMany({
+      where: {
+        townId: id,
+        status: "DEPARTED" // Changed from "EN_COURS" to "DEPARTED" to match the enum
+      },
+      include: {
+        members: true,
+        _count: {
+          select: { members: true }
+        }
+      }
+    });
+
+    if (activeExpeditions.length === 0) {
+      res.status(200).json({ summary: "Aucune expédition en cours." });
+      return;
+    }
+
+    // Créer un résumé lisible des expéditions
+    const summary = activeExpeditions
+      .map(exp => {
+        if (!exp.returnAt) {
+          return `🏕️ **${exp.name}** - ${exp._count?.members || 0} membre(s) - Date de retour inconnue`;
+        }
+        const daysRemaining = Math.ceil((exp.returnAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return `🏕️ **${exp.name}** - ${exp._count?.members || 0} membre(s) - Retour dans ${daysRemaining} jour(s)`;
+      })
+      .join("\n");
+
+    res.status(200).json({ summary });
+  } catch (error) {
+    next(error);
+  }
+};
+

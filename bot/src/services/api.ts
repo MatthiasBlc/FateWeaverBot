@@ -135,6 +135,18 @@ class APIService {
   }
 
   /**
+   * Met à jour le canal des messages quotidiens d'une guilde
+   * @param discordGuildId L'ID Discord de la guilde
+   * @param dailyMessageChannelId L'ID du canal des messages quotidiens (ou null pour désactiver)
+   */
+  public async updateGuildDailyMessageChannel(
+    discordGuildId: string,
+    dailyMessageChannelId: string | null
+  ) {
+    return this.guilds.updateGuildDailyMessageChannel(discordGuildId, dailyMessageChannelId);
+  }
+
+  /**
    * Crée ou met à jour un rôle
    */
   public async upsertRole(

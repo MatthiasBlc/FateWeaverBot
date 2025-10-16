@@ -224,16 +224,16 @@ async function deductExpeditionPA() {
       } else {
         // Check catastrophic return conditions
         const shouldCatastrophicReturn =
-          character.hungerLevel <= 1 || // Agonie
+          character.hungerLevel <= 1 || // Affamé/Agonie (hunger)
           character.isDead || // Mort
-          character.hp === 0 || // HP = 0
+          character.hp <= 1 || // Agonie/Mort (HP)
           character.pm <= 2; // Dépression/déprime
 
         if (shouldCatastrophicReturn) {
           // Determine reason for catastrophic return
           let reason = "";
           if (character.hungerLevel <= 1) reason = "agonie";
-          else if (character.isDead || character.hp === 0) reason = "mort";
+          else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
           else if (character.pm <= 2) reason = "dépression";
 
           // Remove member catastrophically

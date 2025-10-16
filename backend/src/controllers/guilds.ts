@@ -108,6 +108,23 @@ export const updateGuildLogChannel: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const updateGuildDailyMessageChannel: RequestHandler = async (req, res, next) => {
+  try {
+    const { discordId } = req.params;
+    const { dailyMessageChannelId } = req.body;
+
+    const guild = await prisma.guild.update({
+      where: { discordGuildId: discordId },
+      data: { dailyMessageChannelId },
+      include: { roles: true },
+    });
+
+    res.status(200).json(guild);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteGuild: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;

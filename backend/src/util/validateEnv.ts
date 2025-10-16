@@ -6,4 +6,5 @@ export default cleanEnv(process.env, {
   PORT: port(),
   SESSION_SECRET: str(),
   CORS_ORIGIN: str(),
+  DISCORD_TOKEN: str({ default: "" }), // Optional: Discord bot token for notifications
 });

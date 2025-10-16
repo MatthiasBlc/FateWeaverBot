@@ -319,9 +319,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     color: getHungerColor(data.character.hungerLevel),
     title: `${CHARACTER.PROFILE} ###${data.character.name || "Sans nom"}`,
     footer: {
-      text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(
-        data.timeUntilUpdate
-      )} avant reset`,
+      text: `Profil de: ${data.character.name}`,
       iconURL: data.user.displayAvatarURL,
     },
     timestamp: true,
@@ -331,11 +329,11 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   const rolesText =
     data.character.roles && data.character.roles.length > 0
       ? data.character.roles
-          .map(
-            (role: { discordId: string; name: string }) =>
-              `<@&${role.discordId}>`
-          )
-          .join(", ")
+        .map(
+          (role: { discordId: string; name: string }) =>
+            `<@&${role.discordId}>`
+        )
+        .join(", ")
       : "Aucun rôle";
 
   // Formatage des rôles Discord de l'utilisateur
@@ -365,9 +363,8 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${
-        data.actionPoints.points >= 3 ? STATUS.WARNING : " "
-      }`.trim(),
+      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${data.actionPoints.points >= 3 ? STATUS.WARNING : " "
+        }`.trim(),
       inline: true,
     },
     {
@@ -418,10 +415,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       const inventoryText = inventory.slots
         .map(
           (slot: any) =>
-            `${slot.objectType.name}${
-              slot.objectType.description
-                ? ` • ${slot.objectType.description}`
-                : ""
+            `${slot.objectType.name}${slot.objectType.description
+              ? ` • ${slot.objectType.description}`
+              : ""
             }`
         )
         .join("\n");
@@ -635,16 +631,14 @@ function createPMDisplay(current: number, max: number): string {
 
   // Special case: PM=0 (Dépression)
   if (current === 0) {
-    return `${hearts.join(" ")} - ${
-      CHARACTER.MP_DEPRESSION
-    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSION
+      }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
   }
 
   // Special case: PM=1 (Déprime)
   if (current === 1) {
-    return `${hearts.join(" ")} - ${
-      CHARACTER.MP_DEPRESSED
-    }**Déprime** (Ne peut pas utiliser de PA)`;
+    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSED
+      }**Déprime** (Ne peut pas utiliser de PA)`;
   }
 
   // Normal case: PM=2-5
@@ -761,9 +755,8 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       await interaction.editReply({
-        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${
-          result.message || ""
-        }`,
+        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${result.message || ""
+          }`,
       });
     } catch (error: any) {
       logger.error("Error using capability via button:", {
@@ -791,11 +784,11 @@ export async function handleProfileButtonInteraction(interaction: any) {
 function createCapabilitiesDisplay(
   capabilities:
     | Array<{
-        name: string;
-        description?: string;
-        costPA: number;
-        emojiTag?: string;
-      }>
+      name: string;
+      description?: string;
+      costPA: number;
+      emojiTag?: string;
+    }>
     | undefined
 ): string {
   if (!capabilities || capabilities.length === 0) {
@@ -834,8 +827,7 @@ function createCapabilitiesDisplay(
   return capabilities
     .map(
       (cap) =>
-        `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${
-          cap.costPA
+        `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${cap.costPA
         } PA)${cap.description ? ` • ${cap.description}` : ""}`
     )
     .join("\n");

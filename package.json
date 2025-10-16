@@ -19,5 +19,13 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/rest": "^2.6.0",
+    "cron": "^4.3.3",
+    "discord-api-types": "^0.38.30"
+  },
+  "devDependencies": {
+    "@types/cron": "^2.4.3"
+  }
 }

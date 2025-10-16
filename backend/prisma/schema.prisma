@@ -54,15 +54,16 @@ model Town {
 }
 
 model Guild {
-  id             String   @id @default(cuid())
-  discordGuildId String   @unique @map("discord_guild_id")
-  name           String // Nom de la guilde
-  memberCount    Int      @default(0) // Nombre de membres dans la guilde
-  logChannelId   String? // ID du salon Discord pour les logs automatiques
-  town           Town? // Relation 1:1 avec la ville
-  roles          Role[] // Ajout de la relation avec les rôles
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id                    String   @id @default(cuid())
+  discordGuildId        String   @unique @map("discord_guild_id")
+  name                  String // Nom de la guilde
+  memberCount           Int      @default(0) // Nombre de membres dans la guilde
+  logChannelId          String? // ID du salon Discord pour les logs automatiques
+  dailyMessageChannelId String?  @map("daily_message_channel_id") // ID du salon Discord pour les messages quotidiens (météo, saisons)
+  town                  Town? // Relation 1:1 avec la ville
+  roles                 Role[] // Ajout de la relation avec les rôles
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("guilds")
 }

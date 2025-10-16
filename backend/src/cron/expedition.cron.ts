@@ -121,45 +121,6 @@ async function returnExpeditionsDue() {
   }
 }
 
-async function appendDailyDirections() {
-  try {
-    const expeditions = await prisma.expedition.findMany({
-      where: {
-        status: "DEPARTED",
-        currentDayDirection: { not: null },
-      },
-      select: { id: true, name: true, path: true, currentDayDirection: true },
-    });
-
-    for (const exp of expeditions) {
-      if (exp.currentDayDirection) {
-        // Append direction to path
-        const newPath = [...exp.path, exp.currentDayDirection];
-
-        await prisma.expedition.update({
-          where: { id: exp.id },
-          data: {
-            path: newPath,
-            currentDayDirection: null,
-            directionSetBy: null,
-            directionSetAt: null,
-          },
-        });
-
-        console.log(
-          `Appended direction ${exp.currentDayDirection} to expedition ${exp.name}`
-        );
-      }
-    }
-
-    console.log(
-      `Appended directions for ${expeditions.length} expedition(s)`
-    );
-  } catch (error) {
-    console.error("Error appending daily directions:", error);
-  }
-}
-
 async function processEmergencyReturns() {
   try {
     logger.debug("Starting emergency return check");
@@ -174,37 +135,34 @@ async function processEmergencyReturns() {
   }
 }
 
-export function setupExpeditionJobs() {
-  // Append daily directions (runs at 00:00:05 - after PA consumption, before lock)
-  const appendDirectionsJob = new CronJob(
-    "5 0 * * *", // 00:00:05 every day
-    appendDailyDirections,
-    null,
-    true,
-    "Europe/Paris"
-  );
+async function morningExpeditionUpdate() {
+  try {
+    logger.info("=== Starting morning expedition update at 08:00 ===");
 
+    // STEP 1: Process all returns (normal + emergency)
+    await returnExpeditionsDue();
+    await processEmergencyReturns();
+
+    // STEP 2: Depart new expeditions
+    await departExpeditionsDue();
+
+    logger.info("=== Morning expedition update completed ===");
+  } catch (error) {
+    logger.error("Error in morning expedition update:", { error });
+  }
+}
+
+export function setupExpeditionJobs() {
   // Lock expeditions at midnight (00:00)
   const lockJob = new CronJob("0 0 * * *", lockExpeditionsDue, null, true, "Europe/Paris");
   logger.info("Expedition lock job scheduled for midnight daily");
 
-  // Depart expeditions at 08:00
-  const departJob = new CronJob("0 8 * * *", departExpeditionsDue, null, true, "Europe/Paris");
-  logger.info("Expedition depart job scheduled for 08:00 daily");
-
-  // Return expeditions every 10 minutes
-  const returnJob = new CronJob("*/10 * * * *", returnExpeditionsDue, null, true, "Europe/Paris");
-  logger.info("Expedition return job scheduled every 10 minutes");
-
-  // Process emergency returns every 10 minutes (same as normal returns)
-  const emergencyJob = new CronJob("*/10 * * * *", processEmergencyReturns, null, true, "Europe/Paris");
-  logger.info("Emergency return job scheduled every 10 minutes");
+  // Morning update at 08:00: Returns → Departs
+  const morningJob = new CronJob("0 8 * * *", morningExpeditionUpdate, null, true, "Europe/Paris");
+  logger.info("Morning expedition update job scheduled for 08:00 daily (returns then departs)");
 
   return {
     lockJob,
-    departJob,
-    returnJob,
-    emergencyJob,
-    appendDirectionsJob
+    morningJob
   };
 }

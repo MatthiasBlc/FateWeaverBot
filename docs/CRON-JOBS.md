@@ -1,28 +1,35 @@
 # 🕐 FateWeaver - Cron Jobs Documentation
 
-This document provides technical documentation for all scheduled cron jobs in the FateWeaver bot backend.
+This document provides technical documentation for all scheduled cron jobs in the FateWeaver system.
 
 ---
 
 ## 📋 Overview
 
-All cron jobs are registered in `/backend/src/app.ts` and use the **Europe/Paris timezone**.
+**IMPORTANT ARCHITECTURE NOTE:**
+- **Backend Cron Jobs:** Game mechanics (hunger, PA, expeditions) run in `/backend/src/app.ts`
+- **Bot Cron Jobs:** Discord notifications (daily messages, season changes) run in `/bot/src/index.ts`
+
+All cron jobs use the **Europe/Paris timezone**.
 
 ### Active Cron Jobs
 
+#### Backend Cron Jobs (Game Mechanics)
+
 | Job | File | Frequency | Purpose |
 |-----|------|-----------|---------|
-| **Hunger Management** | `hunger-increase.cron.ts` | Daily 00:00:00 | Heal HP (hunger=4), decrease hunger, trigger agony |
-| **Mental Health Contagion** | `daily-pm.cron.ts` | Daily 00:00:00 | Spread depression between characters |
-| **Lock Expeditions** | `expedition.cron.ts` | Daily 00:00:00 | Lock PLANNING expeditions created before midnight |
-| **Daily PA (Main)** | `daily-pa.cron.ts` | Daily 00:00:00 | Check death/agony, reset PA counter, regenerate PA |
-| **Append Directions** | `expedition.cron.ts` | Daily 00:00:05 | Append daily directions to expedition paths |
-| **Daily PA (Expeditions)** | `daily-pa.cron.ts` | Daily 00:00:10 | Deduct 2 PA for DEPARTED expeditions, handle catastrophic returns |
-| **Daily Messages** | `daily-message.cron.ts` | Daily 08:00:00 | Send daily status messages to Discord |
-| **Depart Expeditions** | `expedition.cron.ts` | Daily 08:00:00 | Depart LOCKED expeditions |
-| **Return Expeditions** | `expedition.cron.ts` | Every 10 min | Process expedition returns when returnAt is reached |
-| **Emergency Returns** | `expedition.cron.ts` | Every 10 min | Process emergency/catastrophic expedition returns |
-| **Season Change** | `season-change.cron.ts` | Weekly (Mon 00:00) | Manage seasonal transitions |
+| **Hunger Management** | `backend/src/cron/hunger-increase.cron.ts` | Daily 00:00:00 | Heal HP (hunger=4), decrease hunger, trigger agony |
+| **Mental Health Contagion** | `backend/src/cron/daily-pm.cron.ts` | Daily 00:00:00 | Spread depression between characters |
+| **Lock Expeditions** | `backend/src/cron/expedition.cron.ts` | Daily 00:00:00 | Lock PLANNING expeditions created before midnight |
+| **Daily PA Update** | `backend/src/cron/daily-pa.cron.ts` | Daily 00:00:00 | Death/agony checks, PA reset/regen, append directions, expedition PA deduction |
+| **Morning Expedition Update** | `backend/src/cron/expedition.cron.ts` | Daily 08:00:00 | Process returns (DEPARTED→RETURNED) then departs (LOCKED→DEPARTED) |
+
+#### Bot Cron Jobs (Discord Notifications)
+
+| Job | File | Frequency | Purpose |
+|-----|------|-----------|---------|
+| **Daily Messages** | `bot/src/cron/daily-messages.cron.ts` | Daily 08:00:05 | Send daily recap to Discord (weather, actions, stocks, expeditions) |
+| **Season Change Notifications** | `bot/src/cron/season-change.cron.ts` | Weekly (Mon 00:00) | Check for season changes and notify all guilds |
 
 ---
 
@@ -30,7 +37,7 @@ All cron jobs are registered in `/backend/src/app.ts` and use the **Europe/Paris
 
 **CRITICAL:** Cron jobs execute in a specific order to ensure correct game mechanics.
 
-### Midnight Sequence (00:00:00 - 00:00:10)
+### Midnight Sequence (00:00:00)
 
 ```
 00:00:00 (simultaneous start)
@@ -48,64 +55,59 @@ All cron jobs are registered in `/backend/src/app.ts` and use the **Europe/Paris
 │   ├─ Lock PLANNING expeditions created before today
 │   └─ Set initialDirection to UNKNOWN if not set
 │
-└── 4. Daily PA Update - Main (daily-pa.cron.ts)
+└── 4. Daily PA Update (daily-pa.cron.ts) - UNIFIED JOB
     ├─ STEP 1: Reset agonySince if recovered (hp > 1)
     ├─ STEP 2: Check death if hp=0 → isDead=true
     ├─ STEP 3: Check agony duration (2 days → death)
     ├─ STEP 4: Reset paUsedToday = 0
-    └─ STEP 5: Regenerate PA (hunger penalty if hungerLevel≤1)
-
-00:00:05
-└── 5. Append Directions (expedition.cron.ts)
-    ├─ Find DEPARTED expeditions with currentDayDirection
-    ├─ Append currentDayDirection to path[]
-    └─ Reset currentDayDirection, directionSetBy, directionSetAt
-
-00:00:10
-└── 6. Daily PA Update - Expeditions (daily-pa.cron.ts)
-    ├─ Find all members in DEPARTED expeditions
-    ├─ Give +2 PA first (daily regeneration)
-    ├─ Check if can afford 2 PA for expedition
-    ├─ If yes: Deduct 2 PA
-    └─ If no + catastrophic conditions → Remove from expedition
-       (catastrophic = hungerLevel≤1 OR isDead OR hp=0 OR pm≤2)
+    ├─ STEP 5: Regenerate PA (hunger penalty if hungerLevel≤1)
+    ├─ STEP 6: Append expedition directions to path[]
+    └─ STEP 7: Deduct 2 PA for DEPARTED expeditions
+       └─ If PA < 2 + catastrophic → Remove from expedition
+          (catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
 ```
 
-### Morning Sequence (08:00:00)
+### Morning Sequence (08:00:00 - 08:00:05)
 
 ```
-08:00:00
-├── Daily Messages (daily-message.cron.ts)
-│   ├─ Build daily status message for each town
-│   └─ Send to Discord log channels
-│
-└── Depart Expeditions (expedition.cron.ts)
-    ├─ Find all LOCKED expeditions
-    ├─ Change status to DEPARTED
-    └─ Initialize path with initialDirection
-```
-
-### Continuous Monitoring (Every 10 minutes)
-
-```
-*/10 * * * *
-├── Return Expeditions (expedition.cron.ts)
+08:00:00 - Morning Expedition Update (backend/expedition.cron.ts)
+├── STEP 1: Return Expeditions (DEPARTED → RETURNED)
 │   ├─ Find DEPARTED expeditions with returnAt <= now
+│   ├─ Process emergency returns (pendingEmergencyReturn flag)
 │   ├─ Change status to RETURNED
 │   └─ Handle resource transfers and notifications
 │
-└── Emergency Returns (expedition.cron.ts)
-    └─ Process expeditions with pendingEmergencyReturn flag
+└── STEP 2: Depart Expeditions (LOCKED → DEPARTED)
+    ├─ Find all LOCKED expeditions
+    ├─ Change status to DEPARTED
+    └─ Initialize path with initialDirection
+
+08:00:05 - Daily Messages (bot/daily-messages.cron.ts) ⚡ BOT
+└── Send daily recap to Discord
+    ├─ Fetch all guilds from backend API
+    ├─ For each guild with dailyMessageChannelId:
+    │   ├─ Call backend API endpoints:
+    │   │   ├─ GET /api/towns/:id/weather
+    │   │   ├─ GET /api/towns/:id/actions-recap
+    │   │   ├─ GET /api/towns/:id/stocks-summary
+    │   │   └─ GET /api/towns/:id/expeditions-summary
+    │   └─ Send rich embed to Discord channel
+    └─ Log sent count
 ```
 
 ### Weekly Maintenance (Monday 00:00:00)
 
 ```
-Monday 00:00:00
-└── Season Change (season-change.cron.ts)
-    ├─ Check if season change is due
-    ├─ Update current season
-    └─ Notify Discord if changed
+Monday 00:00:00 - Season Change Check (bot/season-change.cron.ts) ⚡ BOT
+└── Check and notify season changes
+    ├─ Call backend API: GET /api/seasons/check-change
+    ├─ If season changed in last 24h:
+    │   ├─ Fetch all guilds from backend API
+    │   ├─ For each guild with notification channel:
+    │   │   ├─ Create season-specific embed (emoji, color, temp, description)
+    │   │   └─ Send to dailyMessageChannelId or logChannelId
+    │   └─ Log sent count
+    └─ If no change: log and continue
 ```
 
 ---
@@ -115,15 +117,16 @@ Monday 00:00:00
 **Critical Sequencing:**
 - **Heal BEFORE hunger decrease:** Hunger=4 heal must happen before hunger drops to 3 (atomicity in same job)
 - **Reset agonySince BEFORE agony check:** Characters healed during night (hunger job) must have agonySince cleared first
-- **Hunger before PA (main):** Hunger affects PA regeneration calculation
-- **PM contagion before PA (main):** Depressed characters use paUsedToday logic
-- **Death/agony check before PA:** Dead/dying characters handled correctly
-- **PA reset before expedition:** paUsedToday must reset before daily costs
-- **PA regeneration before expedition PA:** Main regeneration happens first
-- **Append directions after PA but before deduction:** Path updates before new day costs
-- **Expedition PA deduction 10s after main:** Ensures all updates are complete
+- **Hunger before PA:** Hunger affects PA regeneration calculation
+- **PM contagion before PA:** Depressed characters use paUsedToday logic
+- **Death/agony check before PA regen:** Dead/dying characters handled correctly
+- **PA regen before append directions:** PA must be updated before expedition processing
+- **Append directions before PA deduction:** Path updates before new day PA costs
+- **PA deduction uses current PA:** NO double regeneration, uses PA from STEP 5
+- **All PA steps in ONE job:** Ensures consistency, no race conditions
 - **Lock before depart:** Expeditions must be locked (00:00) before departing (08:00)
-- **Messages at 08:00:** Sent after all midnight processing is complete
+- **Returns before departs:** Returning expeditions processed BEFORE new departures (08:00)
+- **Messages after expedition processing:** Daily recap sent at 08:00:05 to include all returns/departs
 
 ---
 
@@ -256,15 +259,15 @@ node backend/src/cron/daily-pm.cron.ts
 
 ### 3. Daily PA Update (`daily-pa.cron.ts`)
 
-**Purpose:** Check for death/agony, reset PA counter, regenerate PA, and deduct expedition costs.
+**Purpose:** Unified job handling all PA-related daily updates including death checks, PA regeneration, expedition directions, and expedition costs.
 
-**IMPORTANT:** This file contains TWO separate jobs that run at different times.
+**IMPORTANT:** This is now a SINGLE unified job that runs all steps sequentially at 00:00:00.
 
 **NOTE:** HP healing was moved to `hunger-increase.cron.ts` to ensure atomicity with hunger decrease.
 
-#### Job 1: Main PA Update (00:00:00)
+#### Unified PA Update Process (00:00:00)
 
-**Multi-Step Process:**
+**Sequential Steps:**
 
 **STEP 1: Reset Agony Timer if Recovered**
 ```typescript
@@ -316,64 +319,76 @@ For each living character (not dead from steps above):
      lastPaUpdate = now
 ```
 
-#### Job 2: Expedition PA Deduction (00:00:10)
+**STEP 6: Append Expedition Directions**
+```typescript
+1. Find all DEPARTED expeditions with currentDayDirection != null
 
-**Purpose:** Deduct 2 PA for characters in DEPARTED expeditions.
+2. For each expedition:
+   - Append currentDayDirection to path[]
+   - Reset currentDayDirection = null
+   - Reset directionSetBy = null
+   - Reset directionSetAt = null
+```
 
+**STEP 7: Deduct Expedition PA**
 ```typescript
 1. Find all ExpeditionMembers in DEPARTED expeditions
 
 2. For each member:
    a. Skip if expedition has pendingEmergencyReturn flag
 
-   b. Calculate PA after regeneration:
-      newPaTotal = character.paTotal + 2
+   b. Check if can afford expedition (needs PA >= 2):
+      // IMPORTANT: Uses current paTotal from STEP 5 (already regenerated with hunger penalties)
 
-   c. Check if can afford expedition (needs >= 2 PA):
-      If yes:
-        - Deduct 2 PA: paTotal = newPaTotal - 2
+      If paTotal >= 2:
+        - Deduct 2 PA: paTotal -= 2
 
-      If no:
+      If paTotal < 2:
         - Check catastrophic return conditions:
-          * hungerLevel <= 1 (Agonie)
-          * isDead
-          * hp == 0
+          * hungerLevel <= 1 (Affamé/Agonie from hunger)
+          * isDead (Mort)
+          * hp <= 1 (Agonie/Mort from HP)
           * pm <= 2 (Dépression/Déprime)
 
         - If catastrophic:
           * Remove member from expedition
-          * Set reason (agonie, mort, dépression)
+          * Set reason (agonie, mort/agonie, dépression)
           * Log catastrophic return
+          * Note: hp<=1 includes both agony (hp=1) and death (hp=0)
 
         - If not catastrophic:
-          * Log warning (shouldn't happen)
+          * Log warning (shouldn't happen in normal gameplay)
 ```
 
 #### Key Features
 
-- **Two-Stage PA System:** Regenerate first, then deduct expedition costs
+- **Single Unified Job:** All PA operations in one sequential job (no race conditions)
+- **No Double Regeneration:** Expedition deduction uses PA from STEP 5 directly
 - **Agony Death Timer:** 2 days in agony (hp=1) = automatic death
 - **Hunger Penalties:** Affects PA regeneration (heal moved to hunger job)
 - **Catastrophic Returns:** Automatic expedition removal for critical conditions
 - **Daily Counter Reset:** paUsedToday reset for depression mechanics
+- **Sequential Processing:** Steps 1-7 run in order within same job
 
 #### Logging
 
 ```typescript
-Main job console output:
+Unified job console output:
+=== Début de la mise à jour quotidienne des PA ===
 - Total characters updated
 - Number dead (hp=0 or 2-day agony)
-
-Expedition job console output:
+--- STEP 6: Append daily expedition directions ---
+- Directions appended count
+--- STEP 7: Deduct PA for expeditions ---
 - Members who paid 2 PA
 - Catastrophic returns with reasons
+=== Mise à jour quotidienne des PA terminée ===
 ```
 
 #### Configuration
 
 ```typescript
-Main Job Pattern: "0 0 * * *"     // 00:00:00
-Expedition Job Pattern: "10 0 * * *"  // 00:00:10
+Cron Pattern: "0 0 * * *"  // Daily at 00:00:00
 Timezone: Europe/Paris
 ```
 
@@ -388,9 +403,11 @@ node backend/src/cron/daily-pa.cron.ts
 
 ### 4. Expedition Management (`expedition.cron.ts`)
 
-**Purpose:** Manage the complete expedition lifecycle across multiple stages.
+**Purpose:** Manage expedition lifecycle transitions (lock, morning returns/departs).
 
-This file contains **FIVE separate jobs** that handle different expedition phases.
+This file contains **TWO separate jobs** that handle different expedition phases.
+
+**NOTE:** Append directions was moved to `daily-pa.cron.ts` to ensure it runs after PA regeneration.
 
 #### Job 1: Lock Expeditions (00:00:00)
 
@@ -406,25 +423,26 @@ Logic:
 4. Log locked count
 ```
 
-#### Job 2: Append Daily Directions (00:00:05)
+#### Job 2: Morning Expedition Update (08:00:00)
 
-**Purpose:** Append the current day's direction to expedition path.
+**Purpose:** Process all returns then all departures in the morning.
 
+**CRITICAL:** This is a unified job that processes returns BEFORE departures.
+
+**STEP 1: Return Expeditions (DEPARTED → RETURNED)**
 ```typescript
 Logic:
-1. Find all DEPARTED expeditions with currentDayDirection != null
+1. Find all DEPARTED expeditions with returnAt <= now
 2. For each expedition:
-   - Append currentDayDirection to path[]
-   - Reset currentDayDirection = null
-   - Reset directionSetBy = null
-   - Reset directionSetAt = null
-3. Log appended count
+   - Call expeditionService.returnExpedition(id)
+   - Handle resource transfers
+   - Update expedition members
+   - Send Discord notifications
+3. Process emergency returns (pendingEmergencyReturn flag)
+4. Log returned count
 ```
 
-#### Job 3: Depart Expeditions (08:00:00)
-
-**Purpose:** Depart all LOCKED expeditions in the morning.
-
+**STEP 2: Depart Expeditions (LOCKED → DEPARTED)**
 ```typescript
 Logic:
 1. Find all LOCKED expeditions
@@ -434,109 +452,153 @@ Logic:
 3. Log departed count
 ```
 
-#### Job 4: Return Expeditions (Every 10 minutes)
-
-**Purpose:** Process expeditions that have reached their return time.
-
-```typescript
-Logic:
-1. Find all DEPARTED expeditions with returnAt <= now
-2. For each expedition:
-   - Call expeditionService.returnExpedition(id)
-   - Handle resource transfers
-   - Update expedition members
-   - Send Discord notifications
-3. Log returned count
-```
-
-#### Job 5: Process Emergency Returns (Every 10 minutes)
-
-**Purpose:** Force emergency returns for expeditions flagged for immediate return.
-
-```typescript
-Logic:
-1. Call expeditionService.forceEmergencyReturns()
-2. Process all expeditions with pendingEmergencyReturn = true
-3. Log emergency return count
-```
-
 #### Expedition Status Flow
 
 ```
 PLANNING → LOCKED → DEPARTED → RETURNED
     ↓         ↓          ↓
- 00:00:00   08:00:00   returnAt
+ 00:00:00   08:00:00   08:00:00
  (lock)     (depart)   (return)
+
+Note: Returns happen at 08:00:00 when returnAt is reached
+      (not continuously monitored)
 ```
 
 #### Configuration
 
 ```typescript
-Lock Job: "0 0 * * *"        // 00:00:00
-Append Job: "5 0 * * *"      // 00:00:05
-Depart Job: "0 8 * * *"      // 08:00:00
-Return Job: "*/10 * * * *"   // Every 10 minutes
-Emergency Job: "*/10 * * * *" // Every 10 minutes
+Lock Job: "0 0 * * *"    // 00:00:00
+Morning Job: "0 8 * * *" // 08:00:00 (returns then departs)
 Timezone: Europe/Paris
 ```
 
 ---
 
-### 5. Daily Messages (`daily-message.cron.ts`)
+### 5. Daily Messages (`bot/src/cron/daily-messages.cron.ts`) ⚡ BOT
 
-**Purpose:** Send daily status messages to Discord log channels.
+**Location:** Discord Bot (not backend)
 
-**STATUS:** ⚠️ Partially Implemented (Discord integration pending)
+**Purpose:** Send daily recap to Discord including weather, actions, stocks, and expeditions.
+
+**STATUS:** ✅ Fully Implemented (Runs in bot, calls backend API)
+
+**CRITICAL:** Runs at 08:00:05, 5 seconds AFTER expedition processing to include all updates.
+
+#### Architecture
+
+```
+Bot Cron (08:00:05)
+└─→ Backend API
+    ├─→ GET /api/guilds (get all guilds with towns)
+    ├─→ GET /api/towns/:id/weather
+    ├─→ GET /api/towns/:id/actions-recap
+    ├─→ GET /api/towns/:id/stocks-summary
+    └─→ GET /api/towns/:id/expeditions-summary
+```
 
 #### Logic
 
 ```typescript
-1. Find all towns with logChannelId configured
-2. For each town:
-   a. Build daily status message via dailyMessageService
-   b. TODO: Send to Discord log channel
-   c. Currently: Log message to console
-3. Log sent count
+1. Fetch all guilds from backend API (GET /api/guilds)
+2. For each guild:
+   a. Check if dailyMessageChannelId is configured
+   b. Verify bot is in Discord server
+   c. Fetch Discord channel
+   d. Verify guild has associated town
+   e. Call backend API endpoints to get data:
+      - Weather message
+      - Actions recap from previous day
+      - Current stock summary
+      - Expedition summary (active expeditions)
+   f. Build rich embed with all sections
+   g. Send to Discord channel
+   h. Log success/failure
+3. Log total sent count
 ```
 
 #### Key Features
 
-- **Town-Based:** One message per town
-- **Guild Integration:** Uses guild logChannelId
-- **Service-Driven:** Message building delegated to dailyMessageService
-- **TODO:** Discord webhook/API call implementation pending
+- **Bot-Hosted:** Runs directly in Discord bot (no HTTP communication needed)
+- **Guild-Based:** One message per guild with dailyMessageChannelId configured
+- **API-Driven:** Fetches all data from backend REST API
+- **Post-Processing Timing:** Runs after expedition updates (08:00:05) to include fresh data
+- **Discord.js:** Uses Discord.js EmbedBuilder for rich message formatting
+- **Separate Channel:** Uses `dailyMessageChannelId` (not `logChannelId`)
+- **Graceful Errors:** Continues to next guild if one fails
 
 #### Configuration
 
 ```typescript
-Cron Pattern: "0 8 * * *"  // Daily at 08:00:00
+Cron Pattern: "5 8 * * *"  // Daily at 08:00:05 (after expedition processing)
 Timezone: Europe/Paris
+Initialization: bot/src/index.ts (clientReady event)
 ```
+
+#### Backend API Endpoints
+
+Created to support daily messages:
+
+- **GET /api/guilds** - Returns all guilds with their towns
+- **GET /api/towns/:id/weather** - Returns weather message (TODO: season-based)
+- **GET /api/towns/:id/actions-recap** - Returns actions from last 24h (TODO: implement logs)
+- **GET /api/towns/:id/stocks-summary** - Returns formatted stock list with emojis
+- **GET /api/towns/:id/expeditions-summary** - Returns active expeditions with return dates
 
 ---
 
-### 6. Season Change (`season-change.cron.ts`)
+### 6. Season Change Notifications (`bot/src/cron/season-change.cron.ts`) ⚡ BOT
 
-**Purpose:** Manage seasonal transitions in the game world.
+**Location:** Discord Bot (not backend)
+
+**Purpose:** Check for season changes and notify all guilds via Discord.
+
+**STATUS:** ✅ Fully Implemented (Runs in bot, calls backend API)
+
+#### Architecture
+
+```
+Bot Cron (Monday 00:00:00)
+└─→ Backend API
+    ├─→ GET /api/seasons/check-change (checks if changed in last 24h)
+    └─→ GET /api/guilds (if changed, get all guilds)
+```
 
 #### Logic
 
 ```typescript
-1. Initialize SeasonService
-2. Call checkAndUpdateSeason()
+1. Call backend API: GET /api/seasons/check-change
+2. Backend checks if season was updated in last 24h
 3. If season changed:
-   - Log new season
-   - TODO: Send Discord notification
+   a. Fetch all guilds from backend API
+   b. For each guild:
+      - Get notification channel (dailyMessageChannelId or fallback to logChannelId)
+      - Verify bot is in Discord server
+      - Fetch Discord channel
+      - Create season-specific embed:
+        * Season emoji (🌸 Spring, ☀️ Summer, 🍂 Autumn, ❄️ Winter)
+        * Season color (Light green, Gold, Orange, Sky blue)
+        * Temperature and precipitation
+        * Season description
+      - Send to Discord channel
+      - Log success/failure
+   c. Log total sent count
 4. If no change:
-   - Log "no change needed"
+   - Log "No season change detected"
 ```
 
 #### Season System
 
 ```typescript
-- Manages SUMMER ↔ WINTER transitions
-- Checks season schedule weekly
-- Updates current season in database
+- Backend manages SUMMER/WINTER/SPRING/AUTUMN transitions
+- Bot checks weekly (every Monday) if change occurred in last 24h
+- Backend stores season in database with updatedAt timestamp
+- Bot creates notifications with season-specific data:
+  * Name (localized: Été, Hiver, Printemps, Automne)
+  * Temperature (e.g., 28°C for Summer, -5°C for Winter)
+  * Precipitation percentage
+  * Description text
+- Uses seasonal emojis and Discord embed colors
+- Notifications sent to all configured guilds
 ```
 
 #### Configuration
@@ -544,13 +606,17 @@ Timezone: Europe/Paris
 ```typescript
 Cron Pattern: "0 0 * * 1"  // Every Monday at 00:00:00
 Timezone: Europe/Paris
+Initialization: bot/src/index.ts (clientReady event)
 ```
 
-#### Manual Execution
+#### Backend API Endpoints
 
-```bash
-node backend/src/cron/season-change.cron.ts
-```
+Created to support season notifications:
+
+- **GET /api/seasons/check-change** - Checks if season changed in last 24h, returns season data
+  - Returns: `{ changed: boolean, newSeason: { name, temperature, precipitation, description } }`
+  - Uses season.updatedAt timestamp to detect recent changes
+  - Returns localized season names and data
 
 ---
 
@@ -558,34 +624,76 @@ node backend/src/cron/season-change.cron.ts
 
 ### Running Cron Jobs Manually
 
-All cron jobs support manual execution for testing:
+#### Backend Cron Jobs
+
+Backend cron jobs support manual execution for testing:
 
 ```bash
 # From project root
 node backend/src/cron/hunger-increase.cron.ts
 node backend/src/cron/daily-pm.cron.ts
 node backend/src/cron/daily-pa.cron.ts
-# Note: expedition.cron.ts doesn't support manual execution (5 separate jobs)
-node backend/src/cron/season-change.cron.ts
-# Note: daily-message.cron.ts doesn't support manual execution
+# Note: expedition.cron.ts doesn't support manual execution (multiple jobs)
 ```
 
+#### Bot Cron Jobs
+
+Bot cron jobs are initialized when the bot starts (index.ts:193-205). To test:
+
+```bash
+# Start the bot in development mode
+cd bot
+npm run dev
+
+# Cron jobs will initialize on bot ready and run at scheduled times
+# Check logs for "✅ Cron jobs initialized successfully"
+```
+
+**Note:** Bot cron jobs cannot be run manually outside of the bot process because they require:
+- Discord.js Client instance (for posting messages)
+- Active connection to Discord servers
+- Access to guild channels
+
 ### Disabling Cron Jobs
+
+#### Backend Cron Jobs
 
 Cron jobs are automatically disabled in test environment:
 
 ```typescript
-// In app.ts
+// In backend/src/app.ts
 if (process.env.NODE_ENV !== "test") {
-  const { mainJob, expeditionJob } = setupDailyPaJob();
+  const { mainJob } = setupDailyPaJob();
   mainJob.start();
-  expeditionJob.start();
   setupHungerIncreaseJob();
   setupDailyPmJob();
   setupExpeditionJobs();
-  setupSeasonChangeJob();
-  setupDailyMessageJob();
+  // Note: Daily messages and season changes now in bot
 }
+```
+
+#### Bot Cron Jobs
+
+Bot cron jobs are initialized in the `clientReady` event:
+
+```typescript
+// In bot/src/index.ts
+client.once("clientReady", async () => {
+  // ... other initialization
+
+  // Initialize cron jobs
+  try {
+    const { setupDailyMessagesJob } = await import("./cron/daily-messages.cron.js");
+    const { setupSeasonChangeJob } = await import("./cron/season-change.cron.js");
+
+    setupDailyMessagesJob(client);
+    setupSeasonChangeJob(client);
+
+    logger.info("✅ Cron jobs initialized successfully");
+  } catch (error) {
+    logger.error("❌ Failed to initialize cron jobs:", { error });
+  }
+});
 ```
 
 ### Testing Strategy
@@ -593,7 +701,7 @@ if (process.env.NODE_ENV !== "test") {
 1. **Unit Tests:** Test individual cron logic functions
 2. **Integration Tests:** Test full cron execution with test database
 3. **Manual Testing:** Run cron scripts with development database
-4. **Timing Tests:** Verify 10-second delay between PA main and expedition jobs
+4. **Timing Tests:** Verify morning sequence (returns at 08:00:00, messages at 08:00:05)
 5. **Production Monitoring:** Check logs after midnight and 08:00 for errors
 
 ---
@@ -769,33 +877,45 @@ When adding jobs that depend on other jobs:
 
 ## 🐛 Known Issues & TODOs
 
-### TODO Items
+### Completed Items ✅
 
-1. **Daily Messages Integration:**
-   - Implement Discord webhook/API call
-   - Currently only logs to console
+1. ✅ **Daily Messages Integration (v4.0):**
+   - Moved to bot cron jobs (from backend)
+   - Bot calls backend API for data
+   - Sends formatted embeds to Discord channels
+   - Uses separate `dailyMessageChannelId` configuration
 
-2. **Season Change Notifications:**
-   - Add Discord notification when season changes
-   - Currently only logs to console
+2. ✅ **Season Change Notifications (v4.0):**
+   - Moved to bot cron jobs (from backend)
+   - Bot checks backend API for season changes
+   - Sends to all guilds with notification channels
+   - Season-specific emojis, colors, and descriptions
+
+### Architecture Notes
+
+**Bot Cron Jobs:**
+- Run directly in Discord bot process
+- Use Discord.js for message posting
+- Call backend REST API for data
+- No HTTP server needed in bot
+- Initialized in `clientReady` event
+
+**Deprecated (v3.2):**
+- `discord-notification.service.ts` in backend (removed in v4.0)
+- Backend-based Discord REST API integration (replaced by bot crons)
 
 ### Known Limitations
 
 1. **Race Conditions:**
    - Multiple jobs start at 00:00:00 simultaneously
-   - 10-second delay mitigates PA race condition
    - Hunger job ensures atomicity by combining heal + hunger decrease
-   - May need transaction isolation for other concurrent updates
+   - PA job is now unified (no internal race conditions)
+   - May need transaction isolation for concurrent updates between different jobs
 
-2. **Expedition PA Logic:**
-   - Assumes +2 PA regeneration in expedition job
-   - Should read actual regeneration amount from main job result
-   - Works because expedition job runs 10s after main job
-
-3. **HP Healing Logic:**
-   - HP healing moved from PA job to hunger job for atomicity
-   - This ensures hunger=4 characters get healed before hunger drops to 3
-   - Both jobs run at 00:00:00 but healing is now guaranteed to happen first
+2. **Fixed Issues (Previously Limitations):**
+   - ✅ Expedition PA logic no longer assumes +2 PA (uses actual paTotal from STEP 5)
+   - ✅ No more timing issues between PA regeneration and deduction (same job now)
+   - ✅ HP healing moved from PA job to hunger job for atomicity
 
 ---
 
@@ -809,6 +929,60 @@ When adding jobs that depend on other jobs:
 ---
 
 **Last Updated:** 2025-10-16
-**Version:** 2.2 - Fixed critical bugs:
+**Version:** 4.0 - Bot-Based Discord Notifications Architecture
+
+## 📋 Version History
+
+### v4.0 - Bot-Based Discord Notifications (2025-10-16)
+
+**MAJOR ARCHITECTURE CHANGE:** Moved Discord notifications from backend to bot
+
+**Changes:**
+- ✅ **Moved cron jobs to bot:**
+  - Daily messages now run in `bot/src/cron/daily-messages.cron.ts`
+  - Season change notifications now run in `bot/src/cron/season-change.cron.ts`
+  - Initialized in bot's `clientReady` event handler
+
+- ✅ **New backend API endpoints:**
+  - `GET /api/guilds` - Get all guilds with towns
+  - `GET /api/towns/:id/weather` - Get weather message
+  - `GET /api/towns/:id/actions-recap` - Get activities recap (TODO: implement logs)
+  - `GET /api/towns/:id/stocks-summary` - Get formatted stock list
+  - `GET /api/towns/:id/expeditions-summary` - Get active expeditions summary
+  - `GET /api/seasons/check-change` - Check if season changed in last 24h
+  - `PATCH /api/guilds/:discordId/daily-message-channel` - Update daily message channel
+
+- ✅ **Database changes:**
+  - Added `dailyMessageChannelId` field to Guild model
+  - Separate channels for logs vs daily messages
+
+- ✅ **Bot features:**
+  - Updated `/config-channel-admin` to configure two channel types
+  - Bot fetches data from backend API via fetch()
+  - Bot posts directly to Discord using Discord.js EmbedBuilder
+  - Season-specific emojis, colors, and descriptions
+
+**Benefits:**
+- ✨ Simpler architecture (no HTTP server needed in bot)
+- ✨ No complex inter-service communication
+- ✨ Bot already connected to Discord (reuses existing connection)
+- ✨ Lighter codebase with fewer dependencies
+
+### v3.2 - Discord Integration & Major Refactoring
+
+**v3.2 Changes:**
+- ✅ Implemented Discord REST API integration for notifications (deprecated in v4.0)
+- ✅ Created discord-notification.service.ts for centralized Discord messaging (deprecated in v4.0)
+- ✅ Daily messages sent to Discord as rich embeds
+- ✅ Season change notifications broadcast to all guilds
+
+### v3.1 - PA System Refactoring
+
+**v3.1 Changes:**
 - HP healing moved to hunger job for atomicity
 - agonySince reset moved before agony duration check
+- Unified Daily PA job (removed separate expedition job and timing issues)
+- Removed double PA regeneration bug in expedition logic
+- Moved append directions to PA job for proper sequencing
+- Unified morning expedition update (returns at 08:00, then departs, then messages at 08:00:05)
+- Removed unnecessary continuous monitoring jobs (returns only happen at 08:00)
