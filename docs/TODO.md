@@ -1,8 +1,5 @@
 -------------------------Todo-------------------------
 
-
-
-
 # Objets et inventaires.
 
 intégration d'un système d'objets.
@@ -24,7 +21,6 @@ Dans /character-admin, les admins doivent avoir un nouveau bouton permettant de 
 Un personnage peut tout à fait avoir plusieurs fois le même objet dans son inventaire.
 
 # évolution pêche
-
 
 Pour le pécheur dans le tableau de récompenses à 2PA, le dernier champ est "un grigri", le "grigri" est un objet.
 Lorsque ce dernier est péché, par un des pécheur de la ville, il va dans son inventaire directement et est retiré du tableau de possibilité comme prévu. A la place, il doit être remplacé par "3 minerai, 3 de bois et 3 vivres".
@@ -50,7 +46,20 @@ Une liste de métiers exisants est disponible en base de données, avec un fonct
 
 Voici la liste des couples métiers / capacités de départ:
 
--
+-       -> 'Chasser',
+-       -> 'Cueillir',
+-       -> 'Pêcher',
+-       -> 'Bûcheronner',
+-       -> 'Miner',
+-       -> 'Tisser',
+-       -> 'Forger',
+-       -> 'Travailler le bois',
+-       -> 'Cuisiner',
+-       -> 'Soigner',
+-       -> 'Rechercher',
+-       -> 'Cartographier',
+-       -> 'Auspice',
+-       -> 'Divertir',
 -
 -
 -
@@ -73,50 +82,32 @@ Si c'est le personnalisé qui est choisi alors .....
 
 En réponse sa fiche profil s'affiche alors.
 
-
 # création objet admin + compétence admin
 
 # changer grigri en coquillage
 
+Implémenter les mssages météo
 
+------------------------------TRUC------------------- -------------
 
+# supernova claude update
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+si c'est plus économique pour toi fais le prompt dans une fichier, et
+donne moi un mini prompt pour y accéder.
+En réponse demande à supernova de faire un rapport dans un fichier et demande
+lui d'écrire un résumé <300 tokens dedans
 
 ------------------------------TRUC------------------- -------------
 
 ## CapacitéV2
 
-pécher grigri => mettre après 3/3/3
+logs de la création de personnages
 
-remplacer nourriture en repas ? 
-
-Modifier projets pour que lorsqu'il est terminé, il puisse être recommencé et ce, à l'infini. (potentiellement moins cher à partir de la seconde fois ??)
-
+remplacer nourriture en repas ?
 
 capacité en "+"
 cataplasme (utilisation) bug
 
-Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
 Cataplasme : limite à 3 dans le monde (exped + ville)
 
 Instinct ?
@@ -130,17 +121,12 @@ QUESTION :
 Bouton manger, gestion des erreurs (exemple manger alors que l'on a pas faim)
 
 /expedition:
--> ⏸️ il faut faire le point sur la gestion de la faim et des PA spécifiques en expédition. - À TESTER
-Expéd
-2 PA/case/jour
 -> ⏸️ Nombreux tests de fonctionnalité à faire et de CRON. - PHASE 7
 
 Quand on crée une exped avec plus de ressources qu'il n'y en a en ville → message d'erreur
 Comme dans les Chantiers, ce serait cool si le stock Vivres/Repas apparaissait quand on crée
 Quand on transfère de la nourriture via les expeds, "Ville" apparaît au lieu de "Village (+ emote à changer 🏘️ ) (screen 2)
 Idem après le transfert (screen 3)
-
-donner une direction au formulaire ? voir règles
 
 /profil:
 -> Pour toutes les actions de manger : nouveaux logs utilisants les nouveaux emojis "thorynest a mangé X **resourceType** , il reste YY de \*\*ResourceType dans la ville"
@@ -158,22 +144,6 @@ Tester les interractions d'expéditions avec plusieurs personnages
 
 Lister ce qui peut être fait en ville et en expédition, et ce qui ne peut pas être fait si l'on est pas dans l'une ou l'autre des situations
 
-## Daily messages:
-
-dayli message (weather)
-Prévoir 7 messages types x2
-== 2 array de 7, clone array, rm du clone quand utilisé, prendre random dans l'array
-
-- message quotidien "belle journée" ou "journée pluvieuse" etc
-- pouvoir lui donner un message différent la veille
-  Message quotidien : ajouter stock vivres ?
-  chantier terminés la veille
-  récap des ressources vivres etc
-  annonce du départ de l'expédition (préparée la veille)
-
-SYSTEME
-→ 8h : message du matin, récap de toutes les actions de la veille + Evelyne Déliat + stock (+ retour expéd)
-
 ## Erreur sur la gestion des saisons à vérifier :
 
 gestion des saisons par VILLE et non pas globale !!!!!
@@ -185,8 +155,6 @@ gestion des saisons par VILLE et non pas globale !!!!!
 Gestion des pénuries ?? Alerte etc ?
 
 Système de réapprovisionnement automatique des vivres via des chantiers ??
-
-logs de la création de personnages
 
 lors lors de l'ajout / retrait de ressources dans les stocks par les admins ?
 

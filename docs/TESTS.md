@@ -43,52 +43,49 @@ Ce bouton agit comme un togglable, si au moins la moitié des membres d'une exp�
 4. Est-ce que les emoji's sont harmonisés ? le fichier global ?
 5. Les messages de log devraient tous apparaitrent dans le channel programmé par la commande /config-channel-admin. s'il n'y a pas de channel programmé, ignorer les messages de log.
 
-
-
 un joueur ne peut avoir qu'un seul personnage actif,
 Lors de la création désactiver les anciens et activer le nouveau
- ✅ Corrections appliquées avec succès !
+✅ Corrections appliquées avec succès !
 
-  📋 Résumé des modifications :
+📋 Résumé des modifications :
 
-  1. createCharacter() - backend/src/services/character.service.ts:117
-  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
-  - ✅ Suppression du filtre isDead: false
-  - ✅ Commentaire ajouté pour documenter la règle métier
+1. createCharacter() - backend/src/services/character.service.ts:117
 
-  2. upsertCharacter() - backend/src/controllers/characters.ts:88
-  - ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
-  - ✅ Logique corrigée dans les deux branches (existingCharacter ou non)
-  - ✅ Commentaire ajouté pour documenter la règle métier
+- ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+- ✅ Suppression du filtre isDead: false
+- ✅ Commentaire ajouté pour documenter la règle métier
 
-  🔒 Règle métier garantie :
+2. upsertCharacter() - backend/src/controllers/characters.ts:88
 
-  Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
-  - À la création d'un personnage → tous les autres sont désactivés
-  - Un personnage mort reste actif jusqu'à ce que canReroll: true ET qu'un nouveau personnage soit créé
-  - Les commandes admin peuvent outrepasser cette règle (pour debug)
--> A tester
+- ✅ Désactive maintenant TOUS les personnages actifs (morts ET vivants)
+- ✅ Logique corrigée dans les deux branches (existingCharacter ou non)
+- ✅ Commentaire ajouté pour documenter la règle métier
 
+🔒 Règle métier garantie :
 
+Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
 
-  1. ✅ Système de faim - Déjà fonctionnel
-  2. ✅ Heal bloqué si agonie affamé - Implémenté
-  3. ✅ Mort après 2 jours d'agonie - Implémenté avec tracking agonySince
-  4. ✅ Agonie bloque PA - Validation ajoutée
-  5. ✅ Déprime limite 1PA/jour - Système complet avec compteur quotidien
+- À la création d'un personnage → tous les autres sont désactivés
+- Un personnage mort reste actif jusqu'à ce que canReroll: true ET qu'un nouveau personnage soit créé
+- Les commandes admin peuvent outrepasser cette règle (pour debug)
+  -> A tester
 
-  Le bot est maintenant conforme à toutes les spécifications ! 🎉
+1. ✅ Système de faim - Déjà fonctionnel
+2. ✅ Heal bloqué si agonie affamé - Implémenté
+3. ✅ Mort après 2 jours d'agonie - Implémenté avec tracking agonySince
+4. ✅ Agonie bloque PA - Validation ajoutée
+5. ✅ Déprime limite 1PA/jour - Système complet avec compteur quotidien
 
-  
+Le bot est maintenant conforme à toutes les spécifications ! 🎉
+
 Changement du message de PA:
-  Avant : Un panneau séparé avec "⚠️ ATTENTION" et un message pour PA >= 3.
+Avant : Un panneau séparé avec "⚠️ ATTENTION" et un message pour PA >= 3.
 Après : Affichage inline comme "3/4 ⚠️" ou "4/4 ⚠️" si PA >= 3, sinon juste "3/4" ou "4/4".
-Constante Utilisée : STATUS.WARNING de 
+Constante Utilisée : STATUS.WARNING de
 emojis.ts
- (⚠️).
+(⚠️).
 
-Dans profil s'il y a plus de 4 capacités, les boutons ne s'affichent pas 
-
+Dans profil s'il y a plus de 4 capacités, les boutons ne s'affichent pas
 
 1 - Point sur le système de faim:
 
@@ -115,71 +112,119 @@ le changement doit aussi être appliqué dans le seed en réponse.
 Ajouter une nouvelle capacité
 Ajouter une nouvelle ressource
 
+---
 
-
--------------------------------
 Nous allons corriger les capacités
 
 Capacité
 Récolteurs
- - 🏹 Chasser (2 PA)
-texte descriptif : Chasser du gibier pour obtenir des vivres. Plus efficace en été.
-Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. Un tableau différent est utilisé si la saion est hiver. (ne fonctionne pas correctement à ce jour)
- - 🌿 Cueillir (1 PA)
-texte descriptif : Cueillir des plantes comestibles pour obtenir des vivres. Plus efficace en été.
-Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. Un tableau différent est utilisé si la saion est hiver. (ne fonctionne pas correctement à ce jour)
- - ⛏️  Miner (2 PA)
-texte descriptif : Récolter du minerai
-Concrètement : donne un nombre aléatoire de minerai comme défini, rappelle moi ce qui est codé actuellement.
- - 🎣 Pêcher (1 PA, ou 2PA)
-texte descriptif : Pêcher du poisson pour obtenir des Vivres. Peut utiliser 2 PA pour un lancer chanceux.
-Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. L'utilisateur a le choix d'utiliser 1 PA ou 2 PA pour cette capacité. Un tableau différent est utilisé s'il en utilise 2 d'un coup. (ne fonctionne pas correctement à ce jour, impossible de choisir entre 1 et 2 PA)
+
+- 🏹 Chasser (2 PA)
+  texte descriptif : Chasser du gibier pour obtenir des vivres. Plus efficace en été.
+  Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. Un tableau différent est utilisé si la saion est hiver. (ne fonctionne pas correctement à ce jour)
+- 🌿 Cueillir (1 PA)
+  texte descriptif : Cueillir des plantes comestibles pour obtenir des vivres. Plus efficace en été.
+  Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. Un tableau différent est utilisé si la saion est hiver. (ne fonctionne pas correctement à ce jour)
+- ⛏️ Miner (2 PA)
+  texte descriptif : Récolter du minerai
+  Concrètement : donne un nombre aléatoire de minerai comme défini, rappelle moi ce qui est codé actuellement.
+- 🎣 Pêcher (1 PA, ou 2PA)
+  texte descriptif : Pêcher du poisson pour obtenir des Vivres. Peut utiliser 2 PA pour un lancer chanceux.
+  Concrètement : prend un élément random d'un tableau et donne ce nombre de vivres. L'utilisateur a le choix d'utiliser 1 PA ou 2 PA pour cette capacité. Un tableau différent est utilisé s'il en utilise 2 d'un coup. (ne fonctionne pas correctement à ce jour, impossible de choisir entre 1 et 2 PA)
 
 Artisans
- - 🧵 Tisser (1 PA)
-texte descriptif : Tisser du tissu
-Concrètement : Voir ARTISANAT
- - 🔨 Forger (1 PA)
-texte descriptif : Forger du métal
-Concrètement : Voir ARTISANAT
- - 🪚  Travailler le bois (1 PA)
-texte descriptif : Transformer du bois
-Concrètement : Voir ARTISANAT
- - 🫕  Cuisiner (1 PA)
-texte descriptif : Multiplier des Vivres en Repas
-Concrètement : transforme un nombre de vivres en nourriture.(quel serait l'impact de changer le terme nourriture en repas ?). Donne moi le fonctionnement de cette capacité comme elle est codée.
+
+- 🧵 Tisser (1 PA)
+  texte descriptif : Tisser du tissu
+  Concrètement : Voir ARTISANAT
+- 🔨 Forger (1 PA)
+  texte descriptif : Forger du métal
+  Concrètement : Voir ARTISANAT
+- 🪚 Travailler le bois (1 PA)
+  texte descriptif : Transformer du bois
+  Concrètement : Voir ARTISANAT
+- 🫕 Cuisiner (1 PA)
+  texte descriptif : Multiplier des Vivres en Repas
+  Concrètement : transforme un nombre de vivres en nourriture.(quel serait l'impact de changer le terme nourriture en repas ?). Donne moi le fonctionnement de cette capacité comme elle est codée.
 
 Scientifiques
- - 🗺️  Cartographier (1 PA, ou 2PA)
-texte descriptif : Analyser les alentours pour révéler de nouvelles cases sur la carte
-Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
- - 🔎  Rechercher (1 PA, ou 2PA)
-texte descriptif : Analyser un objet/lieu/créature pour obtenir des informations dessus
-Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
- - 🌦️  Auspice (1 PA, ou 2PA)
-texte descriptif : Analyser les cieux pour anticiper la météo des prochains jours
-Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
 
- - ⚕️  Soigner (1 PA)
-texte descriptif : Rendre 1 PV à 1 personne OU utiliser 2 PA pour créer 1 Cataplasme
-Concrètement : Pour 1 PA, le character doit pouvoir choisir une personne autour de lui pour la soigner. Pour 2 PA, le character doit pouvoir créer un cataplasme. Il doit choisir ce qu'il veut faire. devons nous créer une seconde capacité pour créer le cataplasme ?
+- 🗺️ Cartographier (1 PA, ou 2PA)
+  texte descriptif : Analyser les alentours pour révéler de nouvelles cases sur la carte
+  Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
+- 🔎 Rechercher (1 PA, ou 2PA)
+  texte descriptif : Analyser un objet/lieu/créature pour obtenir des informations dessus
+  Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
+- 🌦️ Auspice (1 PA, ou 2PA)
+  texte descriptif : Analyser les cieux pour anticiper la météo des prochains jours
+  Concrètement : l'utilisateur doit pouvoir choisir s'il utilise 1 ou 2 pa pour cette action (s'il a au moins 2 PA en stock). Le message public (channel configuré) doit tag les admins du serveur. une sera faite par les admins en réponse.
 
+- ⚕️ Soigner (1 PA)
+  texte descriptif : Rendre 1 PV à 1 personne OU utiliser 2 PA pour créer 1 Cataplasme
+  Concrètement : Pour 1 PA, le character doit pouvoir choisir une personne autour de lui pour la soigner. Pour 2 PA, le character doit pouvoir créer un cataplasme. Il doit choisir ce qu'il veut faire. devons nous créer une seconde capacité pour créer le cataplasme ?
 
 SPECIAL
+
 - 🎭 Divertir (1 PA)
-Divertir le village pour faire regagner des PM. Tous les 5 usages, tout le monde autour gagne 1 PM.
-Concrètement : un message public doit être fait pour dire que le personnage prépare une animation + nombre de PA mis dans l'action. Lorsque le personnage a mis 5PA au total dans l'action, le message public doit être modifié pour dire que l'animation est terminée et que tout le monde a gagné 1 PM.
-
-
+  Divertir le village pour faire regagner des PM. Tous les 5 usages, tout le monde autour gagne 1 PM.
+  Concrètement : un message public doit être fait pour dire que le personnage prépare une animation + nombre de PA mis dans l'action. Lorsque le personnage a mis 5PA au total dans l'action, le message public doit être modifié pour dire que l'animation est terminée et que tout le monde a gagné 1 PM.
 
 ARTISANAT
- - Pour l'artisanat, nous allons créer le concept de Projets.
- Chaque capacités d'artisanat (sauf cuisiner qui fonctionne à sa manière) doit avoir sa liste de projets.
- Les projets sont similaire aux chantier: ils ont un nom, un nombre de PA requis, ils peuvent avoir une ou plusieurs ressources nécessaires. En revanche un projet est lié à une resource.
- exemple, je suis artisan, je souhaite faire une planche. Je damande aux admins.
- Ils valident donc avec la commande  /new-element-admin, il s'assure que la ressource planche existe ou alors il la créé. Ensuite, il va créer un projet avec un nom, un nombre de PA requis, les ressources nécessaires et la ressource de sortie, ainsi que sa quantité.
- Ce projet est attribué à un ou plusieurs corps de capacités Artisant. (tisser, forger, travailler le bois). Dans notre exemple travailler le bois.
- Lorsqu'un personnage avec la capacité en question, ici travailler le bois, utilise sa capacité, il doit voir la liste des projets disponibles.(non terminés seulement), il doit pouvoir choisir l'un d'entre eux et y attribuer ressources et PA.
- Lorsqu'un projet est terminé, il doit être marqué comme terminé et la ressource de sortie doit être ajoutée au stock de la ville.
 
+- Pour l'artisanat, nous allons créer le concept de Projets.
+  Chaque capacités d'artisanat (sauf cuisiner qui fonctionne à sa manière) doit avoir sa liste de projets.
+  Les projets sont similaire aux chantier: ils ont un nom, un nombre de PA requis, ils peuvent avoir une ou plusieurs ressources nécessaires. En revanche un projet est lié à une resource.
+  exemple, je suis artisan, je souhaite faire une planche. Je damande aux admins.
+  Ils valident donc avec la commande /new-element-admin, il s'assure que la ressource planche existe ou alors il la créé. Ensuite, il va créer un projet avec un nom, un nombre de PA requis, les ressources nécessaires et la ressource de sortie, ainsi que sa quantité.
+  Ce projet est attribué à un ou plusieurs corps de capacités Artisant. (tisser, forger, travailler le bois). Dans notre exemple travailler le bois.
+  Lorsqu'un personnage avec la capacité en question, ici travailler le bois, utilise sa capacité, il doit voir la liste des projets disponibles.(non terminés seulement), il doit pouvoir choisir l'un d'entre eux et y attribuer ressources et PA.
+  Lorsqu'un projet est terminé, il doit être marqué comme terminé et la ressource de sortie doit être ajoutée au stock de la ville.
 
+pécher grigri => mettre après 3/3/3
+
+# Projet et blueprint
+
+Le système de projet doit légèrement évoluer.
+Un projet devient un blueprint une fois qu'il a été terminé une première fois.
+la fabrication de la version blueprint d'un projet a des couts différents (généralement inférieur), du cout du projet d'origine mais demande les mêmes matériaux.
+Lors de la création d'un projet, il faut désormais lui définir ses couts en PA et Ressources pour sa première construction mais également pour les suivante une fois en mode blueprint.
+Les règles de construction des blueprints sont les mêmes que les projets, ils partagent également leurs interfaces.
+Lorsqu'une blueprint est terminée, elle peut être recommencée autant de fois que l'on le souhaite.
+
+# évolutions des expéditions:
+
+/expedition:
+-> Confirme moi que la faim descend bien également en expédition (DEPARTED), et que l'on peut bien manger depuis sa fiche /profil en consommant les ressources vivres et nourriture disponibles dans l'expedition et non pas la ville.
+
+-> Chaque jour, le cron doit donner 2 PA aux characters. En expédition, il faut retirer 2 PA par jours, chaque jours. Une expédition de 3 jours doit avoir couté 6 PA au character au final (2 par jour).
+-> exemple : Lundi je lance une expédition de 3 jours et j'ai 0PA a 23h30, a minuit lorsque l'expédition est locked, on doit me donner mes PA du nouveau jour, puis retirer ces 2 PA pour le premier jour d'expédition. Le mardi, premier jour d'expédition, j'ai donc naturellement 0 PA.
+Le mercredi deuxière jour se passe de la même manière, le jeudi troisième jour également. le vendredi, jour de retour de l'expédition, A minuit, je récupère mes 2PA, mais cette fois ils ne me sont pas consommé (l'expédition est sur le retour). Lexpédition arrive à 8h du matin, c'est à partir de ce moment là et donc du retour d'expédition que je peux enfin réutiliser mes PA pour mes capacités, des chantiers etc en ville de manière classique.
+-> Si un character ne peut pas dépenser ses deux PA pour continuer l'expédition (agonie, déprime, dépression, affamé, mort, etc) A ce moment là, il est automatiquement retiré de l'expédition, ses PA sont ramenés à 0 et il est renvoyé en ville. D'autres malus seront appliqués mais ce sera géré manuellement par les administrateurs. (il faudra un message type "**character** est rentré en catastrophe ! + tag admin").
+-> Si l'expédition a votée le retour d'urgence, alors à minuit le cron ne retire pas les PA d'expédition (comme le vendredi dans l'exemple ci-dessus), l'expédition est sur le retour et cette dernière rentre à 8h.
+
+->Quand on crée une expedition avec plus de ressources qu'il n'y en a en ville, il doit y avoir un message d'erreur explicite.
+
+->Lors de la création d'une expédition, l'utilisateur doit voir apparaitre également un menu déroulant pour choisir la direction. les directions possibles sont [Nord,Nord-Est,Est,Sud-Est,Sud,Sud-Ouest,Ouest,Nord-Ouest]. Cette valeur est définitive pour l'expédition et ne peut pas être changée une fois le formulaire validé.
+->Si a minuit, aucune destination n'est choisie, remplir la destivation avec Unknown. Les admininstrateurs s'occuperons de décider ou va l'expédition.
+-> Une fois l'expédition DEPARTED, un membre de l'expéition doit choisir la prochaine direction avec le même menu déroulant. Une fois que quelqu'un l'a choisie, le menu ne doit plus être disponible pour les autres. La direction choisie doit être affichée dans la fiche de l'expédition.
+La direction choisie est celle de la destination du lendemain.
+Donc dans une expédition créer le lundi pour une durée de 3 jours, le Lundi on définit la direction du mardi, l'expédition passe en DEPARTED le mardi, le mardi on définit la direction du mercredi, le mercredi la direction du jeudi. En revanche puisque l'expédition rentre le vendredi, le jeudi on ne défini pas de direction.
+->Idéalement, le chemin de l'expédition (le suite de direction) devrait être stockée en base dans un array.
+
+# Daily messages:
+
+Tout les jours à 8h du matin, un message doit être envoyé dans le channel configuré (config-channel)
+Le message doit contenir :
+
+- La meteo (voir ci-dessous),
+- un récapitulatif de toutes les actions de la veille (projets terminés, chantiers terminés, ressources trouvées etc)
+- un récapitulatif des stocks
+- Le bilan du des expéditions qui partent (ressources prises, durée etc), retour(ressources rammenées qui sont ajoutrées au stock), retour en urgence d'une expédition, retour en catastrophe d'un membre d'une expédition etc.
+
+Pour la Météo :
+Nous allons avoir 4 array de plusieurs messages chacun.
+Un array été, un array hiver, un array pour le premier jour de l'été, un array pour le premier jour de l'hiver.
+Chaque jour, le cron va prendre un message aléatoire dans l'array correspondant à la saison et le jour de la semaine. Pour les array hiver et été, un même message ne peut pas apparaitre deux fois dans la même saison (tant que la saison n'a pas changé donc).
+
+Il faut une commande admin permettant de proposer un message "Météo" pour le lendemain.
+Si un message est paramétré par ce système, c'est ce Message qui sera pris pour la partie Météo. Une fois le message envoyé, nous reprennons le système classique les jours suivants.

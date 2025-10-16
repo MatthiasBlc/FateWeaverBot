@@ -357,10 +357,9 @@ actuellement il y a une erreur car dans ce cas on me propose la modale de reroll
 2. Dans votre cas précis, quand vous faites /profil avec un
    personnage mort (isDead=true, canReroll=false, isActive=true) :
 
-
-    - Est-ce que vous voyez le profil mort (lignes 70-115) ?
-    - Ou est-ce que la modale s'affiche directement ?
-    -> la modale d'affiche directement
+   - Est-ce que vous voyez le profil mort (lignes 70-115) ?
+   - Ou est-ce que la modale s'affiche directement ?
+     -> la modale d'affiche directement
 
 3. La modale qui s'affiche, c'est bien celle déclenchée par la
    ligne 136 (createRerollModal()) ?
@@ -392,3 +391,21 @@ Mort 💀
 retirer la photo
 retirer le nom
 retirer les rôles (métier?)
+
+Soin : Tu es en agonie (pv = 1) et ta faim = 0, on si l'on te soigne.....???'
+
+## Daily messages:
+
+dayli message (weather)
+Prévoir 7 messages types x2
+== 2 array de 7, clone array, rm du clone quand utilisé, prendre random dans l'array
+
+- message quotidien "belle journée" ou "journée pluvieuse" etc
+- pouvoir lui donner un message différent la veille
+  Message quotidien : ajouter stock vivres ?
+  chantier terminés la veille
+  récap des ressources vivres etc
+  annonce du départ de l'expédition (préparée la veille)
+
+SYSTEME
+→ 8h : message du matin, récap de toutes les actions de la veille + Evelyne Déliat + stock (+ retour expéd)
