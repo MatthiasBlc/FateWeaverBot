@@ -318,7 +318,7 @@ Objet -> Compétence
 Arc -> Combat distance
 Graines ->Cultiver
 Lanterne ->Vision nocturne
-Matériel de plongée ->Plongée
+Matériel de plongée ->Plonger
 Corde ->Noeuds
 Marteau ->Réparer
 Harnais ->Porter
@@ -361,14 +361,19 @@ Couteau de chasse -> Chasser+
 Serpe -> Cueillir+
 Pioche -> Miner+
 Nasse -> Pêcher+
+
 Quenouille -> Tisser+
 Enclume -> Forger+
 Mètre -> Menuiser+
+
 Sel -> Cuisiner+
-Compas -> Cartographier+
+
 Bandages -> Soigner+
+
+Compas -> Cartographier+
 Loupe -> Rechercher+
 Anémomètre -> Auspice+
+
 instrument -> Divertir+
 
 ## Objet sac de ressources

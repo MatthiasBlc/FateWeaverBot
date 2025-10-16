@@ -240,7 +240,7 @@ async function main() {
           locationType: "CITY",
           locationId: city.id,
           resourceTypeId: vivresType.id,
-          quantity: 100, // Stock initial de vivres
+          quantity: 50, // Stock initial de vivres
           townId: city.id,
         },
       });
@@ -253,7 +253,7 @@ async function main() {
   // Créer les types d'objets
   const existingObjectTypes = await prisma.objectType.findMany();
   if (existingObjectTypes.length === 0) {
-    console.log("🎒 Création des types d'objets...");
+    console.log("🎒 Création d'objets...");
 
     // Récupérer les capacités pour les relations
     const capabilities = await prisma.capability.findMany();
@@ -264,23 +264,23 @@ async function main() {
     const simpleObjects = [
       { name: "Coquillage", description: "Coquillage trouvé en pêchant" },
       {
-        name: "Pierre philosophale",
-        description: "Pierre mystérieuse aux propriétés inconnues",
+        name: "Appeau",
+        description: "Parfait pour attirer les animaux",
       },
       {
-        name: "Carte au trésor",
-        description: "Carte indiquant l'emplacement d'un trésor",
+        name: "Herbier",
+        description: "----",
       },
-      { name: "Boussole", description: "Instrument de navigation" },
-      { name: "Longue-vue", description: "Pour observer au loin" },
+      { name: "Boussole", description: "----" },
+      { name: "Canari", description: "----" },
       {
-        name: "Journal intime",
-        description: "Carnet personnel d'un explorateur",
+        name: "Filet",
+        description: "----",
       },
-      { name: "Amulette", description: "Bijou mystique" },
-      { name: "Miroir", description: "Miroir poli" },
-      { name: "Sablier", description: "Pour mesurer le temps" },
-      { name: "Dés", description: "Pour les jeux de hasard" },
+      { name: "Somnifère", description: "----" },
+      { name: "Bougie", description: "----" },
+      { name: "Grenouille", description: "----" },
+      { name: "Couronne de fleurs", description: "----" },
     ];
 
     for (const obj of simpleObjects) {
@@ -292,54 +292,66 @@ async function main() {
 
     // 2. Objets avec bonus de compétence (ObjectSkillBonus)
     const skillBonusObjects = [
-      { name: "Arc", description: "Bonus à la chasse", skills: ["HUNT"] },
-      { name: "Filet", description: "Bonus à la pêche", skills: ["FISH"] },
       {
-        name: "Hache",
-        description: "Bonus au bûcheronnage",
-        skills: ["CHOPPING"],
-      },
-      { name: "Pioche", description: "Bonus au minage", skills: ["MINING"] },
-      { name: "Marteau", description: "Bonus à la forge", skills: ["FORGING"] },
-      {
-        name: "Métier à tisser",
-        description: "Bonus au tissage",
-        skills: ["WEAVING"],
+        name: "Arc",
+        description: "----",
+        skills: ["Combat distance"],
       },
       {
-        name: "Rabot",
-        description: "Bonus au travail du bois",
-        skills: ["WOODWORKING"],
+        name: "Graines",
+        description: "----",
+        skills: ["Cultiver"],
+      },
+      {
+        name: "Lanterne",
+        description: "----",
+        skills: ["Vision nocturne"],
+      },
+      {
+        name: "Matériel de plongée",
+        description: "----",
+        skills: ["Plonger"],
+      },
+      { name: "Corde", description: "----", skills: ["Noeuds"] },
+      {
+        name: "Marteau",
+        description: "----",
+        skills: ["Réparer"],
+      },
+      {
+        name: "Harnais",
+        description: "----",
+        skills: ["Porter"],
       },
       {
         name: "Marmite",
-        description: "Bonus à la cuisine",
-        skills: ["COOKING"],
+        description: "----",
+        skills: ["Réconforter"],
       },
       {
-        name: "Trousse de soin",
-        description: "Bonus aux soins",
-        skills: ["HEALING"],
+        name: "Bottes",
+        description: "----",
+        skills: ["Déplacement rapide"],
       },
       {
-        name: "Loupe",
-        description: "Bonus à la recherche",
-        skills: ["RESEARCHING"],
+        name: "Fioles",
+        description: "----",
+        skills: ["Herboristerie"],
       },
       {
-        name: "Instruments de mesure",
-        description: "Bonus à la cartographie",
-        skills: ["CARTOGRAPHING"],
+        name: "Grimoire vierge",
+        description: "----",
+        skills: ["Assommer"],
       },
       {
-        name: "Luth",
-        description: "Bonus au divertissement",
-        skills: ["ENTERTAIN"],
+        name: "Longue-vue",
+        description: "----",
+        skills: ["Vision lointaine"],
       },
       {
-        name: "Couteau suisse",
-        description: "Multi-bonus artisanat",
-        skills: ["FORGING", "WOODWORKING", "COOKING"],
+        name: "Maquillage",
+        description: "----",
+        skills: ["Camouflage"],
       },
     ];
 
@@ -370,24 +382,50 @@ async function main() {
     // 3. Objets avec bonus de capacité (ObjectCapacityBonus)
     const capacityBonusObjects = [
       {
-        name: "Fer à cheval",
-        description: "Porte-bonheur : relance favorable une fois par jour",
+        name: "Couteau de chasse",
+        description: "----",
         bonuses: [
           { capabilityTag: "HUNT", bonusType: CapacityBonusType.LUCKY_ROLL },
-          { capabilityTag: "FISH", bonusType: CapacityBonusType.LUCKY_ROLL },
+        ],
+      },
+      {
+        name: "Serpe",
+        description: "----",
+        bonuses: [
           { capabilityTag: "GATHER", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
-        name: "Plantes médicinales",
-        description: "Soigne 1 PV supplémentaire",
+        name: "Pioche",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "MINING", bonusType: CapacityBonusType.LUCKY_ROLL },
+        ],
+      },
+      {
+        name: "Nasse",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "FISH", bonusType: CapacityBonusType.LUCKY_ROLL },
+        ],
+      },
+      {
+        name: "Sel",
+        description: "----",
+        bonuses: [
+          { capabilityTag: "COOKING", bonusType: CapacityBonusType.LUCKY_ROLL },
+        ],
+      },
+      {
+        name: "Bandages",
+        description: "----",
         bonuses: [
           { capabilityTag: "HEALING", bonusType: CapacityBonusType.HEAL_EXTRA },
         ],
       },
       {
-        name: "Masque de théâtre",
-        description: "Burst de divertissement : tous les 3 usages au lieu de 5",
+        name: "instrument",
+        description: "----",
         bonuses: [
           {
             capabilityTag: "ENTERTAIN",
@@ -396,17 +434,33 @@ async function main() {
         ],
       },
       {
-        name: "Talisman de chance",
-        description: "Porte-bonheur pour toutes les récoltes",
+        name: "Compas",
+        description: "----",
         bonuses: [
-          { capabilityTag: "HUNT", bonusType: CapacityBonusType.LUCKY_ROLL },
-          { capabilityTag: "FISH", bonusType: CapacityBonusType.LUCKY_ROLL },
-          { capabilityTag: "GATHER", bonusType: CapacityBonusType.LUCKY_ROLL },
           {
-            capabilityTag: "CHOPPING",
-            bonusType: CapacityBonusType.LUCKY_ROLL,
+            capabilityTag: "CARTOGRAPHING",
+            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
           },
-          { capabilityTag: "MINING", bonusType: CapacityBonusType.LUCKY_ROLL },
+        ],
+      },
+      {
+        name: "Loupe",
+        description: "----",
+        bonuses: [
+          {
+            capabilityTag: "RESEARCHING",
+            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
+          },
+        ],
+      },
+      {
+        name: "Anémomètre",
+        description: "----",
+        bonuses: [
+          {
+            capabilityTag: "AUGURING",
+            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
+          },
         ],
       },
     ];
@@ -443,40 +497,28 @@ async function main() {
 
     const resourceBagObjects = [
       {
-        name: "Sac de bois",
-        description: "Se transforme en 10 bois",
+        name: "planches",
+        description: "Se transforme en 20 bois",
         resource: "Bois",
-        quantity: 10,
+        quantity: 20,
       },
       {
-        name: "Sac de minerai",
+        name: "ferraille",
         description: "Se transforme en 10 minerai",
         resource: "Minerai",
         quantity: 10,
       },
       {
-        name: "Sac de vivres",
-        description: "Se transforme en 20 vivres",
+        name: "Jambon",
+        description: "Se transforme en 10 vivres",
         resource: "Vivres",
-        quantity: 20,
-      },
-      {
-        name: "Sac de métal",
-        description: "Se transforme en 5 métal",
-        resource: "Métal",
-        quantity: 5,
+        quantity: 10,
       },
       {
         name: "Sac de tissu",
-        description: "Se transforme en 5 tissu",
+        description: "Se transforme en 10 tissu",
         resource: "Tissu",
-        quantity: 5,
-      },
-      {
-        name: "Sac de planches",
-        description: "Se transforme en 5 planches",
-        resource: "Planches",
-        quantity: 5,
+        quantity: 10,
       },
     ];
 
@@ -503,44 +545,12 @@ async function main() {
       console.log(`✅ Objet sac de ressource créé : ${obj.name}`);
     }
 
-    // 5. Objets spéciaux admin
-    const adminObjects = [
-      {
-        name: "Objet admin spécial 1",
-        description: "Effet interprété par admin",
-      },
-      {
-        name: "Objet admin spécial 2",
-        description: "Effet interprété par admin",
-      },
-      {
-        name: "Objet admin spécial 3",
-        description: "Effet interprété par admin",
-      },
-      {
-        name: "Objet admin spécial 4",
-        description: "Effet interprété par admin",
-      },
-      {
-        name: "Objet admin spécial 5",
-        description: "Effet interprété par admin",
-      },
-    ];
-
-    for (const obj of adminObjects) {
-      await prisma.objectType.create({
-        data: obj,
-      });
-      console.log(`✅ Objet admin créé : ${obj.name}`);
-    }
-
     console.log(
       `✅ Total: ${
         simpleObjects.length +
         skillBonusObjects.length +
         capacityBonusObjects.length +
-        resourceBagObjects.length +
-        adminObjects.length
+        resourceBagObjects.length
       } objets créés`
     );
   } else {
@@ -556,22 +566,44 @@ async function main() {
 
     // Table PA 1
     const lootTablePA1 = [
-      { paTable: 1, resourceName: "Vivres", quantity: 4, orderIndex: 1 },
-      { paTable: 1, resourceName: "Vivres", quantity: 5, orderIndex: 2 },
-      { paTable: 1, resourceName: "Vivres", quantity: 6, orderIndex: 3 },
-      { paTable: 1, resourceName: "Vivres", quantity: 7, orderIndex: 4 },
-      { paTable: 1, resourceName: "Vivres", quantity: 8, orderIndex: 5 },
-      { paTable: 1, resourceName: "Vivres", quantity: 9, orderIndex: 6 },
+      { paTable: 1, resourceName: "Vivres", quantity: 0, orderIndex: 1 },
+      { paTable: 1, resourceName: "Vivres", quantity: 1, orderIndex: 2 },
+      { paTable: 1, resourceName: "Vivres", quantity: 1, orderIndex: 3 },
+      { paTable: 1, resourceName: "Vivres", quantity: 1, orderIndex: 4 },
+      { paTable: 1, resourceName: "Vivres", quantity: 1, orderIndex: 5 },
+      { paTable: 1, resourceName: "bois", quantity: 2, orderIndex: 6 },
+      { paTable: 1, resourceName: "bois", quantity: 2, orderIndex: 7 },
+      { paTable: 1, resourceName: "minerai", quantity: 2, orderIndex: 8 },
+      { paTable: 1, resourceName: "minerai", quantity: 2, orderIndex: 9 },
+      { paTable: 1, resourceName: "Vivres", quantity: 2, orderIndex: 10 },
+      { paTable: 1, resourceName: "Vivres", quantity: 2, orderIndex: 11 },
+      { paTable: 1, resourceName: "Vivres", quantity: 2, orderIndex: 12 },
+      { paTable: 1, resourceName: "Vivres", quantity: 3, orderIndex: 13 },
+      { paTable: 1, resourceName: "Vivres", quantity: 3, orderIndex: 14 },
+      { paTable: 1, resourceName: "Vivres", quantity: 3, orderIndex: 15 },
+      { paTable: 1, resourceName: "Vivres", quantity: 4, orderIndex: 16 },
+      { paTable: 1, resourceName: "Vivres", quantity: 4, orderIndex: 17 },
     ];
 
     // Table PA 2 (avec coquillage)
     const lootTablePA2 = [
-      { paTable: 2, resourceName: "Vivres", quantity: 6, orderIndex: 1 },
-      { paTable: 2, resourceName: "Vivres", quantity: 8, orderIndex: 2 },
-      { paTable: 2, resourceName: "Vivres", quantity: 10, orderIndex: 3 },
-      { paTable: 2, resourceName: "Vivres", quantity: 12, orderIndex: 4 },
-      { paTable: 2, resourceName: "Vivres", quantity: 14, orderIndex: 5 },
-      { paTable: 2, resourceName: "Coquillage", quantity: 1, orderIndex: 6 },
+      { paTable: 2, resourceName: "Vivres", quantity: 1, orderIndex: 1 },
+      { paTable: 2, resourceName: "Vivres", quantity: 2, orderIndex: 2 },
+      { paTable: 2, resourceName: "Vivres", quantity: 2, orderIndex: 3 },
+      { paTable: 2, resourceName: "Vivres", quantity: 2, orderIndex: 4 },
+      { paTable: 2, resourceName: "Vivres", quantity: 2, orderIndex: 5 },
+      { paTable: 2, resourceName: "bois", quantity: 4, orderIndex: 6 },
+      { paTable: 2, resourceName: "minerai", quantity: 4, orderIndex: 7 },
+      { paTable: 2, resourceName: "Vivres", quantity: 3, orderIndex: 8 },
+      { paTable: 2, resourceName: "Vivres", quantity: 3, orderIndex: 9 },
+      { paTable: 2, resourceName: "Vivres", quantity: 3, orderIndex: 10 },
+      { paTable: 2, resourceName: "Vivres", quantity: 3, orderIndex: 11 },
+      { paTable: 2, resourceName: "bois", quantity: 6, orderIndex: 12 },
+      { paTable: 2, resourceName: "minerai", quantity: 5, orderIndex: 13 },
+      { paTable: 2, resourceName: "Vivres", quantity: 5, orderIndex: 14 },
+      { paTable: 2, resourceName: "Vivres", quantity: 5, orderIndex: 15 },
+      { paTable: 2, resourceName: "Vivres", quantity: 10, orderIndex: 16 },
+      { paTable: 2, resourceName: "Coquillage", quantity: 1, orderIndex: 17 },
     ];
 
     for (const entry of [...lootTablePA1, ...lootTablePA2]) {
