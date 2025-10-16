@@ -418,12 +418,12 @@ export const setExpeditionDirection = async (
       return;
     }
 
-    const expedition = new ExpeditionService();
+    const expedition = expeditionService;
     await expedition.setNextDirection(id, direction, characterId);
 
     res.status(200).json({ message: "Direction set successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error setting expedition direction:", error);
-    res.status(500).json({ error: error.message || "Internal server error" });
+    res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
   }
 };

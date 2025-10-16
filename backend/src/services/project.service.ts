@@ -118,10 +118,7 @@ export const ProjectService = {
       const blueprint = await tx.project.findUnique({
         where: { id: blueprintId },
         include: {
-          outputResourceType: true,
-          craftTypes: {
-            include: { craftType: true },
-          },
+          craftTypes: true,
           blueprintResourceCosts: {
             include: { resourceType: true },
           },
@@ -159,7 +156,7 @@ export const ProjectService = {
       await tx.projectCraftType.createMany({
         data: blueprint.craftTypes.map((ct) => ({
           projectId: newProject.id,
-          craftTypeId: ct.craftTypeId,
+          craftType: ct.craftType,
         })),
       });
 

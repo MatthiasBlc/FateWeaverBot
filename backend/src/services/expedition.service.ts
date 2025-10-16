@@ -35,7 +35,7 @@ export interface ExpeditionWithDetails extends Expedition {
   _count?: {
     members: number;
   };
-  initialDirection: Direction;
+  initialDirection: Direction | null;
   path: Direction[];
   currentDayDirection: Direction | null;
   directionSetBy: string | null;
@@ -302,7 +302,7 @@ export class ExpeditionService {
           createdBy: data.createdBy,
           status: ExpeditionStatus.PLANNING,
           returnAt: null,
-          initialDirection: (data.initialDirection as any) || "UNKNOWN",
+          initialDirection: (data.initialDirection as Direction) || "UNKNOWN",
         },
       });
 
@@ -1194,6 +1194,77 @@ export class ExpeditionService {
     });
   }
 
+  async removeMemberCatastrophic(
+    expeditionId: string,
+    characterId: string,
+    reason: string
+  ): Promise<{ characterName: string; townId: string }> {
+    return await prisma.$transaction(async (tx) => {
+      // Check if expedition exists and is DEPARTED
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: { id: true, status: true, name: true, townId: true },
+      });
+
+      if (!expedition) {
+        throw new Error("Expedition not found");
+      }
+
+      if (expedition.status !== ExpeditionStatus.DEPARTED) {
+        throw new Error("Can only remove members from DEPARTED expeditions");
+      }
+
+      // Check if character is a member
+      const member = await tx.expeditionMember.findFirst({
+        where: {
+          expeditionId,
+          characterId,
+        },
+        include: {
+          character: {
+            select: { id: true, name: true, userId: true },
+          },
+        },
+      });
+
+      if (!member) {
+        throw new Error("Character is not a member of this expedition");
+      }
+
+      // Set character PA to 0
+      await tx.character.update({
+        where: { id: characterId },
+        data: { paTotal: 0 },
+      });
+
+      // Remove member from expedition
+      await tx.expeditionMember.delete({
+        where: { id: member.id },
+      });
+
+      // Log the catastrophic return
+      await dailyEventLogService.logCharacterCatastrophicReturn(
+        characterId,
+        member.character.name,
+        expedition.townId,
+        reason
+      );
+
+      logger.info("expedition_catastrophic_return", {
+        expeditionId,
+        expeditionName: expedition.name,
+        characterId,
+        characterName: member.character.name,
+        reason,
+      });
+
+      return {
+        characterName: member.character.name,
+        townId: expedition.townId,
+      };
+    });
+  }
+
   async setNextDirection(
     expeditionId: string,
     direction: string,
@@ -1238,7 +1309,7 @@ export class ExpeditionService {
       await tx.expedition.update({
         where: { id: expeditionId },
         data: {
-          currentDayDirection: direction as any,
+          currentDayDirection: direction as Direction,
           directionSetBy: characterId,
           directionSetAt: new Date(),
         },

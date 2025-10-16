@@ -19,6 +19,7 @@ import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
 import { setupDailyPmJob } from "./cron/daily-pm.cron";
 import { setupExpeditionJobs } from "./cron/expedition.cron";
 import { setupSeasonChangeJob } from "./cron/season-change.cron";
+import { setupDailyMessageJob } from "./cron/daily-message.cron";
 import chantierRoutes from "./routes/chantier";
 import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
@@ -31,11 +32,14 @@ const app = express();
 
 // Démarrer les jobs CRON
 if (process.env.NODE_ENV !== "test") {
-  setupDailyPaJob();
+  const { mainJob, expeditionJob } = setupDailyPaJob();
+  mainJob.start();
+  expeditionJob.start();
   setupHungerIncreaseJob();
   setupDailyPmJob();
   setupExpeditionJobs();
   setupSeasonChangeJob();
+  setupDailyMessageJob();
 }
 
 // Configuration du proxy trust

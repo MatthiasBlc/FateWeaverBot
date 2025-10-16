@@ -68,11 +68,11 @@ async function departExpeditionsDue() {
       try {
         await expeditionService.departExpedition(expedition.id);
 
-        // Initialize path with initial direction
+        // Initialize path with initial direction (default to UNKNOWN if null)
         await prisma.expedition.update({
           where: { id: expedition.id },
           data: {
-            path: [expedition.initialDirection],
+            path: [expedition.initialDirection || "UNKNOWN"],
           },
         });
 
