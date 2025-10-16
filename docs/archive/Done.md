@@ -409,3 +409,7 @@ Prévoir 7 messages types x2
 
 SYSTEME
 → 8h : message du matin, récap de toutes les actions de la veille + Evelyne Déliat + stock (+ retour expéd)
+
+Nous avons créé la commande /new-element-admin
+Actuellement elle a deux sous commandes.
+Je ne veux pas de sous commandes mais des boutons permettant d'accéder à la création en db d'une nouvelle capacité ou d'une nouvelle ressource.
