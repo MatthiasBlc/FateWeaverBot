@@ -1,11 +1,18 @@
-import { CHARACTER, HUNGER, STATUS, CAPABILITIES, RESOURCES, RESOURCES_EXTENDED } from "../../constants/emojis.js";
+import {
+  CHARACTER,
+  HUNGER,
+  STATUS,
+  CAPABILITIES,
+  RESOURCES,
+  RESOURCES_EXTENDED,
+} from "../../constants/emojis.js";
 import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  type GuildMember
+  type GuildMember,
 } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
@@ -14,7 +21,11 @@ import {
   checkAndPromptReroll,
   createRerollModal,
 } from "../../modals/character-modals";
-import type { ProfileData, ActionPointsData, ActionPointsResponse } from "./users.types";
+import type {
+  ProfileData,
+  ActionPointsData,
+  ActionPointsResponse,
+} from "./users.types";
 import {
   calculateTimeUntilNextUpdate,
   formatTimeUntilUpdate,
@@ -31,7 +42,9 @@ export async function handleProfileCommand(interaction: any) {
 
   try {
     // Récupérer la ville d'abord
-    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as {
+    const town = (await apiService.guilds.getTownByGuildId(
+      interaction.guildId!
+    )) as {
       id: string;
     } | null;
 
@@ -69,7 +82,11 @@ export async function handleProfileCommand(interaction: any) {
       };
 
       // Cas spécial : personnage mort qui ne peut pas reroll mais existe dans characterStatus.character
-      if (characterStatus.character && characterStatus.character.isDead && !characterStatus.character.canReroll) {
+      if (
+        characterStatus.character &&
+        characterStatus.character.isDead &&
+        !characterStatus.character.canReroll
+      ) {
         const character = characterStatus.character;
 
         // Calculer le temps restant avant la prochaine mise à jour
@@ -100,8 +117,10 @@ export async function handleProfileCommand(interaction: any) {
           member: {
             nickname: member.nickname || null,
             roles: member.roles.cache
-              .filter(role => role.name !== '@everyone' && role.name !== 'everyone')
-              .map(role => ({
+              .filter(
+                (role) => role.name !== "@everyone" && role.name !== "everyone"
+              )
+              .map((role) => ({
                 id: role.id,
                 name: role.name,
                 color: role.hexColor,
@@ -144,9 +163,10 @@ export async function handleProfileCommand(interaction: any) {
         const capabilities = await getCharacterCapabilities(character.id);
 
         // Récupérer les points d'action du personnage
-        const actionPointsResponse = (await apiService.characters.getActionPoints(
-          character.id
-        )) as ActionPointsResponse;
+        const actionPointsResponse =
+          (await apiService.characters.getActionPoints(
+            character.id
+          )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
 
         // Préparer les données pour l'affichage avec les rôles récupérés du personnage
@@ -158,7 +178,7 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel || 0,
             hp: character.hp || 5,
             pm: character.pm || 5,
-            capabilities: capabilities.map(cap => ({
+            capabilities: capabilities.map((cap) => ({
               id: cap.id,
               name: cap.name,
               description: cap.description,
@@ -182,8 +202,10 @@ export async function handleProfileCommand(interaction: any) {
           member: {
             nickname: member.nickname || null,
             roles: member.roles.cache
-              .filter(role => role.name !== '@everyone' && role.name !== 'everyone')
-              .map(role => ({
+              .filter(
+                (role) => role.name !== "@everyone" && role.name !== "everyone"
+              )
+              .map((role) => ({
                 id: role.id,
                 name: role.name,
                 color: role.hexColor,
@@ -194,7 +216,11 @@ export async function handleProfileCommand(interaction: any) {
         // Créer l'embed du profil
         const { embed, components } = await createProfileEmbed(profileData);
 
-        await interaction.reply({ embeds: [embed], components, flags: ["Ephemeral"] });
+        await interaction.reply({
+          embeds: [embed],
+          components,
+          flags: ["Ephemeral"],
+        });
         return;
       } else if (characterStatus.needsCreation) {
         await interaction.reply({
@@ -219,8 +245,7 @@ export async function handleProfileCommand(interaction: any) {
 
     // Si on arrive ici, c'est qu'il y a un problème avec le statut du personnage
     await interaction.reply({
-      content:
-        INFO_MESSAGES.CHARACTER_STATUS_UNKNOWN,
+      content: INFO_MESSAGES.CHARACTER_STATUS_UNKNOWN,
       flags: ["Ephemeral"],
     });
   } catch (error) {
@@ -231,8 +256,7 @@ export async function handleProfileCommand(interaction: any) {
     });
 
     await interaction.reply({
-      content:
-        INFO_MESSAGES.PROFILE_ERROR,
+      content: INFO_MESSAGES.PROFILE_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -258,12 +282,16 @@ function createStatusDisplay(character: any): string | null {
 
   // Déprime (PM = 1)
   if (character.pm === 1) {
-    statuses.push(`${CHARACTER.MP_DEPRESSED} **Déprime** : 1 seul PA utilisable / jour`);
+    statuses.push(
+      `${CHARACTER.MP_DEPRESSED} **Déprime** : 1 seul PA utilisable / jour`
+    );
   }
 
   // Dépression (PM = 0)
   if (character.pm === 0) {
-    statuses.push(`${CHARACTER.MP_DEPRESSION} **Dépression** : 1 seul PA utilisable / jour + contamination`);
+    statuses.push(
+      `${CHARACTER.MP_DEPRESSION} **Dépression** : 1 seul PA utilisable / jour + contamination`
+    );
   }
 
   // Affamé (niveau 2)
@@ -274,19 +302,26 @@ function createStatusDisplay(character: any): string | null {
   // Meurt de faim (niveau 0, mais déjà géré par mort)
   // Si niveau 0 et pas mort (mais normalement niveau 0 = mort)
   if (character.hungerLevel === 0 && !character.isDead) {
-    statuses.push(`${HUNGER.AGONY} **Meurt de faim** : Agonie ${CHARACTER.HP_BANDAGED}`);
+    statuses.push(
+      `${HUNGER.AGONY} **Meurt de faim** : Agonie ${CHARACTER.HP_BANDAGED}`
+    );
   }
 
   // Retourner la liste des statuts ou null si vide
-  return statuses.length > 0 ? statuses.join('\n') : null;
+  return statuses.length > 0 ? statuses.join("\n") : null;
 }
 
-async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] }> {
+async function createProfileEmbed(data: ProfileData): Promise<{
+  embed: EmbedBuilder;
+  components: ActionRowBuilder<ButtonBuilder>[];
+}> {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
     title: `${CHARACTER.PROFILE} ###${data.character.name || "Sans nom"}`,
     footer: {
-      text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(data.timeUntilUpdate)} avant reset`,
+      text: `Profil de: ${data.character.name} | ${formatTimeUntilUpdate(
+        data.timeUntilUpdate
+      )} avant reset`,
       iconURL: data.user.displayAvatarURL,
     },
     timestamp: true,
@@ -295,13 +330,18 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
   // Formatage des rôles avec mentions Discord comme dans l'ancienne version
   const rolesText =
     data.character.roles && data.character.roles.length > 0
-      ? data.character.roles.map((role: { discordId: string; name: string }) => `<@&${role.discordId}>`).join(", ")
+      ? data.character.roles
+          .map(
+            (role: { discordId: string; name: string }) =>
+              `<@&${role.discordId}>`
+          )
+          .join(", ")
       : "Aucun rôle";
 
   // Formatage des rôles Discord de l'utilisateur
   const discordRolesText =
     data.member.roles && data.member.roles.length > 0
-      ? data.member.roles.map(role => `<@&${role.id}>`).join(", ")
+      ? data.member.roles.map((role) => `<@&${role.id}>`).join(", ")
       : "Aucun rôle";
 
   // Formatage avancé de l'état de faim
@@ -325,7 +365,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${data.actionPoints.points >= 3 ? STATUS.WARNING : ' '}`.trim(),
+      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${
+        data.actionPoints.points >= 3 ? STATUS.WARNING : " "
+      }`.trim(),
       inline: true,
     },
     {
@@ -341,9 +383,10 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
     {
       name: `Faim`,
       value: `${hungerEmoji} **${hungerText}**`,
-      inline: true, // Essayer inline pour rester avec les autres
+      inline: true,
     },
   ];
+
   // Créer le bloc Status
   const statusDisplay = createStatusDisplay(data.character);
   if (statusDisplay) {
@@ -361,15 +404,27 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
     });
   }
 
+  // Ajouter tous les champs à l'embed en une seule fois
+  embed.addFields(fields);
+
   // Ajouter l'inventaire (nouveau)
   try {
-    const inventoryResponse = await httpClient.get(`/api/characters/${data.character.id}/inventory`);
+    const inventoryResponse = await httpClient.get(
+      `/api/characters/${data.character.id}/inventory`
+    );
     const inventory = inventoryResponse.data;
 
     if (inventory && inventory.slots && inventory.slots.length > 0) {
-      const inventoryText = inventory.slots.map((slot: any) =>
-        `${slot.objectType.name}${slot.objectType.description ? ` • ${slot.objectType.description}` : ''}`
-      ).join('\n');
+      const inventoryText = inventory.slots
+        .map(
+          (slot: any) =>
+            `${slot.objectType.name}${
+              slot.objectType.description
+                ? ` • ${slot.objectType.description}`
+                : ""
+            }`
+        )
+        .join("\n");
 
       fields.push({
         name: `📦 **Inventaire**`,
@@ -379,7 +434,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
     }
   } catch (error) {
     // Silencieusement ignorer les erreurs d'inventaire pour ne pas casser le profil
-    logger.debug('Erreur lors de la récupération de l\'inventaire:', error);
+    logger.debug("Erreur lors de la récupération de l'inventaire:", error);
   }
 
   // Créer les composants (boutons d'action rapide) si le personnage a des capacités
@@ -423,7 +478,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
     buttons.push(eatMoreButton);
 
     // Ajouter les boutons à la ligne
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      ...buttons
+    );
     components.push(buttonRow);
   }
 
@@ -434,13 +491,17 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
       .setLabel(`Utiliser Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
       .setStyle(ButtonStyle.Danger);
 
-    const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(cataplasmeButton);
+    const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      cataplasmeButton
+    );
     components.push(cataplasmeRow);
   }
 
   // Ajouter le bouton "Donner un objet" si le personnage a des objets dans son inventaire
   try {
-    const inventoryResponse = await httpClient.get(`/api/characters/${data.character.id}/inventory`);
+    const inventoryResponse = await httpClient.get(
+      `/api/characters/${data.character.id}/inventory`
+    );
     const inventory = inventoryResponse.data;
 
     if (inventory && inventory.slots && inventory.slots.length > 0) {
@@ -449,12 +510,17 @@ async function createProfileEmbed(data: ProfileData): Promise<{ embed: EmbedBuil
         .setLabel(`🎁 Donner un objet`)
         .setStyle(ButtonStyle.Secondary);
 
-      const giveObjectRow = new ActionRowBuilder<ButtonBuilder>().addComponents(giveObjectButton);
+      const giveObjectRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        giveObjectButton
+      );
       components.push(giveObjectRow);
     }
   } catch (error) {
     // Silencieusement ignorer les erreurs
-    logger.debug('Erreur lors de la vérification de l\'inventaire pour le bouton donner:', error);
+    logger.debug(
+      "Erreur lors de la vérification de l'inventaire pour le bouton donner:",
+      error
+    );
   }
 
   return { embed, components };
@@ -494,8 +560,12 @@ function getHungerEmoji(level: number): string {
   }
 }
 
-
-function createHeartDisplay(current: number, max: number, filledEmoji = CHARACTER.HP_FULL, emptyEmoji = CHARACTER.HP_EMPTY): string {
+function createHeartDisplay(
+  current: number,
+  max: number,
+  filledEmoji = CHARACTER.HP_FULL,
+  emptyEmoji = CHARACTER.HP_EMPTY
+): string {
   const hearts = [];
 
   for (let i = 0; i < max; i++) {
@@ -506,7 +576,7 @@ function createHeartDisplay(current: number, max: number, filledEmoji = CHARACTE
     }
   }
 
-  return hearts.join(' ');
+  return hearts.join(" ");
 }
 
 function createPVDisplay(current: number, max: number): string {
@@ -519,7 +589,7 @@ function createPVDisplay(current: number, max: number): string {
       hearts.push(CHARACTER.HP_EMPTY);
     }
 
-    return hearts.join(' ');
+    return hearts.join(" ");
   }
 
   // Cas normal : utiliser la fonction standard
@@ -548,16 +618,20 @@ function createPMDisplay(current: number, max: number): string {
 
   // Special case: PM=0 (Dépression)
   if (current === 0) {
-    return `${hearts.join(' ')} - ${CHARACTER.MP_DEPRESSION}**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSION
+    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
   }
 
   // Special case: PM=1 (Déprime)
   if (current === 1) {
-    return `${hearts.join(' ')} - ${CHARACTER.MP_DEPRESSED}**Déprime** (Ne peut pas utiliser de PA)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSED
+    }**Déprime** (Ne peut pas utiliser de PA)`;
   }
 
   // Normal case: PM=2-5
-  return hearts.join(' ');
+  return hearts.join(" ");
 }
 
 export async function handleProfileButtonInteraction(interaction: any) {
@@ -566,27 +640,27 @@ export async function handleProfileButtonInteraction(interaction: any) {
   const customId = interaction.customId;
 
   // Vérifier si c'est un bouton de capacité
-  if (customId.startsWith('use_capability:')) {
-    const [, capabilityId, characterId, userId] = customId.split(':');
+  if (customId.startsWith("use_capability:")) {
+    const [, capabilityId, characterId, userId] = customId.split(":");
 
-    logger.debug('Capability button clicked', {
+    logger.debug("Capability button clicked", {
       customId,
       capabilityId,
       characterId,
       userId,
-      currentUserId: interaction.user.id
+      currentUserId: interaction.user.id,
     });
 
     try {
       // Vérifier que l'utilisateur qui clique est bien le propriétaire du profil
       if (interaction.user.id !== userId) {
-        logger.debug('Owner verification failed', {
+        logger.debug("Owner verification failed", {
           expected: userId,
-          actual: interaction.user.id
+          actual: interaction.user.id,
         });
         await interaction.reply({
           content: `${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`,
-          flags: ["Ephemeral"]
+          flags: ["Ephemeral"],
         });
         return;
       }
@@ -595,7 +669,9 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Récupérer les détails de la capacité
       const capabilities = await getCharacterCapabilities(characterId);
-      const selectedCapability = capabilities.find(cap => cap.id === capabilityId);
+      const selectedCapability = capabilities.find(
+        (cap) => cap.id === capabilityId
+      );
 
       if (!selectedCapability) {
         await interaction.editReply(`${STATUS.ERROR} Capacité non trouvée.`);
@@ -603,7 +679,9 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       // Récupérer le personnage pour vérifier les PA
-      const characterService = new (await import("../../services/api/character-api.service")).CharacterAPIService(httpClient);
+      const characterService = new (
+        await import("../../services/api/character-api.service")
+      ).CharacterAPIService(httpClient);
       const character = await characterService.getCharacterById(characterId);
 
       if (!character) {
@@ -613,19 +691,23 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Vérifier que le personnage appartient à l'utilisateur
       if (!character.user || character.user.discordId !== userId) {
-        logger.debug('Character owner verification failed', {
+        logger.debug("Character owner verification failed", {
           characterUserId: character.userId,
           characterDiscordId: character.user?.discordId,
           expectedUserId: userId,
-          actualUserId: interaction.user.id
+          actualUserId: interaction.user.id,
         });
-        await interaction.editReply(`${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`);
+        await interaction.editReply(
+          `${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`
+        );
         return;
       }
 
       // Vérifier que le personnage n'est pas mort
       if (character.isDead) {
-        await interaction.editReply(`${STATUS.ERROR} Vous ne pouvez pas utiliser de capacités avec un personnage mort.`);
+        await interaction.editReply(
+          `${STATUS.ERROR} Vous ne pouvez pas utiliser de capacités avec un personnage mort.`
+        );
         return;
       }
 
@@ -638,14 +720,17 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       // Exécuter la capacité
-      const seasonResponse = await httpClient.get('/seasons/current');
+      const seasonResponse = await httpClient.get("/seasons/current");
       const currentSeason = seasonResponse.data;
-      const isSummer = currentSeason?.name?.toLowerCase() === 'summer';
+      const isSummer = currentSeason?.name?.toLowerCase() === "summer";
 
-      const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-        capabilityId: capabilityId,
-        isSummer
-      });
+      const response = await httpClient.post(
+        `/characters/${characterId}/capabilities/use`,
+        {
+          capabilityId: capabilityId,
+          isSummer,
+        }
+      );
 
       const result = response.data;
 
@@ -659,9 +744,10 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       await interaction.editReply({
-        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${result.message || ''}`
+        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${
+          result.message || ""
+        }`,
       });
-
     } catch (error: any) {
       logger.error("Error using capability via button:", {
         error: formatErrorForLog(error),
@@ -671,7 +757,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
       });
 
       // Extraire le message d'erreur détaillé du backend pour les erreurs HTTP
-      let errorMessage = 'Une erreur est survenue';
+      let errorMessage = "Une erreur est survenue";
       if (error.response && error.response.data && error.response.data.error) {
         errorMessage = error.response.data.error;
       } else if (error.message) {
@@ -679,34 +765,43 @@ export async function handleProfileButtonInteraction(interaction: any) {
       }
 
       await interaction.editReply({
-        content: `${STATUS.ERROR} ${errorMessage}`
+        content: `${STATUS.ERROR} ${errorMessage}`,
       });
     }
   }
 }
 
-function createCapabilitiesDisplay(capabilities: Array<{ name: string; description?: string; costPA: number; emojiTag?: string; }> | undefined): string {
+function createCapabilitiesDisplay(
+  capabilities:
+    | Array<{
+        name: string;
+        description?: string;
+        costPA: number;
+        emojiTag?: string;
+      }>
+    | undefined
+): string {
   if (!capabilities || capabilities.length === 0) {
     return "Aucune capacité connue";
   }
 
   // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
   const getEmojiForCapability = (emojiTag?: string): string => {
-    console.log('getEmojiForCapability - emojiTag reçu:', emojiTag);
+    console.log("getEmojiForCapability - emojiTag reçu:", emojiTag);
     if (!emojiTag) {
-      console.log('Aucun emojiTag fourni, utilisation de CAPABILITIES.GENERIC');
+      console.log("Aucun emojiTag fourni, utilisation de CAPABILITIES.GENERIC");
       return CAPABILITIES.GENERIC;
     }
 
     const upperEmojiTag = emojiTag.toUpperCase();
-    console.log('Recherche de la clé dans CAPABILITIES:', upperEmojiTag);
+    console.log("Recherche de la clé dans CAPABILITIES:", upperEmojiTag);
 
     // Vérifier si l'emojiTag existe comme clé dans CAPABILITIES
     const capabilityKey = Object.keys(CAPABILITIES).find(
-      key => key === upperEmojiTag
+      (key) => key === upperEmojiTag
     ) as keyof typeof CAPABILITIES | undefined;
 
-    console.log('Clé trouvée dans CAPABILITIES:', capabilityKey);
+    console.log("Clé trouvée dans CAPABILITIES:", capabilityKey);
 
     if (capabilityKey) {
       const emoji = CAPABILITIES[capabilityKey];
@@ -715,17 +810,27 @@ function createCapabilitiesDisplay(capabilities: Array<{ name: string; descripti
     }
 
     console.warn(`EmojiTag inconnu: ${emojiTag}`);
-    console.log('CAPABILITIES disponibles:', Object.entries(CAPABILITIES));
+    console.log("CAPABILITIES disponibles:", Object.entries(CAPABILITIES));
     return CAPABILITIES.GENERIC;
   };
 
-  return capabilities.map(cap =>
-    `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${cap.costPA} PA)${cap.description ? ` • ${cap.description}` : ''}`
-  ).join('\n');
+  return capabilities
+    .map(
+      (cap) =>
+        `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${
+          cap.costPA
+        } PA)${cap.description ? ` • ${cap.description}` : ""}`
+    )
+    .join("\n");
 }
 
 function createCapabilityButtons(
-  capabilities: Array<{ id: string; name: string; costPA: number; emojiTag?: string; }>,
+  capabilities: Array<{
+    id: string;
+    name: string;
+    costPA: number;
+    emojiTag?: string;
+  }>,
   userId: string,
   characterId: string,
   currentPA: number
@@ -739,18 +844,27 @@ function createCapabilityButtons(
   const maxRows = 4; // Limiter à 4 lignes pour laisser de la place pour d'autres boutons
 
   // Diviser les capacités en groupes de 5
-  for (let i = 0; i < capabilities.length && rows.length < maxRows; i += maxButtonsPerRow) {
+  for (
+    let i = 0;
+    i < capabilities.length && rows.length < maxRows;
+    i += maxButtonsPerRow
+  ) {
     const group = capabilities.slice(i, i + maxButtonsPerRow);
-    const buttons = group.map(cap => {
+    const buttons = group.map((cap) => {
       // Déterminer l'emoji selon l'emojiTag de la capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
         if (!emojiTag) return CAPABILITIES.GENERIC;
-        return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] || CAPABILITIES.GENERIC;
+        return (
+          CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] ||
+          CAPABILITIES.GENERIC
+        );
       };
 
       // Vérifier si le personnage a assez de PA pour cette capacité
       const hasEnoughPA = currentPA >= cap.costPA;
-      const buttonStyle = hasEnoughPA ? ButtonStyle.Primary : ButtonStyle.Secondary;
+      const buttonStyle = hasEnoughPA
+        ? ButtonStyle.Primary
+        : ButtonStyle.Secondary;
 
       const button = new ButtonBuilder()
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)

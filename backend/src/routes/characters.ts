@@ -5,7 +5,10 @@ import { objectsController } from "../controllers/objects";
 const router = express.Router();
 
 // Récupérer le personnage actif d'un utilisateur par son ID Discord et l'ID de la ville
-router.get("/active/:discordId/:townId", CharacterController.getActiveCharacterByDiscordId);
+router.get(
+  "/active/:discordId/:townId",
+  CharacterController.getActiveCharacterByDiscordId
+);
 
 // Créer ou mettre à jour un personnage
 router.post("/", CharacterController.upsertCharacter);
@@ -34,10 +37,16 @@ router.post("/reroll", CharacterController.createRerollCharacter);
 router.post("/switch-active", CharacterController.switchActiveCharacter);
 
 // Récupérer les personnages morts éligibles pour reroll
-router.get("/rerollable/:userId/:townId", CharacterController.getRerollableCharacters);
+router.get(
+  "/rerollable/:userId/:townId",
+  CharacterController.getRerollableCharacters
+);
 
 // Vérifier si un utilisateur a besoin de créer un personnage
-router.get("/needs-creation/:userId/:townId", CharacterController.needsCharacterCreation);
+router.get(
+  "/needs-creation/:userId/:townId",
+  CharacterController.needsCharacterCreation
+);
 
 // Met à jour les statistiques d'un personnage (PA, faim, etc.)
 router.patch("/:id/stats", CharacterController.updateCharacterStats);
@@ -50,16 +59,31 @@ router.post("/:id/eat-alternative", CharacterController.eatFoodAlternative);
 
 // Gestion des capacités du personnage
 router.get("/:id/capabilities", CharacterController.getCharacterCapabilities);
-router.get("/:id/available-capabilities", CharacterController.getAvailableCapabilities);
+router.get(
+  "/:id/available-capabilities",
+  CharacterController.getAvailableCapabilities
+);
 // Les routes spécifiques doivent venir avant les routes avec paramètres
-router.post("/:id/capabilities/use", CharacterController.useCharacterCapability);
-router.post("/:id/capabilities/:capabilityId", CharacterController.addCharacterCapability);
-router.delete("/:id/capabilities/:capabilityId", CharacterController.removeCharacterCapability);
+router.post(
+  "/:id/capabilities/use",
+  CharacterController.useCharacterCapability
+);
+router.post(
+  "/:id/capabilities/:capabilityId",
+  CharacterController.addCharacterCapability
+);
+router.delete(
+  "/:id/capabilities/:capabilityId",
+  CharacterController.removeCharacterCapability
+);
 
 // Inventory routes
 router.get("/:id/inventory", objectsController.getCharacterInventory);
 router.post("/:id/inventory/add", objectsController.addObjectToCharacter);
-router.delete("/:id/inventory/:slotId", objectsController.removeObjectFromCharacter);
+router.delete(
+  "/:id/inventory/:slotId",
+  objectsController.removeObjectFromCharacter
+);
 router.post("/:id/inventory/transfer", objectsController.transferObject);
 
 export default router;

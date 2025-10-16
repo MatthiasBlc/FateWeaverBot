@@ -50,14 +50,31 @@ export async function handleConfigChannelCommand(
 
   const guild = interaction.guild;
 
-  // Récupérer la guilde actuelle pour voir s'il y a déjà un salon configuré
+  // S'assurer que la guilde existe avant de continuer
+  try {
+    // Créer la guilde si elle n'existe pas
+    await apiService.guilds.getOrCreateGuild(
+      guild.id,
+      guild.name,
+      guild.memberCount
+    );
+  } catch (error) {
+    logger.error("Failed to get or create guild:", { error });
+    return replyEphemeral(
+      interaction,
+      "Une erreur est survenue lors de la configuration de la guilde."
+    );
+  }
+
+  // Récupérer la configuration de la guilde
   let currentLogChannel = null;
   let currentLogChannelName = null;
   try {
-    const guildConfig = (await apiService.getGuildByDiscordId(
+    const guildConfig = (await apiService.guilds.getGuildByDiscordId(
       guild.id
     )) as GuildConfig;
-    if (guildConfig && guildConfig.logChannelId) {
+    
+    if (guildConfig?.logChannelId) {
       currentLogChannel = guild.channels.cache.get(guildConfig.logChannelId);
       currentLogChannelName = currentLogChannel
         ? currentLogChannel.name

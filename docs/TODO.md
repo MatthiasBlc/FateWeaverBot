@@ -1,4 +1,10 @@
+------------------------------TRUC A Corriger------------------- -------------
+
+1- Bug dans le seed des skills et dans le seed des objets skills
+2- Projets dans une commande ? pas dans un bouton pour les personnes concernées ?
+
 -------------------------Todo-------------------------
+
 Messages type dans daily messages
 
 #Objets /compétence métiers :
@@ -34,8 +40,6 @@ Implémenter les mssages météo
 Commandes add objet et add compétences
 
 Update Docs, Update Backend
-
-------------------------------TRUC------------------- -------------
 
 ------------------------------TRUC------------------- -------------
 

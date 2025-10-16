@@ -80,21 +80,28 @@ export async function checkCharacterStatus(
 
     const townId = guildWithTown.town.id;
     // Récupérer le personnage actif de l'utilisateur (il doit toujours y en avoir un ou aucun)
-    const activeCharacter = await httpClient.get(`/characters/town/${townId}`)
-      .then(response => response.data?.find((char: any) => char.userId === user.id && char.isActive))
+    const activeCharacter = await httpClient
+      .get(`/characters/town/${townId}`)
+      .then((response) =>
+        response.data?.find(
+          (char: any) => char.userId === user.id && char.isActive
+        )
+      )
       .catch(() => null);
 
     logger.info("Debug checkCharacterStatus", {
       userId,
       guildId,
       townId,
-      activeCharacter: activeCharacter ? {
-        id: activeCharacter.id,
-        name: activeCharacter.name,
-        isDead: activeCharacter.isDead,
-        isActive: activeCharacter.isActive,
-        canReroll: activeCharacter.canReroll
-      } : null
+      activeCharacter: activeCharacter
+        ? {
+            id: activeCharacter.id,
+            name: activeCharacter.name,
+            isDead: activeCharacter.isDead,
+            isActive: activeCharacter.isActive,
+            canReroll: activeCharacter.canReroll,
+          }
+        : null,
     });
 
     // CAS 1: Aucun personnage actif -> l'utilisateur doit créer un personnage
@@ -103,7 +110,7 @@ export async function checkCharacterStatus(
       return {
         needsCreation: true,
         canReroll: false,
-        hasActiveCharacter: false
+        hasActiveCharacter: false,
       };
     }
 
@@ -115,7 +122,7 @@ export async function checkCharacterStatus(
         canReroll: true,
         hasActiveCharacter: true,
         character: activeCharacter,
-        rerollableCharacters: [activeCharacter]
+        rerollableCharacters: [activeCharacter],
       };
     }
 
@@ -127,7 +134,7 @@ export async function checkCharacterStatus(
         canReroll: false,
         hasActiveCharacter: true,
         character: activeCharacter,
-        rerollableCharacters: []
+        rerollableCharacters: [],
       };
     }
 
@@ -138,14 +145,13 @@ export async function checkCharacterStatus(
       canReroll: false,
       hasActiveCharacter: true,
       character: activeCharacter,
-      rerollableCharacters: []
+      rerollableCharacters: [],
     };
-
   } catch (error) {
     logger.error("Error checking character status:", {
       userId,
       guildId,
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
     });
     throw error;
   }
