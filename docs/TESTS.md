@@ -386,5 +386,5 @@ Si le character est dans une expédition DEPARTED, alors les resources vont dans
 
 Sac de Tissu -> 10 tissu
 ferraille -> 10 minerai
-Planches -> 20 planche
+Planches -> 20 bois
 Jambon -> 10 nourriture

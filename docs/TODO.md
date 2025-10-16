@@ -1,7 +1,12 @@
 ------------------------------TRUC A Corriger------------------- -------------
 
 1- Bug dans le seed des skills et dans le seed des objets skills
-2- Projets dans une commande ? pas dans un bouton pour les personnes concernées ?
+2- Projets dans une commande ? devraient être dans un bouton pour les personnes concernées !
+3 - new element admin -> nouvelle ressource catégorie base c'est quoi ? utilisé ou ? (science en particulier)
+4 - new element admin -> nouvel objet c'est incomplet
+5 - new element admin -> Il manque nouvelle compétence(skill) ?
+5 - Character admin -> ajouter / retirer objet, ajouter/ retirer compétence(skill) ?
+6 - projets admin, manque des champs (resource blueprint?, corps d'artisanat requis ?)
 
 -------------------------Todo-------------------------
 
