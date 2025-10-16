@@ -588,6 +588,39 @@ export class ButtonHandler {
       }
     });
 
+    // =================== NEW ELEMENT ADMIN HANDLERS ===================
+    // Gestionnaire pour le bouton "Nouvelle Capacité"
+    this.registerHandler("new_element_capability", async (interaction) => {
+      try {
+        const { handleNewCapabilityButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleNewCapabilityButton(interaction);
+      } catch (error) {
+        logger.error("Error handling new capability button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du formulaire de capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Nouvelle Ressource"
+    this.registerHandler("new_element_resource", async (interaction) => {
+      try {
+        const { handleNewResourceButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleNewResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling new resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du formulaire de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== BLUEPRINT PROJECTS HANDLERS ===================
     // Gestionnaire pour les boutons de redémarrage de blueprints
     this.registerHandlerByPrefix("project_restart:", async (interaction) => {

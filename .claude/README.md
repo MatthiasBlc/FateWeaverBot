@@ -18,15 +18,27 @@ This directory contains all context files and documentation specifically for Cla
 
 ---
 
-### 🤝 collaboration.md (273 lines)
+### 🤝 collaboration.md (416 lines)
 **Collaboration protocol between Claude Code and Code Supernova**
 - When to use Supernova vs Claude
-- 6-step protocol for delegation
+- 6-step protocol for delegation (AUTOMATIQUE)
 - Token optimization strategies
-- Prompt templates (short & detailed)
+- Prompt templates (mini-prompt ≤50 tokens & detailed)
+- Checklist automatique pour Claude
 - Real examples with token savings
 
 **When to read:** Starting multi-step projects, repetitive tasks, token optimization needed
+
+---
+
+### 🚀 supernova-quick-ref.md (59 lines)
+**Quick reference for Supernova protocol**
+- Checklist pour savoir quand proposer Supernova
+- Protocole en 3 phases automatiques
+- Liste des JAMAIS / TOUJOURS
+- Format exact du mini-prompt
+
+**When to read:** EVERY TIME before delegating to Supernova
 
 ---
 
@@ -53,13 +65,17 @@ This directory contains all context files and documentation specifically for Cla
 
 **Claude-specific (this directory):**
 - `.claude/reference.md` - Architecture & workflows
-- `.claude/collaboration.md` - Supernova protocol
+- `.claude/collaboration.md` - Supernova protocol complet
+- `.claude/supernova-quick-ref.md` - Référence rapide Supernova (⚡ À lire AVANT chaque délégation)
 - `.claude/context-optimization.md` - Context system
 
 **Project-specific (docs/):**
 - `docs/refactoring-progress.md` - Refactoring status
 - `docs/refactoring-roadmap.md` - Refactoring plan
-- `docs/supernova-prompt-*.md` - Supernova instructions
+
+**Supernova workspace (.supernova/):**
+- `.supernova/prompt-*.md` - Instructions détaillées pour Supernova
+- `.supernova/report-*.md` - Rapports d'exécution de Supernova
 
 **Entry point (root):**
 - `CLAUDE.md` - Minimal context (auto-read every session)
@@ -75,4 +91,17 @@ This directory contains all context files and documentation specifically for Cla
 
 ---
 
-**Last updated:** 2025-10-08
+## 🎯 Pour Claude : Protocole Supernova Automatique
+
+**RAPPEL CRITIQUE** : Quand une tâche nécessite >3 fichiers OU >100 lignes :
+
+1. ⚡ Consulter `.claude/supernova-quick-ref.md`
+2. ✅ Créer AUTOMATIQUEMENT `.supernova/prompt-[nom].md`
+3. ✅ Fournir mini-prompt ≤50 tokens
+4. ✅ Attendre "Terminé" → Lire résumé uniquement
+
+**Ne jamais oublier** : Le but est d'économiser les crédits en déléguant à Supernova toutes les tâches répétitives/volumineuses.
+
+---
+
+**Last updated:** 2025-10-16

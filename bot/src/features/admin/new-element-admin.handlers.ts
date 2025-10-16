@@ -1,4 +1,14 @@
-import { type ChatInputCommandInteraction } from "discord.js";
+import {
+  type ChatInputCommandInteraction,
+  type ButtonInteraction,
+  type ModalSubmitInteraction,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+} from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { checkAdmin } from "../../utils/roles";
@@ -21,13 +31,27 @@ export async function handleNewElementAdminCommand(
       return;
     }
 
-    const subcommand = interaction.options.getSubcommand();
+    // Créer les boutons
+    const capabilityButton = new ButtonBuilder()
+      .setCustomId("new_element_capability")
+      .setLabel("➕ Nouvelle Capacité")
+      .setStyle(ButtonStyle.Primary);
 
-    if (subcommand === "capability") {
-      await handleAddCapability(interaction);
-    } else if (subcommand === "resource") {
-      await handleAddResource(interaction);
-    }
+    const resourceButton = new ButtonBuilder()
+      .setCustomId("new_element_resource")
+      .setLabel("➕ Nouvelle Ressource")
+      .setStyle(ButtonStyle.Success);
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      capabilityButton,
+      resourceButton
+    );
+
+    await interaction.reply({
+      content: "**Que souhaitez-vous créer ?**",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
   } catch (error) {
     logger.error("Erreur dans handleNewElementAdminCommand", {
       error: error instanceof Error ? error.message : error,
@@ -43,21 +67,156 @@ export async function handleNewElementAdminCommand(
 }
 
 /**
- * Ajoute une nouvelle capacité
+ * Gère le clic sur le bouton "Nouvelle Capacité"
  */
-async function handleAddCapability(interaction: ChatInputCommandInteraction) {
-  const name = interaction.options.getString("name", true);
-  const emojiTag = interaction.options.getString("emoji_tag", true);
-  const category = interaction.options.getString("category", true) as
-    | "HARVEST"
-    | "CRAFT"
-    | "SCIENCE"
-    | "SPECIAL";
-  const costPA = interaction.options.getInteger("cost_pa", true);
-  const description = interaction.options.getString("description");
+export async function handleNewCapabilityButton(interaction: ButtonInteraction) {
+  try {
+    // Créer le modal pour la capacité
+    const modal = new ModalBuilder()
+      .setCustomId("new_capability_modal")
+      .setTitle("Créer une nouvelle capacité");
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId("capability_name")
+      .setLabel("Nom de la capacité")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(100);
+
+    const emojiTagInput = new TextInputBuilder()
+      .setCustomId("capability_emoji_tag")
+      .setLabel("Tag emoji (ex: HUNT, GATHER)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(50);
+
+    const categoryInput = new TextInputBuilder()
+      .setCustomId("capability_category")
+      .setLabel("Catégorie (HARVEST/CRAFT/SCIENCE/SPECIAL)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(20);
+
+    const costPAInput = new TextInputBuilder()
+      .setCustomId("capability_cost_pa")
+      .setLabel("Coût en PA (1-4)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(1);
+
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId("capability_description")
+      .setLabel("Description (optionnel)")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(500);
+
+    const rows = [
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(emojiTagInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(categoryInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(costPAInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput),
+    ];
+
+    modal.addComponents(...rows);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error("Erreur dans handleNewCapabilityButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+  }
+}
+
+/**
+ * Gère le clic sur le bouton "Nouvelle Ressource"
+ */
+export async function handleNewResourceButton(interaction: ButtonInteraction) {
+  try {
+    // Créer le modal pour la ressource
+    const modal = new ModalBuilder()
+      .setCustomId("new_resource_modal")
+      .setTitle("Créer un nouveau type de ressource");
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId("resource_name")
+      .setLabel("Nom de la ressource")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(100);
+
+    const emojiInput = new TextInputBuilder()
+      .setCustomId("resource_emoji")
+      .setLabel("Emoji de la ressource (ex: 🌲)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(10);
+
+    const categoryInput = new TextInputBuilder()
+      .setCustomId("resource_category")
+      .setLabel("Catégorie (base/transformé/science)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMaxLength(20);
+
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId("resource_description")
+      .setLabel("Description (optionnel)")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(500);
+
+    const rows = [
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(emojiInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(categoryInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput),
+    ];
+
+    modal.addComponents(...rows);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error("Erreur dans handleNewResourceButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+  }
+}
+
+/**
+ * Gère la soumission du modal de capacité
+ */
+export async function handleCapabilityModalSubmit(interaction: ModalSubmitInteraction) {
+  const name = interaction.fields.getTextInputValue("capability_name");
+  const emojiTag = interaction.fields.getTextInputValue("capability_emoji_tag");
+  const categoryRaw = interaction.fields.getTextInputValue("capability_category").toUpperCase();
+  const costPARaw = interaction.fields.getTextInputValue("capability_cost_pa");
+  const description = interaction.fields.getTextInputValue("capability_description") || undefined;
 
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Valider la catégorie
+    const validCategories = ["HARVEST", "CRAFT", "SCIENCE", "SPECIAL"];
+    if (!validCategories.includes(categoryRaw)) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Catégorie invalide. Utilisez : HARVEST, CRAFT, SCIENCE ou SPECIAL.`,
+      });
+      return;
+    }
+    const category = categoryRaw as "HARVEST" | "CRAFT" | "SCIENCE" | "SPECIAL";
+
+    // Valider le coût PA
+    const costPA = parseInt(costPARaw, 10);
+    if (isNaN(costPA) || costPA < 1 || costPA > 4) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Coût PA invalide. Utilisez un nombre entre 1 et 4.`,
+      });
+      return;
+    }
 
     // Appeler l'API backend pour créer la capacité
     const response = await apiService.capabilities.createCapability({
@@ -65,7 +224,7 @@ async function handleAddCapability(interaction: ChatInputCommandInteraction) {
       emojiTag,
       category,
       costPA,
-      description: description || undefined,
+      description,
     });
 
     logger.info("Nouvelle capacité créée", {
@@ -104,23 +263,32 @@ async function handleAddCapability(interaction: ChatInputCommandInteraction) {
 }
 
 /**
- * Ajoute un nouveau type de ressource
+ * Gère la soumission du modal de ressource
  */
-async function handleAddResource(interaction: ChatInputCommandInteraction) {
-  const name = interaction.options.getString("name", true);
-  const emoji = interaction.options.getString("emoji", true);
-  const category = interaction.options.getString("category", true);
-  const description = interaction.options.getString("description");
+export async function handleResourceModalSubmit(interaction: ModalSubmitInteraction) {
+  const name = interaction.fields.getTextInputValue("resource_name");
+  const emoji = interaction.fields.getTextInputValue("resource_emoji");
+  const category = interaction.fields.getTextInputValue("resource_category");
+  const description = interaction.fields.getTextInputValue("resource_description") || undefined;
 
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Valider la catégorie
+    const validCategories = ["base", "transformé", "science"];
+    if (!validCategories.includes(category)) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Catégorie invalide. Utilisez : base, transformé ou science.`,
+      });
+      return;
+    }
 
     // Appeler l'API backend pour créer le type de ressource
     const response = await apiService.resources.createResourceType({
       name,
       emoji,
       category,
-      description: description || undefined,
+      description,
     });
 
     logger.info("Nouveau type de ressource créé", {

@@ -44,35 +44,41 @@ Claude crée un plan détaillé avec :
 - Procédure de test
 
 ### Étape 3 : Création du Prompt (Claude Code)
-Claude crée un fichier détaillé :
-- **Emplacement** : `docs/supernova-prompt-[nom-tache].md`
+Claude crée **AUTOMATIQUEMENT** un fichier détaillé :
+- **Emplacement** : `.supernova/prompt-[nom-tache].md`
 - **Contenu** : Instructions complètes, exemples, règles critiques
 - **Format** : Markdown structuré avec sections claires
+- **⚠️ OBLIGATION** : Créer ce fichier AVANT de fournir le mini-prompt
 
 ### Étape 4 : Transmission (Claude Code → User)
-Claude fournit un **prompt court** à copier-coller pour Supernova :
+Claude fournit **AUTOMATIQUEMENT** un **mini-prompt ≤50 tokens** à copier-coller pour Supernova :
 
 ```markdown
 ## 🚀 PROMPT POUR SUPERNOVA
 
-Copie le texte ci-dessous et donne-le à Code Supernova dans Windsurf :
+Copie et colle ceci à Supernova :
 
-[Prompt court avec référence au fichier docs/supernova-prompt-*.md]
+```
+Lis `.supernova/prompt-[nom-tache].md` et exécute.
+Crée rapport : `.supernova/report-[nom-tache].md` avec résumé ≤300 tokens en première section.
+```
+
+Dis-moi "Terminé" quand c'est fait ! 🎯
 ```
 
 ### Étape 5 : Exécution (User → Supernova)
 L'utilisateur :
-1. Copie le prompt fourni par Claude
+1. Copie le mini-prompt fourni par Claude
 2. Lance Supernova dans Windsurf
-3. Colle le prompt
+3. Colle le mini-prompt
 4. Laisse Supernova travailler
 5. **Supernova crée automatiquement un fichier de rapport** (pas de copier-coller)
 6. L'utilisateur informe Claude : "Terminé" (Claude connaît l'emplacement du fichier)
 
 ### Étape 6 : Validation (User → Claude Code)
-L'utilisateur dit simplement "Terminé". Claude :
-1. Lit le fichier de rapport au chemin standardisé `docs/supernova-reports/supernova-report-[nom-tache]-[date].md`
-2. Lit **UNIQUEMENT** la section **RÉSUMÉ EXÉCUTIF** (≤300 tokens)
+L'utilisateur dit simplement "Terminé". Claude **AUTOMATIQUEMENT** :
+1. Lit le fichier de rapport au chemin standardisé `.supernova/report-[nom-tache].md`
+2. Lit **UNIQUEMENT** la section **RÉSUMÉ** ou première section (≤300 tokens)
 3. Si le résumé indique tout OK → Valide et continue
 4. Si problèmes détectés → Lit les sections pertinentes du rapport détaillé
 5. Met à jour la documentation et prépare la suite
@@ -128,9 +134,9 @@ L'utilisateur dit simplement "Terminé". Claude :
 
 ## 📝 Templates de Prompts
 
-### Template Prompt Court (pour l'utilisateur) - ⚠️ GARDER ULTRA-COURT
+### Template Mini-Prompt (pour l'utilisateur) - ⚠️ GARDER ULTRA-COURT
 
-**RÈGLE CRITIQUE** : Le prompt copier-coller doit être ≤50 tokens. TOUT le détail va dans le fichier .md
+**RÈGLE CRITIQUE** : Le mini-prompt copier-coller doit être ≤50 tokens. TOUT le détail va dans le fichier .md
 
 ```markdown
 ## 🚀 PROMPT POUR SUPERNOVA - [Nom Tâche]
@@ -138,14 +144,14 @@ L'utilisateur dit simplement "Terminé". Claude :
 Copie et colle ceci à Supernova :
 
 \`\`\`
-Lis `/chemin/absolu/docs/supernova-prompt-X.md` et exécute.
-Crée rapport : `docs/supernova-reports/supernova-report-X-[date].md` avec résumé ≤300 tokens.
+Lis `.supernova/prompt-[nom-tache].md` et exécute.
+Crée rapport : `.supernova/report-[nom-tache].md` avec résumé ≤300 tokens en première section.
 \`\`\`
 
 Dis-moi "Terminé" quand c'est fait ! 🎯
 ```
 
-### Template Prompt Détaillé (docs/supernova-prompt-X.md)
+### Template Prompt Détaillé (.supernova/prompt-[nom-tache].md)
 ```markdown
 # 🚀 [NOM DE LA TÂCHE]
 
@@ -341,16 +347,17 @@ Quand tu (Claude Code) vois une tâche volumineuse/répétitive :
 
 ### 🎯 Réflexes Automatiques
 
-**TOUJOURS** quand tu délègues à Supernova :
-1. ✅ Créer un prompt copier-coller ready
-2. ✅ Inclure : "Crée un fichier de rapport à `docs/supernova-reports/supernova-report-[nom]-[date].md`"
-3. ✅ Spécifier que le rapport doit avoir un **RÉSUMÉ EXÉCUTIF ≤300 tokens** en première section
-4. ✅ Dire à l'utilisateur : "Dis-moi juste 'Terminé' quand c'est fait"
-5. ✅ Quand terminé : Lire le fichier de rapport (résumé d'abord, détails si nécessaire)
+**TOUJOURS AUTOMATIQUEMENT** quand tu délègues à Supernova :
+1. ✅ Créer le fichier de prompt détaillé dans `.supernova/prompt-[nom-tache].md`
+2. ✅ Fournir un mini-prompt ≤50 tokens qui référence ce fichier
+3. ✅ Inclure dans le mini-prompt : "Crée rapport : `.supernova/report-[nom-tache].md` avec résumé ≤300 tokens en première section"
+4. ✅ Dire à l'utilisateur : "Dis-moi 'Terminé' quand c'est fait ! 🎯"
+5. ✅ Quand l'utilisateur dit "Terminé" : Lire `.supernova/report-[nom-tache].md` (résumé d'abord, détails si nécessaire)
 
 **JAMAIS** :
-- ❌ Oublier de proposer Supernova pour une tâche volumineuse/répétitive
-- ❌ Valider l'utilisation de Supernova sans fournir un prompt copier-coller
+- ❌ Oublier de proposer Supernova pour une tâche volumineuse/répétitive (>3 fichiers OU >100 lignes)
+- ❌ Valider l'utilisation de Supernova sans créer le fichier de prompt détaillé AVANT le mini-prompt
+- ❌ Fournir un prompt de plus de 50 tokens à copier-coller
 - ❌ Demander à l'utilisateur de copier-coller le rapport (c'est un fichier maintenant !)
 - ❌ Lire le rapport détaillé complet si le résumé indique que tout est OK
 
@@ -377,8 +384,33 @@ Quand tu (Claude Code) vois une tâche volumineuse/répétitive :
 
 - **Documentation Claude Code** : `/home/bouloc/Repo/FateWeaverBot/CLAUDE.md`
 - **Progression Refactoring** : `/home/bouloc/Repo/FateWeaverBot/docs/refactoring-progress.md`
-- **Prompts Supernova** : `/home/bouloc/Repo/FateWeaverBot/docs/supernova-prompt-*.md`
+- **Dossier Supernova** : `/home/bouloc/Repo/FateWeaverBot/.supernova/`
+  - Prompts : `.supernova/prompt-*.md`
+  - Rapports : `.supernova/report-*.md`
 
 ---
 
-**Dernière mise à jour** : 2025-10-10
+## 📋 Checklist Automatique pour Claude
+
+Quand l'utilisateur valide l'usage de Supernova, **AUTOMATIQUEMENT** :
+
+### ☐ Phase 1 : Création du fichier de prompt
+1. [ ] Créer `.supernova/prompt-[nom-tache].md` avec toutes les instructions détaillées
+2. [ ] Inclure les chemins absolus des fichiers
+3. [ ] Spécifier le format exact du rapport attendu
+4. [ ] Inclure : "Crée un rapport dans `.supernova/report-[nom-tache].md` avec un résumé ≤300 tokens en première section"
+
+### ☐ Phase 2 : Fournir le mini-prompt
+1. [ ] Créer un mini-prompt ≤50 tokens
+2. [ ] Format : "Lis `.supernova/prompt-[nom-tache].md` et exécute. Crée rapport : `.supernova/report-[nom-tache].md` avec résumé ≤300 tokens en première section."
+3. [ ] Dire : "Dis-moi 'Terminé' quand c'est fait ! 🎯"
+
+### ☐ Phase 3 : Validation (après "Terminé")
+1. [ ] Lire `.supernova/report-[nom-tache].md`
+2. [ ] Lire UNIQUEMENT la première section (résumé ≤300 tokens)
+3. [ ] Si OK → Valider et continuer
+4. [ ] Si problème → Lire les sections pertinentes du rapport détaillé
+
+---
+
+**Dernière mise à jour** : 2025-10-16

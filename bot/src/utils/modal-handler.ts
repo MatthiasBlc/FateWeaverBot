@@ -364,6 +364,39 @@ export class ModalHandler {
         });
       }
     });
+
+    // =================== NEW ELEMENT ADMIN HANDLERS ===================
+    // Gestionnaire pour le modal de création de capacité
+    this.registerHandler("new_capability_modal", async (interaction) => {
+      try {
+        const { handleCapabilityModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleCapabilityModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling new capability modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de création de ressource
+    this.registerHandler("new_resource_modal", async (interaction) => {
+      try {
+        const { handleResourceModalSubmit } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleResourceModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling new resource modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

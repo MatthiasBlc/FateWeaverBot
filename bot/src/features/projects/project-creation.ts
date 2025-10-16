@@ -419,8 +419,6 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
         outputResourceTypeId: draft.outputResourceTypeId!,
         outputQuantity: draft.outputQuantity,
         resourceCosts: resourceCosts.length > 0 ? resourceCosts : undefined,
-        paBlueprintRequired: draft.paBlueprintRequired,
-        blueprintResourceCosts: blueprintResourceCosts && blueprintResourceCosts.length > 0 ? blueprintResourceCosts : undefined,
       },
       draft.userId
     );

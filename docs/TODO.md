@@ -46,24 +46,19 @@ Une liste de métiers exisants est disponible en base de données, avec un fonct
 
 Voici la liste des couples métiers / capacités de départ:
 
--       -> 'Chasser',
--       -> 'Cueillir',
--       -> 'Pêcher',
--       -> 'Bûcheronner',
--       -> 'Miner',
--       -> 'Tisser',
--       -> 'Forger',
--       -> 'Travailler le bois',
--       -> 'Cuisiner',
--       -> 'Soigner',
--       -> 'Rechercher',
--       -> 'Cartographier',
--       -> 'Auspice',
--       -> 'Divertir',
--
--
--
--
+- Chasseuse -> Chasser
+- Cueilleur -> Cueillir
+- Pêcheur-> Pêcher
+- Mineuse -> Miner
+- Tisserand -> Tisser
+- Forgeronne -> Forger
+- Menuisier -> Travailler le bois
+- Cuisinière-> Cuisiner
+- Guérisseur -> Soigner
+- Érudit-> Rechercher
+- Cartographe -> Cartographier
+- Météorologue -> Auspice
+- L'Artiste -> Divertir
 
 Lorsqu'un métier est attribué à un character, il faut vérifier s'il a sa capacité de départ et, si ce n'est pas le cas la lui donner.
 
@@ -82,26 +77,21 @@ Si c'est le personnalisé qui est choisi alors .....
 
 En réponse sa fiche profil s'affiche alors.
 
+logs de la création de personnages
+
 # création objet admin + compétence admin
 
 # changer grigri en coquillage
 
 Implémenter les mssages météo
 
+Commandes add objet et add compétences
+
 ------------------------------TRUC------------------- -------------
-
-# supernova claude update
-
-si c'est plus économique pour toi fais le prompt dans une fichier, et
-donne moi un mini prompt pour y accéder.
-En réponse demande à supernova de faire un rapport dans un fichier et demande
-lui d'écrire un résumé <300 tokens dedans
 
 ------------------------------TRUC------------------- -------------
 
 ## CapacitéV2
-
-logs de la création de personnages
 
 remplacer nourriture en repas ?
 
