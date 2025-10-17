@@ -1,4 +1,5 @@
 import {
+  Prisma,
   PrismaClient,
   Character,
   User,
@@ -652,8 +653,55 @@ export class CharacterService {
         }
       }
 
-      return characterUpdate;
+      // Ajouter le bois généré au stock de la ville (pour la capacité couper du bois)
+      if (result.loot && result.loot.wood && result.loot.wood > 0) {
+        const boisType = await tx.resourceType.findFirst({
+          where: { name: "Bois" },
+        });
+
+        if (boisType) {
+          tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: character.townId,
+                resourceTypeId: boisType.id,
+              },
+            },
+            update: {
+              quantity: { increment: result.loot.wood },
+            },
+            create: {
+              locationType: "CITY",
+              locationId: character.townId,
+              resourceTypeId: boisType.id,
+              quantity: result.loot.wood,
+            },
+          });
+        }
+      }
+
+      return tx.character.findUnique({
+        where: { id: characterId },
+        include: {
+          user: true,
+          town: {
+            include: {
+              guild: true
+            }
+          },
+          characterRoles: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
     });
+
+    if (!updatedCharacter) {
+      throw new Error("Erreur lors de la mise à jour du personnage");
+    }
 
     result.updatedCharacter = updatedCharacter;
     return result;
