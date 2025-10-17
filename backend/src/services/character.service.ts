@@ -660,7 +660,7 @@ export class CharacterService {
         });
 
         if (boisType) {
-          tx.resourceStock.upsert({
+          await tx.resourceStock.upsert({
             where: {
               locationType_locationId_resourceTypeId: {
                 locationType: "CITY",
