@@ -8,6 +8,7 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
 import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
+import { LOCATION, RESOURCES, STATUS } from "@shared/index.js";
 
 interface ResourceStock {
   id: number;
@@ -83,7 +84,7 @@ export async function handleViewStockCommand(interaction: any) {
     const totalStock = resources.reduce((sum, resource) => sum + resource.quantity, 0);
     const embed = createCustomEmbed({
       color: getStockColor(totalStock),
-      title: `🏙️ Stock de la Ville : ${townResponse.name}`,
+      title: `${LOCATION.TOWN} Stock du Village : ${townResponse.name}`,
       timestamp: true,
     });
 
@@ -132,13 +133,13 @@ export async function handleViewStockCommand(interaction: any) {
 
     if (resourceLines.length === 0) {
       embed.addFields({
-        name: "📦 Ressources",
+        name: `${RESOURCES.GENERIC} Ressources`,
         value: "Aucune ressource en stock",
         inline: false,
       });
     } else {
       embed.addFields({
-        name: "📦 Ressources",
+        name: `${RESOURCES.GENERIC} Ressources`,
         value: resourceLines.join('\n'),
         inline: false,
       });
@@ -157,16 +158,16 @@ export async function handleViewStockCommand(interaction: any) {
     });
 
     let errorMessage =
-      "❌ Une erreur est survenue lors de la récupération du stock de ressources.";
+      `${STATUS.ERROR} Une erreur est survenue lors de la récupération du stock de ressources.`;
 
     if (error.response?.status === 404) {
       errorMessage =
-        "❌ Aucune ville trouvée pour ce serveur. Contactez un administrateur.";
+        `${STATUS.ERROR} Aucune ville trouvée pour ce serveur. Contactez un administrateur.`;
     } else if (
       error.response?.status === 401 ||
       error.response?.status === 403
     ) {
-      errorMessage = "❌ Problème d'autorisation. Contactez un administrateur.";
+      errorMessage = `${STATUS.ERROR} Problème d'autorisation. Contactez un administrateur.`;
     }
 
     await replyEphemeral(interaction, errorMessage);

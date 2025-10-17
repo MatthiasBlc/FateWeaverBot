@@ -405,8 +405,7 @@ export async function handleJobSelection(
             'En cas de besoin, les **Veilleurs** ne sont pas loin.';
         })() :
         'En cas de besoin, les **Veilleurs** ne sont pas loin.'
-        }
-https://discord.com/channels/1134100914333040680/1146442875295498360`,
+        }`,
     });
   } catch (error) {
     logger.error("Error creating character with job:", {

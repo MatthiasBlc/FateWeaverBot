@@ -64,12 +64,14 @@ export function createCharacterSelectMenu(characters: Character[]) {
 
 /**
  * Crée les boutons d'action pour un personnage sélectionné.
+ * Retourne un tableau de 2 ActionRows (Discord limite à 5 boutons par row).
  */
-export function createCharacterActionButtons(character: Character) {
-  const buttons = [];
+export function createCharacterActionButtons(character: Character): ActionRowBuilder<ButtonBuilder>[] {
+  // Première rangée : Actions principales (max 5 boutons)
+  const firstRowButtons = [];
 
   // Bouton Modifier Stats
-  buttons.push({
+  firstRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX}${character.id}`,
     label: "Modifier Stats",
     style: ButtonStyle.Primary,
@@ -77,7 +79,7 @@ export function createCharacterActionButtons(character: Character) {
   });
 
   // Bouton Stats Avancées
-  buttons.push({
+  firstRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX}${character.id}`,
     label: "Stats Avancées",
     style: ButtonStyle.Secondary,
@@ -85,7 +87,7 @@ export function createCharacterActionButtons(character: Character) {
   });
 
   // Bouton Toggle Reroll
-  buttons.push({
+  firstRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.TOGGLE_REROLL_BUTTON_PREFIX}${character.id}`,
     label: character.canReroll ? "Interdire Reroll" : "Autoriser Reroll",
     style: ButtonStyle.Secondary,
@@ -94,7 +96,7 @@ export function createCharacterActionButtons(character: Character) {
 
   // Bouton Tuer Personnage (seulement si pas mort)
   if (!character.isDead) {
-    buttons.push({
+    firstRowButtons.push({
       customId: `${CHARACTER_ADMIN_CUSTOM_IDS.KILL_BUTTON_PREFIX}${character.id}`,
       label: "Tuer Personnage",
       style: ButtonStyle.Danger,
@@ -102,28 +104,34 @@ export function createCharacterActionButtons(character: Character) {
   }
 
   // Bouton Gérer Capacités
-  buttons.push({
+  firstRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX}${character.id}`,
     label: "Gérer Capacités",
     style: ButtonStyle.Secondary,
     emoji: CAPABILITIES.GENERIC,
   });
 
+  // Deuxième rangée : Gestion des entités
+  const secondRowButtons = [];
+
   // Bouton Gérer Objets
-  buttons.push({
+  secondRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.OBJECTS_BUTTON_PREFIX}${character.id}`,
     label: "Gérer Objets",
     style: ButtonStyle.Secondary,
   });
 
   // Bouton Gérer Compétences
-  buttons.push({
+  secondRowButtons.push({
     customId: `${CHARACTER_ADMIN_CUSTOM_IDS.SKILLS_BUTTON_PREFIX}${character.id}`,
     label: "Gérer Compétences",
     style: ButtonStyle.Secondary,
   });
 
-  return createActionButtons(buttons);
+  return [
+    createActionButtons(firstRowButtons),
+    createActionButtons(secondRowButtons),
+  ];
 }
 
 /**

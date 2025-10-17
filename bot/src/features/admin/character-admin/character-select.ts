@@ -33,11 +33,11 @@ export async function handleCharacterSelect(
   }
 
   const content = createCharacterDetailsContent(character);
-  const buttons = createCharacterActionButtons(character);
+  const buttonRows = createCharacterActionButtons(character);
 
   await interaction.reply({
     content,
-    components: [buttons],
+    components: buttonRows,
     flags: ["Ephemeral"],
   });
 }

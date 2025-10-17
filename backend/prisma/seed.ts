@@ -43,7 +43,7 @@ async function main() {
           "Pêcher du poisson pour obtenir des Vivres. Peut utiliser 2 PA pour un lancer chanceux.",
       },
       {
-        name: "Bûcheronner",
+        name: "Couper du bois",
         emojiTag: "CHOPPING",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
@@ -71,7 +71,7 @@ async function main() {
         description: "Multiplier du Minerai en Métal",
       },
       {
-        name: "Menuiser",
+        name: "Travailler le bois",
         emojiTag: "WOODWORKING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
@@ -203,7 +203,7 @@ async function main() {
     const resourceTypes = [
       {
         name: "Vivres",
-        emoji: RESOURCES_EXTENDED.BREAD,
+        emoji: RESOURCES.FOOD,
         category: "base",
         description: "Ressource brute de survie",
       },
@@ -226,7 +226,7 @@ async function main() {
         description: " ",
       },
       {
-        name: "Nourriture",
+        name: "Repas",
         emoji: RESOURCES.PREPARED_FOOD,
         category: "transformé",
         description: "Produit des vivres",
