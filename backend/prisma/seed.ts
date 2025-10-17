@@ -290,19 +290,27 @@ async function main() {
     console.log("🎯 Création des compétences (skills)...");
 
     const skills = [
-      { name: "Combat distance", description: "Permet d'attaquer à distance" },
-      { name: "Cultiver", description: "Permet de cultiver des plantes" },
+      { name: "Combat distance", description: "Attaquer à distance" },
+      { name: "Cultiver", description: "Cultiver des plantes" },
       { name: "Vision nocturne", description: "Voir dans l'obscurité" },
       { name: "Plonger", description: "Plonger en profondeur" },
       { name: "Noeuds", description: "Maîtrise des nœuds" },
       { name: "Réparer", description: "Réparer des objets" },
       { name: "Porter", description: "Porter de lourdes charges" },
-      { name: "Réconforter", description: "Réconforter les autres" },
+      // { name: "Réconforter", description: "Réconforter les autres" },
       { name: "Déplacement rapide", description: "Se déplacer rapidement" },
       { name: "Herboristerie", description: "Connaissance des plantes" },
       { name: "Assommer", description: "Assommer un adversaire" },
-      { name: "Vision lointaine", description: "Voir très loin" },
+      { name: "Vision lointaine", description: "Vue perçante" },
       { name: "Camouflage", description: "Se camoufler" },
+      { name: "Apprivoisement", description: "Apprivoiser une créature" },
+      { name: "Pistage", description: "Suivre une piste" },
+      { name: "Pièges", description: "Créer et déjouer des pièges" },
+      { name: "Orientation", description: "Trouver son chemin" },
+      { name: "Escalader", description: "Savoir grimper" },
+      { name: "Balisage", description: "Marquer un chemin pour se repérer" },
+      { name: "Discrétion", description: "Se déplacer sans bruit" },
+      { name: "Communiquer", description: "Savoir s'exprimer et échanger" },
     ];
 
     for (const skill of skills) {
@@ -332,25 +340,27 @@ async function main() {
 
     // 1. Objets simples (sans bonus)
     const simpleObjects = [
-      { name: "Coquillage", description: "Coquillage trouvé en pêchant" },
+      { name: "Coquillage", description: "On entend la mer" },
       {
         name: "Appeau",
-        description: "Parfait pour attirer les animaux",
+        description: "Petit, petit, petit...",
       },
       {
         name: "Herbier",
-        description: "----",
+        description: "De jolis dessins descriptifs",
       },
-      { name: "Boussole", description: "----" },
-      { name: "Canari", description: "----" },
+      { name: "Boussole", description: "Elle ne perd jamais le nord, elle !" },
+      { name: "Canari", description: "S'il cesse de chanter... fuyez !" },
       {
         name: "Filet",
-        description: "----",
+        description: "Qui sait ce qui peut s'y prendre ?",
       },
-      { name: "Somnifère", description: "----" },
-      { name: "Bougie", description: "----" },
-      { name: "Grenouille", description: "----" },
-      { name: "Couronne de fleurs", description: "----" },
+      { name: "Somnifère", description: "Toujours utile" },
+      { name: "Bougie", description: "Pour y voir un peu mieux" },
+      { name: "Grenouille", description: "Elle monte... et elle redescend" },
+      { name: "Couronne de fleurs", description: "Création féérique" },
+      { name: "Codex sacré", description: "Paroles, paroles, paroles (mais sacrées !)" },
+      { name: "Nécessaire d'écriture", description: "Indispensable à tout érudit" },
     ];
 
     for (const obj of simpleObjects) {
@@ -364,64 +374,69 @@ async function main() {
     const skillBonusObjects = [
       {
         name: "Arc",
-        description: "----",
+        description: "Une arme redoutable",
         skills: ["Combat distance"],
       },
       {
         name: "Graines",
-        description: "----",
+        description: "Qui sème une graine, récolte la tempête",
         skills: ["Cultiver"],
       },
       {
         name: "Lanterne",
-        description: "----",
+        description: "Un phare dans l'obscurité",
         skills: ["Vision nocturne"],
       },
       {
         name: "Matériel de plongée",
-        description: "----",
+        description: "Le tuba de l'été !",
         skills: ["Plonger"],
       },
-      { name: "Corde", description: "----", skills: ["Noeuds"] },
+      { name: "Corde", description: "Quitte à vivre en hauteur, c'est mieux que de se pendre", skills: ["Noeuds"] },
       {
         name: "Marteau",
-        description: "----",
+        description: "Je cognerais le jour !",
         skills: ["Réparer"],
       },
       {
         name: "Harnais",
-        description: "----",
+        description: "Pourquoi c'est toujours moi qui porte ?",
         skills: ["Porter"],
       },
       {
         name: "Marmite",
-        description: "----",
+        description: "Ne pas tomber dedans quand on est petit",
         skills: ["Réconforter"],
       },
       {
         name: "Bottes",
-        description: "----",
+        description: "Probablement piquées à un chat",
         skills: ["Déplacement rapide"],
       },
       {
         name: "Fioles",
-        description: "----",
+        description: "Pour adoucir le mélange, pressez trois quartiers d'orange",
         skills: ["Herboristerie"],
       },
       {
         name: "Grimoire vierge",
-        description: "----",
+        description: "Un texte assommant",
         skills: ["Assommer"],
       },
       {
         name: "Longue-vue",
-        description: "----",
+        description: "Au royaume des aveugles, les longues vues sont reines",
         skills: ["Vision lointaine"],
       },
       {
         name: "Maquillage",
-        description: "----",
+        description: "Touche finale, bouche fatale",
         skills: ["Camouflage"],
+      },
+      {
+        name: "Collets",
+        description: "Attrapez les tous !",
+        skills: ["Pièges"],
       },
     ];
 
@@ -453,70 +468,71 @@ async function main() {
     const capacityBonusObjects = [
       {
         name: "Couteau de chasse",
-        description: "----",
+        description: "Le couteau le plus affûté du tiroir",
         bonuses: [
           { capabilityTag: "HUNT", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
         name: "Serpe",
-        description: "----",
+        description: "En or, sinon rien",
         bonuses: [
           { capabilityTag: "GATHER", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
         name: "Pioche",
-        description: "----",
+        description: "Quoi, ma tête ? Qu'est-ce qu'elle a ma tête ?",
         bonuses: [
           { capabilityTag: "MINING", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
         name: "Nasse",
-        description: "----",
+        description: "Stockage en baie peu profonde",
         bonuses: [
           { capabilityTag: "FISH", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
         name: "Quenouille",
-        description: "----",
+        description: "Gare à l'endormissement !",
         bonuses: [
           { capabilityTag: "WEAVING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
         name: "Enclume",
-        description: "----",
+        description: "Entre le marteau et elle...",
         bonuses: [
           { capabilityTag: "FORGING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
-        name: "Mètre",
-        description: "----",
+        name: "Scie",
+        description: "Avec des scies, on mettrait l'île en bouteille",
         bonuses: [
           { capabilityTag: "WOODWORKING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
         name: "Sel",
-        description: "----",
+        description: "À ne pas déverser n'importe où !",
         bonuses: [
           { capabilityTag: "COOKING", bonusType: CapacityBonusType.LUCKY_ROLL },
         ],
       },
       {
-        name: "Bandages",
-        description: "----",
+        name: "Traité de Médecine",
+        description: "Un corps de texte anatomique",
         bonuses: [
           { capabilityTag: "HEALING", bonusType: CapacityBonusType.HEAL_EXTRA },
         ],
       },
+
       {
         name: "Compas",
-        description: "----",
+        description: "Con et passion font Compas-sion",
         bonuses: [
           {
             capabilityTag: "CARTOGRAPHING",
@@ -526,7 +542,7 @@ async function main() {
       },
       {
         name: "Loupe",
-        description: "----",
+        description: "Élémentaire.",
         bonuses: [
           {
             capabilityTag: "RESEARCHING",
@@ -536,7 +552,7 @@ async function main() {
       },
       {
         name: "Anémomètre",
-        description: "----",
+        description: "Pas de risque de se prendre un vent",
         bonuses: [
           {
             capabilityTag: "AUGURING",
@@ -545,8 +561,8 @@ async function main() {
         ],
       },
       {
-        name: "instrument",
-        description: "----",
+        name: "Violon",
+        description: "Qui fait danser les filles et les garçons",
         bonuses: [
           {
             capabilityTag: "ENTERTAIN",
@@ -588,26 +604,14 @@ async function main() {
 
     const resourceBagObjects = [
       {
-        name: "planches",
-        description: "Se transforme en 20 bois",
-        resource: "Bois",
-        quantity: 20,
-      },
-      {
-        name: "ferraille",
-        description: "Se transforme en 10 minerai",
+        name: "Lingots",
+        description: "D'une valeur de 10 minerais",
         resource: "Minerai",
         quantity: 10,
       },
       {
         name: "Jambon",
-        description: "Se transforme en 10 vivres",
-        resource: "Vivres",
-        quantity: 10,
-      },
-      {
-        name: "Sac de tissu",
-        description: "Se transforme en 10 vivres",
+        description: "D'une valeur de 10 vivres",
         resource: "Vivres",
         quantity: 10,
       },
