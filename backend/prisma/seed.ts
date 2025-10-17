@@ -24,7 +24,7 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 2,
         description:
-          "Chasser du gibier pour obtenir des vivres. Plus efficace en été.",
+          "Chasser du gibier pour obtenir des vivres.",
       },
       {
         name: "Cueillir",
@@ -32,7 +32,7 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 1,
         description:
-          "Cueillir des plantes comestibles pour obtenir des vivres. Plus efficace en été.",
+          "Cueillir des plantes comestibles pour obtenir des vivres.",
       },
       {
         name: "Pêcher",
@@ -40,49 +40,49 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 1,
         description:
-          "Pêcher du poisson pour obtenir des Vivres. Peut utiliser 2 PA pour un lancer chanceux.",
+          "Pêcher du poisson pour obtenir des Vivres.",
       },
       {
         name: "Couper du bois",
         emojiTag: "CHOPPING",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: "Récolter du bois",
+        description: "Récolter du bois.",
       },
       {
         name: "Miner",
         emojiTag: "MINING",
         category: CapabilityCategory.HARVEST,
         costPA: 2,
-        description: "Récolter du minerai",
+        description: "Récolter du minerai.",
       },
       {
         name: "Cuisiner",
         emojiTag: "COOKING",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: "Multiplier des Vivres en Repas",
+        description: "Multiplier des Vivres en Repas.",
       },
       {
         name: "Tisser",
         emojiTag: "WEAVING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Multiplier du Bois en Tissu",
+        description: "Concevoir des projets de tissage.",
       },
       {
         name: "Forger",
         emojiTag: "FORGING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Multiplier du Minerai en Métal",
+        description: "Concevoir des projets de forge.",
       },
       {
         name: "Travailler le bois",
         emojiTag: "WOODWORKING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Multiplier du Bois en Planches",
+        description: "Concevoir des projets de menuiserie.",
       },
       {
         name: "Soigner",
@@ -90,7 +90,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Rendre 1 PV à 1 personne OU utiliser 2 PA pour créer 1 Cataplasme",
+          "Soigner 1 personnage.",
       },
       {
         name: "Rechercher",
@@ -98,7 +98,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser un objet/lieu/créature pour obtenir des informations dessus",
+          "Analyser un objet/lieu/créature pour obtenir des informations dessus.",
       },
       {
         name: "Cartographier",
@@ -106,7 +106,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser les alentours pour révéler de nouvelles cases sur la carte",
+          "Analyser les alentours pour révéler de nouvelles cases sur la carte.",
       },
       {
         name: "Auspice",
@@ -114,7 +114,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser les cieux pour anticiper la météo des prochains jours",
+          "Analyser les cieux pour anticiper la météo des prochains jours.",
       },
       {
         name: "Divertir",
@@ -122,7 +122,7 @@ async function main() {
         category: CapabilityCategory.SPECIAL,
         costPA: 1,
         description:
-          "Divertir le village pour faire regagner des PM. Tous les 5 usages, tout le monde autour gagne 1 PM.",
+          "Divertir le village pour faire regagner des PM.",
       },
     ];
 
@@ -205,19 +205,19 @@ async function main() {
         name: "Vivres",
         emoji: RESOURCES.FOOD,
         category: "base",
-        description: "Ressource brute de survie",
+        description: "Ressource comestible et utilisable pour survivre",
       },
       {
         name: "Bois",
         emoji: RESOURCES.WOOD,
         category: "base",
-        description: "Matériau brut",
+        description: "Des morceaux d'arbre",
       },
       {
         name: "Minerai",
         emoji: RESOURCES.MINERAL,
         category: "base",
-        description: "Matériau brut",
+        description: "Extraits d'un filon minier",
       },
       {
         name: "Tissu",
@@ -229,13 +229,13 @@ async function main() {
         name: "Repas",
         emoji: RESOURCES.PREPARED_FOOD,
         category: "transformé",
-        description: "Produit des vivres",
+        description: "Un bon repas",
       },
       {
         name: "Cataplasme",
         emoji: RESOURCES.CATAPLASM,
         category: "science",
-        description: "Soin médical (max 3 par ville)",
+        description: "Bandages à emporter",
       },
     ];
 
@@ -274,7 +274,7 @@ async function main() {
           locationType: "CITY",
           locationId: city.id,
           resourceTypeId: vivresType.id,
-          quantity: 50, // Stock initial de vivres
+          quantity: 20, // Stock initial de vivres
           townId: city.id,
         },
       });
