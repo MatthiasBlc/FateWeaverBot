@@ -867,10 +867,20 @@ function createCapabilityButtons(
       // Déterminer l'emoji selon l'emojiTag de la capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
         if (!emojiTag) return CAPABILITIES.GENERIC;
-        return (
-          CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] ||
-          CAPABILITIES.GENERIC
-        );
+
+        // Vérifier si l'emojiTag est une clé valide dans CAPABILITIES
+        if (emojiTag in CAPABILITIES) {
+          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES];
+        }
+
+        // Si l'emojiTag n'est pas trouvé, essayer avec la version en majuscules
+        const upperEmojiTag = emojiTag.toUpperCase();
+        if (upperEmojiTag in CAPABILITIES) {
+          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES];
+        }
+
+        // Si toujours pas trouvé, retourner l'emoji générique
+        return CAPABILITIES.GENERIC;
       };
 
       // Vérifier si le personnage a assez de PA pour cette capacité

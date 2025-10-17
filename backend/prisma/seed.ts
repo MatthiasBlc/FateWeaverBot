@@ -57,6 +57,13 @@ async function main() {
         description: "Récolter du minerai",
       },
       {
+        name: "Cuisiner",
+        emojiTag: "COOKING",
+        category: CapabilityCategory.HARVEST,
+        costPA: 1,
+        description: "Multiplier des Vivres en Repas",
+      },
+      {
         name: "Tisser",
         emojiTag: "WEAVING",
         category: CapabilityCategory.CRAFT,
@@ -76,13 +83,6 @@ async function main() {
         category: CapabilityCategory.CRAFT,
         costPA: 1,
         description: "Multiplier du Bois en Planches",
-      },
-      {
-        name: "Cuisiner",
-        emojiTag: "COOKING",
-        category: CapabilityCategory.CRAFT,
-        costPA: 1,
-        description: "Multiplier des Vivres en Repas",
       },
       {
         name: "Soigner",
