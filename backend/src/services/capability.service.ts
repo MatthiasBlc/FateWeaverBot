@@ -232,19 +232,6 @@ export class CapabilityService {
         message = `🌿 ${character.name} a cueilli ${foodGained} vivres.`;
         break;
 
-      case "pêcher":
-        if (luckyRoll && character.paTotal >= 2) {
-          // Double le coût en PA pour le lucky roll
-          const roll1 = Math.floor(Math.random() * (isSummer ? 5 : 3));
-          const roll2 = Math.floor(Math.random() * (isSummer ? 5 : 3));
-          foodGained = Math.max(roll1, roll2);
-          message = `🎣 ${character.name} a pêché avec succès et a obtenu ${foodGained} vivres (lucky roll)!`;
-        } else {
-          foodGained = Math.floor(Math.random() * (isSummer ? 5 : 3));
-          message = `🎣 ${character.name} a pêché ${foodGained} vivres.`;
-        }
-        break;
-
       default:
         throw new Error("Capacité de récolte non reconnue");
     }

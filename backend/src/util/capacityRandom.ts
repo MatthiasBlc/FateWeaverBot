@@ -22,20 +22,20 @@ export function getRandomFromPool(pool: number[]): number {
 
 /**
  * Calcule le rendement de chasse selon la saison
- * @param isWinter Indique si c'est l'hiver
- * @returns Nombre de vivres obtenus (0-10 en été, 0-4 en hiver)
+ * @param isSummer Indique si c'est l'été
+ * @returns Nombre de vivres obtenus (2-10 en été, 0-4 en hiver)
  */
-export function getHuntYield(isWinter: boolean): number {
-  return getRandomFromPool(isWinter ? huntWinter : huntSummer);
+export function getHuntYield(isSummer: boolean): number {
+  return getRandomFromPool(isSummer ? huntSummer : huntWinter);
 }
 
 /**
  * Calcule le rendement de cueillette selon la saison
- * @param isWinter Indique si c'est l'hiver
- * @returns Nombre de vivres obtenus (0-3 en été, 0-2 en hiver)
+ * @param isSummer Indique si c'est l'été
+ * @returns Nombre de vivres obtenus (1-3 en été, 0-2 en hiver)
  */
-export function getGatherYield(isWinter: boolean): number {
-  return getRandomFromPool(isWinter ? gatherWinter : gatherSummer);
+export function getGatherYield(isSummer: boolean): number {
+  return getRandomFromPool(isSummer ? gatherSummer : gatherWinter);
 }
 
 /**
