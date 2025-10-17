@@ -404,6 +404,23 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== COOKING HANDLERS ===================
+    // Gestionnaire pour la sélection de quantité de vivres à cuisiner
+    this.registerHandlerByPrefix("cooking_quantity:", async (interaction) => {
+      try {
+        const { handleCookingQuantityChoice } = await import(
+          "../features/users/cooking.handlers.js"
+        );
+        await handleCookingQuantityChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling cooking quantity choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de quantité pour cuisiner.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

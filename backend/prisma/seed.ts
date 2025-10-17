@@ -607,8 +607,8 @@ async function main() {
       },
       {
         name: "Sac de tissu",
-        description: "Se transforme en 10 tissu",
-        resource: "Tissu",
+        description: "Se transforme en 10 vivres",
+        resource: "Vivres",
         quantity: 10,
       },
     ];

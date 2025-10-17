@@ -11,47 +11,6 @@ type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
 };
 
-// Tables de loot fixes pour la pêche (V2)
-const FISH_LOOT_1PA = [
-  { resource: "Vivres", quantity: 0 },
-  { resource: "Vivres", quantity: 1 },
-  { resource: "Vivres", quantity: 1 },
-  { resource: "Vivres", quantity: 1 },
-  { resource: "Vivres", quantity: 1 },
-  { resource: "Bois", quantity: 2 },
-  { resource: "Bois", quantity: 2 },
-  { resource: "Minerai", quantity: 2 },
-  { resource: "Minerai", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 4 },
-  { resource: "Vivres", quantity: 4 },
-];
-
-const FISH_LOOT_2PA = [
-  { resource: "Vivres", quantity: 1 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Vivres", quantity: 2 },
-  { resource: "Bois", quantity: 4 },
-  { resource: "Minerai", quantity: 4 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Vivres", quantity: 3 },
-  { resource: "Bois", quantity: 6 },
-  { resource: "Minerai", quantity: 5 },
-  { resource: "Vivres", quantity: 5 },
-  { resource: "Vivres", quantity: 5 },
-  { resource: "Vivres", quantity: 10 },
-  { resource: "GRIGRI", quantity: 1 }, // Special case - log only
-];
-
 export class CapabilityService {
   constructor(private prisma: PrismaClient) {}
 
@@ -530,9 +489,9 @@ export class CapabilityService {
   }
 
   /**
-   * Exécute la capacité Pêcher avec tables de loot fixes (V2)
+   * Exécute la capacité Pêcher avec tables de loot depuis la DB (V3)
    */
-  async executeFish(characterId: string, paSpent: 1 | 2): Promise<{ success: boolean; loot?: Record<string, number>; message: string }> {
+  async executeFish(characterId: string, paSpent: 1 | 2): Promise<{ success: boolean; loot?: Record<string, number>; message: string; objectFound?: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -568,34 +527,77 @@ export class CapabilityService {
     // Vérifier les PA et les restrictions (Agonie, Déprime)
     validateCanUsePA(character, paSpent);
 
-    // Sélectionner la table de loot appropriée
-    const lootTable = paSpent === 1 ? FISH_LOOT_1PA : FISH_LOOT_2PA;
-    const randomIndex = Math.floor(Math.random() * lootTable.length);
-    const loot = lootTable[randomIndex];
+    // Récupérer les entrées de loot depuis la DB
+    const lootEntries = await this.prisma.fishingLootEntry.findMany({
+      where: {
+        paTable: paSpent,
+        isActive: true
+      },
+      orderBy: {
+        orderIndex: 'asc'
+      }
+    });
 
-    // Cas spécial pour GRIGRI
-    if (loot.resource === "GRIGRI") {
-      await this.prisma.character.update({
-        where: { id: characterId },
-        data: {
-          paTotal: { decrement: paSpent },
-          paUsedToday: { increment: paSpent },
-        },
+    if (lootEntries.length === 0) {
+      throw new Error(`Aucune table de loot trouvée pour ${paSpent} PA`);
+    }
+
+    // Tirer aléatoirement une entrée
+    const randomIndex = Math.floor(Math.random() * lootEntries.length);
+    const lootEntry = lootEntries[randomIndex];
+
+    // Cas spécial pour Coquillage (objet)
+    if (lootEntry.resourceName === "Coquillage") {
+      // Récupérer l'objet Coquillage
+      const coquillageObject = await this.prisma.objectType.findUnique({
+        where: { name: "Coquillage" }
       });
+
+      if (!coquillageObject) {
+        throw new Error("Objet Coquillage non trouvé");
+      }
+
+      // Ajouter le coquillage à l'inventaire du personnage
+      let inventory = await this.prisma.characterInventory.findUnique({
+        where: { characterId }
+      });
+
+      if (!inventory) {
+        inventory = await this.prisma.characterInventory.create({
+          data: { characterId }
+        });
+      }
+
+      await this.prisma.$transaction([
+        this.prisma.character.update({
+          where: { id: characterId },
+          data: {
+            paTotal: { decrement: paSpent },
+            paUsedToday: { increment: paSpent },
+          },
+        }),
+        this.prisma.characterInventorySlot.create({
+          data: {
+            inventoryId: inventory.id,
+            objectTypeId: coquillageObject.id
+          }
+        })
+      ]);
 
       return {
         success: true,
-        message: `${character.name} a trouvé un grigri !`,
+        objectFound: "Coquillage",
+        message: `${character.name} a trouvé un coquillage ! (-${paSpent} PA)`,
       };
     }
 
-    // Ajouter la ressource au stock de la ville
+    // Cas normal : ajouter la ressource au stock
     const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: loot.resource },
+      where: { name: lootEntry.resourceName },
     });
 
     if (!resourceType) {
-      throw new Error(`Type de ressource '${loot.resource}' non trouvé`);
+      throw new Error(`Type de ressource '${lootEntry.resourceName}' non trouvé`);
     }
 
     await this.prisma.$transaction([
@@ -615,33 +617,31 @@ export class CapabilityService {
           },
         },
         update: {
-          quantity: { increment: loot.quantity },
+          quantity: { increment: lootEntry.quantity },
         },
         create: {
           locationType: "CITY",
           locationId: character.townId,
           resourceTypeId: resourceType.id,
-          quantity: loot.quantity,
+          quantity: lootEntry.quantity,
         },
       }),
     ]);
 
-    // Log resource gathering (skip for GRIGRI case)
-    if (loot.resource !== "GRIGRI") {
-      await dailyEventLogService.logResourceGathered(
-        characterId,
-        character.name,
-        character.townId,
-        loot.resource,
-        loot.quantity,
-        "Pêcher"
-      );
-    }
+    // Log resource gathering
+    await dailyEventLogService.logResourceGathered(
+      characterId,
+      character.name,
+      character.townId,
+      lootEntry.resourceName,
+      lootEntry.quantity,
+      "Pêcher"
+    );
 
     return {
       success: true,
-      loot: { [loot.resource.toLowerCase()]: loot.quantity },
-      message: `Vous avez pêché ${loot.quantity} ${loot.resource}`,
+      loot: { [lootEntry.resourceName.toLowerCase()]: lootEntry.quantity },
+      message: `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName} (-${paSpent} PA)`,
     };
   }
 

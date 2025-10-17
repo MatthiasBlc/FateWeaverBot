@@ -319,9 +319,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 }> {
   const embed = createCustomEmbed({
     color: getHungerColor(data.character.hungerLevel),
-    title: `${CHARACTER.PROFILE} ###${data.character.name || "Sans nom"}`,
+    title: `${CHARACTER.PROFILE} ${data.character.name || "Sans nom"}`,
     footer: {
-      text: `Profil de: ${data.character.name}`,
+      text: `Profil de : ${data.character.name}`,
       iconURL: data.user.displayAvatarURL,
     },
     timestamp: true,
@@ -726,6 +726,52 @@ export async function handleProfileButtonInteraction(interaction: any) {
         return;
       }
 
+      // Gestion spéciale pour la capacité "Cuisiner"
+      if (selectedCapability.name.toLowerCase() === "cuisiner") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`cooking_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA (1 vivre max)")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`cooking_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA (1-5 vivres)")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `🫕 **Cuisiner** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
+      // Gestion spéciale pour la capacité "Pêcher"
+      if (selectedCapability.name.toLowerCase() === "pêcher") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`fishing_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA (lancer simple)")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`fishing_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA (lancer chanceux)")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `${CAPABILITIES.FISH} **Pêcher** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
       // Vérifier les PA
       if (character.paTotal < selectedCapability.costPA) {
         await interaction.editReply(
@@ -758,9 +804,26 @@ export async function handleProfileButtonInteraction(interaction: any) {
         );
       }
 
+      // Fonction utilitaire pour obtenir l'emoji d'une capacité
+      const getEmojiForCapability = (emojiTag?: string): string => {
+        if (!emojiTag) return '';
+        
+        // Vérifier si l'emojiTag est une clé valide dans CAPABILITIES
+        if (emojiTag in CAPABILITIES) {
+          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + ' ';
+        }
+        
+        // Si l'emojiTag n'est pas trouvé, essayer avec la version en majuscules
+        const upperEmojiTag = emojiTag.toUpperCase();
+        if (upperEmojiTag in CAPABILITIES) {
+          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + ' ';
+        }
+        
+        return '';
+      };
+
       await interaction.editReply({
-        content: `✅ **${selectedCapability.name}** utilisée avec succès !\n${result.message || ""
-          }`,
+        content: `${getEmojiForCapability(selectedCapability.emojiTag)}**${selectedCapability.name}**\n${result.message || ""}`,
       });
     } catch (error: any) {
       logger.error("Error using capability via button:", {

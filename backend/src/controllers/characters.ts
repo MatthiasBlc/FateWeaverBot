@@ -813,7 +813,7 @@ export const useCharacterCapability: RequestHandler = async (
 ) => {
   try {
     const { id } = req.params;
-    const { capabilityId, capabilityName, isSummer } = req.body;
+    const { capabilityId, capabilityName, isSummer, paToUse, inputQuantity } = req.body;
 
     // Utiliser le nom ou l'ID selon ce qui est fourni
     const capabilityIdentifier = capabilityId || capabilityName;
@@ -825,7 +825,9 @@ export const useCharacterCapability: RequestHandler = async (
     const result = await characterService.useCharacterCapability(
       id,
       capabilityIdentifier,
-      isSummer
+      isSummer,
+      paToUse,
+      inputQuantity
     );
 
     res.status(200).json(result);
@@ -836,7 +838,7 @@ export const useCharacterCapability: RequestHandler = async (
         error.message === "Capacité non trouvée"
       ) {
         next(createHttpError(404, error.message));
-      } else if (error.message.includes("PA")) {
+      } else if (error.message.includes("PA") || error.message.includes("vivres") || error.message.includes("Vivres")) {
         next(createHttpError(400, error.message));
       } else {
         next(

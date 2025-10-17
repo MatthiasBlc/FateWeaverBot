@@ -1,0 +1,66 @@
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { httpClient } from "../../services/httpClient";
+import { logger } from "../../services/logger";
+import { sendLogMessage } from "../../utils/channels";
+import { CAPABILITIES, STATUS } from "../../constants/emojis";
+
+/**
+ * Gère le choix du nombre de PA pour pêcher
+ */
+export async function handleFishingPAChoice(interaction: any) {
+  if (!interaction.isButton()) return;
+
+  const [, characterId, userId, paStr] = interaction.customId.split(":");
+  const paToUse = parseInt(paStr, 10);
+
+  // Vérifier que l'utilisateur qui clique est bien le propriétaire
+  if (interaction.user.id !== userId) {
+    await interaction.reply({
+      content: `${STATUS.ERROR} Vous ne pouvez utiliser que vos propres capacités.`,
+      flags: ["Ephemeral"],
+    });
+    return;
+  }
+
+  await interaction.deferReply({ flags: ["Ephemeral"] });
+
+  try {
+    await executeFishing(interaction, characterId, paToUse);
+  } catch (error: any) {
+    logger.error("Error handling fishing PA choice:", { error });
+    await interaction.editReply(
+      `${STATUS.ERROR} ${error.response?.data?.error || error.message || "Une erreur est survenue"}`
+    );
+  }
+}
+
+/**
+ * Exécute la capacité pêcher avec les paramètres donnés
+ */
+async function executeFishing(
+  interaction: any,
+  characterId: string,
+  paToUse: number
+) {
+  try {
+    const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
+      capabilityName: "Pêcher",
+      paToUse,
+    });
+
+    const result = response.data;
+
+    // Afficher le résultat
+    if (result.publicMessage && interaction.guildId) {
+      await sendLogMessage(interaction.guildId, interaction.client, result.publicMessage);
+    }
+
+    await interaction.editReply({
+      content: `${CAPABILITIES.FISH} **Pêcher**\n${result.message || ""}`,
+      components: [],
+    });
+  } catch (error: any) {
+    logger.error("Error executing fishing:", { error });
+    throw error;
+  }
+}

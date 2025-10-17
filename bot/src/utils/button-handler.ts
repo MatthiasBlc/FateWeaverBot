@@ -798,6 +798,40 @@ export class ButtonHandler {
         });
       }
     });
+
+    // =================== COOKING HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour cuisiner
+    this.registerHandlerByPrefix("cooking_pa:", async (interaction) => {
+      try {
+        const { handleCookingPAChoice } = await import(
+          "../features/users/cooking.handlers.js"
+        );
+        await handleCookingPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling cooking PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour cuisiner.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== FISHING HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour pêcher
+    this.registerHandlerByPrefix("fishing_pa:", async (interaction) => {
+      try {
+        const { handleFishingPAChoice } = await import(
+          "../features/users/fishing.handlers.js"
+        );
+        await handleFishingPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling fishing PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour pêcher.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
   /**
    * Enregistre un gestionnaire pour tous les boutons commençant par un préfixe

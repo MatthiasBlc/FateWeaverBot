@@ -36,6 +36,7 @@ export interface CapabilityResult {
   updatedCharacter?: Character;
   divertCounter?: number;
   pmGained?: number;
+  paUsed?: number;
 }
 
 export interface CharacterWithCapabilities extends Character {
@@ -466,7 +467,9 @@ export class CharacterService {
   async useCharacterCapability(
     characterId: string,
     capabilityIdentifier: string,
-    isSummer?: boolean
+    isSummer?: boolean,
+    paToUse?: number,
+    inputQuantity?: number
   ) {
     // Récupérer le personnage avec ses capacités
     const character = (await prisma.character.findUnique({
@@ -540,7 +543,7 @@ export class CharacterService {
         result = await this.useFishingCapability(
           character,
           capability,
-          isSummer
+          paToUse || 1
         );
         break;
       case "divertir":
@@ -549,17 +552,23 @@ export class CharacterService {
       case "bûcheronner":
         result = await this.useLoggingCapability(character, capability);
         break;
+      case "cuisiner":
+        result = await this.useCookingCapability(character, capability, paToUse, inputQuantity);
+        break;
       default:
         throw new Error("Capacité non implémentée");
     }
 
     // Mettre à jour les PA du personnage et ajouter les ressources à la ville
     const updatedCharacter = await prisma.$transaction(async (tx) => {
+      // Déterminer le nombre de PA à déduire (utiliser paUsed si défini, sinon costPA)
+      const paToDeduct = result.paUsed !== undefined ? result.paUsed : capability.costPA;
+
       // Mettre à jour les PA du personnage
       const characterUpdate = await tx.character.update({
         where: { id: characterId },
         data: {
-          paTotal: character.paTotal - capability.costPA,
+          paTotal: character.paTotal - paToDeduct,
           lastPaUpdate: new Date(),
           updatedAt: new Date(),
         },
@@ -569,7 +578,7 @@ export class CharacterService {
       if (
         result.loot &&
         result.loot.foodSupplies &&
-        result.loot.foodSupplies > 0
+        result.loot.foodSupplies !== 0
       ) {
         // Récupérer le type de ressource "Vivres"
         const vivresType = await tx.resourceType.findFirst({
@@ -577,22 +586,67 @@ export class CharacterService {
         });
 
         if (vivresType) {
+          if (result.loot.foodSupplies > 0) {
+            // Production de vivres
+            await tx.resourceStock.upsert({
+              where: {
+                locationType_locationId_resourceTypeId: {
+                  locationType: "CITY",
+                  locationId: character.townId,
+                  resourceTypeId: vivresType.id,
+                },
+              },
+              update: {
+                quantity: { increment: result.loot.foodSupplies },
+              },
+              create: {
+                locationType: "CITY",
+                locationId: character.townId,
+                resourceTypeId: vivresType.id,
+                quantity: result.loot.foodSupplies,
+              },
+            });
+          } else {
+            // Consommation de vivres (valeur négative)
+            await tx.resourceStock.update({
+              where: {
+                locationType_locationId_resourceTypeId: {
+                  locationType: "CITY",
+                  locationId: character.townId,
+                  resourceTypeId: vivresType.id,
+                },
+              },
+              data: {
+                quantity: { increment: result.loot.foodSupplies }, // increment avec une valeur négative = décrément
+              },
+            });
+          }
+        }
+      }
+
+      // Ajouter les repas générés au stock de la ville (pour la capacité cuisiner)
+      if (result.loot && result.loot.preparedFood && result.loot.preparedFood > 0) {
+        const repasType = await tx.resourceType.findFirst({
+          where: { name: "Repas" },
+        });
+
+        if (repasType) {
           await tx.resourceStock.upsert({
             where: {
               locationType_locationId_resourceTypeId: {
                 locationType: "CITY",
                 locationId: character.townId,
-                resourceTypeId: vivresType.id,
+                resourceTypeId: repasType.id,
               },
             },
             update: {
-              quantity: { increment: result.loot.foodSupplies },
+              quantity: { increment: result.loot.preparedFood },
             },
             create: {
               locationType: "CITY",
               locationId: character.townId,
-              resourceTypeId: vivresType.id,
-              quantity: result.loot.foodSupplies,
+              resourceTypeId: repasType.id,
+              quantity: result.loot.preparedFood,
             },
           });
         }
@@ -687,31 +741,26 @@ export class CharacterService {
    * Utilise la capacité de pêche
    * @param character Le personnage qui utilise la capacité
    * @param capability La capacité utilisée
+   * @param paToUse Nombre de PA à utiliser (1 ou 2)
    */
   private async useFishingCapability(
     character: CharacterWithCapabilities,
     capability: Capability,
-    isSummer?: boolean
+    paToUse: number
   ): Promise<CapabilityResult> {
-    // Pêche normale : été = 0-4 vivres, hiver = 0-2 vivres
-    const maxFood = isSummer ? 4 : 2;
-    const foodAmount = Math.floor(Math.random() * (maxFood + 1)); // 0 à maxFood inclus
+    // Utiliser le service capability pour exécuter la pêche avec les tables de loot de la DB
+    const { CapabilityService } = await import('./capability.service');
+    const capabilityService = new CapabilityService(prisma);
 
-    if (foodAmount > 0) {
-      return {
-        success: true,
-        message: `Vous avez pêché avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
-        publicMessage: `🎣 ${character.name} a pêché ${foodAmount} vivres.`,
-        loot: { foodSupplies: foodAmount },
-      };
-    } else {
-      return {
-        success: false,
-        message: `La pêche n'a rien donné cette fois. Vous avez dépensé ${capability.costPA} PA.`,
-        publicMessage: `🎣 ${character.name} n'a rien attrapé.`,
-        loot: { foodSupplies: 0 },
-      };
-    }
+    const fishResult = await capabilityService.executeFish(character.id, paToUse as 1 | 2);
+
+    return {
+      success: fishResult.success,
+      message: fishResult.message,
+      publicMessage: `🎣 ${character.name} ${fishResult.message.includes('coquillage') ? 'a trouvé un coquillage !' : fishResult.message}`,
+      loot: fishResult.loot || {},
+      paUsed: paToUse, // Retourner le nombre de PA utilisés
+    };
   }
 
   /**
@@ -744,6 +793,104 @@ export class CharacterService {
       }`,
       divertCounter: newDivertCounter,
       pmGained,
+    };
+  }
+
+  /**
+   * Capacité de cuisine
+   */
+  /**
+   * Utilise la capacité de cuisine
+   * @param character Le personnage qui utilise la capacité
+   * @param capability La capacité utilisée
+   * @param paToUse Nombre de PA à utiliser (1 ou 2)
+   * @param inputQuantity Nombre de vivres à transformer (optionnel)
+   */
+  private async useCookingCapability(
+    character: CharacterWithCapabilities,
+    capability: Capability,
+    paToUse?: number,
+    inputQuantity?: number
+  ): Promise<CapabilityResult> {
+    // Déterminer le nombre de PA à utiliser (par défaut 1)
+    const actualPaToUse = paToUse || 1;
+
+    // Valider que le nombre de PA est correct
+    if (actualPaToUse !== 1 && actualPaToUse !== 2) {
+      throw new Error("Vous devez utiliser 1 ou 2 PA pour cuisiner");
+    }
+
+    // Vérifier que le personnage a assez de PA
+    if (character.paTotal < actualPaToUse) {
+      throw new Error(
+        `PA insuffisants : vous avez ${character.paTotal} PA mais vous voulez en utiliser ${actualPaToUse}.`
+      );
+    }
+
+    // Déterminer le nombre maximum de vivres utilisables selon les PA
+    const maxInput = actualPaToUse === 1 ? 1 : 5;
+
+    // Vérifier qu'il y a des vivres disponibles dans la ville
+    const vivresType = await prisma.resourceType.findFirst({
+      where: { name: "Vivres" },
+    });
+
+    if (!vivresType) {
+      throw new Error("Type de ressource Vivres non trouvé");
+    }
+
+    const vivresStock = await prisma.resourceStock.findUnique({
+      where: {
+        locationType_locationId_resourceTypeId: {
+          locationType: "CITY",
+          locationId: character.townId,
+          resourceTypeId: vivresType.id,
+        },
+      },
+    });
+
+    const vivresAvailable = vivresStock?.quantity || 0;
+
+    // Déterminer combien de vivres utiliser
+    let vivresToConsume: number;
+    if (inputQuantity !== undefined) {
+      // L'utilisateur a spécifié une quantité
+      if (inputQuantity < 1) {
+        throw new Error("Vous devez utiliser au moins 1 vivre");
+      }
+      if (inputQuantity > maxInput) {
+        throw new Error(
+          `Avec ${actualPaToUse} PA, vous ne pouvez utiliser que ${maxInput} vivres maximum`
+        );
+      }
+      vivresToConsume = inputQuantity;
+    } else {
+      // Utiliser le maximum possible
+      vivresToConsume = Math.min(vivresAvailable, maxInput);
+    }
+
+    // Vérifier qu'il y a assez de vivres
+    if (vivresAvailable < vivresToConsume) {
+      throw new Error(
+        `Vivres insuffisants : il y a ${vivresAvailable} vivres dans le stock de la ville mais vous voulez en utiliser ${vivresToConsume}.`
+      );
+    }
+
+    // Calculer le nombre de repas créés avec la formule aléatoire
+    // Output = random(Input - 1, Input × 3)
+    const minOutput = vivresToConsume - 1;
+    const maxOutput = vivresToConsume * 3;
+    const repasCreated = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+
+    return {
+      success: true,
+      message: `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas (coût : ${actualPaToUse} PA).`,
+      publicMessage: `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres.`,
+      loot: {
+        foodSupplies: -vivresToConsume, // Consommation de vivres
+        preparedFood: repasCreated, // Production de repas
+      },
+      paUsed: actualPaToUse, // Retourner le nombre de PA utilisés
     };
   }
 
