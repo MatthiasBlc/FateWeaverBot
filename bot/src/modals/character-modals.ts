@@ -3,12 +3,18 @@ import {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  StringSelectMenuBuilder,
   type ModalSubmitInteraction,
+  type StringSelectMenuInteraction,
 } from "discord.js";
 import { apiService } from "../services/api";
 import { logger } from "../services/logger";
 import { Town, Character } from "../types/entities";
 import { formatErrorForLog } from "../utils/errors";
+import { sendLogMessage } from "../utils/channels";
+import { JobAPIService } from "../services/api/job-api.service";
+import { httpClient } from "../services/httpClient";
+import { CHARACTER, STATUS, SYSTEM } from "@shared/constants/emojis";
 
 /**
  * Modal pour créer un nouveau personnage
@@ -64,6 +70,7 @@ export function createRerollModal() {
 
 /**
  * Gère la soumission du modal de création de personnage
+ * Affiche un select menu pour choisir le métier avant de créer le personnage
  */
 export async function handleCharacterCreation(
   interaction: ModalSubmitInteraction
@@ -75,65 +82,60 @@ export async function handleCharacterCreation(
 
     if (!characterName.trim()) {
       await interaction.reply({
-        content: "❌ Le nom du personnage ne peut pas être vide.",
+        content: `${STATUS.ERROR} Le nom du personnage ne peut pas être vide.`,
         flags: ["Ephemeral"],
       });
       return;
     }
 
-    // Get or create user
-    const user = await apiService.getOrCreateUser(
-      interaction.user.id,
-      interaction.user.username,
-      interaction.user.discriminator
-    );
+    // Récupérer les métiers disponibles
+    const jobService = new JobAPIService(httpClient);
+    const jobs = await jobService.getAllJobs();
 
-    // Get or create town
-    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as Town;
-
-    if (!town) {
+    if (jobs.length === 0) {
       await interaction.reply({
-        content: "❌ Impossible de trouver ou créer la ville pour ce serveur.",
+        content: `${STATUS.ERROR} Aucun métier disponible. Contactez un administrateur.`,
         flags: ["Ephemeral"],
       });
       return;
     }
 
-    // Create character
-    const character = (await apiService.characters.createCharacter({
-      name: characterName.trim(),
-      userId: user.id,
-      townId: town.id,
-    })) as Character;
+    // Créer le select menu pour les métiers
+    const jobSelectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`job_select:${characterName.trim()}`)
+      .setPlaceholder("Choisissez votre métier")
+      .addOptions(
+        jobs.map((job) => ({
+          label: job.name,
+          value: job.id.toString(),
+          description: job.description || `Capacité: ${job.startingAbility?.name || 'Aucune'}`,
+        }))
+      );
 
-    logger.info("Character created successfully", {
-      characterId: character.id,
-      userId: user.id,
-      townId: town.id,
-      characterName: character.name,
-    });
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(jobSelectMenu);
 
     await interaction.reply({
-      content: `✅ Bienvenue **${character.name}** !\nVotre personnage a été créé avec succès dans **${town.name}**.\n\n**Statistiques initiales :**\n❤️ Vie : Sain\n⚡ PA : 2/4\n\nVous pouvez maintenant utiliser toutes les commandes du bot !`,
+      content: `${SYSTEM.SPARKLES} **Bienvenue ${characterName.trim()} !**\n\nChoisis maintenant ton métier de départ :`,
+      components: [row],
       flags: ["Ephemeral"],
     });
+
   } catch (error) {
-    logger.error("Error creating character:", {
+    logger.error("Error in character creation modal:", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
       error:
         error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-            }
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          }
           : error,
     });
 
     await interaction.reply({
-      content:
-        "❌ Une erreur est survenue lors de la création de votre personnage. Veuillez réessayer.",
+      content: `${STATUS.ERROR} Une erreur est survenue lors de la création de votre personnage. Veuillez réessayer.`,
       flags: ["Ephemeral"],
     });
   }
@@ -149,7 +151,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
 
     if (!newCharacterName.trim()) {
       await interaction.reply({
-        content: "❌ Le nom du personnage ne peut pas être vide.",
+        content: `${STATUS.ERROR} Le nom du personnage ne peut pas être vide.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -167,7 +169,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
 
     if (!town) {
       await interaction.reply({
-        content: "❌ Impossible de trouver la ville pour ce serveur.",
+        content: `${STATUS.ERROR} Impossible de trouver la ville pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -188,7 +190,7 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     });
 
     await interaction.reply({
-      content: `✨ **${newCharacter.name}** est né(e) !\n\nVotre nouveau personnage est maintenant actif.\n\n**Statistiques initiales :**\n❤️ Vie : Sain\n⚡ PA : 2/4\n\nVous pouvez continuer votre aventure !`,
+      content: `${SYSTEM.SPARKLES} **${newCharacter.name}** est né(e) !\n\nVotre nouveau personnage est maintenant actif.\n\n**Statistiques initiales :**\n${CHARACTER.HP_FULL} Vie : Sain\n${CHARACTER.PA} PA : 2/4\n\nVous pouvez continuer votre aventure !`,
       flags: ["Ephemeral"],
     });
   } catch (error) {
@@ -204,13 +206,13 @@ export async function handleReroll(interaction: ModalSubmitInteraction) {
     ) {
       await interaction.reply({
         content:
-          "❌ Vous n'avez pas l'autorisation de créer un nouveau personnage. Contactez un administrateur pour obtenir l'autorisation de reroll.",
+          `${STATUS.ERROR} Vous n'avez pas l'autorisation de créer un nouveau personnage. Contactez un administrateur pour obtenir l'autorisation de reroll.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.reply({
         content:
-          "❌ Une erreur est survenue lors de la création de votre nouveau personnage. Veuillez réessayer.",
+          `${STATUS.ERROR} Une erreur est survenue lors de la création de votre nouveau personnage. Veuillez réessayer.`,
         flags: ["Ephemeral"],
       });
     }
@@ -234,7 +236,7 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
 
     if (!town) {
       await interaction.reply({
-        content: "❌ Impossible de trouver ou créer la ville pour ce serveur.",
+        content: `${STATUS.ERROR} Impossible de trouver ou créer la ville pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return false;
@@ -260,10 +262,10 @@ export async function checkAndPromptCharacterCreation(interaction: any) {
       error:
         error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-            }
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          }
           : error,
     });
     return false;
@@ -287,7 +289,7 @@ export async function checkAndPromptReroll(interaction: any) {
 
     if (!town) {
       await interaction.reply({
-        content: "❌ Impossible de trouver la ville pour ce serveur.",
+        content: `${STATUS.ERROR} Impossible de trouver la ville pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return false;
@@ -313,12 +315,108 @@ export async function checkAndPromptReroll(interaction: any) {
       error:
         error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-            }
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          }
           : error,
     });
     return false;
+  }
+}
+
+/**
+ * Gère la sélection du métier lors de la création d'un personnage
+ */
+export async function handleJobSelection(
+  interaction: StringSelectMenuInteraction
+) {
+  try {
+    // Extraire le nom du personnage du customId
+    const [, characterName] = interaction.customId.split(":");
+    const jobId = parseInt(interaction.values[0], 10);
+
+    if (!characterName || isNaN(jobId)) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de la sélection du métier. Veuillez réessayer.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Get or create user
+    const user = await apiService.getOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.discriminator
+    );
+
+    // Get or create town
+    const town = (await apiService.guilds.getTownByGuildId(interaction.guildId!)) as Town;
+
+    if (!town) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Impossible de trouver ou créer la ville pour ce serveur.`,
+      });
+      return;
+    }
+
+    // Create character with job
+    const character = (await apiService.characters.createCharacter({
+      name: characterName,
+      userId: user.id,
+      townId: town.id,
+      jobId: jobId,
+    })) as Character;
+
+    logger.info("Character created successfully with job", {
+      characterId: character.id,
+      userId: user.id,
+      townId: town.id,
+      characterName: character.name,
+      jobId: jobId,
+    });
+
+    // Récupérer les informations du métier pour l'affichage
+    const jobName = character.job?.name || "Métier inconnu";
+    const startingAbilityName = character.job?.startingAbility?.name || "Aucune";
+
+    // Envoyer un message dans le canal de logs
+    if (interaction.guildId) {
+      await sendLogMessage(
+        interaction.guildId,
+        interaction.client,
+        `🎉 **${character.name}** vient d'arriver dans **${town.name}** !\n**Métier:** ${jobName}\n**Capacité de départ:** ${startingAbilityName}`
+      );
+    }
+
+    await interaction.editReply({
+      content: `${SYSTEM.SPARKLES} Bienvenue **${character.name}** !\n\nTon aventure commence maintenant !\n\nTu es **${jobName}**. Tu as les capacités suivantes : **Couper du bois** et **${startingAbilityName}**.\n\nVoici un petit rappel des commandes utilisables :\n- **/profil** te permet d'accéder au profil de ton personnage pour manger, utiliser tes capacités, etc.\n- **/chantier** te permet de participer (avec tes PA) à un chantier\n- **/expedition** te permet de créer une expédition ou rejoindre celle en préparation\n- **/stock** te permet de savoir tout ce que vous avez en stock au camp\n- enfin **/help** te fait un récap de tout ça\n\n${interaction.guild ?
+        (() => {
+          const veilleurRole = interaction.guild.roles.cache.find(role =>
+            role.name.toLowerCase() === 'veilleur' ||
+            role.name.toLowerCase() === 'veilleuse' ||
+            role.name.toLowerCase() === 'veilleurs'
+          );
+          return veilleurRole ?
+            `En cas de besoin, les **${veilleurRole}** ne sont pas loin.` :
+            'En cas de besoin, les **Veilleurs** ne sont pas loin.';
+        })() :
+        'En cas de besoin, les **Veilleurs** ne sont pas loin.'
+        }
+https://discord.com/channels/1134100914333040680/1146442875295498360`,
+    });
+  } catch (error) {
+    logger.error("Error creating character with job:", {
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+      error: formatErrorForLog(error),
+    });
+
+    await interaction.editReply({
+      content: `${STATUS.ERROR} Une erreur est survenue lors de la création de votre personnage. Veuillez réessayer.`,
+    });
   }
 }

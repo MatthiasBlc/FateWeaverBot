@@ -53,7 +53,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
 
 export const upsertCharacter: RequestHandler = async (req, res, next) => {
   try {
-    const { userId, townId, name, roleIds } = req.body;
+    const { userId, townId, name, roleIds, jobId } = req.body;
 
     if (!userId || !townId) {
       throw createHttpError(400, "Les champs userId et townId sont requis");
@@ -113,16 +113,24 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
           name: characterName,
           user: { connect: { id: userId } },
           town: { connect: { id: townId } },
+          ...(jobId && { job: { connect: { id: jobId } } }),
         },
         include: {
           user: true,
           town: { include: { guild: true } },
           characterRoles: { include: { role: true } },
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
         },
       });
 
-      // Si c'est une nouvelle création (et non une mise à jour), on ajoute la compétence de base
+      // Si c'est une nouvelle création (et non une mise à jour), on ajoute les compétences
       if (!existingCharacter) {
+        // 1. Ajouter la capacité de base "Bûcheronner"
         const bucheronnerCapability = await tx.capability.findFirst({
           where: { name: "Bûcheronner" },
         });
@@ -141,6 +149,34 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
           console.error(
             'La capacité "Bûcheronner" n\'a pas été trouvée dans la base de données'
           );
+        }
+
+        // 2. Si un métier est fourni, attribuer sa capacité de départ
+        if (jobId && character.job?.startingAbility) {
+          const startingAbilityId = character.job.startingAbility.id;
+
+          // Vérifier si le personnage a déjà cette capacité
+          const hasCapability = await tx.characterCapability.findUnique({
+            where: {
+              characterId_capabilityId: {
+                characterId: character.id,
+                capabilityId: startingAbilityId,
+              },
+            },
+          });
+
+          // Ajouter la capacité si elle n'existe pas déjà
+          if (!hasCapability) {
+            await tx.characterCapability.create({
+              data: {
+                characterId: character.id,
+                capabilityId: startingAbilityId,
+              },
+            });
+            console.log(
+              `Capacité "${character.job.startingAbility.name}" attribuée au personnage ${character.id}`
+            );
+          }
         }
       }
 
@@ -172,6 +208,12 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
           user: true,
           town: { include: { guild: true } },
           characterRoles: { include: { role: true } },
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
         },
       });
     });
@@ -191,6 +233,12 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true,
+          },
+        },
       },
     });
 
@@ -940,5 +988,38 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * POST /characters/:id/job - Changer le métier d'un personnage
+ */
+export const changeCharacterJob: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { jobId } = req.body;
+
+    if (!jobId) {
+      throw createHttpError(400, "jobId is required");
+    }
+
+    const character = await characterService.changeCharacterJob(id, jobId);
+
+    res.status(200).json(character);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (
+        error.message === "Character not found" ||
+        error.message === "Job not found"
+      ) {
+        next(createHttpError(404, error.message));
+      } else {
+        next(
+          createHttpError(500, "Error changing character job", { cause: error })
+        );
+      }
+    } else {
+      next(createHttpError(500, "An unknown error occurred"));
+    }
   }
 };

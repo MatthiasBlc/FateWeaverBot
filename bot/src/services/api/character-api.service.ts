@@ -125,6 +125,7 @@ export class CharacterAPIService extends BaseAPIService {
     name: string;
     userId: string;
     townId: string;
+    jobId?: number;
   }) {
     return this.post('/characters', characterData);
   }

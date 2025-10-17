@@ -388,6 +388,22 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour la sélection de métier lors de la création de personnage
+    this.registerHandlerByPrefix("job_select:", async (interaction) => {
+      try {
+        const { handleJobSelection } = await import(
+          "../modals/character-modals.js"
+        );
+        await handleJobSelection(interaction);
+      } catch (error) {
+        logger.error("Error handling job selection:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du métier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

@@ -8,6 +8,7 @@ export interface CreateCharacterDto {
   name: string;
   nickname?: string | null;
   roles: string[];
+  jobId?: number;
 }
 
 export interface UpdateCharacterStatsDto {

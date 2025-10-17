@@ -86,4 +86,10 @@ router.delete(
 );
 router.post("/:id/inventory/transfer", objectsController.transferObject);
 
+// Job management
+router.post("/:id/job", CharacterController.changeCharacterJob);
+
+// Cataplasme
+router.post("/:id/use-cataplasme", CharacterController.useCataplasme);
+
 export default router;

@@ -7,6 +7,7 @@ export interface Character {
   name: string;
   userId: string;
   townId: string;
+  jobId?: number | null;
   isActive: boolean;
   isDead: boolean;
   canReroll: boolean;
@@ -18,6 +19,21 @@ export interface Character {
   lastPaUpdate: string;
   createdAt: string;
   updatedAt: string;
+  job?: {
+    id: number;
+    name: string;
+    description: string | null;
+    startingAbility: {
+      id: string;
+      name: string;
+      emojiTag: string;
+    };
+    optionalAbility?: {
+      id: string;
+      name: string;
+      emojiTag: string;
+    } | null;
+  } | null;
   user?: {
     id: string;
     discordId: string;

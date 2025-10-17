@@ -101,6 +101,7 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel, // Utilise la valeur du backend (devrait être 0)
             hp: character.hp, // Utilise la valeur du backend (devrait être 0)
             pm: character.pm, // Utilise la valeur du backend (devrait être 0)
+            job: character.job || null, // Ajouter le métier
             capabilities: [], // Personnage mort n'a pas de capacités actives
           },
           actionPoints: {
@@ -178,6 +179,7 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel || 0,
             hp: character.hp || 5,
             pm: character.pm || 5,
+            job: character.job || null, // Ajouter le métier
             capabilities: capabilities.map((cap) => ({
               id: cap.id,
               name: cap.name,
@@ -350,10 +352,12 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   // Ancienne logique supprimée ici
 
   // Ajout des champs d'information
+  const jobText = data.character.job?.name || "Aucun métier";
+
   const fields = [
     {
       name: "Métier",
-      value: discordRolesText,
+      value: jobText,
       inline: true,
     },
     {

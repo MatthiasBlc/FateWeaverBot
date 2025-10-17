@@ -136,6 +136,52 @@ async function main() {
     console.log(`✅ ${existingCapabilities.length} capacités déjà présentes`);
   }
 
+  // Créer les métiers si nécessaire
+  const existingJobs = await prisma.job.findMany();
+
+  if (existingJobs.length === 0) {
+    console.log("💼 Création des métiers de base...");
+
+    const jobsData = [
+      { name: "Chasseuse", startingAbility: "Chasser", description: " " },
+      { name: "Cueilleur", startingAbility: "Cueillir", description: " " },
+      { name: "Pêcheur", startingAbility: "Pêcher", description: " " },
+      { name: "Mineuse", startingAbility: "Miner", description: " " },
+      { name: "Tisserand", startingAbility: "Tisser", description: " " },
+      { name: "Forgeronne", startingAbility: "Forger", description: " " },
+      { name: "Menuisier", startingAbility: "Menuiser", description: " " },
+      { name: "Cuisinière", startingAbility: "Cuisiner", description: " " },
+      { name: "Guérisseur", startingAbility: "Soigner", description: " " },
+      { name: "Érudit", startingAbility: "Rechercher", description: " " },
+      { name: "Cartographe", startingAbility: "Cartographier", description: " " },
+      { name: "Météorologue", startingAbility: "Auspice", description: " " },
+      { name: "Artiste", startingAbility: "Divertir", description: " " },
+    ];
+
+    for (const jobData of jobsData) {
+      const startingAbility = await prisma.capability.findUnique({
+        where: { name: jobData.startingAbility },
+      });
+
+      if (!startingAbility) {
+        console.error(`❌ Capacité "${jobData.startingAbility}" introuvable pour le métier ${jobData.name}`);
+        continue;
+      }
+
+      await prisma.job.create({
+        data: {
+          name: jobData.name,
+          description: jobData.description,
+          startingAbilityId: startingAbility.id,
+          optionalAbilityId: null,
+        },
+      });
+      console.log(`✅ Métier créé : ${jobData.name} (${jobData.startingAbility})`);
+    }
+  } else {
+    console.log(`✅ ${existingJobs.length} métiers déjà présents`);
+  }
+
   // Créer une saison par défaut si elle n'existe pas
   const existingSeason = await prisma.season.findFirst();
   if (!existingSeason) {

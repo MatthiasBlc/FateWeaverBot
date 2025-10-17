@@ -75,6 +75,8 @@ model Character {
   userId            String                @map("user_id")
   town              Town                  @relation(fields: [townId], references: [id], onDelete: Cascade)
   townId            String                @map("town_id")
+  jobId             Int?                  @map("job_id")
+  job               Job?                  @relation(fields: [jobId], references: [id], onDelete: SetNull)
   characterRoles    CharacterRole[] // Relation avec les rôles
   expeditionMembers ExpeditionMember[] // Relation avec les membres d'expédition
   paTotal           Int                   @default(2) // 0-4
@@ -237,6 +239,8 @@ model Capability {
   description           String?
   characters            CharacterCapability[]
   objectCapacityBonuses ObjectCapacityBonus[]
+  jobsAsStarting        Job[]                 @relation("JobStartingAbility")
+  jobsAsOptional        Job[]                 @relation("JobOptionalAbility")
   createdAt             DateTime              @default(now()) @map("created_at")
   updatedAt             DateTime              @updatedAt @map("updated_at")
 
@@ -253,6 +257,21 @@ model CharacterCapability {
 
   @@id([characterId, capabilityId])
   @@map("character_capabilities")
+}
+
+model Job {
+  id                Int         @id @default(autoincrement())
+  name              String      @unique
+  description       String?
+  startingAbilityId String      @map("starting_ability_id")
+  startingAbility   Capability  @relation("JobStartingAbility", fields: [startingAbilityId], references: [id], onDelete: Restrict)
+  optionalAbilityId String?     @map("optional_ability_id")
+  optionalAbility   Capability? @relation("JobOptionalAbility", fields: [optionalAbilityId], references: [id], onDelete: Restrict)
+  characters        Character[]
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("jobs")
 }
 
 model Season {

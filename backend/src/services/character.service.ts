@@ -17,6 +17,7 @@ export interface CreateCharacterData {
   name: string;
   userId: string;
   townId: string;
+  jobId?: number;
 }
 
 /**
@@ -94,6 +95,12 @@ export class CharacterService {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -109,6 +116,12 @@ export class CharacterService {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true,
+          },
+        },
       },
     });
   }
@@ -133,6 +146,7 @@ export class CharacterService {
           name: data.name,
           userId: data.userId,
           townId: data.townId,
+          jobId: data.jobId,
           paTotal: 2,
           hungerLevel: 4,
           hp: 5,
@@ -160,7 +174,51 @@ export class CharacterService {
         }
       }
 
-      return character;
+      // Si un métier est fourni, attribuer la capacité de départ
+      if (data.jobId) {
+        const job = await tx.job.findUnique({
+          where: { id: data.jobId },
+          include: { startingAbility: true },
+        });
+
+        if (job && job.startingAbility) {
+          // Vérifier si le personnage a déjà cette capacité
+          const hasCapability = await tx.characterCapability.findUnique({
+            where: {
+              characterId_capabilityId: {
+                characterId: character.id,
+                capabilityId: job.startingAbility.id,
+              },
+            },
+          });
+
+          // Ajouter la capacité si elle n'existe pas
+          if (!hasCapability) {
+            await tx.characterCapability.create({
+              data: {
+                characterId: character.id,
+                capabilityId: job.startingAbility.id,
+              },
+            });
+          }
+        }
+      }
+
+      // Récupérer le personnage avec toutes ses relations (job inclus)
+      return await tx.character.findUniqueOrThrow({
+        where: { id: character.id },
+        include: {
+          user: true,
+          town: { include: { guild: true } },
+          characterRoles: { include: { role: true } },
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
+        },
+      });
     });
   }
 
@@ -182,6 +240,12 @@ export class CharacterService {
           user: true,
           town: { include: { guild: true } },
           characterRoles: { include: { role: true } },
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
         },
       });
 
@@ -265,6 +329,12 @@ export class CharacterService {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true,
+          },
+        },
       },
       orderBy: [
         { isDead: "asc" }, // Vivants en premier
@@ -285,6 +355,12 @@ export class CharacterService {
         user: true,
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true,
+          },
+        },
       },
     });
 
@@ -669,5 +745,116 @@ export class CharacterService {
       divertCounter: newDivertCounter,
       pmGained,
     };
+  }
+
+  /**
+   * Changer le métier d'un personnage
+   * Retire les capacités de l'ancien métier et ajoute celles du nouveau
+   */
+  async changeCharacterJob(
+    characterId: string,
+    newJobId: number
+  ): Promise<Character> {
+    return await prisma.$transaction(async (tx) => {
+      // Récupérer le personnage avec son métier actuel
+      const character = await tx.character.findUnique({
+        where: { id: characterId },
+        include: {
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
+        },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Récupérer le nouveau métier
+      const newJob = await tx.job.findUnique({
+        where: { id: newJobId },
+        include: {
+          startingAbility: true,
+          optionalAbility: true,
+        },
+      });
+
+      if (!newJob) {
+        throw new Error("Job not found");
+      }
+
+      // Retirer les capacités de l'ancien métier
+      if (character.job) {
+        const oldJobAbilityIds: string[] = [];
+
+        if (character.job.startingAbility) {
+          oldJobAbilityIds.push(character.job.startingAbility.id);
+        }
+
+        if (character.job.optionalAbility) {
+          oldJobAbilityIds.push(character.job.optionalAbility.id);
+        }
+
+        // Supprimer ces capacités du personnage
+        if (oldJobAbilityIds.length > 0) {
+          await tx.characterCapability.deleteMany({
+            where: {
+              characterId: character.id,
+              capabilityId: { in: oldJobAbilityIds },
+            },
+          });
+        }
+      }
+
+      // Ajouter les capacités du nouveau métier
+      const newJobAbilityIds: string[] = [];
+
+      if (newJob.startingAbility) {
+        newJobAbilityIds.push(newJob.startingAbility.id);
+      }
+
+      if (newJob.optionalAbility) {
+        newJobAbilityIds.push(newJob.optionalAbility.id);
+      }
+
+      // Créer les nouvelles capacités
+      for (const abilityId of newJobAbilityIds) {
+        await tx.characterCapability.upsert({
+          where: {
+            characterId_capabilityId: {
+              characterId: character.id,
+              capabilityId: abilityId,
+            },
+          },
+          update: {},
+          create: {
+            characterId: character.id,
+            capabilityId: abilityId,
+          },
+        });
+      }
+
+      // Mettre à jour le personnage avec le nouveau métier
+      return await tx.character.update({
+        where: { id: characterId },
+        data: { jobId: newJobId },
+        include: {
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true,
+            },
+          },
+          capabilities: {
+            include: {
+              capability: true,
+            },
+          },
+        },
+      });
+    });
   }
 }

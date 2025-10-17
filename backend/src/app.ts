@@ -29,6 +29,7 @@ import objectsRoutes from "./routes/objects";
 import projectsRoutes from "./routes/projects";
 import resourcesRoutes from "./routes/resources";
 import skillsRoutes from "./routes/skills";
+import jobRoutes from "./routes/jobs";
 
 const app = express();
 
@@ -119,6 +120,7 @@ app.use("/api/chantier", chantierRoutes);
 app.use("/api/seasons", seasonsRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);
+app.use("/api/jobs", jobRoutes);
 
 // Routes admin
 app.use("/api/admin/expeditions", expeditionAdminRoutes);

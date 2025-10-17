@@ -10,6 +10,7 @@ export interface CharacterDto {
   hungerLevel: number;
   hp: number;
   pm: number;
+  jobId?: number | null;
   user?: {
     id: string;
     discordId: string;
@@ -22,6 +23,21 @@ export interface CharacterDto {
     id: string;
     discordId: string;
     name: string;
+  };
+  job?: {
+    id: number;
+    name: string;
+    description: string | null;
+    startingAbility?: {
+      id: string;
+      name: string;
+      emojiTag: string;
+    };
+    optionalAbility?: {
+      id: string;
+      name: string;
+      emojiTag: string;
+    } | null;
   };
   roles?: Array<{
     id: string;

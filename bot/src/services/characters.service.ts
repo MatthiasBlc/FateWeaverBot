@@ -25,6 +25,17 @@ export interface CharacterCheckResult {
     paTotal: number;
     hp: number;
     pm: number;
+    jobId?: number | null;
+    job?: {
+      id: number;
+      name: string;
+      description: string | null;
+      startingAbility?: {
+        id: string;
+        name: string;
+        emojiTag: string;
+      };
+    } | null;
     roles?: Array<{ discordId: string; name: string }>;
     lastPaUpdate: string;
     createdAt: string;
@@ -42,6 +53,17 @@ export interface CharacterCheckResult {
     paTotal: number;
     hp: number;
     pm: number;
+    jobId?: number | null;
+    job?: {
+      id: number;
+      name: string;
+      description: string | null;
+      startingAbility?: {
+        id: string;
+        name: string;
+        emojiTag: string;
+      };
+    } | null;
     roles?: Array<{ discordId: string; name: string }>;
     lastPaUpdate: string;
     createdAt: string;

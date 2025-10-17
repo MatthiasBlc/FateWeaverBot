@@ -8,11 +8,22 @@ export interface ProfileData {
     hungerLevel: number;
     hp: number;
     pm: number;
+    job?: {
+      id: number;
+      name: string;
+      description: string | null;
+      startingAbility?: {
+        id: string;
+        name: string;
+        emojiTag: string;
+      };
+    } | null;
     capabilities?: Array<{  // ← Ajout des capacités
       id: string;
       name: string;
       description?: string;
       costPA: number;
+      emojiTag?: string;
     }>;
   };
   actionPoints: {
