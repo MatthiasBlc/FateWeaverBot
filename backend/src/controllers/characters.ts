@@ -77,12 +77,12 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
     const guildRoles =
       roleIds && roleIds.length > 0
         ? await prisma.role.findMany({
-            where: {
-              guildId: town.guild.id,
-              discordId: { in: roleIds },
-            },
-            select: { id: true },
-          })
+          where: {
+            guildId: town.guild.id,
+            discordId: { in: roleIds },
+          },
+          select: { id: true },
+        })
         : [];
 
     const upsertedCharacter = await prisma.$transaction(async (tx) => {
@@ -130,24 +130,24 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
 
       // Si c'est une nouvelle création (et non une mise à jour), on ajoute les compétences
       if (!existingCharacter) {
-        // 1. Ajouter la capacité de base "Bûcheronner"
-        const bucheronnerCapability = await tx.capability.findFirst({
-          where: { name: "Bûcheronner" },
+        // 1. Ajouter la capacité de base "Couper du bois"
+        const couperDuBoisCapability = await tx.capability.findFirst({
+          where: { name: "Couper du bois" },
         });
 
-        if (bucheronnerCapability) {
+        if (couperDuBoisCapability) {
           await tx.characterCapability.create({
             data: {
               characterId: character.id,
-              capabilityId: bucheronnerCapability.id,
+              capabilityId: couperDuBoisCapability.id,
             },
           });
           console.log(
-            `Capacité "Bûcheronner" attribuée au personnage ${character.id}`
+            `Capacité "Couper du bois" attribuée au personnage ${character.id}`
           );
         } else {
           console.error(
-            'La capacité "Bûcheronner" n\'a pas été trouvée dans la base de données'
+            'La capacité "Couper du bois" n\'a pas été trouvée dans la base de données'
           );
         }
 

@@ -2,7 +2,7 @@ import express from "express";
 import {
   getAllCapabilities,
   createCapability,
-  executeBûcheronner,
+  executeCouperDuBois,
   executeMiner,
   executeFish,
   executeCraft,
@@ -22,7 +22,7 @@ router.get("/", requireAuthOrInternal, getAllCapabilities);
 router.post("/", requireAuthOrInternal, createCapability);
 
 // Exécuter des capacités spécifiques
-router.post("/:characterId/bucheronner", requireAuthOrInternal, executeBûcheronner);
+router.post("/:characterId/couper-du-bois", requireAuthOrInternal, executeCouperDuBois);
 router.post("/:characterId/miner", requireAuthOrInternal, executeMiner);
 router.post("/:characterId/pecher", requireAuthOrInternal, executeFish);
 router.post("/:characterId/harvest", requireAuthOrInternal, executeHarvest);

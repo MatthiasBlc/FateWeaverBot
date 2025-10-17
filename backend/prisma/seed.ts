@@ -24,7 +24,7 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 2,
         description:
-          "Chasser du gibier pour obtenir des vivres.",
+          "Chasser du gibier pour obtenir des vivres",
       },
       {
         name: "Cueillir",
@@ -32,7 +32,7 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 1,
         description:
-          "Cueillir des plantes comestibles pour obtenir des vivres.",
+          "Cueillir des plantes comestibles pour obtenir des vivres",
       },
       {
         name: "Pêcher",
@@ -40,49 +40,49 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 1,
         description:
-          "Pêcher du poisson pour obtenir des Vivres.",
+          "Pêcher du poisson pour obtenir des vivres",
       },
       {
         name: "Couper du bois",
         emojiTag: "CHOPPING",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: "Récolter du bois.",
+        description: "Récolter du bois",
       },
       {
         name: "Miner",
         emojiTag: "MINING",
         category: CapabilityCategory.HARVEST,
         costPA: 2,
-        description: "Récolter du minerai.",
+        description: "Récolter du minerai",
       },
       {
         name: "Cuisiner",
         emojiTag: "COOKING",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: "Multiplier des Vivres en Repas.",
+        description: "Multiplier des Vivres en Repas",
       },
       {
         name: "Tisser",
         emojiTag: "WEAVING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Concevoir des projets de tissage.",
+        description: "Concevoir des projets de tissage",
       },
       {
         name: "Forger",
         emojiTag: "FORGING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Concevoir des projets de forge.",
+        description: "Concevoir des projets de forge",
       },
       {
         name: "Travailler le bois",
         emojiTag: "WOODWORKING",
         category: CapabilityCategory.CRAFT,
         costPA: 1,
-        description: "Concevoir des projets de menuiserie.",
+        description: "Concevoir des projets de menuiserie",
       },
       {
         name: "Soigner",
@@ -90,7 +90,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Soigner 1 personnage.",
+          "Soigner 1 personnage",
       },
       {
         name: "Rechercher",
@@ -98,7 +98,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser un objet/lieu/créature pour obtenir des informations dessus.",
+          "Analyser un objet/lieu/créature pour obtenir des informations dessus",
       },
       {
         name: "Cartographier",
@@ -106,7 +106,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser les alentours pour révéler de nouvelles cases sur la carte.",
+          "Analyser les alentours pour révéler de nouvelles cases sur la carte",
       },
       {
         name: "Auspice",
@@ -114,7 +114,7 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         description:
-          "Analyser les cieux pour anticiper la météo des prochains jours.",
+          "Analyser les cieux pour anticiper la météo des prochains jours",
       },
       {
         name: "Divertir",
@@ -122,7 +122,7 @@ async function main() {
         category: CapabilityCategory.SPECIAL,
         costPA: 1,
         description:
-          "Divertir le village pour faire regagner des PM.",
+          "Divertir le village pour remonter le moral des troupes",
       },
     ];
 

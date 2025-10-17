@@ -12,7 +12,7 @@ type CapabilityWithRelations = PrismaCapability & {
 };
 
 export class CapabilityService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   /**
    * Récupère toutes les capacités disponibles
@@ -293,9 +293,9 @@ export class CapabilityService {
   }
 
   /**
-   * Exécute la capacité Bûcheronner
+   * Exécute la capacité Couper du bois
    */
-  async executeBûcheronner(characterId: string): Promise<{ success: boolean; woodGained: number; message: string }> {
+  async executeCouperDuBois(characterId: string): Promise<{ success: boolean; woodGained: number; message: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -305,7 +305,7 @@ export class CapabilityService {
       throw new Error("Personnage non trouvé");
     }
 
-    const capability = await this.getCapabilityByName("Bûcheronner");
+    const capability = await this.getCapabilityByName("Couper du bois");
     if (!capability) {
       throw new Error("Capacité non trouvée");
     }
@@ -325,7 +325,7 @@ export class CapabilityService {
     });
 
     if (departedExpedition) {
-      throw new Error("Impossible de Bûcheronner en expédition DEPARTED");
+      throw new Error("Impossible de Couper du bois en expédition DEPARTED");
     }
 
     // Vérifier les PA et les restrictions (Agonie, Déprime)
@@ -380,7 +380,7 @@ export class CapabilityService {
       character.townId,
       "Bois",
       woodGained,
-      "Bûcheronner"
+      "Couper du bois"
     );
 
     return {

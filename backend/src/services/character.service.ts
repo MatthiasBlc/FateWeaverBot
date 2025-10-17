@@ -158,7 +158,7 @@ export class CharacterService {
       });
 
       // Lui donner les capacités de base
-      const baseCapabilities = ["Bûcheronner"];
+      const baseCapabilities = ["Couper du bois"];
 
       for (const capabilityName of baseCapabilities) {
         const capability = await tx.capability.findUnique({
@@ -549,7 +549,7 @@ export class CharacterService {
       case "divertir":
         result = await this.useEntertainmentCapability(character, capability);
         break;
-      case "bûcheronner":
+      case "couper du bois":
         result = await this.useLoggingCapability(character, capability);
         break;
       case "cuisiner":
@@ -788,9 +788,8 @@ export class CharacterService {
     return {
       success: true,
       message,
-      publicMessage: `🎭 ${character.name} a donné un spectacle !${
-        pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
-      }`,
+      publicMessage: `🎭 ${character.name} a donné un spectacle !${pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
+        }`,
       divertCounter: newDivertCounter,
       pmGained,
     };

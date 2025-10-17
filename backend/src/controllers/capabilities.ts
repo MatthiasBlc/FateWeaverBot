@@ -46,7 +46,7 @@ export const createCapability: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const executeBûcheronner: RequestHandler = async (req, res, next) => {
+export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
   try {
     const { characterId } = req.params;
 
@@ -54,7 +54,7 @@ export const executeBûcheronner: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "characterId requis");
     }
 
-    const result = await capabilityService.executeBûcheronner(characterId);
+    const result = await capabilityService.executeCouperDuBois(characterId);
 
     res.status(200).json(result);
   } catch (error) {
