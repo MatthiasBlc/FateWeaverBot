@@ -756,18 +756,86 @@ export async function handleProfileButtonInteraction(interaction: any) {
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(`fishing_pa:${characterId}:${userId}:1`)
-            .setLabel("1 PA (lancer simple)")
+            .setLabel("1 PA")
             .setStyle(ButtonStyle.Primary)
             .setDisabled(character.paTotal < 1),
           new ButtonBuilder()
             .setCustomId(`fishing_pa:${characterId}:${userId}:2`)
-            .setLabel("2 PA (lancer chanceux)")
+            .setLabel("2 PA")
             .setStyle(ButtonStyle.Success)
             .setDisabled(character.paTotal < 2)
         );
 
         await interaction.editReply({
           content: `${CAPABILITIES.FISH} **Pêcher** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
+      // Gestion spéciale pour la capacité "Cartographier"
+      if (selectedCapability.name.toLowerCase() === "cartographier") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`cartography_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`cartography_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `${CAPABILITIES.CARTOGRAPHING} **Cartographier** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
+      // Gestion spéciale pour la capacité "Soigner"
+      if (selectedCapability.name.toLowerCase() === "soigner") {
+        // Vérifier le stock de cataplasmes (max 3 total)
+        let cataplasmeCount = 0;
+        if (character.town?.id) {
+          try {
+            logger.info("Fetching cataplasme count for townId:", { townId: character.town.id });
+            const cataplasmeResponse = await httpClient.get(`/capabilities/cataplasme-count/${character.town.id}`);
+            cataplasmeCount = cataplasmeResponse.data.count || 0;
+            logger.info("Cataplasme count received:", { count: cataplasmeCount, paTotal: character.paTotal });
+          } catch (error) {
+            logger.error("Error fetching cataplasme count:", { error });
+          }
+        }
+
+        const canCraftCataplasme = character.paTotal >= 2 && cataplasmeCount < 3;
+        logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
+
+        // Créer des boutons pour choisir 1 PA (Soigner) ou 2 PA (Cataplasme)
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`healing_pa:${characterId}:${userId}:1`)
+            .setLabel("Soigner (1 PA)")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`healing_pa:${characterId}:${userId}:2`)
+            .setLabel("Cataplasme (2 PA)")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(!canCraftCataplasme)
+        );
+
+        let content = `${CAPABILITIES.HEALING} **Soigner** - Choisissez une action :\n\nVous avez actuellement **${character.paTotal} PA**.\nCataplasmes disponibles : **${cataplasmeCount}/3**`;
+
+        if (cataplasmeCount >= 3) {
+          content += `\n⚠️ Limite de cataplasmes atteinte.`;
+        }
+
+        await interaction.editReply({
+          content,
           components: [paChoiceRow],
         });
         return;
@@ -798,28 +866,47 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Afficher le résultat
       if (result.publicMessage && interaction.guildId) {
+        let finalMessage = result.publicMessage;
+
+        // Remplacer {ADMIN_TAG} par les tags des admins si présent
+        if (finalMessage.includes('{ADMIN_TAG}')) {
+          const guild = interaction.guild;
+          if (guild) {
+            // Récupérer tous les membres avec permission Administrator
+            const members = await guild.members.fetch();
+            const adminIds = members
+              .filter((member: any) => member.permissions.has('Administrator'))
+              .map((member: any) => `<@${member.id}>`)
+              .join(' ');
+
+            finalMessage = finalMessage.replace('{ADMIN_TAG}', adminIds || '@Admins');
+          } else {
+            finalMessage = finalMessage.replace('{ADMIN_TAG}', '@Admins');
+          }
+        }
+
         await sendLogMessage(
           interaction.guildId,
           interaction.client,
-          result.publicMessage
+          finalMessage
         );
       }
 
       // Fonction utilitaire pour obtenir l'emoji d'une capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
         if (!emojiTag) return '';
-        
+
         // Vérifier si l'emojiTag est une clé valide dans CAPABILITIES
         if (emojiTag in CAPABILITIES) {
           return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + ' ';
         }
-        
+
         // Si l'emojiTag n'est pas trouvé, essayer avec la version en majuscules
         const upperEmojiTag = emojiTag.toUpperCase();
         if (upperEmojiTag in CAPABILITIES) {
           return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + ' ';
         }
-        
+
         return '';
       };
 

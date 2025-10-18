@@ -46,6 +46,22 @@ export const createCapability: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const getCataplasmeCount: RequestHandler = async (req, res, next) => {
+  try {
+    const { townId } = req.params;
+
+    if (!townId) {
+      throw createHttpError(400, "townId requis");
+    }
+
+    const count = await capabilityService.getCataplasmeCount(townId);
+
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
   try {
     const { characterId } = req.params;

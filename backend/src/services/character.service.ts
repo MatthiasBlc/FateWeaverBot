@@ -337,6 +337,11 @@ export class CharacterService {
             optionalAbility: true,
           },
         },
+        expeditionMembers: {
+          include: {
+            expedition: true,
+          },
+        },
       },
       orderBy: [
         { isDead: "asc" }, // Vivants en premier
@@ -505,15 +510,25 @@ export class CharacterService {
     }
 
     const capability = characterCapability.capability;
+    const capabilityNameLower = capability.name.toLowerCase();
+
+    // Déterminer le nombre de PA à vérifier/utiliser
+    // Pour les capacités à coût variable (hasVariableCost = true), on utilise paToUse
+    // Sinon on utilise le costPA de la capacité
+    let paRequired = capability.costPA;
+
+    if (capability.hasVariableCost && paToUse) {
+      paRequired = paToUse;
+    }
 
     // Vérifier les PA nécessaires
     if (character.paTotal <= 0) {
       throw new Error(
         `Vous n'avez plus de PA disponibles. Attendez la prochaine régénération quotidienne pour utiliser vos capacités.`
       );
-    } else if (character.paTotal < capability.costPA) {
+    } else if (character.paTotal < paRequired) {
       throw new Error(
-        `PA insuffisants : vous avez ${character.paTotal} PA mais ${capability.name} nécessite ${capability.costPA} PA.`
+        `PA insuffisants : vous avez ${character.paTotal} PA mais cette action nécessite ${paRequired} PA.`
       );
     }
 
@@ -525,7 +540,7 @@ export class CharacterService {
       loot: {},
     };
 
-    switch (capability.name.toLowerCase()) {
+    switch (capabilityNameLower) {
       case "chasser":
         result = await this.useHuntingCapability(
           character,
@@ -555,6 +570,13 @@ export class CharacterService {
         break;
       case "cuisiner":
         result = await this.useCookingCapability(character, capability, paToUse, inputQuantity);
+        break;
+      case "cartographier":
+        result = await this.useCartographyCapability(
+          character,
+          capability,
+          paToUse || 1
+        );
         break;
       default:
         throw new Error("Capacité non implémentée");
@@ -938,6 +960,35 @@ export class CharacterService {
         preparedFood: repasCreated, // Production de repas
       },
       paUsed: actualPaToUse, // Retourner le nombre de PA utilisés
+    };
+  }
+
+  /**
+   * Capacité de cartographie
+   */
+  /**
+   * Utilise la capacité de cartographie
+   * @param character Le personnage qui utilise la capacité
+   * @param capability La capacité utilisée
+   * @param paToUse Nombre de PA à utiliser (1 ou 2)
+   */
+  private async useCartographyCapability(
+    character: CharacterWithCapabilities,
+    capability: Capability,
+    paToUse: number
+  ): Promise<CapabilityResult> {
+    // La cartographie est une capacité admin-interpreted
+    // Elle ne génère pas de loot automatiquement, mais notifie les admins
+
+    const message = `Vous travaillez sur vos cartes (coût : ${paToUse} PA). Les administrateurs ont été notifiés et vous donneront les résultats de votre exploration.`;
+    const publicMessage = `🗺️ **${character.name}** travaille sur ses cartes ! (**${paToUse} PA dépensés** {ADMIN_TAG})`;
+
+    return {
+      success: true,
+      message,
+      publicMessage,
+      loot: {},
+      paUsed: paToUse,
     };
   }
 

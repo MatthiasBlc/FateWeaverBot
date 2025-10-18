@@ -421,6 +421,23 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== HEALING HANDLERS ===================
+    // Gestionnaire pour la sélection du personnage à soigner
+    this.registerHandlerByPrefix("healing_target:", async (interaction) => {
+      try {
+        const { handleHealingTargetChoice } = await import(
+          "../features/users/healing.handlers.js"
+        );
+        await handleHealingTargetChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling healing target choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la cible à soigner.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

@@ -162,7 +162,6 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
             logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
             continue;
           }
-
           // ---------------------------------------------------------------------------
           // ----------------------Fin des commandes ignorées---------------------------
           // ---------------------------------------------------------------------------

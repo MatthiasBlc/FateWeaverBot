@@ -832,6 +832,40 @@ export class ButtonHandler {
         });
       }
     });
+
+    // =================== CARTOGRAPHY HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour cartographier
+    this.registerHandlerByPrefix("cartography_pa:", async (interaction) => {
+      try {
+        const { handleCartographyPAChoice } = await import(
+          "../features/users/cartography.handlers.js"
+        );
+        await handleCartographyPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling cartography PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour cartographier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== HEALING HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour soigner (1 PA = heal, 2 PA = cataplasme)
+    this.registerHandlerByPrefix("healing_pa:", async (interaction) => {
+      try {
+        const { handleHealingPAChoice } = await import(
+          "../features/users/healing.handlers.js"
+        );
+        await handleHealingPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling healing PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour soigner.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
   /**
    * Enregistre un gestionnaire pour tous les boutons commençant par un préfixe

@@ -258,3 +258,5 @@ Si ce nest pas le cas, un nouveau character est créer (couple ville / user)
 -------------------------Done-------------------------
 
 -------------------------Notes-------------------------
+
+

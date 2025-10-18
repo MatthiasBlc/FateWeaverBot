@@ -10,6 +10,7 @@ import {
   executeResearch,
   executeDivertir,
   executeHarvest,
+  getCataplasmeCount,
 } from "../controllers/capabilities";
 import { requireAuthOrInternal } from "../middleware/auth";
 
@@ -20,6 +21,9 @@ router.get("/", requireAuthOrInternal, getAllCapabilities);
 
 // Crée une nouvelle capacité
 router.post("/", requireAuthOrInternal, createCapability);
+
+// Récupère le nombre de cataplasmes pour une ville
+router.get("/cataplasme-count/:townId", requireAuthOrInternal, getCataplasmeCount);
 
 // Exécuter des capacités spécifiques
 router.post("/:characterId/couper-du-bois", requireAuthOrInternal, executeCouperDuBois);

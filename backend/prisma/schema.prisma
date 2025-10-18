@@ -236,6 +236,7 @@ model Capability {
   emojiTag              String
   category              CapabilityCategory
   costPA                Int                   @map("cost_pa")
+  hasVariableCost       Boolean               @default(false) @map("has_variable_cost") // true pour Pêcher et Cuisiner (1 ou 2 PA)
   description           String?
   characters            CharacterCapability[]
   objectCapacityBonuses ObjectCapacityBonus[]
