@@ -70,6 +70,22 @@ export const objectsController = {
   },
 
   /**
+   * GET /api/characters/:id/objects
+   * Retourne la liste des types d'objets (dédupliqués) pour l'admin
+   */
+  async getCharacterObjects(req: Request, res: Response) {
+    try {
+      const characterId = req.params.id;
+      const objects = await objectService.getCharacterObjects(characterId);
+
+      res.json(objects);
+    } catch (error: any) {
+      logger.error("Error in getCharacterObjects:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
    * POST /api/characters/:id/inventory/add
    */
   async addObjectToCharacter(req: Request, res: Response) {
@@ -119,6 +135,48 @@ export const objectsController = {
       res.json(result);
     } catch (error: any) {
       logger.error("Error in transferObject:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * POST /api/characters/:id/objects/:objectId
+   * Ajoute un objet au personnage (pour l'admin)
+   */
+  async addObjectToCharacterById(req: Request, res: Response) {
+    try {
+      const characterId = req.params.id;
+      const objectTypeId = parseInt(req.params.objectId, 10);
+
+      if (isNaN(objectTypeId)) {
+        return res.status(400).json({ error: "Invalid objectId" });
+      }
+
+      const result = await objectService.addObjectToCharacter(characterId, objectTypeId);
+      res.json(result);
+    } catch (error: any) {
+      logger.error("Error in addObjectToCharacterById:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * DELETE /api/characters/:id/objects/:objectId
+   * Retire un objet du personnage par type (pour l'admin)
+   */
+  async removeObjectFromCharacterById(req: Request, res: Response) {
+    try {
+      const characterId = req.params.id;
+      const objectTypeId = parseInt(req.params.objectId, 10);
+
+      if (isNaN(objectTypeId)) {
+        return res.status(400).json({ error: "Invalid objectId" });
+      }
+
+      await objectService.removeObjectFromCharacterByType(characterId, objectTypeId);
+      res.json({ success: true });
+    } catch (error: any) {
+      logger.error("Error in removeObjectFromCharacterById:", error);
       res.status(500).json({ error: error.message });
     }
   }

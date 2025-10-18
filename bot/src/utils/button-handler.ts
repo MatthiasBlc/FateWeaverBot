@@ -336,6 +336,22 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour les boutons de catégories d'objets
+    this.registerHandlerByPrefix("object_category_", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling object category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la catégorie d'objets.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les boutons de gestion des compétences
     this.registerHandlerByPrefix("skill_admin_", async (interaction) => {
       try {
@@ -347,6 +363,22 @@ export class ButtonHandler {
         logger.error("Error handling skill admin button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors du traitement de la gestion des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les boutons de catégories de compétences
+    this.registerHandlerByPrefix("skill_category_", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling skill category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de la catégorie de compétences.",
           flags: ["Ephemeral"],
         });
       }

@@ -330,6 +330,23 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     return handleRemoveObjects(interaction, character);
   }
 
+  // Vérifier si c'est un bouton de catégorie d'objets
+  if (customId.startsWith("object_category_add:") || customId.startsWith("object_category_remove:")) {
+    const { handleObjectCategory } = await import(
+      "./character-admin/character-objects"
+    );
+
+    // Format: object_category_add:characterId:category:page
+    const parts = customId.split(':');
+    const action = customId.startsWith("object_category_add:") ? 'add' : 'remove';
+    const characterId = parts[1];
+    const category = parts[2] as 'simple' | 'capacity' | 'skill' | 'resource';
+    const page = parseInt(parts[3], 10);
+
+    const character = await getCharacterById(characterId, interaction);
+    return handleObjectCategory(interaction, character, category, page, action);
+  }
+
   // Vérifier si c'est une sélection d'objets
   if (customId.startsWith("object_admin_select")) {
     const { handleObjectSelect } = await import(
@@ -396,6 +413,23 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     );
     const character = await getCharacterById(characterId, interaction);
     return handleRemoveSkills(interaction, character);
+  }
+
+  // Vérifier si c'est un bouton de catégorie de compétences
+  if (customId.startsWith("skill_category_add:") || customId.startsWith("skill_category_remove:")) {
+    const { handleSkillCategory } = await import(
+      "./character-admin/character-skills"
+    );
+
+    // Format: skill_category_add:characterId:category:page
+    const parts = customId.split(':');
+    const action = customId.startsWith("skill_category_add:") ? 'add' : 'remove';
+    const characterId = parts[1];
+    const category = parts[2] as 'movement' | 'combat' | 'nature' | 'perception';
+    const page = parseInt(parts[3], 10);
+
+    const character = await getCharacterById(characterId, interaction);
+    return handleSkillCategory(interaction, character, category, page, action);
   }
 
   // Vérifier si c'est une sélection de compétences

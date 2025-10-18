@@ -205,6 +205,73 @@ export const objectService = {
   },
 
   /**
+   * Récupère les types d'objets d'un personnage (pour l'admin)
+   * Retourne une liste unique des types d'objets possédés
+   */
+  async getCharacterObjects(characterId: string) {
+    const inventory = await prisma.characterInventory.findUnique({
+      where: { characterId },
+      include: {
+        slots: {
+          include: {
+            objectType: true
+          }
+        }
+      }
+    });
+
+    if (!inventory) {
+      return [];
+    }
+
+    // Dédupliquer les types d'objets
+    const objectTypesMap = new Map();
+    inventory.slots.forEach(slot => {
+      if (!objectTypesMap.has(slot.objectType.id)) {
+        objectTypesMap.set(slot.objectType.id, {
+          id: slot.objectType.id,
+          name: slot.objectType.name,
+          description: slot.objectType.description
+        });
+      }
+    });
+
+    return Array.from(objectTypesMap.values());
+  },
+
+  /**
+   * Supprime un objet d'un personnage par objectTypeId
+   * Supprime le premier slot trouvé avec ce type d'objet
+   */
+  async removeObjectFromCharacterByType(characterId: string, objectTypeId: number) {
+    const inventory = await prisma.characterInventory.findUnique({
+      where: { characterId },
+      include: {
+        slots: {
+          include: {
+            objectType: true
+          }
+        }
+      }
+    });
+
+    if (!inventory) {
+      throw new Error('Character has no inventory');
+    }
+
+    // Trouver le premier slot avec ce type d'objet
+    const slot = inventory.slots.find(s => s.objectType.id === objectTypeId);
+
+    if (!slot) {
+      throw new Error('Object not found in character inventory');
+    }
+
+    return await prisma.characterInventorySlot.delete({
+      where: { id: slot.id }
+    });
+  },
+
+  /**
    * Transfère un objet entre personnages
    */
   async transferObject(slotId: string, targetCharacterId: string) {

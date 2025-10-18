@@ -354,7 +354,7 @@ export function createObjectSelectMenu(
               ? object.description.substring(0, 100)
               : "Aucune description"
           )
-          .setValue(object.id)
+          .setValue(String(object.id))
           .setDefault(currentIds.has(object.id))
       )
     );

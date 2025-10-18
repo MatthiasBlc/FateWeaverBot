@@ -863,7 +863,7 @@ export class CharacterService {
 
     const pmGained = newDivertCounter >= 5 ? 1 : 0;
 
-    let message = `🎭 Un moment de tranquillité à réviser tes gammes….`;
+    let message = `🎭 Un moment de tranquillité à réviser tes gammes.`;
     let publicMessage = `🎭 ${character.name} a joué du violon pendant des heures… avec quelques fausses notes !`;
 
     if (pmGained > 0) {

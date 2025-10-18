@@ -1,6 +1,7 @@
 import express from "express";
 import * as CharacterController from "../controllers/characters";
 import { objectsController } from "../controllers/objects";
+import * as SkillsController from "../controllers/skills";
 
 const router = express.Router();
 
@@ -76,6 +77,16 @@ router.delete(
   "/:id/capabilities/:capabilityId",
   CharacterController.removeCharacterCapability
 );
+
+// Skill management routes (for admin)
+router.get("/:id/skills", SkillsController.getCharacterSkills);
+router.post("/:id/skills/:skillId", SkillsController.addCharacterSkill);
+router.delete("/:id/skills/:skillId", SkillsController.removeCharacterSkill);
+
+// Object management routes (for admin - must come before inventory routes)
+router.get("/:id/objects", objectsController.getCharacterObjects);
+router.post("/:id/objects/:objectId", objectsController.addObjectToCharacterById);
+router.delete("/:id/objects/:objectId", objectsController.removeObjectFromCharacterById);
 
 // Inventory routes
 router.get("/:id/inventory", objectsController.getCharacterInventory);

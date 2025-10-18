@@ -438,6 +438,40 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== OBJECT ADMIN HANDLERS ===================
+    // Gestionnaire pour la sélection d'objets (ajout/retrait)
+    this.registerHandlerByPrefix("object_admin_select", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling object admin select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection d'objets.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== SKILL ADMIN HANDLERS ===================
+    // Gestionnaire pour la sélection de compétences (ajout/retrait)
+    this.registerHandlerByPrefix("skill_admin_select", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling skill admin select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**
