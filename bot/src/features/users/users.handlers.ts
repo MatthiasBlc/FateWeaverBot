@@ -391,13 +391,34 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   // Créer le bloc Status
   const statusDisplay = createStatusDisplay(data.character);
   if (statusDisplay) {
+    // Ajouter un espacement avant STATUTS si ce n'est pas la première section
+    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    if (currentSectionsCount > 0) {
+      fields.push({
+        name: " ",
+        value: " ",
+        inline: false,
+      });
+    }
+
     fields.push({
       name: `${CHARACTER.STATUS} **STATUTS**`,
       value: statusDisplay,
       inline: false,
     });
   }
+
   if (data.character.capabilities && data.character.capabilities.length > 0) {
+    // Ajouter un espacement avant CAPACITÉS si ce n'est pas la première section
+    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    if (currentSectionsCount > 0) {
+      fields.push({
+        name: " ",
+        value: " ",
+        inline: false,
+      });
+    }
+
     fields.push({
       name: `**CAPACITÉS**`,
       value: createCapabilitiesDisplay(data.character.capabilities),
@@ -405,16 +426,70 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     });
   }
 
-  // Ajouter les compétences
+  // Ajouter les compétences et les compétences liées aux objets
   try {
+    // Récupérer les compétences classiques
     const skillsResponse = await httpClient.get(
       `/api/characters/${data.character.id}/skills`
     );
-    const skills = skillsResponse.data;
+    const skills = skillsResponse.data || [];
 
-    if (skills && skills.length > 0) {
-      const skillsText = skills
-        .map((skill: any) => `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`)
+    // Récupérer les objets pour extraire les compétences liées
+    const objectsResponse = await httpClient.get(
+      `/api/characters/${data.character.id}/objects`
+    );
+    const objects = objectsResponse.data || [];
+
+    // Extraire les compétences liées aux objets
+    const objectSkills: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      sourceObject: string;
+    }> = [];
+
+    if (objects && objects.length > 0) {
+      objects.forEach((obj: any) => {
+        if (obj.skillBonuses && obj.skillBonuses.length > 0) {
+          obj.skillBonuses.forEach((skillBonus: any) => {
+            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
+              objectSkills.push({
+                id: skillBonus.skill.id,
+                name: skillBonus.skill.name,
+                description: skillBonus.skill.description,
+                sourceObject: obj.name
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Combiner les compétences classiques et celles des objets
+    const allSkills = [
+      ...skills.map((skill: any) => ({ ...skill, type: 'classic' })),
+      ...objectSkills.map((skill: any) => ({ ...skill, type: 'object' }))
+    ];
+
+    if (allSkills.length > 0) {
+      // Ajouter un espacement avant COMPÉTENCES si ce n'est pas la première section
+      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      if (currentSectionsCount > 0) {
+        fields.push({
+          name: " ",
+          value: " ",
+          inline: false,
+        });
+      }
+
+      const skillsText = allSkills
+        .map((skill: any) => {
+          if (skill.type === 'object') {
+            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
+          } else {
+            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`;
+          }
+        })
         .join('\n');
 
       fields.push({
@@ -428,7 +503,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     logger.debug("Erreur lors de la récupération des compétences:", error);
   }
 
-  // Ajouter les objets et les compétences liées aux objets
+  // Ajouter les objets
   try {
     const objectsResponse = await httpClient.get(
       `/api/characters/${data.character.id}/objects`
@@ -436,70 +511,16 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     const objects = objectsResponse.data;
 
     if (objects && objects.length > 0) {
-      // Extraire toutes les compétences liées aux objets
-      const objectSkills: Array<{
-        id: string;
-        name: string;
-        description?: string;
-        sourceObject: string;
-      }> = [];
-      const objectCapabilities: Array<{
-        id: string;
-        name: string;
-        description?: string;
-        emojiTag?: string;
-        sourceObject: string;
-        bonusType: string;
-      }> = [];
-
-      objects.forEach((obj: any) => {
-        // Ajouter les compétences liées aux objets
-        if (obj.skillBonuses && obj.skillBonuses.length > 0) {
-          obj.skillBonuses.forEach((skillBonus: any) => {
-            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
-              objectSkills.push({
-                id: skillBonus.skill.id,
-                name: skillBonus.skill.name,
-                description: skillBonus.skill.description,
-                sourceObject: obj.name
-              });
-            }
-          });
-        }
-
-        // Ajouter les capacités liées aux objets (pour référence future)
-        if (obj.capacityBonuses && obj.capacityBonuses.length > 0) {
-          obj.capacityBonuses.forEach((capabilityBonus: any) => {
-            if (capabilityBonus.capability && !objectCapabilities.find((c) => c.id === capabilityBonus.capability.id)) {
-              objectCapabilities.push({
-                id: capabilityBonus.capability.id,
-                name: capabilityBonus.capability.name,
-                description: capabilityBonus.capability.description,
-                emojiTag: capabilityBonus.capability.emojiTag,
-                sourceObject: obj.name,
-                bonusType: capabilityBonus.bonusType
-              });
-            }
-          });
-        }
-      });
-
-      // Afficher les compétences liées aux objets d'abord (après les compétences normales)
-      if (objectSkills.length > 0) {
-        const objectSkillsText = objectSkills
-          .map((skill) =>
-            `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})*`
-          )
-          .join('\n');
-
+      // Ajouter un espacement avant OBJETS si ce n'est pas la première section
+      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      if (currentSectionsCount > 0) {
         fields.push({
-          name: `🔗 **COMPÉTENCES D'OBJETS**`,
-          value: objectSkillsText,
+          name: " ",
+          value: " ",
           inline: false,
         });
       }
 
-      // Puis afficher les objets
       const objectsText = objects
         .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
         .join('\n');
