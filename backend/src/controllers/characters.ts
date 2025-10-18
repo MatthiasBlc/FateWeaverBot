@@ -185,19 +185,11 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       });
 
       if (guildRoles.length > 0) {
-        const rolesWithNames = await tx.role.findMany({
-          where: { id: { in: guildRoles.map((r) => r.id) } },
-          select: { id: true, name: true },
-        });
-        const roleMap = new Map(rolesWithNames.map((r) => [r.id, r.name]));
-        const characterRolesData = guildRoles.map((role) => ({
-          characterId: character.id,
-          roleId: role.id,
-          username: user.username,
-          roleName: roleMap.get(role.id) || "Rôle inconnu",
-        }));
         await tx.characterRole.createMany({
-          data: characterRolesData,
+          data: guildRoles.map((role) => ({
+            characterId: character.id,
+            roleId: role.id,
+          })),
           skipDuplicates: true,
         });
       }

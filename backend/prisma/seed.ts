@@ -267,15 +267,22 @@ async function main() {
     where: { name: "Vivres" },
   });
   if (vivresType) {
-    const citiesWithoutVivres = await prisma.town.findMany({
+    // First, get all towns
+    const allTowns = await prisma.town.findMany();
+  
+    // Then find which towns don't have the vivres resource
+    const townsWithVivres = await prisma.resourceStock.findMany({
       where: {
-        resourceStocks: {
-          none: {
-            resourceTypeId: vivresType.id,
-          },
-        },
+        resourceTypeId: vivresType.id,
+        locationType: "CITY"
       },
+      select: {
+        locationId: true
+      }
     });
+
+    const townsWithVivresIds = new Set(townsWithVivres.map(rs => rs.locationId));
+    const citiesWithoutVivres = allTowns.filter(town => !townsWithVivresIds.has(town.id));
 
     for (const city of citiesWithoutVivres) {
       await prisma.resourceStock.create({
@@ -284,7 +291,6 @@ async function main() {
           locationId: city.id,
           resourceTypeId: vivresType.id,
           quantity: 20, // Stock initial de vivres
-          townId: city.id,
         },
       });
       console.log(

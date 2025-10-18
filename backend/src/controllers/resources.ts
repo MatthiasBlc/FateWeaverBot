@@ -61,28 +61,6 @@ export const addResource: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Type de ressource non trouvé");
     }
 
-    // Préparer les données de création/mise à jour
-    const createData: {
-      locationType: "CITY" | "EXPEDITION";
-      locationId: string;
-      resourceTypeId: number;
-      quantity: number;
-      townId?: string;
-      expeditionId?: string;
-    } = {
-      locationType: locationType as "CITY" | "EXPEDITION",
-      locationId: locationId,
-      resourceTypeId: parseInt(resourceTypeId),
-      quantity: quantity,
-    };
-
-    // Ajouter les relations spécifiques selon le type de localisation
-    if (locationType === "CITY") {
-      createData.townId = locationId;
-    } else if (locationType === "EXPEDITION") {
-      createData.expeditionId = locationId;
-    }
-
     const resource = await prisma.resourceStock.upsert({
       where: {
         locationType_locationId_resourceTypeId: {
@@ -94,7 +72,12 @@ export const addResource: RequestHandler = async (req, res, next) => {
       update: {
         quantity: { increment: quantity },
       },
-      create: createData,
+      create: {
+        locationType: locationType as "CITY" | "EXPEDITION",
+        locationId: locationId,
+        resourceTypeId: parseInt(resourceTypeId),
+        quantity: quantity,
+      },
     });
 
     res.status(200).json(resource);
@@ -129,28 +112,6 @@ export const updateResource: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Type de ressource non trouvé");
     }
 
-    // Préparer les données de création/mise à jour
-    const createData: {
-      locationType: "CITY" | "EXPEDITION";
-      locationId: string;
-      resourceTypeId: number;
-      quantity: number;
-      townId?: string;
-      expeditionId?: string;
-    } = {
-      locationType: locationType as "CITY" | "EXPEDITION",
-      locationId: locationId,
-      resourceTypeId: parseInt(resourceTypeId),
-      quantity: quantity,
-    };
-
-    // Ajouter les relations spécifiques selon le type de localisation
-    if (locationType === "CITY") {
-      createData.townId = locationId;
-    } else if (locationType === "EXPEDITION") {
-      createData.expeditionId = locationId;
-    }
-
     const resource = await prisma.resourceStock.upsert({
       where: {
         locationType_locationId_resourceTypeId: {
@@ -162,7 +123,12 @@ export const updateResource: RequestHandler = async (req, res, next) => {
       update: {
         quantity: quantity,
       },
-      create: createData,
+      create: {
+        locationType: locationType as "CITY" | "EXPEDITION",
+        locationId: locationId,
+        resourceTypeId: parseInt(resourceTypeId),
+        quantity: quantity,
+      },
     });
 
     res.status(200).json(resource);

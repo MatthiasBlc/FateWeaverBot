@@ -61,8 +61,6 @@ export type CharacterWithDetails = Character & {
     characterId: string;
     roleId: string;
     assignedAt: Date;
-    username: string;
-    roleName: string;
     role: {
       id: string;
       discordId: string;

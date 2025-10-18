@@ -935,11 +935,17 @@ export class CapabilityService {
     });
 
     // Count cataplasmes in all town expeditions
+    // First get all expeditions for this town
+    const townExpeditions = await this.prisma.expedition.findMany({
+      where: { townId: townId },
+      select: { id: true }
+    });
+
     const expeditionStocks = await this.prisma.resourceStock.findMany({
       where: {
         locationType: "EXPEDITION",
-        expedition: {
-          townId: townId
+        locationId: {
+          in: townExpeditions.map(exp => exp.id)
         },
         resourceTypeId: cataplasmeType.id
       }

@@ -111,14 +111,10 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
         throw createHttpError(404, "Personnage non trouvé");
       }
 
-      const roleMap = new Map(roles.map((role) => [role.id, role.name]));
-
       await prisma.characterRole.createMany({
         data: roleIds.map((roleId: string) => ({
           characterId,
           roleId,
-          username: characterWithUser.user?.username || "Inconnu",
-          roleName: roleMap.get(roleId) || "Rôle inconnu",
         })),
         skipDuplicates: true,
       });
