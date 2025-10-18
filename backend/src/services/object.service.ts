@@ -214,7 +214,20 @@ export const objectService = {
       include: {
         slots: {
           include: {
-            objectType: true
+            objectType: {
+              include: {
+                skillBonuses: {
+                  include: {
+                    skill: true
+                  }
+                },
+                capacityBonuses: {
+                  include: {
+                    capability: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -231,7 +244,25 @@ export const objectService = {
         objectTypesMap.set(slot.objectType.id, {
           id: slot.objectType.id,
           name: slot.objectType.name,
-          description: slot.objectType.description
+          description: slot.objectType.description,
+          skillBonuses: slot.objectType.skillBonuses.map(sb => ({
+            id: sb.id,
+            skill: {
+              id: sb.skill.id,
+              name: sb.skill.name,
+              description: sb.skill.description
+            }
+          })),
+          capacityBonuses: slot.objectType.capacityBonuses.map(cb => ({
+            id: cb.id,
+            capability: {
+              id: cb.capability.id,
+              name: cb.capability.name,
+              description: cb.capability.description,
+              emojiTag: cb.capability.emojiTag
+            },
+            bonusType: cb.bonusType
+          }))
         });
       }
     });

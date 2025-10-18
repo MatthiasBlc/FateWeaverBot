@@ -428,7 +428,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     logger.debug("Erreur lors de la récupération des compétences:", error);
   }
 
-  // Ajouter les objets
+  // Ajouter les objets et les compétences liées aux objets
   try {
     const objectsResponse = await httpClient.get(
       `/api/characters/${data.character.id}/objects`
@@ -436,6 +436,70 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     const objects = objectsResponse.data;
 
     if (objects && objects.length > 0) {
+      // Extraire toutes les compétences liées aux objets
+      const objectSkills: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        sourceObject: string;
+      }> = [];
+      const objectCapabilities: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        emojiTag?: string;
+        sourceObject: string;
+        bonusType: string;
+      }> = [];
+
+      objects.forEach((obj: any) => {
+        // Ajouter les compétences liées aux objets
+        if (obj.skillBonuses && obj.skillBonuses.length > 0) {
+          obj.skillBonuses.forEach((skillBonus: any) => {
+            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
+              objectSkills.push({
+                id: skillBonus.skill.id,
+                name: skillBonus.skill.name,
+                description: skillBonus.skill.description,
+                sourceObject: obj.name
+              });
+            }
+          });
+        }
+
+        // Ajouter les capacités liées aux objets (pour référence future)
+        if (obj.capacityBonuses && obj.capacityBonuses.length > 0) {
+          obj.capacityBonuses.forEach((capabilityBonus: any) => {
+            if (capabilityBonus.capability && !objectCapabilities.find((c) => c.id === capabilityBonus.capability.id)) {
+              objectCapabilities.push({
+                id: capabilityBonus.capability.id,
+                name: capabilityBonus.capability.name,
+                description: capabilityBonus.capability.description,
+                emojiTag: capabilityBonus.capability.emojiTag,
+                sourceObject: obj.name,
+                bonusType: capabilityBonus.bonusType
+              });
+            }
+          });
+        }
+      });
+
+      // Afficher les compétences liées aux objets d'abord (après les compétences normales)
+      if (objectSkills.length > 0) {
+        const objectSkillsText = objectSkills
+          .map((skill) =>
+            `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})*`
+          )
+          .join('\n');
+
+        fields.push({
+          name: `🔗 **COMPÉTENCES D'OBJETS**`,
+          value: objectSkillsText,
+          inline: false,
+        });
+      }
+
+      // Puis afficher les objets
       const objectsText = objects
         .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
         .join('\n');
