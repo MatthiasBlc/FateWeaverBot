@@ -62,6 +62,7 @@ export const CHARACTER = {
   STATUS: "❗",
   PERSON: "👤",
   GROUP: "👥",
+  LINK: "🔗",
 } as const;
 
 // Hunger Levels
