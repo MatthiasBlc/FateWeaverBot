@@ -15,29 +15,620 @@ model Session {
   sid       String   @unique
   data      String
   expiresAt DateTime
+
+  @@map("sessions")
 }
 
 model User {
-  id         String   @id @default(uuid())
-  username   String   @unique
-  email      String   @unique
-  password   String
-  discordId  String?  @unique
-  guildId    String?  // optional: add later for multi-server
-  globalName String?
-  avatar     String?
-  pa         Int      @default(2)  // Points d'action
-  notes      Note[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String      @id @default(cuid())
+  discordId     String      @unique
+  username      String // Nom d'utilisateur Discord
+  discriminator String // Tag Discord (ex: "1234")
+  globalName    String? // Nom global Discord (peut être null)
+  avatar        String? // Hash de l'avatar
+  characters    Character[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("users")
 }
 
-model Note {
-  id        String   @id @default(uuid())
-  title     String
-  text      String
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  String?  @map("userId")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Town {
+  id                    String                 @id @default(cuid())
+  name                  String // Nom de la ville
+  guild                 Guild                  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guildId               String                 @unique @map("guild_id") // Chaque serveur a exactement une ville
+  characters            Character[] // Relation avec les personnages de la ville
+  chantiers             Chantier[]
+  projects              Project[] // Projets d'artisanat de la ville
+  expeditions           Expedition[] // Relation avec les expéditions de la ville
+  // Relations vers les stocks de ressources
+  resourceStocks        ResourceStock[]
+  dailyEventLogs        DailyEventLog[]
+  dailyMessageOverrides DailyMessageOverride[]
+  grigriFound           Boolean                @default(false) @map("grigri_found") // NOUVEAU
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  @@map("towns")
+}
+
+model Guild {
+  id                    String   @id @default(cuid())
+  discordGuildId        String   @unique @map("discord_guild_id")
+  name                  String // Nom de la guilde
+  memberCount           Int      @default(0) // Nombre de membres dans la guilde
+  logChannelId          String? // ID du salon Discord pour les logs automatiques
+  dailyMessageChannelId String?  @map("daily_message_channel_id") // ID du salon Discord pour les messages quotidiens (météo, saisons)
+  town                  Town? // Relation 1:1 avec la ville
+  roles                 Role[] // Ajout de la relation avec les rôles
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("guilds")
+}
+
+model Character {
+  id                String                @id @default(cuid())
+  name              String // Nom du personnage (obligatoire)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String                @map("user_id")
+  town              Town                  @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId            String                @map("town_id")
+  jobId             Int?                  @map("job_id")
+  job               Job?                  @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  characterRoles    CharacterRole[] // Relation avec les rôles
+  expeditionMembers ExpeditionMember[] // Relation avec les membres d'expédition
+  paTotal           Int                   @default(2) // 0-4
+  lastPaUpdate      DateTime              @default(now()) @map("last_pa_update")
+  hungerLevel       Int                   @default(4) @map("hunger_level") // 0: Mort, 1: Agonie, 2: Affamé, 3: Faim, 4: En bonne santé
+  hp                Int                   @default(5) @map("hp") // Points de vie (0-5)
+  pm                Int                   @default(5) @map("pm") // Points mentaux (0-5)
+  agonySince        DateTime?             @map("agony_since") // Date de début d'agonie (hp=1), null si pas en agonie
+  isDead            Boolean               @default(false) @map("is_dead") // Indique si le personnage est mort
+  canReroll         Boolean               @default(false) @map("can_reroll") // Autorise la création d'un nouveau personnage
+  isActive          Boolean               @default(true) @map("is_active") // Personnage actif pour l'utilisateur dans cette ville
+  divertCounter     Int                   @default(0) @map("divert_counter") // Compteur pour la capacité Divertir
+  paUsedToday       Int                   @default(0) @map("pa_used_today") // PA dépensés aujourd'hui
+  lastPaReset       DateTime              @default(now()) @map("last_pa_reset") // Dernière réinitialisation
+  capabilities      CharacterCapability[] // Capacités connues par le personnage
+  skills            CharacterSkill[] // Compétences du personnage
+  inventory         CharacterInventory? // NOUVEAU
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  // SUPPRIMÉ : @@unique([userId, townId, isActive], name: "one_active_per_user_town") // Un seul personnage actif par user/town
+  // REMPLACÉ PAR : Logique applicative dans les services pour garantir l'unicité
+  @@index([userId])
+  @@index([townId])
+  @@index([userId, townId])
+  @@index([userId, townId, isActive]) // Index pour les performances, mais pas de contrainte unique
+}
+
+enum ChantierStatus {
+  PLAN
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum CapabilityCategory {
+  HARVEST
+  SPECIAL
+  CRAFT // NEW
+  SCIENCE // NEW
+}
+
+enum CraftType {
+  TISSER
+  FORGER
+  MENUISER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum SeasonType {
+  SUMMER
+  WINTER
+}
+
+enum CapacityBonusType {
+  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+
+  HEAL_EXTRA // Soigner+
+  ENTERTAIN_BURST // Divertir+
+  ADMIN_INTERPRETED // Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+
+}
+
+model Chantier {
+  id            String                 @id @default(cuid())
+  name          String // Nom du chantier
+  startDate     DateTime?              @map("start_date") // Date du premier investissement de PA (null si pas commencé)
+  cost          Int // Coût total en PA
+  spendOnIt     Int                    @default(0) // Nombre de PA investis
+  status        ChantierStatus         @default(PLAN) // plan, in_progress, completed
+  town          Town                   @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId        String                 @map("town_id")
+  createdBy     String                 @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
+  resourceCosts ChantierResourceCost[] // Coûts en ressources optionnels
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  @@unique([name, townId], name: "chantier_name_town_unique")
+  @@map("chantiers")
+}
+
+model Project {
+  id                     String                         @id @default(cuid())
+  name                   String // Nom du projet
+  paRequired             Int                            @map("pa_required") // Coût total en PA
+  paContributed          Int                            @default(0) @map("pa_contributed") // PA déjà investis
+  outputResourceTypeId   Int?                           @map("output_resource_type_id") // Ressource produite
+  outputQuantity         Int                            @map("output_quantity") // Quantité produite
+  outputObjectTypeId     Int?                           @map("output_object_type_id") // NOUVEAU
+  status                 ProjectStatus                  @default(ACTIVE)
+  town                   Town                           @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId                 String                         @map("town_id")
+  createdBy              String                         @map("created_by") // ID Discord de l'utilisateur qui a créé le projet
+  craftTypes             ProjectCraftType[] // Types d'artisanat pouvant réaliser ce projet
+  resourceCosts          ProjectResourceCost[] // Coûts en ressources optionnels
+  // Blueprint fields
+  isBlueprint            Boolean                        @default(false)
+  originalProjectId      String?
+  paBlueprintRequired    Int?
+  blueprintResourceCosts ProjectBlueprintResourceCost[]
+
+  originalProject  Project?    @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
+  blueprintCopies  Project[]   @relation("ProjectBlueprint")
+  outputObjectType ObjectType? @relation("ProjectObjectOutput", fields: [outputObjectTypeId], references: [id])
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  @@unique([name, townId], name: "project_name_town_unique")
+  @@map("projects")
+}
+
+model ProjectCraftType {
+  id        String    @id @default(cuid())
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String    @map("project_id")
+  craftType CraftType @map("craft_type")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([projectId, craftType], name: "project_craft_type_unique")
+  @@map("project_craft_types")
+}
+
+model ProjectResourceCost {
+  id                  String       @id @default(cuid())
+  project             Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId           String       @map("project_id")
+  resourceType        ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId      Int          @map("resource_type_id")
+  quantityRequired    Int          @map("quantity_required") // Quantité totale nécessaire
+  quantityContributed Int          @default(0) @map("quantity_contributed") // Quantité déjà contribuée
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@unique([projectId, resourceTypeId], name: "project_resource_unique")
+  @@map("project_resource_costs")
+}
+
+model ProjectBlueprintResourceCost {
+  id               Int    @id @default(autoincrement())
+  projectId        String
+  resourceTypeId   Int
+  quantityRequired Int
+  quantityProvided Int    @default(0)
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resourceType ResourceType @relation(fields: [resourceTypeId], references: [id])
+
+  @@unique([projectId, resourceTypeId])
+  @@map("project_blueprint_resource_costs")
+}
+
+model Capability {
+  id                    String                @id @default(cuid())
+  name                  String                @unique
+  emojiTag              String
+  category              CapabilityCategory
+  costPA                Int                   @map("cost_pa")
+  hasVariableCost       Boolean               @default(false) @map("has_variable_cost") // true pour Pêcher et Cuisiner (1 ou 2 PA)
+  description           String?
+  characters            CharacterCapability[]
+  objectCapacityBonuses ObjectCapacityBonus[]
+  jobsAsStarting        Job[]                 @relation("JobStartingAbility")
+  jobsAsOptional        Job[]                 @relation("JobOptionalAbility")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  @@map("capabilities")
+}
+
+model CharacterCapability {
+  characterId  String     @map("character_id")
+  capabilityId String     @map("capability_id")
+  character    Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@id([characterId, capabilityId])
+  @@map("character_capabilities")
+}
+
+model Job {
+  id                Int         @id @default(autoincrement())
+  name              String      @unique
+  description       String?
+  startingAbilityId String      @map("starting_ability_id")
+  startingAbility   Capability  @relation("JobStartingAbility", fields: [startingAbilityId], references: [id], onDelete: Restrict)
+  optionalAbilityId String?     @map("optional_ability_id")
+  optionalAbility   Capability? @relation("JobOptionalAbility", fields: [optionalAbilityId], references: [id], onDelete: Restrict)
+  characters        Character[]
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("jobs")
+}
+
+model Season {
+  id        Int        @id @default(1) // Toujours un seul enregistrement
+  name      SeasonType
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("seasons")
+}
+
+model Role {
+  id         String          @id @default(cuid())
+  discordId  String // ID du rôle dans Discord
+  name       String // Nom du rôle
+  color      String? // Couleur du rôle (optionnel)
+  guild      Guild           @relation(fields: [guildId], references: [id])
+  guildId    String          @map("guild_id")
+  characters CharacterRole[]
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  @@unique([discordId, guildId], name: "role_guild_unique")
+  @@map("roles")
+}
+
+model CharacterRole {
+  id          String    @id @default(cuid())
+  character   Character @relation(fields: [characterId], references: [id])
+  characterId String    @map("character_id")
+  role        Role      @relation(fields: [roleId], references: [id])
+  roleId      String    @map("role_id")
+  assignedAt  DateTime  @default(now()) @map("assigned_at")
+  username    String    @map("username")
+  roleName    String    @map("role_name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@unique([characterId, roleId], name: "character_role_unique")
+  @@map("character_roles")
+}
+
+enum ExpeditionStatus {
+  PLANNING
+  LOCKED
+  DEPARTED
+  RETURNED
+}
+
+enum Direction {
+  NORD
+  NORD_EST
+  EST
+  SUD_EST
+  SUD
+  SUD_OUEST
+  OUEST
+  NORD_OUEST
+  UNKNOWN
+}
+
+enum LocationType {
+  CITY
+  EXPEDITION
+}
+
+model Expedition {
+  id                     String                    @id @default(cuid())
+  name                   String // Nom de l'expédition
+  town                   Town                      @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId                 String                    @map("town_id")
+  status                 ExpeditionStatus          @default(PLANNING)
+  duration               Int // Durée en jours
+  returnAt               DateTime?                 @map("return_at") // Date de retour prévue (null si pas partie)
+  createdBy              String                    @map("created_by") // ID Discord de l'utilisateur qui a créé l'expédition
+  pendingEmergencyReturn Boolean                   @default(false) @map("pending_emergency_return") // Vote de retour d'urgence en cours
+  // Direction fields
+  initialDirection       Direction?                @map("initial_direction") // Direction initiale
+  path                   Direction[]               @default([]) // Path complète de l'expédition
+  currentDayDirection    Direction?                @map("current_day_direction") // Direction du jour en cours
+  directionSetBy         String?                   @map("direction_set_by") // User ID qui a défini la direction
+  directionSetAt         DateTime?                 @map("direction_set_at") // Quand la direction a été définie
+  members                ExpeditionMember[]
+  emergencyVotes         ExpeditionEmergencyVote[] // Votes pour retour d'urgence
+  // Relations vers les stocks de ressources
+  resourceStocks         ResourceStock[]
+  createdAt              DateTime                  @default(now()) @map("created_at")
+  updatedAt              DateTime                  @updatedAt @map("updated_at")
+
+  @@map("expeditions")
+}
+
+model ExpeditionMember {
+  id           String     @id @default(cuid())
+  expedition   Expedition @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
+  expeditionId String     @map("expedition_id")
+  character    Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  characterId  String     @map("character_id")
+  joinedAt     DateTime   @default(now()) @map("joined_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([expeditionId, characterId], name: "expedition_member_unique")
+  @@map("expedition_members")
+}
+
+model ExpeditionEmergencyVote {
+  id           String     @id @default(cuid())
+  expedition   Expedition @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
+  expeditionId String     @map("expedition_id")
+  userId       String     @map("user_id") // Discord User ID qui a voté
+  votedAt      DateTime   @default(now()) @map("voted_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([expeditionId, userId], name: "expedition_vote_unique")
+  @@map("expedition_emergency_votes")
+}
+
+model ResourceType {
+  id                Int                            @id @default(autoincrement())
+  name              String                         @unique
+  emoji             String
+  category          String // 'base', 'transformé'
+  description       String?
+  stocks            ResourceStock[]                @relation("ResourceTypeToResourceStock")
+  chantierCosts     ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
+  projectCosts      ProjectResourceCost[] // Projets qui nécessitent cette ressource
+  blueprintCosts    ProjectBlueprintResourceCost[]
+  objectConversions ObjectResourceConversion[] // NOUVEAU
+  createdAt         DateTime                       @default(now()) @map("created_at")
+  updatedAt         DateTime                       @updatedAt @map("updated_at")
+
+  @@map("resource_types")
+}
+
+model ResourceStock {
+  id             Int          @id @default(autoincrement())
+  locationType   LocationType
+  locationId     String
+  resourceTypeId Int
+  quantity       Int          @default(0)
+
+  // Relations vers les emplacements
+  town         Town?       @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId       String?     @map("town_id")
+  expedition   Expedition? @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
+  expeditionId String?     @map("expedition_id")
+
+  resourceType ResourceType @relation("ResourceTypeToResourceStock", fields: [resourceTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([locationType, locationId, resourceTypeId])
+  @@index([locationType, locationId])
+  @@map("resource_stocks")
+}
+
+model ChantierResourceCost {
+  id                  String       @id @default(cuid())
+  chantier            Chantier     @relation(fields: [chantierId], references: [id], onDelete: Cascade)
+  chantierId          String       @map("chantier_id")
+  resourceType        ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId      Int          @map("resource_type_id")
+  quantityRequired    Int          @map("quantity_required") // Quantité totale nécessaire
+  quantityContributed Int          @default(0) @map("quantity_contributed") // Quantité déjà contribuée
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@unique([chantierId, resourceTypeId], name: "chantier_resource_unique")
+  @@map("chantier_resource_costs")
+}
+
+enum DailyEventType {
+  PROJECT_COMPLETED
+  CHANTIER_COMPLETED
+  RESOURCE_GATHERED
+  EXPEDITION_DEPARTED
+  EXPEDITION_RETURNED
+  EXPEDITION_EMERGENCY_RETURN
+  CHARACTER_CATASTROPHIC_RETURN
+}
+
+model DailyEventLog {
+  id          String         @id @default(cuid())
+  eventType   DailyEventType @map("event_type")
+  eventDate   DateTime       @map("event_date")
+  town        Town           @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId      String         @map("town_id")
+  description String
+  metadata    Json?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([eventDate, townId])
+  @@map("daily_event_logs")
+}
+
+enum WeatherMessageType {
+  NORMAL_SUMMER
+  NORMAL_WINTER
+  FIRST_DAY_SUMMER
+  FIRST_DAY_WINTER
+}
+
+model WeatherMessage {
+  id        String                @id @default(cuid())
+  type      WeatherMessageType
+  message   String // Texte du message météo
+  usages    WeatherMessageUsage[]
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+
+  @@map("weather_messages")
+}
+
+model WeatherMessageUsage {
+  id               String   @id @default(cuid())
+  weatherMessageId String   @map("weather_message_id")
+  seasonStartDate  DateTime @map("season_start_date") // Date de début de la saison actuelle
+  usedAt           DateTime @default(now()) @map("used_at")
+
+  weatherMessage WeatherMessage @relation(fields: [weatherMessageId], references: [id], onDelete: Cascade)
+
+  @@index([seasonStartDate, weatherMessageId])
+  @@map("weather_message_usage")
+}
+
+model DailyMessageOverride {
+  id        String   @id @default(cuid())
+  townId    String   @map("town_id")
+  date      DateTime // Date pour laquelle l'override s'applique (minuit)
+  message   String // Message météo custom
+  createdBy String   @map("created_by") // Discord user ID de l'admin
+  createdAt DateTime @default(now()) @map("created_at")
+
+  town Town @relation(fields: [townId], references: [id], onDelete: Cascade)
+
+  @@unique([townId, date])
+  @@map("daily_message_overrides")
+}
+
+model ObjectType {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  // Relations
+  inventorySlots      CharacterInventorySlot[]
+  skillBonuses        ObjectSkillBonus[]
+  capacityBonuses     ObjectCapacityBonus[]
+  resourceConversions ObjectResourceConversion[]
+  projectOutputs      Project[]                  @relation("ProjectObjectOutput")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("object_types")
+}
+
+model CharacterInventory {
+  id          String                   @id @default(cuid())
+  characterId String                   @unique @map("character_id")
+  character   Character                @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  slots       CharacterInventorySlot[]
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+
+  @@map("character_inventories")
+}
+
+model CharacterInventorySlot {
+  id           String             @id @default(cuid())
+  inventoryId  String             @map("inventory_id")
+  inventory    CharacterInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  objectTypeId Int                @map("object_type_id")
+  objectType   ObjectType         @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@index([inventoryId])
+  @@map("character_inventory_slots")
+}
+
+model Skill {
+  id            String             @id @default(cuid())
+  name          String             @unique
+  description   String?
+  characters    CharacterSkill[]
+  objectBonuses ObjectSkillBonus[]
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@map("skills")
+}
+
+model CharacterSkill {
+  characterId String    @map("character_id")
+  skillId     String    @map("skill_id")
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@id([characterId, skillId])
+  @@map("character_skills")
+}
+
+model ObjectSkillBonus {
+  id           String     @id @default(cuid())
+  objectTypeId Int        @map("object_type_id")
+  objectType   ObjectType @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  skillId      String     @map("skill_id")
+  skill        Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, skillId])
+  @@map("object_skill_bonuses")
+}
+
+model ObjectCapacityBonus {
+  id           String            @id @default(cuid())
+  objectTypeId Int               @map("object_type_id")
+  objectType   ObjectType        @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  capabilityId String            @map("capability_id")
+  capability   Capability        @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  bonusType    CapacityBonusType @map("bonus_type")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, capabilityId])
+  @@map("object_capacity_bonuses")
+}
+
+model ObjectResourceConversion {
+  id             String       @id @default(cuid())
+  objectTypeId   Int          @map("object_type_id")
+  objectType     ObjectType   @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  resourceTypeId Int          @map("resource_type_id")
+  resourceType   ResourceType @relation(fields: [resourceTypeId], references: [id], onDelete: Cascade)
+  quantity       Int
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([objectTypeId, resourceTypeId])
+  @@map("object_resource_conversions")
+}
+
+model FishingLootEntry {
+  id           String   @id @default(cuid())
+  paTable      Int      @map("pa_table") // 1 ou 2
+  resourceName String   @map("resource_name") // Nom de la ressource ou "GRIGRI"
+  quantity     Int
+  isActive     Boolean  @default(true) @map("is_active")
+  orderIndex   Int      @map("order_index") // Pour maintenir l'ordre
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([paTable, isActive])
+  @@map("fishing_loot_entries")
 }

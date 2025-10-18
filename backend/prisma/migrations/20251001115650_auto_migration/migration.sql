@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Character" ADD COLUMN     "hp" INTEGER NOT NULL DEFAULT 5;

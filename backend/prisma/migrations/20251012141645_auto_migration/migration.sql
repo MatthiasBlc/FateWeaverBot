@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Character" ADD COLUMN     "last_pa_reset" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "pa_used_today" INTEGER NOT NULL DEFAULT 0;

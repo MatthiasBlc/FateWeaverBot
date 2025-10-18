@@ -1,8 +1,9 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
-import bcrypt from "bcrypt";
-import crypto from "crypto";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+// import bcrypt from "bcrypt";
+// import crypto from "crypto";
 
 export const getAuthenticatedUser: RequestHandler = async (req, res, next) => {
   try {
@@ -11,8 +12,9 @@ export const getAuthenticatedUser: RequestHandler = async (req, res, next) => {
         id: req.session.userId,
       },
       select: {
-        username: true,
-        email: true,
+        discordId: true,
+        globalName: true,
+        avatar: true,
       },
     });
     res.status(200).json(user);
@@ -23,8 +25,8 @@ export const getAuthenticatedUser: RequestHandler = async (req, res, next) => {
 
 interface SignUpBody {
   username?: string;
-  email?: string;
   password?: string;
+  discriminator?: string;
 }
 
 export const signUp: RequestHandler<
@@ -33,63 +35,47 @@ export const signUp: RequestHandler<
   SignUpBody,
   unknown
 > = async (req, res, next) => {
-  const username = req.body.username;
-  const email = req.body.email;
+  const { username, discriminator } = req.body as SignUpBody;
   const passwordRaw = req.body.password;
 
   try {
-    if (!username || !email || !passwordRaw) {
-      throw createHttpError(400, "Parameters missing.");
+    if (!username || !passwordRaw) {
+      throw createHttpError(400, "Username and password are required.");
     }
 
-    const existingUsername = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findFirst({
       where: {
-        username: username,
+        AND: [{ username: username }, { discriminator: discriminator }],
       },
       select: {
         username: true,
+        discriminator: true,
       },
     });
 
-    if (existingUsername) {
+    if (existingUser) {
       throw createHttpError(
         409,
         "Username already taken. Please choose a different one or log in instead."
       );
     }
 
-    const existingEmail = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
-      select: {
-        email: true,
-      },
-    });
-
-    if (existingEmail) {
-      throw createHttpError(
-        409,
-        "A user with this email adress already exist. Please log in instead."
-      );
-    }
-
-    const passwordHashed = await bcrypt.hash(passwordRaw, 10);
-
     const newUser = await prisma.user.create({
       data: {
+        discordId: "",
         username,
-        email,
-        password: passwordHashed,
-        discordId: null,
+        discriminator: discriminator || "0000",
+        // password: passwordHashed,
         globalName: null,
         avatar: null,
-        pa: 2,
       },
       select: {
         id: true,
+        discordId: true,
         username: true,
-        email: true,
+        discriminator: true,
+        globalName: true,
+        avatar: true,
         createdAt: true,
       },
     });
@@ -123,13 +109,13 @@ export const login: RequestHandler<
 
     const user = await prisma.user.findUnique({
       where: {
-        username: username,
+        discordId: username,
       },
       select: {
         id: true,
-        username: true,
-        email: true,
-        password: true,
+        discordId: true,
+        globalName: true,
+        avatar: true,
       },
     });
 
@@ -137,11 +123,11 @@ export const login: RequestHandler<
       throw createHttpError(401, "Invalid credentials");
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    // const passwordMatch = await bcrypt.compare(password, user.password);
 
-    if (!passwordMatch) {
-      throw createHttpError(401, "Invalid credentials");
-    }
+    // if (!passwordMatch) {
+    //   throw createHttpError(401, "Invalid credentials");
+    // }
 
     req.session.userId = user.id;
     res.status(201).json(user);
@@ -161,52 +147,67 @@ export const logout: RequestHandler = (req, res, next) => {
 };
 
 // Interfaces pour les requêtes
-export interface DiscordUserInput {
-  discordId: string;
-  username: string;
-  globalName?: string | null;
-  avatar?: string | null;
-}
 
 /**
- * Crée ou met à jour un utilisateur Discord
+ * Récupère un utilisateur par son ID Discord
  */
-export const upsertDiscordUser: RequestHandler = async (req, res, next) => {
+export const getUserByDiscordId: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId, username, globalName, avatar }: DiscordUserInput =
-      req.body;
+    const { discordId } = req.params;
 
-    if (!discordId || !username) {
-      throw createHttpError(
-        400,
-        "Les champs discordId et username sont obligatoires"
-      );
+    if (!discordId) {
+      throw createHttpError(400, "L'ID Discord est requis");
+    }
+
+    // Vérifier si l'utilisateur existe déjà
+    let user = await prisma.user.findUnique({
+      where: { discordId },
+    });
+
+    // Si l'utilisateur n'existe pas, le créer avec des valeurs par défaut
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          discordId,
+          username: `user-${discordId}`,
+          discriminator: "0", // Discord a supprimé les discriminants
+          globalName: null,
+          avatar: null,
+        },
+      });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Crée ou met à jour un utilisateur
+ */
+export const upsertUser: RequestHandler = async (req, res, next) => {
+  try {
+    const { discordId, username, discriminator, globalName, avatar } = req.body;
+
+    if (!discordId) {
+      throw createHttpError(400, "L'ID Discord est requis");
     }
 
     const user = await prisma.user.upsert({
       where: { discordId },
       update: {
-        username,
-        globalName,
-        avatar,
+        username: username || undefined,
+        discriminator: discriminator || "0", // Discord a supprimé les discriminants
+        globalName: globalName || null,
+        avatar: avatar || null,
       },
       create: {
         discordId,
-        username,
-        globalName,
-        avatar,
-        email: `${discordId}@discord.app`, // Email temporaire unique
-        password: crypto.randomBytes(16).toString("hex"), // Mot de passe temporaire
-        pa: 2, // Points d'action par défaut
-      },
-      select: {
-        id: true,
-        discordId: true,
-        username: true,
-        globalName: true,
-        avatar: true,
-        pa: true,
-        createdAt: true,
+        username: username || `user-${discordId}`,
+        discriminator: discriminator || "0",
+        globalName: globalName || null,
+        avatar: avatar || null,
       },
     });
 
@@ -217,26 +218,47 @@ export const upsertDiscordUser: RequestHandler = async (req, res, next) => {
 };
 
 /**
- * Récupère le profil d'un utilisateur par son ID Discord
+ * Récupère tous les utilisateurs
  */
-export const getDiscordUserProfile: RequestHandler = async (req, res, next) => {
+export const getAllUsers: RequestHandler = async (req, res, next) => {
   try {
-    const { discordId } = req.params;
+    const users = await prisma.user.findMany({
+      include: {
+        _count: {
+          select: {
+            characters: true,
+          },
+        },
+      },
+      orderBy: {
+        username: "asc",
+      },
+    });
 
-    if (!discordId) {
-      throw createHttpError(400, "L'ID Discord est requis");
+    res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Supprime un utilisateur et toutes ses données associées
+ */
+export const deleteUser: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw createHttpError(400, "L'ID de l'utilisateur est requis");
     }
 
+    // Vérifier d'abord si l'utilisateur existe
     const user = await prisma.user.findUnique({
-      where: { discordId },
-      select: {
-        id: true,
-        discordId: true,
-        username: true,
-        globalName: true,
-        avatar: true,
-        pa: true,
-        createdAt: true,
+      where: { id },
+      include: {
+        characters: {
+          select: { id: true },
+        },
       },
     });
 
@@ -244,8 +266,113 @@ export const getDiscordUserProfile: RequestHandler = async (req, res, next) => {
       throw createHttpError(404, "Utilisateur non trouvé");
     }
 
-    res.status(200).json(user);
+    // Récupérer les IDs des personnages
+    const characterIds = user.characters.map((c) => c.id);
+
+    // Supprimer d'abord les associations de rôles des personnages
+    await prisma.characterRole.deleteMany({
+      where: { characterId: { in: characterIds } },
+    });
+
+    // Supprimer les personnages de l'utilisateur
+    await prisma.character.deleteMany({
+      where: { id: { in: characterIds } },
+    });
+
+    // Enfin, supprimer l'utilisateur
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Met à jour un utilisateur Discord existant
+ */
+export const updateDiscordUser: RequestHandler = async (req, res, next) => {
+  try {
+    const discordId = req.params.discordId;
+    const { globalName, avatar } = req.body as {
+      globalName?: string;
+      avatar?: string;
+    };
+
+    // Vérifier que l'utilisateur existe
+    const existingUser = await prisma.user.findUnique({
+      where: { discordId },
+    });
+
+    if (!existingUser) {
+      throw createHttpError(404, "Utilisateur non trouvé");
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await prisma.user.update({
+      where: { discordId },
+      data: {
+        globalName,
+        avatar,
+      },
+      select: {
+        id: true,
+        discordId: true,
+        globalName: true,
+        avatar: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Met à jour un utilisateur par son ID Discord
+ */
+export const updateUserByDiscordId: RequestHandler = async (req, res, next) => {
+  try {
+    const { discordId } = req.params;
+    const { username, discriminator, globalName, avatar } = req.body;
+
+    if (!discordId) {
+      throw createHttpError(400, "L'ID Discord est requis");
+    }
+
+    // Vérifier si l'utilisateur existe
+    const existingUser = await prisma.user.findUnique({
+      where: { discordId },
+    });
+
+    if (!existingUser) {
+      throw createHttpError(404, "Utilisateur non trouvé");
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await prisma.user.update({
+      where: { discordId },
+      data: {
+        username: username || existingUser.username,
+        discriminator: discriminator || existingUser.discriminator,
+        globalName:
+          globalName !== undefined ? globalName : existingUser.globalName,
+        avatar: avatar !== undefined ? avatar : existingUser.avatar,
+      },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return next(createHttpError(404, "Utilisateur non trouvé"));
+      }
+    }
     next(error);
   }
 };

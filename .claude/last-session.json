@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-10-18T14:22:27.727Z",
+  "context": {
+    "task": {
+      "type": "continue",
+      "description": "**Objectif** : Garantir que le bot reste fonctionnel après refactoring\n\n**Actions :**\n\n- Tests utilisateur des fonctionnalités principales\n- Vérification des interactions (boutons, modals, menus)\n-"
+    },
+    "suggestions": {
+      "always_load": [
+        "CLAUDE.md"
+      ],
+      "on_demand": [
+        ".claude/reference.md",
+        "bot/ARCHITECTURE.md",
+        ".claude/collaboration.md"
+      ],
+      "code_contexts": [],
+      "tokens_estimate": 2650
+    }
+  },
+  "files_loaded": []
+}

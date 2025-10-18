@@ -1,0 +1,8 @@
+{
+  "name": "@fateweaver/shared",
+  "version": "1.0.0",
+  "description": "Shared constants and utilities for FateWeaverBot",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true
+}

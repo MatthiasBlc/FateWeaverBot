@@ -60,7 +60,7 @@ docker-compose logs -f backenddev
   docker-compose ps
   ```
 
-Script Prisma Docker
+# Script Prisma Docker
 
 Ce script permet de gérer facilement Prisma dans un environnement Docker, en particulier pour le développement local où la base de données n’existe qu’à l’intérieur des conteneurs.
 

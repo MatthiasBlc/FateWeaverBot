@@ -1,0 +1,59 @@
+// Types pour le système de profil avec embeds détaillés
+
+export interface ProfileData {
+  character: {
+    id: string;
+    name: string;
+    roles: Array<{ discordId: string; name: string; }>;
+    hungerLevel: number;
+    hp: number;
+    pm: number;
+    job?: {
+      id: number;
+      name: string;
+      description: string | null;
+      startingAbility?: {
+        id: string;
+        name: string;
+        emojiTag: string;
+      };
+    } | null;
+    capabilities?: Array<{  // ← Ajout des capacités
+      id: string;
+      name: string;
+      description?: string;
+      costPA: number;
+      emojiTag?: string;
+    }>;
+  };
+  actionPoints: {
+    points: number;
+    lastUpdated: Date;
+  };
+  timeUntilUpdate: {
+    hours: number;
+    minutes: number;
+    seconds: number;
+  };
+  user: {
+    id: string;
+    discordId: string;
+    username: string;
+    displayAvatarURL: string;
+  };
+  member: {
+    nickname: string | null;
+    roles: Array<{ id: string; name: string; color: string; }>;
+  };
+}
+
+// Types pour les points d'action
+export interface ActionPointsData {
+  points: number;
+  lastUpdated: string;
+}
+
+export type ActionPointsResponse = {
+  success: boolean;
+  data: ActionPointsData | null;
+};

@@ -12,6 +12,7 @@ echo "[deploy_prod] Vérification des variables critiques..."
 : "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}"
 : "${DISCORD_TOKEN:?Missing DISCORD_TOKEN}"
 : "${DISCORD_CLIENT_ID:?Missing DISCORD_CLIENT_ID}"
+: "${DISCORD_GUILD_ID:?Missing DISCORD_GUILD_ID}"
 : "${SESSION_SECRET:?Missing SESSION_SECRET}"
 : "${API_URL:?Missing API_URL}"
 
@@ -27,6 +28,7 @@ export POSTGRES_DB
 export POSTGRES_PASSWORD
 export DISCORD_TOKEN
 export DISCORD_CLIENT_ID
+export DISCORD_GUILD_ID
 export SESSION_SECRET
 export IMAGE_NAME="${IMAGE_NAME:-fateweaver}"
 export TAG="${TAG:-latest}"                     # TAG par défaut latest
@@ -38,6 +40,7 @@ echo "[deploy_prod] STACK_ID=$STACK_ID"
 echo "[deploy_prod] ENDPOINT_ID=$ENDPOINT_ID"
 echo "[deploy_prod] POSTGRES_USER=$POSTGRES_USER"
 echo "[deploy_prod] POSTGRES_DB=$POSTGRES_DB"
+echo "[deploy_prod] DISCORD_GUILD_ID=$DISCORD_GUILD_ID"
 echo "[deploy_prod] IMAGE_NAME=$IMAGE_NAME"
 echo "[deploy_prod] TAG=$TAG"
 echo "[deploy_prod] API_URL=$API_URL"
@@ -84,7 +87,7 @@ if [ "$HTTP_CODE" -ne 200 ]; then
 fi
 
 echo "[deploy_prod] Déploiement des commandes Discord..."
-docker-compose -f docker-compose.prod.yml run --rm bot npm run deploy-commands
+docker compose -f docker-compose.prod.yml run --rm fateweaver-discord-bot npm run deploy-commands
 
 echo "[deploy_prod] Stack déployée avec succès !"
 rm -f "$TMP_FILE" response.json

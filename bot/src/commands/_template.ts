@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../types/command.js";
+import { logger } from "../services/logger";
 
 const command: Command = {
   // Configuration de la commande
@@ -26,7 +27,7 @@ const command: Command = {
    * // Pour une réponse éphémère (visible uniquement par l'utilisateur)
    * await interaction.reply({
    *   content: 'Réponse éphémère',
-   *   ephemeral: true
+   *   flags: ["Ephemeral"]
    * });
    * ```
    */
@@ -38,10 +39,10 @@ const command: Command = {
       // Logique de la commande
       await interaction.reply({
         content: "Réponse de la commande",
-        // ephemeral: true, // Décommentez pour une réponse visible uniquement par l'utilisateur
+        // flags: ["Ephemeral"], // Décommentez pour une réponse visible uniquement par l'utilisateur
       });
     } catch (error) {
-      console.error("Error in command:", error);
+      logger.error("Error in command:", { error });
 
       // Répondre avec un message d'erreur
       const errorMessage =
@@ -50,12 +51,12 @@ const command: Command = {
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
           content: errorMessage,
-          ephemeral: true,
+          flags: ["Ephemeral"],
         });
       } else {
         await interaction.reply({
           content: errorMessage,
-          ephemeral: true,
+          flags: ["Ephemeral"],
         });
       }
     }

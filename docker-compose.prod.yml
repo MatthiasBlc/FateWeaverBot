@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-logging: &default-logging
   driver: json-file
   options:
@@ -50,6 +48,7 @@ services:
       - PRISMA_CLIENT_ENGINE_TYPE=library
       - CORS_ORIGIN=${CORS_ORIGIN}
       - SESSION_SECRET=${SESSION_SECRET}
+      - TRUST_PROXY=1
     ports:
       - "3000:3000"
     depends_on:
@@ -59,13 +58,6 @@ services:
       - internal
     volumes:
       - fateweaver-backend-logs:/app/logs
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "1"
-    #       memory: 1.5G
-    #     reservations:
-    #       memory: 1G
     logging: *default-logging
     healthcheck:
       test:
@@ -73,7 +65,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 60s
 
   fateweaver-discord-bot:
     image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-fateweaver}/bot:${TAG:-latest}
@@ -84,12 +76,13 @@ services:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-      - API_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      - API_URL=http://fateweaver-backend:3000
       - HEALTH_URL=http://localhost:3001/health
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
     volumes:
       - bot-logs:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      test: ["CMD", "pgrep", "node"]
       interval: 30s
       timeout: 10s
       retries: 5

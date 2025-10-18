@@ -9,19 +9,23 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts --max-warnings 0",
+    "deploy": "tsx src/deploy-commands.ts",
+    "deploy:force": "tsx src/deploy-commands-force.ts",
     "deploy-commands": "tsx src/deploy-commands.ts",
-    "deploy-commands:dev": "NODE_ENV=development tsx src/deploy-commands.ts"
+    "deploy-commands:dev": "NODE_ENV=development tsx src/deploy-commands.ts",
+    "list-commands": "tsx src/list-commands.ts"
   },
   "dependencies": {
     "@discordjs/builders": "^1.11.3",
     "@discordjs/rest": "^2.6.0",
     "axios": "^1.12.2",
+    "cron": "^4.3.3",
     "discord-api-types": "^0.38.26",
     "discord.js": "^14.15.3",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.15",
+    "@types/node": "^20.19.18",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^8.57.0",

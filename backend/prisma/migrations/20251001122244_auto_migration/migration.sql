@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Character" ADD COLUMN     "pm" INTEGER NOT NULL DEFAULT 5;

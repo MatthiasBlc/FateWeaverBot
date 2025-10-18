@@ -4,10 +4,13 @@ FROM node:18.18-alpine3.17 AS builder
 # Création des dossiers nécessaires
 WORKDIR /app
 
+# Copie du dossier shared d'abord
+COPY ./shared /shared
+
 # Copie des fichiers de configuration et de dépendances
-COPY package*.json ./
-COPY prisma ./prisma/
-COPY tsconfig.json ./
+COPY ./backend/package*.json ./
+COPY ./backend/prisma ./prisma/
+COPY ./backend/tsconfig.json ./
 
 # Installation des dépendances
 RUN npm ci
@@ -16,13 +19,16 @@ RUN npm ci
 RUN npx prisma generate
 
 # Copie du code source
-COPY . .
+COPY ./backend .
 
 # Construction de l'application
 RUN npm run build
 
+# Compilation du fichier de seeding
+RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
+
 # Vérification de la structure du build
-# RUN find /app/dist -type f -print
+RUN echo "=== Contenu de /app/dist ===" && ls -la /app/dist/ && echo "=== Fichiers dans dist ===" && find /app/dist -type f -name "*.js" | head -20
 
 # Suppression des dépendances de développement
 RUN npm prune --production
@@ -31,6 +37,9 @@ RUN npm prune --production
 FROM node:18.18-alpine3.17
 
 WORKDIR /app
+
+# Copie du dossier shared
+COPY --from=builder /shared /shared
 
 # Copie des fichiers nécessaires depuis le builder
 COPY --from=builder /app/package*.json ./
@@ -41,7 +50,7 @@ COPY --from=builder /app/prisma ./prisma
 # Installation de Prisma et des outils nécessaires
 RUN npm install -g prisma && \
     apk update && \
-    apk add --no-cache openssl
+    apk add --no-cache openssl wget
 
 # Exposition du port
 EXPOSE 3000

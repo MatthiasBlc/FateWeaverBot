@@ -1,0 +1,98 @@
+Réponse à votre Question : Séparation des Boutons
+Désolé pour le délai ! Voici l'analyse complète pour séparer visuellement les boutons de nourriture et de capacités :
+
+🔍 Situation Actuelle
+Boutons de nourriture : Affichés via /foodstock → eat_food:${characterId} Boutons de capacités : Affichés via /profile → use_capability:${capabilityId}:${characterId}:${userId}
+
+💡 Solutions pour Séparer les Blocs
+Option 1 : Séparateurs Visuels (Recommandée)
+typescript
+// Dans foodstock.handlers.ts - Ajouter un séparateur
+const separator = new ButtonBuilder()
+  .setCustomId('separator')
+  .setLabel('🍽️ NOURRITURE')
+  .setStyle(ButtonStyle.Secondary)
+  .setDisabled(true);
+
+// Puis les boutons de nourriture
+const eatButton = new ButtonBuilder()
+  .setCustomId(`eat_food:${character.id}`)
+  .setLabel("🍽️ Manger")
+  .setStyle(ButtonStyle.Primary);
+Option 2 : Groupement par Catégories
+typescript
+// Dans users.handlers.ts - Modifier createCapabilityButtons
+function createCapabilityButtons(...) {
+  // Boutons de capacités avec label "CAPACITÉS"
+  const capabilityButtons = buttonsToShow.map(cap => {
+    const button = new ButtonBuilder()
+      .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
+      .setLabel(`🔮 ${cap.name} (${cap.costPA}PA)`) // Ajouter émoji catégorie
+      .setStyle(buttonStyle);
+  });
+  
+  // Ajouter un bouton header pour les capacités
+  const headerButton = new ButtonBuilder()
+    .setCustomId('header_capabilities')
+    .setLabel('🔮 CAPACITÉS DISPONIBLES')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(true);
+}
+Option 3 : Navigation par Onglets
+typescript
+// Boutons de navigation principaux
+const navButtons = new ActionRowBuilder<ButtonBuilder>()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('tab_food')
+      .setLabel('🍽️ Nourriture')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('tab_capabilities')  
+      .setLabel('🔮 Capacités')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+// Puis afficher le contenu selon l'onglet sélectionné
+🎯 Recommandation
+Option 1 est la plus simple et efficace :
+
+✅ Séparateurs visuels avec des boutons désactivés
+✅ Lisibilité améliorée sans complexité technique
+✅ Maintien de la fonctionnalité existante
+Voulez-vous que j'implémente cette solution dans le code ?
+
+
+✅ Démonstration Implémentée avec Succès
+J'ai ajouté les trois options de séparation à la fin de la commande /profile pour que vous puissiez les tester en conditions réelles :
+
+🔍 Ce qui a été ajouté
+Dans 
+users.handlers.ts
+ (lignes 343-425) :
+
+Option 1 : Séparateurs Visuels (RECOMMANDÉE)
+Bouton désactivé "🔮 CAPACITÉS DISPONIBLES"
+Boutons de capacités réels à côté
+Séparation claire mais boutons fonctionnels
+Option 2 : Navigation par Onglets
+Boutons d'onglets : "🍽️ Nourriture", "🔮 Capacités", "🎒 Inventaire"
+Interface de type navigateur à onglets
+Clic → message de démonstration
+Option 3 : Groupement par Catégories
+Rangée dédiée "🍽️ ACTIONS NOURRITURE" avec boutons simulés
+Rangée séparée "🔮 CAPACITÉS" avec vrais boutons
+Séparation verticale complète
+🎯 Gestionnaires de Boutons
+Ajouté (lignes 558-578) :
+
+Gestionnaires pour boutons de démonstration (demo_eat_, tab_)
+Réponses explicatives pour chaque option
+📋 Pour Tester
+Utilisez /profile avec un personnage ayant des capacités
+Observez les 3 rangées de boutons en bas du message
+Testez les interactions - vous verrez des messages de démonstration
+🔄 Pour Retour Arrière
+Les modifications sont clairement marquées avec des commentaires // =================== DÉMONSTRATION et // =================== FIN DÉMONSTRATION. Vous pouvez facilement supprimer ces sections pour revenir à l'état initial.
+
+Quelle option préférez-vous après avoir testé ?
