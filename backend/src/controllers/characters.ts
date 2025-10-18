@@ -4,9 +4,12 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../util/db";
 import { toCharacterDto } from "../util/mappers";
 import { CharacterService } from "../services/character.service";
+import { CapabilityService } from "../services/capability.service";
 import { logger } from "../services/logger";
 
-const characterService = new CharacterService();
+// Initialiser les services
+const capabilityService = new CapabilityService(prisma);
+const characterService = new CharacterService(capabilityService);
 
 export const getActiveCharacterByDiscordId: RequestHandler = async (
   req,
