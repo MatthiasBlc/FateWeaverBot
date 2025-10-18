@@ -587,14 +587,27 @@ export class CharacterService {
       // Déterminer le nombre de PA à déduire (utiliser paUsed si défini, sinon costPA)
       const paToDeduct = result.paUsed !== undefined ? result.paUsed : capability.costPA;
 
+      // Préparer les données de mise à jour
+      const updateData: any = {
+        paTotal: character.paTotal - paToDeduct,
+        lastPaUpdate: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Si la capacité divertir a été utilisée, mettre à jour le compteur
+      if (result.divertCounter !== undefined) {
+        updateData.divertCounter = result.divertCounter;
+      }
+
+      // Si le spectacle a eu lieu (pmGained > 0), réinitialiser le compteur
+      if (result.pmGained && result.pmGained > 0) {
+        updateData.divertCounter = 0;
+      }
+
       // Mettre à jour les PA du personnage
       const characterUpdate = await tx.character.update({
         where: { id: characterId },
-        data: {
-          paTotal: character.paTotal - paToDeduct,
-          lastPaUpdate: new Date(),
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
 
       // Ajouter les ressources générées au stock de la ville
@@ -850,16 +863,42 @@ export class CharacterService {
 
     const pmGained = newDivertCounter >= 5 ? 1 : 0;
 
-    let message = `Vous avez diverti la ville (coût : ${capability.costPA} PA).`;
+    let message = `🎭 Un moment de tranquillité à réviser tes gammes….`;
+    let publicMessage = `🎭 ${character.name} a joué du violon pendant des heures… avec quelques fausses notes !`;
+
     if (pmGained > 0) {
-      message += ` Tous les habitants gagnent 1 PM !`;
+      message = `🎭 C'est le grand jour ! Installez tréteaux et calicots, le spectacle commence !`;
+      publicMessage = `🎭 ${character.name} a donné un grand spectacle qui met du baume au cœur. Tous les spectateurs gagnent 1 PM !`;
+
+      // Appliquer +1 PM à tous les personnages de la ville (pas en expédition DEPARTED)
+      await prisma.$transaction(async (tx) => {
+        const cityCharacters = await tx.character.findMany({
+          where: {
+            townId: character.townId,
+            isDead: false,
+            expeditionMembers: {
+              none: {
+                expedition: { status: "DEPARTED" }
+              }
+            }
+          }
+        });
+
+        for (const char of cityCharacters) {
+          if (char.pm < 5) {
+            await tx.character.update({
+              where: { id: char.id },
+              data: { pm: Math.min(5, char.pm + 1) }
+            });
+          }
+        }
+      });
     }
 
     return {
       success: true,
       message,
-      publicMessage: `🎭 ${character.name} a donné un spectacle !${pmGained > 0 ? " Tout le monde regagne 1 PM." : ""
-        }`,
+      publicMessage,
       divertCounter: newDivertCounter,
       pmGained,
     };
