@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: "18"
           cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            bot/package-lock.json
 
       - name: Install jq
         run: sudo apt-get install -y jq
