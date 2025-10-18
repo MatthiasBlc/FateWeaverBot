@@ -392,7 +392,7 @@ export const ProjectService = {
               locationId: character.townId,
               resourceTypeId: updatedProject!.outputResourceTypeId,
               quantity: updatedProject!.outputQuantity,
-              townId: character.townId,
+              
             },
           });
         }

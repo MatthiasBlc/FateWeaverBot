@@ -8,6 +8,7 @@ import {
   Capability,
 } from "@prisma/client";
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
+import { CapabilityService } from "./capability.service";
 
 const prisma = new PrismaClient();
 
@@ -61,8 +62,6 @@ export type CharacterWithDetails = Character & {
     characterId: string;
     roleId: string;
     assignedAt: Date;
-    username: string;
-    roleName: string;
     role: {
       id: string;
       discordId: string;
@@ -73,6 +72,12 @@ export type CharacterWithDetails = Character & {
 };
 
 export class CharacterService {
+  private capabilityService: CapabilityService;
+
+  constructor(capabilityService: CapabilityService) {
+    this.capabilityService = capabilityService;
+  }
+
   async getCharacterCapabilities(characterId: string) {
     return await prisma.characterCapability.findMany({
       where: { characterId },
@@ -577,6 +582,12 @@ export class CharacterService {
           capability,
           paToUse || 1
         );
+        break;
+      case "miner":
+        if (!this.capabilityService) {
+          throw new Error("Service de capacité non initialisé");
+        }
+        result = await this.capabilityService.executeMiner(characterId);
         break;
       default:
         throw new Error("Capacité non implémentée");

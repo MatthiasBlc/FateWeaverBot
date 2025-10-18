@@ -380,7 +380,13 @@ export class CapabilityService {
   /**
    * Exécute la capacité Miner
    */
-  async executeMiner(characterId: string): Promise<{ success: boolean; oreGained: number; message: string }> {
+  async executeMiner(characterId: string): Promise<{ 
+    success: boolean; 
+    oreGained: number; 
+    message: string;
+    publicMessage: string;
+    loot?: { [key: string]: number };
+  }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -468,10 +474,12 @@ export class CapabilityService {
       "Miner"
     );
 
+    const message = `Vous avez miné ${oreGained} minerai`;
     return {
       success: true,
       oreGained,
-      message: `Vous avez miné ${oreGained} minerai`,
+      message,
+      publicMessage: message, // Ajout du champ publicMessage requis
     };
   }
 
@@ -935,11 +943,17 @@ export class CapabilityService {
     });
 
     // Count cataplasmes in all town expeditions
+    // First get all expeditions for this town
+    const townExpeditions = await this.prisma.expedition.findMany({
+      where: { townId: townId },
+      select: { id: true }
+    });
+
     const expeditionStocks = await this.prisma.resourceStock.findMany({
       where: {
         locationType: "EXPEDITION",
-        expedition: {
-          townId: townId
+        locationId: {
+          in: townExpeditions.map(exp => exp.id)
         },
         resourceTypeId: cataplasmeType.id
       }

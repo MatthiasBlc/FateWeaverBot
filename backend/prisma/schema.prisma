@@ -42,8 +42,6 @@ model Town {
   chantiers             Chantier[]
   projects              Project[] // Projets d'artisanat de la ville
   expeditions           Expedition[] // Relation avec les expéditions de la ville
-  // Relations vers les stocks de ressources
-  resourceStocks        ResourceStock[]
   dailyEventLogs        DailyEventLog[]
   dailyMessageOverrides DailyMessageOverride[]
   grigriFound           Boolean                @default(false) @map("grigri_found") // NOUVEAU
@@ -97,12 +95,13 @@ model Character {
   createdAt         DateTime              @default(now()) @map("created_at")
   updatedAt         DateTime              @updatedAt @map("updated_at")
 
-  // SUPPRIMÉ : @@unique([userId, townId, isActive], name: "one_active_per_user_town") // Un seul personnage actif par user/town
-  // REMPLACÉ PAR : Logique applicative dans les services pour garantir l'unicité
   @@index([userId])
   @@index([townId])
   @@index([userId, townId])
-  @@index([userId, townId, isActive]) // Index pour les performances, mais pas de contrainte unique
+  @@index([userId, townId, isActive, isDead])
+  @@index([isDead])
+  @@index([pm])
+  @@index([jobId])
 }
 
 enum ChantierStatus {
@@ -156,6 +155,8 @@ model Chantier {
   updatedAt     DateTime               @updatedAt @map("updated_at")
 
   @@unique([name, townId], name: "chantier_name_town_unique")
+  @@index([status])
+  @@index([townId, status])
   @@map("chantiers")
 }
 
@@ -179,13 +180,16 @@ model Project {
   paBlueprintRequired    Int?
   blueprintResourceCosts ProjectBlueprintResourceCost[]
 
-  originalProject  Project?    @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
-  blueprintCopies  Project[]   @relation("ProjectBlueprint")
-  outputObjectType ObjectType? @relation("ProjectObjectOutput", fields: [outputObjectTypeId], references: [id])
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
+  originalProject    Project?      @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
+  blueprintCopies    Project[]     @relation("ProjectBlueprint")
+  outputResourceType ResourceType? @relation("ProjectResourceOutput", fields: [outputResourceTypeId], references: [id])
+  outputObjectType   ObjectType?   @relation("ProjectObjectOutput", fields: [outputObjectTypeId], references: [id])
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
 
   @@unique([name, townId], name: "project_name_town_unique")
+  @@index([status])
+  @@index([townId, status])
   @@map("projects")
 }
 
@@ -305,8 +309,6 @@ model CharacterRole {
   role        Role      @relation(fields: [roleId], references: [id])
   roleId      String    @map("role_id")
   assignedAt  DateTime  @default(now()) @map("assigned_at")
-  username    String    @map("username")
-  roleName    String    @map("role_name")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -356,11 +358,13 @@ model Expedition {
   directionSetAt         DateTime?                 @map("direction_set_at") // Quand la direction a été définie
   members                ExpeditionMember[]
   emergencyVotes         ExpeditionEmergencyVote[] // Votes pour retour d'urgence
-  // Relations vers les stocks de ressources
-  resourceStocks         ResourceStock[]
   createdAt              DateTime                  @default(now()) @map("created_at")
   updatedAt              DateTime                  @updatedAt @map("updated_at")
 
+  @@index([status])
+  @@index([status, pendingEmergencyReturn])
+  @@index([townId, status])
+  @@index([status, returnAt])
   @@map("expeditions")
 }
 
@@ -401,7 +405,8 @@ model ResourceType {
   chantierCosts     ChantierResourceCost[] // Chantiers qui nécessitent cette ressource
   projectCosts      ProjectResourceCost[] // Projets qui nécessitent cette ressource
   blueprintCosts    ProjectBlueprintResourceCost[]
-  objectConversions ObjectResourceConversion[] // NOUVEAU
+  projectOutputs    Project[]                      @relation("ProjectResourceOutput")
+  objectConversions ObjectResourceConversion[]
   createdAt         DateTime                       @default(now()) @map("created_at")
   updatedAt         DateTime                       @updatedAt @map("updated_at")
 
@@ -414,12 +419,6 @@ model ResourceStock {
   locationId     String
   resourceTypeId Int
   quantity       Int          @default(0)
-
-  // Relations vers les emplacements
-  town         Town?       @relation(fields: [townId], references: [id], onDelete: Cascade)
-  townId       String?     @map("town_id")
-  expedition   Expedition? @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
-  expeditionId String?     @map("expedition_id")
 
   resourceType ResourceType @relation("ResourceTypeToResourceStock", fields: [resourceTypeId], references: [id], onDelete: Cascade)
 
@@ -465,6 +464,7 @@ model DailyEventLog {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   @@index([eventDate, townId])
+  @@index([townId])
   @@map("daily_event_logs")
 }
 
