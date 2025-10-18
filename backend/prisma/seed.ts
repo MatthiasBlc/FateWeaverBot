@@ -158,7 +158,7 @@ async function main() {
       { name: "Mineuse", startingAbility: "Miner", description: " " },
       { name: "Tisserand", startingAbility: "Tisser", description: " " },
       { name: "Forgeronne", startingAbility: "Forger", description: " " },
-      { name: "Menuisier", startingAbility: "Menuiser", description: " " },
+      { name: "Menuisier", startingAbility: "Travailler le bois", description: " " },
       { name: "Cuisinière", startingAbility: "Cuisiner", description: " " },
       { name: "Guérisseur", startingAbility: "Soigner", description: " " },
       { name: "Érudit", startingAbility: "Rechercher", description: " " },
@@ -269,7 +269,7 @@ async function main() {
   if (vivresType) {
     // First, get all towns
     const allTowns = await prisma.town.findMany();
-  
+
     // Then find which towns don't have the vivres resource
     const townsWithVivres = await prisma.resourceStock.findMany({
       where: {
