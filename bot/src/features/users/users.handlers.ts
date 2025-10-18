@@ -405,37 +405,54 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     });
   }
 
-  // Ajouter tous les champs à l'embed en une seule fois
-  embed.addFields(fields);
-
-  // Ajouter l'inventaire (nouveau)
+  // Ajouter les compétences
   try {
-    const inventoryResponse = await httpClient.get(
-      `/api/characters/${data.character.id}/inventory`
+    const skillsResponse = await httpClient.get(
+      `/api/characters/${data.character.id}/skills`
     );
-    const inventory = inventoryResponse.data;
+    const skills = skillsResponse.data;
 
-    if (inventory && inventory.slots && inventory.slots.length > 0) {
-      const inventoryText = inventory.slots
-        .map(
-          (slot: any) =>
-            `${slot.objectType.name}${slot.objectType.description
-              ? ` • ${slot.objectType.description}`
-              : ""
-            }`
-        )
-        .join("\n");
+    if (skills && skills.length > 0) {
+      const skillsText = skills
+        .map((skill: any) => `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`)
+        .join('\n');
 
       fields.push({
-        name: `📦 **Inventaire**`,
-        value: inventoryText,
+        name: `📚 **COMPÉTENCES**`,
+        value: skillsText,
         inline: false,
       });
     }
   } catch (error) {
-    // Silencieusement ignorer les erreurs d'inventaire pour ne pas casser le profil
-    logger.debug("Erreur lors de la récupération de l'inventaire:", error);
+    // Silencieusement ignorer les erreurs de compétences pour ne pas casser le profil
+    logger.debug("Erreur lors de la récupération des compétences:", error);
   }
+
+  // Ajouter les objets
+  try {
+    const objectsResponse = await httpClient.get(
+      `/api/characters/${data.character.id}/objects`
+    );
+    const objects = objectsResponse.data;
+
+    if (objects && objects.length > 0) {
+      const objectsText = objects
+        .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
+        .join('\n');
+
+      fields.push({
+        name: `🎒 **OBJETS**`,
+        value: objectsText,
+        inline: false,
+      });
+    }
+  } catch (error) {
+    // Silencieusement ignorer les erreurs d'objets pour ne pas casser le profil
+    logger.debug("Erreur lors de la récupération des objets:", error);
+  }
+
+  // Ajouter tous les champs à l'embed en une seule fois
+  embed.addFields(fields);
 
   // Créer les composants (boutons d'action rapide) si le personnage a des capacités
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
@@ -498,13 +515,13 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     components.push(cataplasmeRow);
   }
 
-  // Ajouter le bouton "Donner un objet" si le personnage a des objets dans son inventaire
+  // Bouton "Donner un objet" temporairement désactivé
+  /*
   try {
     const inventoryResponse = await httpClient.get(
       `/api/characters/${data.character.id}/inventory`
     );
     const inventory = inventoryResponse.data;
-
     if (inventory && inventory.slots && inventory.slots.length > 0) {
       const giveObjectButton = new ButtonBuilder()
         .setCustomId(`give_object:${data.character.id}`)
@@ -523,6 +540,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       error
     );
   }
+  */
 
   // Ajouter le bouton "Projets" si le personnage a une capacité craft
   const craftCapabilities = data.character.capabilities?.filter((cap) =>
@@ -828,7 +846,9 @@ export async function handleProfileButtonInteraction(interaction: any) {
             .setDisabled(!canCraftCataplasme)
         );
 
-        let content = `${CAPABILITIES.HEALING} **Soigner** - Choisissez une action :\n\nVous avez actuellement **${character.paTotal} PA**.\nCataplasmes disponibles : **${cataplasmeCount}/3**`;
+        let content = `${CAPABILITIES.HEALING} **Soigner** - Choisissez une action :\n\nVous avez actuellement **${character.paTotal} PA**.`;
+
+        //Ajouter plus tard avec le bon compte \nStock de cataplasmes: ** ${ cataplasmeCount }/3** (stock présent dans la ville + stocks des expéditions)
 
         if (cataplasmeCount >= 3) {
           content += `\n⚠️ Limite de cataplasmes atteinte.`;

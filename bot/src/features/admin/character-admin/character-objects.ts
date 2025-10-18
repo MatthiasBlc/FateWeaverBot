@@ -130,7 +130,7 @@ export async function handleAddObjects(
     if (categories.simple.length > 0) {
       categoryButtons.push({
         customId: `object_category_add:${character.id}:simple:0`,
-        label: `📦 Objets simples (${categories.simple.length})`,
+        label: `📦 Objets bonus (${categories.simple.length})`,
         style: 2, // Secondary
       });
     }
@@ -211,7 +211,7 @@ export async function handleRemoveObjects(
     if (categories.simple.length > 0) {
       categoryButtons.push({
         customId: `object_category_remove:${character.id}:simple:0`,
-        label: `📦 Objets simples (${categories.simple.length})`,
+        label: `📦 Objets bonus (${categories.simple.length})`,
         style: 2,
       });
     }
@@ -299,7 +299,7 @@ export async function handleObjectCategory(
     switch (category) {
       case 'simple':
         categoryObjects = categories.simple;
-        categoryName = '📦 Objets simples';
+        categoryName = '📦 Objets bonus';
         break;
       case 'capacity':
         categoryObjects = categories.withCapacity;
@@ -374,7 +374,7 @@ export async function handleObjectCategory(
     const actionText = action === 'add' ? 'Ajouter' : 'Retirer';
     await interaction.editReply({
       content: `## ${actionText === 'Ajouter' ? '➕' : '➖'} ${actionText} des objets - ${categoryName}\n\n` +
-               `Affichage de ${objectsOnPage.length} objet(s) (${startIdx + 1}-${endIdx} sur ${categoryObjects.length})`,
+        `Affichage de ${objectsOnPage.length} objet(s) (${startIdx + 1}-${endIdx} sur ${categoryObjects.length})`,
       components,
     });
   } catch (error) {

@@ -367,7 +367,7 @@ async function main() {
       { name: "Somnifère", description: "Toujours utile" },
       { name: "Bougie", description: "Pour y voir un peu mieux" },
       { name: "Grenouille", description: "Elle monte... et elle redescend" },
-      { name: "Couronne de fleurs", description: "Création féérique" },
+      { name: "Couronne de fleurs", description: "Entrelacée par une fée" },
       { name: "Codex sacré", description: "Paroles, paroles, paroles (mais sacrées !)" },
       { name: "Nécessaire d'écriture", description: "Indispensable à tout érudit" },
     ];
