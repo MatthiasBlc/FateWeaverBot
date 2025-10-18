@@ -68,7 +68,7 @@ import { logger } from "../../services/logger.js";
 import { checkAdmin } from "../../utils/roles.js";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
-import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis.js";
+import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis";
 import { ERROR_MESSAGES } from "../../constants/messages.js";
 
 /**

@@ -8,7 +8,7 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
 import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
-import { LOCATION, RESOURCES, STATUS } from "@shared/constants/emojis";
+import { LOCATION, RESOURCES, STATUS } from "../../constants/emojis";
 
 interface ResourceStock {
   id: number;

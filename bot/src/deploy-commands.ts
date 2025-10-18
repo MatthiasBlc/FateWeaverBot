@@ -24,29 +24,29 @@ const rest = new REST().setToken(config.discord.token);
  */
 function cleanOption(option: any): any {
   if (!option) return option;
-  
+
   const cleaned: any = {
     type: option.type,
     name: option.name,
     description: option.description,
   };
-  
+
   // Ajouter les propriétés optionnelles si elles existent
   if (option.required !== undefined) cleaned.required = option.required;
   if (option.choices !== undefined) cleaned.choices = option.choices;
-  
+
   // Normaliser les options: [] et undefined sont équivalents
   if (option.options !== undefined && option.options.length > 0) {
     cleaned.options = option.options.map(cleanOption);
   }
-  
+
   if (option.min_value !== undefined) cleaned.min_value = option.min_value;
   if (option.max_value !== undefined) cleaned.max_value = option.max_value;
   if (option.min_length !== undefined) cleaned.min_length = option.min_length;
   if (option.max_length !== undefined) cleaned.max_length = option.max_length;
   if (option.autocomplete !== undefined) cleaned.autocomplete = option.autocomplete;
   if (option.channel_types !== undefined) cleaned.channel_types = option.channel_types;
-  
+
   return cleaned;
 }
 
@@ -58,29 +58,29 @@ function areCommandsEqual(local: any, remote: ApplicationCommand): boolean {
   if (local.name !== remote.name) {
     return false;
   }
-  
+
   if (local.description !== remote.description) {
     return false;
   }
-  
+
   // Comparer les options (sous-commandes, paramètres, etc.)
   // Nettoyer les options pour ne comparer que les propriétés pertinentes
   const localOptions = (local.options || []).map(cleanOption);
   const remoteOptions = (remote.options || []).map(cleanOption);
-  
+
   const localOptionsStr = JSON.stringify(localOptions);
   const remoteOptionsStr = JSON.stringify(remoteOptions);
-  
+
   if (localOptionsStr !== remoteOptionsStr) {
     return false;
   }
-  
+
   // Note: On ne compare PAS les permissions par défaut car Discord ne les retourne
   // pas toujours dans l'API GET, même si elles sont bien appliquées.
   // Les permissions sont correctement appliquées lors du déploiement via PUT/PATCH.
   // Si vous modifiez les permissions d'une commande, changez aussi sa description
   // ou une option pour forcer la mise à jour.
-  
+
   return true;
 }
 
@@ -103,6 +103,17 @@ async function loadCommandsRecursively(dir: string): Promise<any[]> {
         logger.info(`   -> Chargement du fichier: ${entry.name}`);
         const commandModule = (await import(fullPath)).default;
         if (commandModule?.data && commandModule?.execute) {
+          // ---------------------------------------------------------------------------
+          // ----------------------Ignorer les commandes désactivées--------------------
+          // ---------------------------------------------------------------------------
+          if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+            logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+            continue;
+          }
+
+          // ---------------------------------------------------------------------------
+          // ----------------------Fin des commandes ignorées---------------------------
+          // ---------------------------------------------------------------------------
           commands.push(commandModule.data.toJSON());
           logger.info(
             `      ✅ Commande '${commandModule.data.name}' chargée.`
@@ -144,6 +155,17 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
         logger.info(`   -> Chargement du fichier: ${entry.name}`);
         const commandModule = (await import(fullPath)).default;
         if (commandModule?.data && commandModule?.execute) {
+          // ---------------------------------------------------------------------------
+          // ----------------------Ignorer les commandes désactivées--------------------
+          // ---------------------------------------------------------------------------
+          if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+            logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+            continue;
+          }
+
+          // ---------------------------------------------------------------------------
+          // ----------------------Fin des commandes ignorées---------------------------
+          // ---------------------------------------------------------------------------
           commands.push(commandModule.data.toJSON());
           logger.info(
             `      ✅ Commande '${commandModule.data.name}' chargée.`
@@ -190,6 +212,17 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
           logger.info(`   -> Chargement du fichier: ${entry.name}/${file.name}`);
           const commandModule = (await import(fullPath)).default;
           if (commandModule?.data && commandModule?.execute) {
+            // ---------------------------------------------------------------------------
+            // ----------------------Ignorer les commandes désactivées--------------------
+            // ---------------------------------------------------------------------------
+            if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+              logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+              continue;
+            }
+
+            // ---------------------------------------------------------------------------
+            // ----------------------Fin des commandes ignorées---------------------------
+            // ---------------------------------------------------------------------------
             commands.push(commandModule.data.toJSON());
             logger.info(
               `      ✅ Commande '${commandModule.data.name}' chargée.`
@@ -264,7 +297,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
     // Vérifier les commandes locales
     for (const [name, localCmd] of localCommandsMap) {
       const deployedCmd = deployedCommandsMap.get(name);
-      
+
       if (!deployedCmd) {
         // Nouvelle commande à créer
         commandsToCreate.push(localCmd);

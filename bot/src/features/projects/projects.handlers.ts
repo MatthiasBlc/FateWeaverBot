@@ -77,7 +77,7 @@ import { apiService } from "../../services/api/index.js";
 import { logger } from "../../services/logger.js";
 import { getStatusText, getStatusEmoji, getCraftTypeEmoji } from "./projects.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
-import { PROJECT, STATUS } from "../../constants/emojis.js";
+import { PROJECT, STATUS } from "../../constants/emojis";
 
 /**
  * Commande /projets - Affiche projets filtrés par craft capability + bouton Participer

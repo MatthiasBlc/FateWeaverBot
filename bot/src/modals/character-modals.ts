@@ -14,7 +14,7 @@ import { formatErrorForLog } from "../utils/errors";
 import { sendLogMessage } from "../utils/channels";
 import { JobAPIService } from "../services/api/job-api.service";
 import { httpClient } from "../services/httpClient";
-import { CHARACTER, STATUS, SYSTEM } from "@shared/constants/emojis";
+import { CHARACTER, STATUS, SYSTEM } from "../constants/emojis";
 
 /**
  * Modal pour créer un nouveau personnage

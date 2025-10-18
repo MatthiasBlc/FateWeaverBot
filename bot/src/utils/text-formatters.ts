@@ -1,4 +1,4 @@
-import { CHARACTER, HUNGER, RESOURCES } from "../constants/emojis.js";
+import { CHARACTER, HUNGER, RESOURCES } from "../constants/emojis";
 import type { Character } from "../types/entities";
 
 /**

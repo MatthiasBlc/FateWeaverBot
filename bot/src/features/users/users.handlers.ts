@@ -5,7 +5,7 @@ import {
   CAPABILITIES,
   RESOURCES,
   RESOURCES_EXTENDED,
-} from "../../constants/emojis.js";
+} from "../../constants/emojis";
 import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
@@ -444,7 +444,8 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       data.character.capabilities,
       data.user.discordId, // Utiliser l'ID Discord au lieu de l'ID interne
       data.character.id,
-      data.actionPoints.points || 0 // Ajouter les PA actuels du personnage
+      data.actionPoints.points || 0, // Ajouter les PA actuels du personnage
+      data.character.hp // Ajouter les points de vie actuels du personnage
     );
     if (capabilityButtons) {
       components.push(...capabilityButtons); // Étendre le tableau
@@ -909,7 +910,8 @@ function createCapabilityButtons(
   }>,
   userId: string,
   characterId: string,
-  currentPA: number
+  currentPA: number,
+  characterHp?: number
 ): ActionRowBuilder<ButtonBuilder>[] | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
@@ -946,20 +948,21 @@ function createCapabilityButtons(
         return CAPABILITIES.GENERIC;
       };
 
-      // Vérifier si le personnage a assez de PA pour cette capacité
+      // Vérifier si le personnage a assez de PA pour cette capacité ou s'il est en agonie
       const hasEnoughPA = currentPA >= cap.costPA;
-      const buttonStyle = hasEnoughPA
+      const isInAgony = characterHp !== undefined && characterHp <= 1;
+      const buttonStyle = hasEnoughPA && !isInAgony
         ? ButtonStyle.Primary
         : ButtonStyle.Secondary;
 
       const button = new ButtonBuilder()
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
-        .setLabel(`${cap.name} (${cap.costPA}PA)`) // Label original sans padding
+        .setLabel(`${cap.name} (${cap.costPA}PA)`)
         .setStyle(buttonStyle)
         .setEmoji(getEmojiForCapability(cap.emojiTag));
 
-      // Désactiver le bouton si pas assez de PA
-      if (!hasEnoughPA) {
+      // Désactiver le bouton si pas assez de PA ou si en agonie
+      if (!hasEnoughPA || isInAgony) {
         button.setDisabled(true);
       }
 

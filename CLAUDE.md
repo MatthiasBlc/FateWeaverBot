@@ -66,3 +66,4 @@ docker compose logs -f backenddev        # Backend logs
 ---
 
 **This file: 52 lines | Old CLAUDE.md: 214 lines | Token savings: ~75% per session**
+- Je ne veux pas de dotenv ni dans le back ni dans le front, les variables env sont envoyées via le build du docker compose

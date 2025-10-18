@@ -1,4 +1,4 @@
-import { HUNGER, RESOURCES, STATUS } from "../../constants/emojis.js";
+import { HUNGER, RESOURCES, STATUS } from "../../constants/emojis";
 import {
   EmbedBuilder,
   ActionRowBuilder,
