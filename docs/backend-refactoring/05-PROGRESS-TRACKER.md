@@ -1,8 +1,8 @@
 # Progress Tracker - Real-Time Status
 
 **Last Updated**: 2025-10-19
-**Current Phase**: 0 (Setup & Tooling)
-**Overall Progress**: 0%
+**Current Phase**: 2 (Extract Utilities)
+**Overall Progress**: 20%
 
 ---
 
@@ -10,8 +10,8 @@
 
 | Phase | Status | Progress | Completed |
 |-------|--------|----------|-----------|
-| 0: Setup & Tooling | Not Started | 0% | - |
-| 1: Query Builders | Not Started | 0% | - |
+| 0: Setup & Tooling | ✅ Complete | 100% | 2025-10-19 |
+| 1: Query Builders | ✅ Complete | 100% | 2025-10-19 |
 | 2: Utilities | Not Started | 0% | - |
 | 3: Validation Layer | Not Started | 0% | - |
 | 4: Repository Layer | Not Started | 0% | - |
@@ -26,62 +26,73 @@
 
 ## Phase 0: Setup & Tooling
 
-**Status**: Not Started
-**Started**: -
-**Completed**: -
+**Status**: ✅ Complete
+**Started**: 2025-10-19
+**Completed**: 2025-10-19
 
 ### Checklist
 
-- [ ] Install Zod
-- [ ] Install Jest and testing dependencies
-- [ ] Configure Jest
-- [ ] Add NPM scripts for testing, linting, typecheck
-- [ ] Create directory structure
-  - [ ] `infrastructure/database/query-builders/`
-  - [ ] `domain/repositories/`
-  - [ ] `api/validators/`
-  - [ ] `shared/errors/`
-  - [ ] `shared/constants/`
-- [ ] Verify build passes
-- [ ] Verify typecheck passes
+- [x] Install Zod
+- [x] Install Jest and testing dependencies
+- [x] Configure Jest
+- [x] Add NPM scripts for testing, linting, typecheck
+- [x] Create directory structure
+  - [x] `infrastructure/database/query-builders/`
+  - [x] `domain/repositories/`
+  - [x] `api/validators/`
+  - [x] `shared/errors/`
+  - [x] `shared/constants/`
+- [x] Verify build passes
+- [x] Verify typecheck passes
 
 ### Notes
 
-_No notes yet_
+All dependencies installed successfully. Directory structure created. Build and typecheck passing.
 
 ---
 
 ## Phase 1: Extract Query Builders
 
-**Status**: Not Started
-**Started**: -
-**Completed**: -
+**Status**: ✅ Complete
+**Started**: 2025-10-19
+**Completed**: 2025-10-19
 
 ### Checklist
 
-- [ ] Create `character.queries.ts`
-  - [ ] `baseInclude()`
-  - [ ] `fullInclude()`
-  - [ ] `withCapabilities()`
-- [ ] Create `resource.queries.ts`
-  - [ ] `stockWhere()`
-  - [ ] `withResourceType()`
-  - [ ] `byLocation()`
-- [ ] Create `project.queries.ts`
-  - [ ] `fullInclude()`
-  - [ ] `withResourceCosts()`
-- [ ] Create `expedition.queries.ts`
-  - [ ] `fullInclude()`
-  - [ ] `withMembers()`
-- [ ] Replace usage in `character.service.ts`
-- [ ] Replace usage in `characters.ts` controller
-- [ ] Replace usage in other files (track count: 0/15)
-- [ ] Verify typecheck passes
-- [ ] Verify build succeeds
+- [x] Create `character.queries.ts`
+  - [x] `baseInclude()`
+  - [x] `fullInclude()`
+  - [x] `withCapabilities()`
+  - [x] `withInventory()`
+  - [x] `withExpeditions()`
+- [x] Create `resource.queries.ts`
+  - [x] `stockWhere()`
+  - [x] `withResourceType()`
+  - [x] `byLocation()`
+  - [x] `stockWithType()`
+- [x] Create `project.queries.ts`
+  - [x] `fullInclude()`
+  - [x] `withResourceCosts()`
+  - [x] `withCraftTypes()`
+  - [x] `withOutput()`
+- [x] Create `expedition.queries.ts`
+  - [x] `fullInclude()`
+  - [x] `withMembers()`
+  - [x] `withTown()`
+  - [x] `withVotes()`
+- [x] Create `chantier.queries.ts`
+  - [x] `fullInclude()`
+  - [x] `withResourceCosts()`
+  - [x] `withTown()`
+- [x] Replace usage in `character.service.ts` (6 replacements)
+- [x] Replace usage in `characters.ts` controller (11 replacements)
+- [x] Replace usage in other files (15/15 files processed)
+- [x] Verify typecheck passes
+- [x] Verify build succeeds
 
 ### Notes
 
-_No notes yet_
+Successfully eliminated 95+ duplicated query patterns across 15 files. Fixed resourceTypeId type from string to number. All type checks pass. See `.supernova/report-phase1-query-builders.md` for full details.
 
 ---
 
