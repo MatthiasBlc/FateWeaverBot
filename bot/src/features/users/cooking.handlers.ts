@@ -52,7 +52,7 @@ export async function handleCookingPAChoice(interaction: any) {
     const vivresStock = stock.find((r: any) => r.resourceType.name === "Vivres");
     const vivresAvailable = vivresStock?.quantity || 0;
 
-    const maxInput = paToUse === 1 ? 1 : 5;
+    const maxInput = paToUse === 1 ? 2 : 5;
     const actualMax = Math.min(vivresAvailable, maxInput);
 
     if (vivresAvailable === 0) {
@@ -70,13 +70,11 @@ export async function handleCookingPAChoice(interaction: any) {
 
     // Sinon, demander combien de vivres utiliser
     const options = [];
-    for (let i = 1; i <= actualMax; i++) {
-      const minOutput = i - 1;
-      const maxOutput = i * 3;
+    const minInputForPA = paToUse === 1 ? 1 : 2;
+    for (let i = minInputForPA; i <= actualMax; i++) {
       options.push({
         label: `${i} vivre${i > 1 ? "s" : ""}`,
         value: `${i}`,
-        description: `Peut produire ${minOutput}-${maxOutput} repas`,
       });
     }
 

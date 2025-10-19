@@ -947,7 +947,7 @@ export class CharacterService {
     }
 
     // Déterminer le nombre maximum de vivres utilisables selon les PA
-    const maxInput = actualPaToUse === 1 ? 1 : 5;
+    const maxInput = actualPaToUse === 1 ? 2 : 5;
 
     // Vérifier qu'il y a des vivres disponibles dans la ville
     const vivresType = await prisma.resourceType.findFirst({
@@ -974,8 +974,9 @@ export class CharacterService {
     let vivresToConsume: number;
     if (inputQuantity !== undefined) {
       // L'utilisateur a spécifié une quantité
-      if (inputQuantity < 1) {
-        throw new Error("Vous devez utiliser au moins 1 vivre");
+      const minInput = actualPaToUse === 1 ? 1 : 2;
+      if (inputQuantity < minInput) {
+        throw new Error(`Avec ${actualPaToUse} PA, vous devez utiliser au moins ${minInput} vivre${minInput > 1 ? 's' : ''}`);
       }
       if (inputQuantity > maxInput) {
         throw new Error(
@@ -996,9 +997,10 @@ export class CharacterService {
     }
 
     // Calculer le nombre de repas créés avec la formule aléatoire
-    // Output = random(Input - 1, Input × 3)
-    const minOutput = vivresToConsume - 1;
-    const maxOutput = vivresToConsume * 3;
+    // 1 PA: Output = random(0, Input × 2)
+    // 2 PA: Output = random(0, Input × 3)
+    const minOutput = 0;
+    const maxOutput = actualPaToUse === 1 ? vivresToConsume * 2 : vivresToConsume * 3;
     const repasCreated = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
 
     return {

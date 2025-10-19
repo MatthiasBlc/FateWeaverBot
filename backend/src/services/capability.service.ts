@@ -703,11 +703,11 @@ export class CapabilityService {
     }
 
     // Vérifier les PA vs quantité d'input
-    if (paSpent === 1 && inputAmount > 1) {
-      throw new Error("1 PA permet max 1 ressource en entrée");
+    if (paSpent === 1 && (inputAmount < 1 || inputAmount > 2)) {
+      throw new Error("1 PA permet 1-2 ressources en entrée");
     }
-    if (paSpent === 2 && (inputAmount < 1 || inputAmount > 5)) {
-      throw new Error("2 PA permet 1-5 ressources en entrée");
+    if (paSpent === 2 && (inputAmount < 2 || inputAmount > 5)) {
+      throw new Error("2 PA permet 2-5 ressources en entrée");
     }
 
     // Vérifier le stock d'input
@@ -734,8 +734,10 @@ export class CapabilityService {
     }
 
     // Calculer l'output avec la formule aléatoire
-    const minOutput = Math.max(0, inputAmount - 1);
-    const maxOutput = inputAmount * 3;
+    // 1 PA: Output = random(0, Input × 2)
+    // 2 PA: Output = random(0, Input × 3)
+    const minOutput = 0;
+    const maxOutput = paSpent === 1 ? inputAmount * 2 : inputAmount * 3;
     const outputAmount = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
 
     // Récupérer le type de ressource d'output
