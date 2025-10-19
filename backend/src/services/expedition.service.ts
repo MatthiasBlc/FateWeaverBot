@@ -2,6 +2,7 @@ import { PrismaClient, ExpeditionStatus, Prisma, Direction } from "@prisma/clien
 import type { Expedition, ExpeditionMember } from "@prisma/client";
 import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 const prisma = new PrismaClient();
 
@@ -52,9 +53,7 @@ export class ExpeditionService {
         locationType: "EXPEDITION",
         locationId: expeditionId,
       },
-      include: {
-        resourceType: true,
-      },
+      ...ResourceQueries.withResourceType(),
     });
   }
 
@@ -75,13 +74,7 @@ export class ExpeditionService {
     }
 
     await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: "EXPEDITION",
-          locationId: expeditionId,
-          resourceTypeId: resourceType.id,
-        },
-      },
+      where: ResourceQueries.stockWhere("EXPEDITION", expeditionId, resourceType.id),
       update: {
         quantity: { increment: quantity },
       },
@@ -135,13 +128,7 @@ export class ExpeditionService {
       if (direction === "from_town") {
         // Transfer from town to expedition
         const townStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: expedition.townId,
-              resourceTypeId: resourceType.id,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", expedition.townId, resourceType.id),
         });
 
         if (!townStock || townStock.quantity < amount) {
@@ -150,25 +137,13 @@ export class ExpeditionService {
 
         await Promise.all([
           tx.resourceStock.update({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: expedition.townId,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("CITY", expedition.townId, resourceType.id),
             data: {
               quantity: { decrement: amount },
             },
           }),
           tx.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "EXPEDITION",
-                locationId: expeditionId,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("EXPEDITION", expeditionId, resourceType.id),
             update: {
               quantity: { increment: amount },
             },
@@ -183,13 +158,7 @@ export class ExpeditionService {
       } else {
         // Transfer from expedition to town
         const expeditionStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "EXPEDITION",
-              locationId: expeditionId,
-              resourceTypeId: resourceType.id,
-            },
-          },
+          where: ResourceQueries.stockWhere("EXPEDITION", expeditionId, resourceType.id),
         });
 
         if (!expeditionStock || expeditionStock.quantity < amount) {
@@ -198,13 +167,7 @@ export class ExpeditionService {
 
         await Promise.all([
           tx.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: expedition.townId,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("CITY", expedition.townId, resourceType.id),
             update: {
               quantity: { increment: amount },
             },
@@ -216,13 +179,7 @@ export class ExpeditionService {
             },
           }),
           tx.resourceStock.update({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "EXPEDITION",
-                locationId: expeditionId,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("EXPEDITION", expeditionId, resourceType.id),
             data: {
               quantity: { decrement: amount },
             },
@@ -275,13 +232,7 @@ export class ExpeditionService {
 
         // Check if town has enough of this resource
         const townStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: data.townId,
-              resourceTypeId: resourceType.id,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
         });
 
         const availableQuantity = townStock?.quantity || 0;
@@ -315,13 +266,7 @@ export class ExpeditionService {
         if (resourceType) {
           // Remove from town
           await tx.resourceStock.update({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: data.townId,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
             data: {
               quantity: { decrement: resource.quantity },
             },
@@ -329,13 +274,7 @@ export class ExpeditionService {
 
           // Add to expedition
           await tx.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "EXPEDITION",
-                locationId: expedition.id,
-                resourceTypeId: resourceType.id,
-              },
-            },
+            where: ResourceQueries.stockWhere("EXPEDITION", expedition.id, resourceType.id),
             update: {
               quantity: { increment: resource.quantity },
             },
@@ -746,9 +685,7 @@ export class ExpeditionService {
           locationType: "EXPEDITION",
           locationId: expeditionId,
         },
-        include: {
-          resourceType: true,
-        },
+        ...ResourceQueries.withResourceType(),
       });
 
       const resourcesSummary = expeditionResources.map(r => ({
@@ -1098,13 +1035,7 @@ export class ExpeditionService {
     for (const resource of expeditionResources) {
       // Add to town
       await tx.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: expedition.townId,
-            resourceTypeId: resource.resourceTypeId,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", expedition.townId, resource.resourceTypeId),
         update: {
           quantity: { increment: resource.quantity },
         },

@@ -6,6 +6,7 @@ import {
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { consumePA, validateCanUsePA } from "../util/character-validators";
 import { dailyEventLogService } from "./daily-event-log.service";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -247,13 +248,7 @@ export class CapabilityService {
       }),
       // Ajouter les vivres au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: (await this.prisma.resourceType.findFirst({ where: { name: "Vivres" } }))!.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, (await this.prisma.resourceType.findFirst({ where: { name: "Vivres" } }))!.id),
         update: {
           quantity: { increment: foodGained },
         },
@@ -341,13 +336,7 @@ export class CapabilityService {
       }),
       // Ajouter le bois au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: boisType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, boisType.id),
         update: {
           quantity: { increment: woodGained },
         },
@@ -445,13 +434,7 @@ export class CapabilityService {
       }),
       // Ajouter le minerai au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: mineraiType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, mineraiType.id),
         update: {
           quantity: { increment: oreGained },
         },
@@ -605,13 +588,7 @@ export class CapabilityService {
         },
       }),
       this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: resourceType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, resourceType.id),
         update: {
           quantity: { increment: lootEntry.quantity },
         },
@@ -721,13 +698,7 @@ export class CapabilityService {
     }
 
     const inputStock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: "CITY",
-          locationId: character.townId,
-          resourceTypeId: inputResourceType.id,
-        },
-      },
+      where: ResourceQueries.stockWhere("CITY", character.townId, inputResourceType.id),
     });
 
     if (!inputStock || inputStock.quantity < inputAmount) {
@@ -754,13 +725,7 @@ export class CapabilityService {
     await this.prisma.$transaction(async (tx) => {
       // Retirer l'input
       await tx.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: inputResourceType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, inputResourceType.id),
         data: {
           quantity: { decrement: inputAmount },
         },
@@ -768,13 +733,7 @@ export class CapabilityService {
 
       // Ajouter l'output
       await tx.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: outputResourceType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, outputResourceType.id),
         update: {
           quantity: { increment: outputAmount },
         },
@@ -894,13 +853,7 @@ export class CapabilityService {
       }
 
       await this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: character.townId,
-            resourceTypeId: (await this.prisma.resourceType.findFirst({ where: { name: "Cataplasme" } }))!.id,
-          },
-        },
+        where: ResourceQueries.stockWhere("CITY", character.townId, (await this.prisma.resourceType.findFirst({ where: { name: "Cataplasme" } }))!.id),
         update: {
           quantity: { increment: 1 },
         },
@@ -936,13 +889,7 @@ export class CapabilityService {
     }
 
     const cityStock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: "CITY",
-          locationId: townId,
-          resourceTypeId: cataplasmeType.id
-        }
-      }
+      where: ResourceQueries.stockWhere("CITY", townId, cataplasmeType.id)
     });
 
     // Count cataplasmes in all town expeditions
@@ -1055,13 +1002,7 @@ export class CapabilityService {
     }
 
     const stock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: cataplasmeType.id
-        }
-      }
+      where: ResourceQueries.stockWhere(locationType, locationId, cataplasmeType.id)
     });
 
     if (!stock || stock.quantity < 1) {

@@ -9,6 +9,7 @@ import {
 } from "@prisma/client";
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { CapabilityService } from "./capability.service";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
 const prisma = new PrismaClient();
 
@@ -98,17 +99,7 @@ export class CharacterService {
   ): Promise<CharacterWithDetails | null> {
     return await prisma.character.findFirst({
       where: { userId, townId, isActive: true, isDead: false },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-        job: {
-          include: {
-            startingAbility: true,
-            optionalAbility: true,
-          },
-        },
-      },
+      ...CharacterQueries.fullInclude(),
       orderBy: { createdAt: "desc" },
     });
   }
@@ -119,17 +110,7 @@ export class CharacterService {
   ): Promise<Character[]> {
     return await prisma.character.findMany({
       where: { userId, townId, isDead: true, canReroll: true, isActive: true },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-        job: {
-          include: {
-            startingAbility: true,
-            optionalAbility: true,
-          },
-        },
-      },
+      ...CharacterQueries.fullInclude(),
     });
   }
 
@@ -214,17 +195,7 @@ export class CharacterService {
       // Récupérer le personnage avec toutes ses relations (job inclus)
       return await tx.character.findUniqueOrThrow({
         where: { id: character.id },
-        include: {
-          user: true,
-          town: { include: { guild: true } },
-          characterRoles: { include: { role: true } },
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-        },
+        ...CharacterQueries.fullInclude(),
       });
     });
   }
@@ -243,17 +214,7 @@ export class CharacterService {
       // Il y a TOUJOURS un personnage actif par utilisateur par ville
       const currentActiveCharacter = await prisma.character.findFirst({
         where: { userId, townId, isActive: true },
-        include: {
-          user: true,
-          town: { include: { guild: true } },
-          characterRoles: { include: { role: true } },
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-        },
+        ...CharacterQueries.fullInclude(),
       });
 
       if (!currentActiveCharacter) {
@@ -363,17 +324,7 @@ export class CharacterService {
     // Vérifier s'il y a un personnage actif (mort ou vivant)
     const activeCharacter = await prisma.character.findFirst({
       where: { userId, townId, isActive: true },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-        job: {
-          include: {
-            startingAbility: true,
-            optionalAbility: true,
-          },
-        },
-      },
+      ...CharacterQueries.fullInclude(),
     });
 
     // Retourne true si aucun personnage actif n'est trouvé (nécessite création)
@@ -729,19 +680,7 @@ export class CharacterService {
 
       return tx.character.findUnique({
         where: { id: characterId },
-        include: {
-          user: true,
-          town: {
-            include: {
-              guild: true
-            }
-          },
-          characterRoles: {
-            include: {
-              role: true
-            }
-          }
-        }
+        ...CharacterQueries.withCapabilities(),
       });
     });
 

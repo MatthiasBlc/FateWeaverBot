@@ -1,4 +1,5 @@
 import { PrismaClient, CraftType, ProjectStatus } from '@prisma/client';
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 const prisma = new PrismaClient();
 
@@ -80,9 +81,7 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
     });
@@ -120,7 +119,7 @@ export const ProjectService = {
         include: {
           craftTypes: true,
           blueprintResourceCosts: {
-            include: { resourceType: true },
+            ...ResourceQueries.withResourceType(),
           },
         },
       });
@@ -217,9 +216,7 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
       orderBy: {
@@ -236,14 +233,10 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
         blueprintResourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
     });
@@ -324,13 +317,7 @@ export const ProjectService = {
         const locationId = character.townId;
 
         const currentStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType,
-              locationId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere(locationType, locationId, contribution.resourceTypeId),
         });
 
         if (!currentStock || currentStock.quantity < contribution.quantity) {
@@ -338,13 +325,7 @@ export const ProjectService = {
         }
 
         await tx.resourceStock.update({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType,
-              locationId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere(locationType, locationId, contribution.resourceTypeId),
           data: {
             quantity: { decrement: contribution.quantity },
           },
@@ -377,13 +358,7 @@ export const ProjectService = {
         // Si le projet produit une ressource (et non un objet)
         if (updatedProject!.outputResourceTypeId !== null) {
           await tx.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: 'CITY',
-                locationId: character.townId,
-                resourceTypeId: updatedProject!.outputResourceTypeId,
-              },
-            },
+            where: ResourceQueries.stockWhere('CITY', character.townId, updatedProject!.outputResourceTypeId),
             update: {
               quantity: { increment: updatedProject!.outputQuantity },
             },
@@ -411,14 +386,10 @@ export const ProjectService = {
       include: {
         craftTypes: true,
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
         blueprintResourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
       orderBy: [

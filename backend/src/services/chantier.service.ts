@@ -2,6 +2,7 @@ import { PrismaClient, ChantierStatus, Prisma } from "@prisma/client";
 import type { Chantier } from "@prisma/client";
 import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 const prisma = new PrismaClient();
 
@@ -103,9 +104,7 @@ export class ChantierService {
       where: { townId },
       include: {
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
       orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
@@ -120,9 +119,7 @@ export class ChantierService {
       where: { id: chantierId },
       include: {
         resourceCosts: {
-          include: {
-            resourceType: true,
-          },
+          ...ResourceQueries.withResourceType(),
         },
       },
     });
@@ -215,13 +212,7 @@ export class ChantierService {
 
         // Check town stock
         const townStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: chantier.townId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", chantier.townId, contribution.resourceTypeId),
         });
 
         if (!townStock || townStock.quantity < contribution.quantity) {
@@ -238,13 +229,7 @@ export class ChantierService {
       for (const contribution of contributions) {
         // Deduct from town
         await tx.resourceStock.update({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: chantier.townId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", chantier.townId, contribution.resourceTypeId),
           data: {
             quantity: { decrement: contribution.quantity },
           },
@@ -303,9 +288,7 @@ export class ChantierService {
         where: { id: chantierId },
         include: {
           resourceCosts: {
-            include: {
-              resourceType: true,
-            },
+            ...ResourceQueries.withResourceType(),
           },
         },
       });

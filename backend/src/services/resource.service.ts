@@ -1,4 +1,5 @@
 import { PrismaClient, LocationType } from "@prisma/client";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 export class ResourceService {
   constructor(private prisma: PrismaClient) {}
@@ -12,9 +13,7 @@ export class ResourceService {
         locationType,
         locationId
       },
-      include: {
-        resourceType: true
-      },
+      ...ResourceQueries.withResourceType(),
       orderBy: {
         resourceType: {
           name: "asc"
@@ -43,13 +42,7 @@ export class ResourceService {
 
     // Ajouter ou mettre à jour le stock
     await this.prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
       update: {
         quantity: { increment: quantity }
       },
@@ -84,13 +77,7 @@ export class ResourceService {
     }
 
     await this.prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
       update: {
         quantity: newQuantity
       },
@@ -126,13 +113,7 @@ export class ResourceService {
 
     // Vérifier que le lieu a assez de ressources
     const currentStock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      }
+      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id)
     });
 
     if (!currentStock || currentStock.quantity < quantity) {
@@ -140,13 +121,7 @@ export class ResourceService {
     }
 
     await this.prisma.resourceStock.update({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
       data: {
         quantity: { decrement: quantity }
       }
@@ -184,26 +159,14 @@ export class ResourceService {
     await this.prisma.$transaction([
       // Retirer du lieu source
       this.prisma.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: fromLocationType,
-            locationId: fromLocationId,
-            resourceTypeId: resourceType.id
-          }
-        },
+        where: ResourceQueries.stockWhere(fromLocationType, fromLocationId, resourceType.id),
         data: {
           quantity: { decrement: quantity }
         }
       }),
       // Ajouter au lieu destination
       this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: toLocationType,
-            locationId: toLocationId,
-            resourceTypeId: resourceType.id
-          }
-        },
+        where: ResourceQueries.stockWhere(toLocationType, toLocationId, resourceType.id),
         update: {
           quantity: { increment: quantity }
         },
@@ -230,13 +193,7 @@ export class ResourceService {
     }
 
     const stock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: vivresType.id
-        }
-      }
+      where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id)
     });
 
     return stock?.quantity || 0;
