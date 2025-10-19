@@ -87,11 +87,16 @@ async function updateAllCharactersActionPoints() {
       updateData.paUsedToday = 0;
       updateData.lastPaReset = now;
 
-      // STEP 5: Update PA (only if alive and time has passed)
+      // STEP 5: Update PA (regenerate daily at midnight)
       const lastUpdate = character.lastPaUpdate;
-      const daysSinceLastUpdate = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (daysSinceLastUpdate > 0 && character.paTotal < 4 && !updateData.isDead) {
+      // Check if midnight has passed since last update (compare dates, not time)
+      const lastUpdateDate = new Date(lastUpdate.getFullYear(), lastUpdate.getMonth(), lastUpdate.getDate());
+      const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const daysSinceLastUpdate = Math.floor((currentDate.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Regenerate PA if at least one midnight has passed
+      if (daysSinceLastUpdate >= 1 && character.paTotal < 4 && !updateData.isDead) {
         // Calculate PA to add based on hunger level
         let pointsToAdd = 2; // Default: +2 PA
 
