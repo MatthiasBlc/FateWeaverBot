@@ -3,6 +3,7 @@ import createHttpError from "http-errors";
 import { prisma } from "../util/db";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
+import { ResourceUtils } from "../shared/utils";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -40,7 +41,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
 
       // Mettre à jour le stock de vivres si spécifié
       if (foodStock !== undefined && foodStock >= 0) {
-        const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
         if (vivresType) {
           await prisma.resourceStock.upsert({
             where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
@@ -71,7 +72,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
       // Créer le stock de vivres par défaut ou avec la valeur spécifiée
       const initialFoodStock = foodStock !== undefined ? foodStock : 50;
       if (initialFoodStock >= 0) {
-        const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
 
         if (vivresType) {
           await prisma.resourceStock.upsert({
@@ -110,7 +111,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
     }
 
     // Récupérer le stock de vivres pour compatibilité avec l'interface existante
-    const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
@@ -152,7 +153,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     }
 
     // Vérifier et créer automatiquement le stock de vivres si nécessaire
-    const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
     let vivresStock = null;
     if (vivresType) {
       vivresStock = await prisma.resourceStock.findUnique({
@@ -234,7 +235,7 @@ export const getTownById: RequestHandler = async (req, res, next) => {
     }
 
     // Récupérer le stock de vivres pour compatibilité avec l'interface existante
-    const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
@@ -265,7 +266,7 @@ export const getAllTowns: RequestHandler = async (req, res, next) => {
     });
 
     // Get Vivres type
-    const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
 
     // For each town, fetch vivres stock
     const townsWithVivres = await Promise.all(
@@ -300,10 +301,7 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
     }
 
     // Récupérer le type de ressource "Vivres"
-    const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
-    if (!vivresType) {
-      throw createHttpError(404, "Type de ressource 'Vivres' non trouvé");
-    }
+    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
     const resourceStock = await prisma.resourceStock.upsert({
       where: ResourceQueries.stockWhere("CITY", id, vivresType.id),

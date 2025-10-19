@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
 
 export const getResources: RequestHandler = async (req, res, next) => {
   try {

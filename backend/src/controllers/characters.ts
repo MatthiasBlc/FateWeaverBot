@@ -8,6 +8,7 @@ import { CapabilityService } from "../services/capability.service";
 import { logger } from "../services/logger";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils, CharacterUtils } from "../shared/utils";
 
 // Initialiser les services
 const capabilityService = new CapabilityService(prisma);
@@ -29,9 +30,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
     }
 
     // Trouver l'utilisateur par son ID Discord
-    const user = await prisma.user.findUnique({
-      where: { discordId },
-    });
+    const user = await CharacterUtils.getUserByDiscordId(discordId);
 
     if (!user) {
       throw createHttpError(404, "Utilisateur non trouvé");
@@ -294,13 +293,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
 
     // Récupérer le type de ressource "Vivres"
-    const vivresType = await prisma.resourceType.findFirst({
-      where: { name: "Vivres" },
-    });
-
-    if (!vivresType) {
-      throw createHttpError(500, "Type de ressource 'Vivres' non trouvé");
-    }
+    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
     // Déterminer la source des vivres selon la logique demandée
     let locationType: "CITY" | "EXPEDITION";
@@ -423,16 +416,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
 
     // Récupérer le type de ressource demandé
-    const resourceType = await prisma.resourceType.findFirst({
-      where: { name: resourceTypeName },
-    });
-
-    if (!resourceType) {
-      throw createHttpError(
-        404,
-        `Type de ressource '${resourceTypeName}' non trouvé`
-      );
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     // Déterminer la source des ressources selon la logique demandée
     let locationType: "CITY" | "EXPEDITION";
@@ -870,13 +854,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
       : character.townId;
 
     // Check cataplasme availability
-    const cataplasmeType = await prisma.resourceType.findFirst({
-      where: { name: "Cataplasme" },
-    });
-
-    if (!cataplasmeType) {
-      throw createHttpError(500, "Type de ressource Cataplasme non trouvé");
-    }
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
 
     const stock = await prisma.resourceStock.findUnique({
       where: ResourceQueries.stockWhere(locationType, locationId, cataplasmeType.id),

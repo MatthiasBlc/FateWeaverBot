@@ -10,6 +10,7 @@ import {
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { CapabilityService } from "./capability.service";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
+import { ResourceUtils } from "../shared/utils";
 
 const prisma = new PrismaClient();
 
@@ -579,9 +580,7 @@ export class CharacterService {
         result.loot.foodSupplies !== 0
       ) {
         // Récupérer le type de ressource "Vivres"
-        const vivresType = await tx.resourceType.findFirst({
-          where: { name: "Vivres" },
-        });
+        const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
         if (vivresType) {
           if (result.loot.foodSupplies > 0) {
@@ -624,9 +623,7 @@ export class CharacterService {
 
       // Ajouter les repas générés au stock de la ville (pour la capacité cuisiner)
       if (result.loot && result.loot.preparedFood && result.loot.preparedFood > 0) {
-        const repasType = await tx.resourceType.findFirst({
-          where: { name: "Repas" },
-        });
+        const repasType = await ResourceUtils.getResourceTypeByName("Repas");
 
         if (repasType) {
           await tx.resourceStock.upsert({
@@ -652,9 +649,7 @@ export class CharacterService {
 
       // Ajouter le bois généré au stock de la ville (pour la capacité couper du bois)
       if (result.loot && result.loot.wood && result.loot.wood > 0) {
-        const boisType = await tx.resourceType.findFirst({
-          where: { name: "Bois" },
-        });
+        const boisType = await ResourceUtils.getResourceTypeByName("Bois");
 
         if (boisType) {
           await tx.resourceStock.upsert({
@@ -889,23 +884,9 @@ export class CharacterService {
     const maxInput = actualPaToUse === 1 ? 2 : 5;
 
     // Vérifier qu'il y a des vivres disponibles dans la ville
-    const vivresType = await prisma.resourceType.findFirst({
-      where: { name: "Vivres" },
-    });
+    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
-    if (!vivresType) {
-      throw new Error("Type de ressource Vivres non trouvé");
-    }
-
-    const vivresStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: "CITY",
-          locationId: character.townId,
-          resourceTypeId: vivresType.id,
-        },
-      },
-    });
+    const vivresStock = await ResourceUtils.getStock("CITY", character.townId, vivresType.id);
 
     const vivresAvailable = vivresStock?.quantity || 0;
 

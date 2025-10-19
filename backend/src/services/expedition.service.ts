@@ -3,6 +3,7 @@ import type { Expedition, ExpeditionMember } from "@prisma/client";
 import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
 
 const prisma = new PrismaClient();
 
@@ -65,26 +66,9 @@ export class ExpeditionService {
     resourceTypeName: string,
     quantity: number
   ): Promise<void> {
-    const resourceType = await prisma.resourceType.findFirst({
-      where: { name: resourceTypeName },
-    });
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
-    if (!resourceType) {
-      throw new Error(`Resource type "${resourceTypeName}" not found`);
-    }
-
-    await prisma.resourceStock.upsert({
-      where: ResourceQueries.stockWhere("EXPEDITION", expeditionId, resourceType.id),
-      update: {
-        quantity: { increment: quantity },
-      },
-      create: {
-        locationType: "EXPEDITION",
-        locationId: expeditionId,
-        resourceTypeId: resourceType.id,
-        quantity,
-      },
-    });
+    await ResourceUtils.upsertStock("EXPEDITION", expeditionId, resourceType.id, quantity);
   }
 
   /**
@@ -117,13 +101,7 @@ export class ExpeditionService {
         throw new Error("Transfer amount must be positive");
       }
 
-      const resourceType = await tx.resourceType.findFirst({
-        where: { name: resourceTypeName },
-      });
-
-      if (!resourceType) {
-        throw new Error(`Resource type "${resourceTypeName}" not found`);
-      }
+      const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
       if (direction === "from_town") {
         // Transfer from town to expedition
@@ -220,15 +198,7 @@ export class ExpeditionService {
           );
         }
 
-        const resourceType = await tx.resourceType.findFirst({
-          where: { name: resource.resourceTypeName },
-        });
-
-        if (!resourceType) {
-          throw new Error(
-            `Resource type "${resource.resourceTypeName}" not found`
-          );
-        }
+        const resourceType = await ResourceUtils.getResourceTypeByName(resource.resourceTypeName);
 
         // Check if town has enough of this resource
         const townStock = await tx.resourceStock.findUnique({

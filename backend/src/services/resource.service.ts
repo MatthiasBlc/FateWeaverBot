@@ -1,5 +1,6 @@
 import { PrismaClient, LocationType } from "@prisma/client";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
 
 export class ResourceService {
   constructor(private prisma: PrismaClient) {}
@@ -32,27 +33,10 @@ export class ResourceService {
     quantity: number
   ): Promise<void> {
     // Récupérer le type de ressource
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     // Ajouter ou mettre à jour le stock
-    await this.prisma.resourceStock.upsert({
-      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
-      update: {
-        quantity: { increment: quantity }
-      },
-      create: {
-        locationType,
-        locationId,
-        resourceTypeId: resourceType.id,
-        quantity
-      }
-    });
+    await ResourceUtils.upsertStock(locationType, locationId, resourceType.id, quantity);
   }
 
   /**
@@ -64,13 +48,7 @@ export class ResourceService {
     resourceTypeName: string,
     newQuantity: number
   ): Promise<void> {
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (newQuantity < 0) {
       throw new Error("La quantité ne peut pas être négative");
@@ -99,22 +77,14 @@ export class ResourceService {
     resourceTypeName: string,
     quantity: number
   ): Promise<void> {
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (quantity <= 0) {
       throw new Error("La quantité à retirer doit être positive");
     }
 
     // Vérifier que le lieu a assez de ressources
-    const currentStock = await this.prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id)
-    });
+    const currentStock = await ResourceUtils.getStock(locationType, locationId, resourceType.id);
 
     if (!currentStock || currentStock.quantity < quantity) {
       throw new Error(`Pas assez de ${resourceTypeName} disponibles`);
@@ -147,13 +117,7 @@ export class ResourceService {
       throw new Error("La quantité doit être positive");
     }
 
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     // Effectuer le transfert en transaction
     await this.prisma.$transaction([
@@ -184,17 +148,9 @@ export class ResourceService {
    * Récupère le stock de vivres d'un lieu
    */
   async getVivresStock(locationType: LocationType, locationId: string): Promise<number> {
-    const vivresType = await this.prisma.resourceType.findFirst({
-      where: { name: "Vivres" }
-    });
+    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
-    if (!vivresType) {
-      return 0;
-    }
-
-    const stock = await this.prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id)
-    });
+    const stock = await ResourceUtils.getStock(locationType, locationId, vivresType.id);
 
     return stock?.quantity || 0;
   }

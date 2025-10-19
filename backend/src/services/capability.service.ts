@@ -7,6 +7,7 @@ import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { consumePA, validateCanUsePA } from "../util/character-validators";
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -317,13 +318,7 @@ export class CapabilityService {
     const woodGained = Math.floor(Math.random() * 2) + 2; // 2 or 3
 
     // Récupérer le type de ressource "Bois"
-    const boisType = await this.prisma.resourceType.findFirst({
-      where: { name: "Bois" },
-    });
-
-    if (!boisType) {
-      throw new Error("Type de ressource 'Bois' non trouvé");
-    }
+    const boisType = await ResourceUtils.getResourceTypeByName("Bois");
 
     // Mettre à jour les PA et ajouter les ressources à la ville
     await this.prisma.$transaction([
@@ -415,13 +410,7 @@ export class CapabilityService {
     const oreGained = Math.floor(Math.random() * 5) + 2; // 2-6
 
     // Récupérer le type de ressource "Minerai"
-    const mineraiType = await this.prisma.resourceType.findFirst({
-      where: { name: "Minerai" },
-    });
-
-    if (!mineraiType) {
-      throw new Error("Type de ressource 'Minerai' non trouvé");
-    }
+    const mineraiType = await ResourceUtils.getResourceTypeByName("Minerai");
 
     // Mettre à jour les PA et ajouter les ressources à la ville
     await this.prisma.$transaction([
@@ -852,18 +841,8 @@ export class CapabilityService {
         throw new Error("Limite de cataplasmes atteinte (max 3 par ville)");
       }
 
-      await this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, (await this.prisma.resourceType.findFirst({ where: { name: "Cataplasme" } }))!.id),
-        update: {
-          quantity: { increment: 1 },
-        },
-        create: {
-          locationType: "CITY",
-          locationId: character.townId,
-          resourceTypeId: (await this.prisma.resourceType.findFirst({ where: { name: "Cataplasme" } }))!.id,
-          quantity: 1,
-        },
-      });
+      const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
+      await ResourceUtils.upsertStock("CITY", character.townId, cataplasmeType.id, 1);
 
       // Consommer les PA
       await consumePA(characterId, 2, this.prisma);
@@ -880,17 +859,9 @@ export class CapabilityService {
    */
   async getCataplasmeCount(townId: string): Promise<number> {
     // Count cataplasmes in city
-    const cataplasmeType = await this.prisma.resourceType.findFirst({
-      where: { name: "Cataplasme" }
-    });
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
 
-    if (!cataplasmeType) {
-      return 0;
-    }
-
-    const cityStock = await this.prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere("CITY", townId, cataplasmeType.id)
-    });
+    const cityStock = await ResourceUtils.getStock("CITY", townId, cataplasmeType.id);
 
     // Count cataplasmes in all town expeditions
     // First get all expeditions for this town
@@ -993,17 +964,9 @@ export class CapabilityService {
     const locationId = departedExpedition ? departedExpedition.expeditionId : character.townId;
 
     // Check cataplasme availability
-    const cataplasmeType = await this.prisma.resourceType.findFirst({
-      where: { name: "Cataplasme" }
-    });
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
 
-    if (!cataplasmeType) {
-      throw new Error("Type de ressource Cataplasme non trouvé");
-    }
-
-    const stock = await this.prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, cataplasmeType.id)
-    });
+    const stock = await ResourceUtils.getStock(locationType, locationId, cataplasmeType.id);
 
     if (!stock || stock.quantity < 1) {
       throw new Error("Aucun cataplasme disponible");
