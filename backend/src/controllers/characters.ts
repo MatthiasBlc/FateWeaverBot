@@ -776,11 +776,10 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     if (canReroll !== undefined) updateData.canReroll = canReroll;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    // Vérifier si le personnage doit mourir (PV = 0, PM = 0 ou Faim = 0)
+    // Vérifier si le personnage doit mourir (PV = 0, PM = 0) - sauf pour la faim qui passe en agonie
     const shouldDie =
       (hp !== undefined && hp <= 0) ||
-      (pm !== undefined && pm <= 0) ||
-      (hungerLevel !== undefined && hungerLevel <= 0);
+      (pm !== undefined && pm <= 0);
 
     if (shouldDie) {
       updateData.isDead = true;

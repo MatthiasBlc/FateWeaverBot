@@ -41,6 +41,7 @@ async function increaseAllCharactersHunger() {
         if (character.hp !== 1 || !character.agonySince) {
           updateData.agonySince = new Date();
         }
+        // Don't set isDead = true - characters in agony are not dead
       }
 
       await prisma.character.update({

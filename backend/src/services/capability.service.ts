@@ -659,7 +659,7 @@ export class CapabilityService {
       },
       cuisiner: {
         inputResource: "Vivres",
-        outputResource: "Nourriture",
+        outputResource: "Repas",
         verb: "cuisiné"
       }
     };
