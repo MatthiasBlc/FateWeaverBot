@@ -100,23 +100,13 @@ if (isBehindProxy) {
   // Middleware pour logger les informations de la requête (skip health checks)
   app.use((req, res, next) => {
     if (req.url !== "/health") {
-      console.log("Request received:", {
+      console.log(`[Request] ${JSON.stringify({
         method: req.method,
         url: req.url,
         ip: req.ip,
-        ips: req.ips,
         protocol: req.protocol,
-        secure: req.secure,
         hostname: req.hostname,
-        originalUrl: req.originalUrl,
-        headers: {
-          "x-forwarded-for": req.headers["x-forwarded-for"],
-          "x-forwarded-proto": req.headers["x-forwarded-proto"],
-          "x-forwarded-host": req.headers["x-forwarded-host"],
-          "x-real-ip": req.headers["x-real-ip"],
-          host: req.headers["host"],
-        },
-      });
+      })}`);
     }
     next();
   });
@@ -167,7 +157,7 @@ app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/objects", objectsRoutes);
 app.use("/api/expeditions", expeditionRoutes);
-app.use("/api/chantier", chantierRoutes);
+app.use("/api/chantiers", chantierRoutes);
 app.use("/api/seasons", seasonsRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);

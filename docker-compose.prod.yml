@@ -51,6 +51,7 @@ services:
       - TRUST_PROXY=1
     ports:
       - "3000:3000"
+      - "5555:5555"  # Prisma Studio
     depends_on:
       fateweaver-postgres:
         condition: service_healthy
