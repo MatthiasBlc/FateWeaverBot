@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 export const getResources: RequestHandler = async (req, res, next) => {
   try {
@@ -19,9 +20,7 @@ export const getResources: RequestHandler = async (req, res, next) => {
         locationType: locationType as "CITY" | "EXPEDITION",
         locationId: locationId,
       },
-      include: {
-        resourceType: true,
-      },
+      ...ResourceQueries.withResourceType(),
       orderBy: {
         resourceType: {
           name: "asc",
@@ -62,13 +61,7 @@ export const addResource: RequestHandler = async (req, res, next) => {
     }
 
     const resource = await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       update: {
         quantity: { increment: quantity },
       },
@@ -113,13 +106,7 @@ export const updateResource: RequestHandler = async (req, res, next) => {
     }
 
     const resource = await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       update: {
         quantity: quantity,
       },
@@ -165,13 +152,7 @@ export const removeResource: RequestHandler = async (req, res, next) => {
 
     // Vérifier que le lieu a assez de ressources
     const currentStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
     });
 
     if (!currentStock || currentStock.quantity < quantity) {
@@ -179,13 +160,7 @@ export const removeResource: RequestHandler = async (req, res, next) => {
     }
 
     const updatedResource = await prisma.resourceStock.update({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       data: {
         quantity: { decrement: quantity },
       },
@@ -229,13 +204,7 @@ export const transferResource: RequestHandler = async (req, res, next) => {
 
     // Vérifier que la localisation source a assez de ressources
     const sourceStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: fromLocationType as "CITY" | "EXPEDITION",
-          locationId: fromLocationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(fromLocationType as "CITY" | "EXPEDITION", fromLocationId, parseInt(resourceTypeId)),
     });
 
     if (!sourceStock || sourceStock.quantity < quantity) {
@@ -246,26 +215,14 @@ export const transferResource: RequestHandler = async (req, res, next) => {
     await prisma.$transaction([
       // Retirer de la source
       prisma.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: fromLocationType as "CITY" | "EXPEDITION",
-            locationId: fromLocationId,
-            resourceTypeId: parseInt(resourceTypeId),
-          },
-        },
+        where: ResourceQueries.stockWhere(fromLocationType as "CITY" | "EXPEDITION", fromLocationId, parseInt(resourceTypeId)),
         data: {
           quantity: { decrement: quantity },
         },
       }),
       // Ajouter à la destination
       prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: toLocationType as "CITY" | "EXPEDITION",
-            locationId: toLocationId,
-            resourceTypeId: parseInt(resourceTypeId),
-          },
-        },
+        where: ResourceQueries.stockWhere(toLocationType as "CITY" | "EXPEDITION", toLocationId, parseInt(resourceTypeId)),
         update: {
           quantity: { increment: quantity },
         },

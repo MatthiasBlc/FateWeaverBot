@@ -6,6 +6,8 @@ import { toCharacterDto } from "../util/mappers";
 import { CharacterService } from "../services/character.service";
 import { CapabilityService } from "../services/capability.service";
 import { logger } from "../services/logger";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 
 // Initialiser les services
 const capabilityService = new CapabilityService(prisma);
@@ -118,17 +120,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
           town: { connect: { id: townId } },
           ...(jobId && { job: { connect: { id: jobId } } }),
         },
-        include: {
-          user: true,
-          town: { include: { guild: true } },
-          characterRoles: { include: { role: true } },
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-        },
+        ...CharacterQueries.fullInclude(),
       });
 
       // Si c'est une nouvelle création (et non une mise à jour), on ajoute les compétences
@@ -199,17 +191,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
 
       return tx.character.findUniqueOrThrow({
         where: { id: character.id },
-        include: {
-          user: true,
-          town: { include: { guild: true } },
-          characterRoles: { include: { role: true } },
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-        },
+        ...CharacterQueries.fullInclude(),
       });
     });
 
@@ -224,17 +206,7 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
     const { id } = req.params;
     const character = await prisma.character.findUnique({
       where: { id },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-        job: {
-          include: {
-            startingAbility: true,
-            optionalAbility: true,
-          },
-        },
-      },
+      ...CharacterQueries.fullInclude(),
     });
 
     if (!character) {
@@ -259,11 +231,7 @@ export const getCharacterByDiscordIds: RequestHandler = async (
         user: { discordId: userId },
         town: { guild: { discordGuildId: guildId } },
       },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-      },
+      ...CharacterQueries.withCapabilities(),
     });
 
     if (!character) {
@@ -281,11 +249,7 @@ export const getGuildCharacters: RequestHandler = async (req, res, next) => {
     const { guildId } = req.params;
     const characters = await prisma.character.findMany({
       where: { town: { guild: { discordGuildId: guildId } } },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-      },
+      ...CharacterQueries.withCapabilities(),
       orderBy: { name: "asc" },
     });
     res.status(200).json(characters);
@@ -362,13 +326,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Récupérer le stock approprié
     const foodStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: vivresType.id,
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
@@ -389,13 +347,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
       // Retirer les vivres du stock approprié (ville ou expédition)
       await tx.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType,
-            locationId,
-            resourceTypeId: vivresType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
         data: {
           quantity: { decrement: foodToConsume },
         },
@@ -403,13 +355,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
       // Récupérer le stock mis à jour pour la réponse
       const updatedStock = await tx.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType,
-            locationId,
-            resourceTypeId: vivresType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
       });
 
       return {
@@ -512,13 +458,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
     // Récupérer le stock approprié
     const foodStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id,
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
@@ -539,13 +479,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
       // Retirer les ressources du stock approprié (ville ou expédition)
       await tx.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType,
-            locationId,
-            resourceTypeId: resourceType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
         data: {
           quantity: { decrement: foodToConsume },
         },
@@ -553,13 +487,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
       // Récupérer le stock mis à jour pour la réponse
       const updatedStock = await tx.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType,
-            locationId,
-            resourceTypeId: resourceType.id,
-          },
-        },
+        where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
       });
 
       return {
@@ -951,13 +879,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     }
 
     const stock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: cataplasmeType.id,
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType, locationId, cataplasmeType.id),
     });
 
     if (!stock || stock.quantity < 1) {

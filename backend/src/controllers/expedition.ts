@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../util/db";
 import { ExpeditionService } from "../services/expedition.service";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
 const expeditionService = new ExpeditionService();
 

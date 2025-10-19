@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -41,13 +43,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
         const vivresType = await prisma.resourceType.findFirst({ where: { name: "Vivres" } });
         if (vivresType) {
           await prisma.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: town.id,
-                resourceTypeId: vivresType.id
-              }
-            },
+            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
             update: { quantity: foodStock },
             create: {
               locationType: "CITY",
@@ -79,13 +75,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
 
         if (vivresType) {
           await prisma.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: town.id,
-                resourceTypeId: vivresType.id
-              }
-            },
+            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
             update: { quantity: initialFoodStock },
             create: {
               locationType: "CITY",
@@ -124,13 +114,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: town.id,
-            resourceTypeId: vivresType.id
-          }
-        }
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
       });
       foodStockValue = vivresStock?.quantity || 0;
     }
@@ -172,13 +156,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     let vivresStock = null;
     if (vivresType) {
       vivresStock = await prisma.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: town.id,
-            resourceTypeId: vivresType.id
-          }
-        }
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
       });
     }
 
@@ -188,13 +166,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
       try {
         if (vivresType) {
           await prisma.resourceStock.upsert({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: town.id,
-                resourceTypeId: vivresType.id
-              }
-            },
+            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
             update: { quantity: 50 },
             create: {
               locationType: "CITY",
@@ -231,13 +203,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     // Récupérer le stock de vivres final pour l'interface
     if (vivresType && !vivresStock) {
       vivresStock = await prisma.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: town.id,
-            resourceTypeId: vivresType.id
-          }
-        }
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
       });
     }
 
@@ -272,13 +238,7 @@ export const getTownById: RequestHandler = async (req, res, next) => {
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: "CITY",
-            locationId: town.id,
-            resourceTypeId: vivresType.id
-          }
-        }
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
       });
       foodStockValue = vivresStock?.quantity || 0;
     }
@@ -313,13 +273,7 @@ export const getAllTowns: RequestHandler = async (req, res, next) => {
         let foodStock = 0;
         if (vivresType) {
           const vivresStock = await prisma.resourceStock.findUnique({
-            where: {
-              locationType_locationId_resourceTypeId: {
-                locationType: "CITY",
-                locationId: town.id,
-                resourceTypeId: vivresType.id
-              }
-            }
+            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
           });
           foodStock = vivresStock?.quantity || 0;
         }
@@ -352,13 +306,7 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
     }
 
     const resourceStock = await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: "CITY",
-          locationId: id,
-          resourceTypeId: vivresType.id
-        }
-      },
+      where: ResourceQueries.stockWhere("CITY", id, vivresType.id),
       update: { quantity: foodStock },
       create: {
         locationType: "CITY",
@@ -438,7 +386,7 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
         locationType: "CITY",
         locationId: id
       },
-      include: { resourceType: true },
+      ...ResourceQueries.withResourceType(),
       orderBy: { resourceType: { name: "asc" } }
     });
 

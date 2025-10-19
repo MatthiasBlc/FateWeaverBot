@@ -4,6 +4,8 @@ import { actionPointService } from "../services/action-point.service";
 import { chantierService } from "../services/chantier.service";
 import { logger } from "../services/logger";
 import { validateCanUsePA } from "../util/character-validators";
+import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
 export const createChantier = async (req: Request, res: Response) => {
   try {
@@ -144,9 +146,7 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     const chantier = await prisma.chantier.findUnique({
       where: { id: chantierId },
-      include: {
-        resourceCosts: true,
-      },
+      ...ChantierQueries.withResourceCosts(),
     });
 
     if (!chantier) {
@@ -159,13 +159,7 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      include: {
-        expeditionMembers: {
-          include: {
-            expedition: true,
-          },
-        },
-      },
+      ...CharacterQueries.withExpeditions(),
     });
 
     if (!character) {
