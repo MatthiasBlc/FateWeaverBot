@@ -157,7 +157,7 @@ app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/objects", objectsRoutes);
 app.use("/api/expeditions", expeditionRoutes);
-app.use("/api/chantier", chantierRoutes);
+app.use("/api/chantiers", chantierRoutes);
 app.use("/api/seasons", seasonsRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);
