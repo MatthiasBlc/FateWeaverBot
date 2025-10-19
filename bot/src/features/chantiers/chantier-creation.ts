@@ -25,6 +25,7 @@ interface ChantierDraft {
   cost: number;
   guildId: string;
   userId: string;
+  completionText?: string;
   resourceCosts: { resourceTypeId: number; quantity: number; name: string; emoji: string }[];
 }
 
@@ -40,6 +41,7 @@ export async function handleChantierCreateModal(interaction: ModalSubmitInteract
   try {
     const name = interaction.fields.getTextInputValue("chantier_name").trim();
     const costInput = interaction.fields.getTextInputValue("chantier_cost").trim();
+    const completionText = interaction.fields.getTextInputValue("chantier_completion_text")?.trim() || undefined;
 
     // Validation du coût
     const cost = parseInt(costInput, 10);
@@ -57,6 +59,7 @@ export async function handleChantierCreateModal(interaction: ModalSubmitInteract
       cost,
       guildId: interaction.guildId!,
       userId: interaction.user.id,
+      completionText,
       resourceCosts: [],
     };
 
@@ -319,6 +322,7 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
         name: draft.name,
         cost: draft.cost,
         guildId: draft.guildId,
+        completionText: draft.completionText,
         resourceCosts: resourceCosts.length > 0 ? resourceCosts : undefined,
       },
       draft.userId

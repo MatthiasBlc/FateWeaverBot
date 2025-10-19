@@ -28,6 +28,7 @@ export class ChantierAPIService extends BaseAPIService {
       name: string;
       cost: number;
       guildId: string;
+      completionText?: string;
       resourceCosts?: { resourceTypeId: number; quantity: number }[];
     },
     userId: string

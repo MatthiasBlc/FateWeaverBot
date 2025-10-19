@@ -15,6 +15,7 @@ export async function createChantier(
     name: string;
     cost: number;
     guildId: string;
+    completionText?: string;
     resourceCosts?: { resourceTypeId: number; quantity: number }[];
   },
   userId: string

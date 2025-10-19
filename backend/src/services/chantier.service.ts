@@ -10,6 +10,7 @@ export interface CreateChantierData {
   cost: number;
   townId: string;
   createdBy: string;
+  completionText?: string;
   resourceCosts?: { resourceTypeId: number; quantity: number }[];
 }
 
@@ -63,6 +64,7 @@ export class ChantierService {
           cost: data.cost,
           townId: data.townId,
           createdBy: data.createdBy,
+          completionText: data.completionText,
           status: ChantierStatus.PLAN,
         },
       });

@@ -141,18 +141,19 @@ enum CapacityBonusType {
 }
 
 model Chantier {
-  id            String                 @id @default(cuid())
-  name          String // Nom du chantier
-  startDate     DateTime?              @map("start_date") // Date du premier investissement de PA (null si pas commencé)
-  cost          Int // Coût total en PA
-  spendOnIt     Int                    @default(0) // Nombre de PA investis
-  status        ChantierStatus         @default(PLAN) // plan, in_progress, completed
-  town          Town                   @relation(fields: [townId], references: [id], onDelete: Cascade)
-  townId        String                 @map("town_id")
-  createdBy     String                 @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
-  resourceCosts ChantierResourceCost[] // Coûts en ressources optionnels
-  createdAt     DateTime               @default(now()) @map("created_at")
-  updatedAt     DateTime               @updatedAt @map("updated_at")
+  id             String                 @id @default(cuid())
+  name           String // Nom du chantier
+  startDate      DateTime?              @map("start_date") // Date du premier investissement de PA (null si pas commencé)
+  cost           Int // Coût total en PA
+  spendOnIt      Int                    @default(0) // Nombre de PA investis
+  status         ChantierStatus         @default(PLAN) // plan, in_progress, completed
+  town           Town                   @relation(fields: [townId], references: [id], onDelete: Cascade)
+  townId         String                 @map("town_id")
+  createdBy      String                 @map("created_by") // ID Discord de l'utilisateur qui a créé le chantier
+  completionText String?                @map("completion_text") // Message affiché quand le chantier est terminé
+  resourceCosts  ChantierResourceCost[] // Coûts en ressources optionnels
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
 
   @@unique([name, townId], name: "chantier_name_town_unique")
   @@index([status])
