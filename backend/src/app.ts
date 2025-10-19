@@ -34,14 +34,58 @@ import jobRoutes from "./routes/jobs";
 const app = express();
 
 // Démarrer les jobs CRON
+console.log("🔧 Initializing CRON jobs...");
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+
 if (process.env.NODE_ENV !== "test") {
-  const { mainJob } = setupDailyPaJob();
-  mainJob.start();
-  setupHungerIncreaseJob();
-  setupDailyPmJob();
-  setupExpeditionJobs();
-  setupSeasonChangeJob();
-  setupDailyMessageJob();
+  console.log("✅ Starting CRON jobs (not in test mode)");
+
+  try {
+    const { mainJob } = setupDailyPaJob();
+    mainJob.start();
+    console.log("✅ Daily PA job started");
+  } catch (error) {
+    console.error("❌ Failed to start Daily PA job:", error);
+  }
+
+  try {
+    setupHungerIncreaseJob();
+    console.log("✅ Hunger increase job started");
+  } catch (error) {
+    console.error("❌ Failed to start Hunger increase job:", error);
+  }
+
+  try {
+    setupDailyPmJob();
+    console.log("✅ Daily PM job started");
+  } catch (error) {
+    console.error("❌ Failed to start Daily PM job:", error);
+  }
+
+  try {
+    setupExpeditionJobs();
+    console.log("✅ Expedition jobs started");
+  } catch (error) {
+    console.error("❌ Failed to start Expedition jobs:", error);
+  }
+
+  try {
+    setupSeasonChangeJob();
+    console.log("✅ Season change job started");
+  } catch (error) {
+    console.error("❌ Failed to start Season change job:", error);
+  }
+
+  try {
+    setupDailyMessageJob();
+    console.log("✅ Daily message job started");
+  } catch (error) {
+    console.error("❌ Failed to start Daily message job:", error);
+  }
+
+  console.log("🎉 All CRON jobs initialized successfully");
+} else {
+  console.log("⏭️  Skipping CRON jobs (test mode)");
 }
 
 // Configuration du proxy trust
@@ -53,25 +97,27 @@ if (isBehindProxy) {
   // Faire confiance au premier proxy
   app.set("trust proxy", 1);
 
-  // Middleware pour logger les informations de la requête
+  // Middleware pour logger les informations de la requête (skip health checks)
   app.use((req, res, next) => {
-    console.log("Request received:", {
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-      ips: req.ips,
-      protocol: req.protocol,
-      secure: req.secure,
-      hostname: req.hostname,
-      originalUrl: req.originalUrl,
-      headers: {
-        "x-forwarded-for": req.headers["x-forwarded-for"],
-        "x-forwarded-proto": req.headers["x-forwarded-proto"],
-        "x-forwarded-host": req.headers["x-forwarded-host"],
-        "x-real-ip": req.headers["x-real-ip"],
-        host: req.headers["host"],
-      },
-    });
+    if (req.url !== "/health") {
+      console.log("Request received:", {
+        method: req.method,
+        url: req.url,
+        ip: req.ip,
+        ips: req.ips,
+        protocol: req.protocol,
+        secure: req.secure,
+        hostname: req.hostname,
+        originalUrl: req.originalUrl,
+        headers: {
+          "x-forwarded-for": req.headers["x-forwarded-for"],
+          "x-forwarded-proto": req.headers["x-forwarded-proto"],
+          "x-forwarded-host": req.headers["x-forwarded-host"],
+          "x-real-ip": req.headers["x-real-ip"],
+          host: req.headers["host"],
+        },
+      });
+    }
     next();
   });
 }
@@ -84,7 +130,12 @@ app.use(
   })
 );
 
-app.use(morgan("dev"));
+// Morgan logger - skip health checks
+app.use(
+  morgan("dev", {
+    skip: (req, _res) => req.url === "/health",
+  })
+);
 
 app.use(express.json());
 
@@ -128,29 +179,17 @@ app.use("/api/admin/expeditions", expeditionAdminRoutes);
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
 
-// Health endpoint for container healthcheck
-app.get("/health", (req: Request, res: Response) => {
-  // Log simplifié pour le healthcheck
-  if (process.env.NODE_ENV === "production") {
-    console.log(`[HealthCheck] ${new Date().toISOString()} - Status: OK`);
-  } else {
-    console.log({
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-      status: "OK",
-    });
-  }
+// Health endpoint for container healthcheck (no logging)
+app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use((req, res, next) => {
+app.use((_req, _res, next) => {
   next(createHttpError(404, "Endpoint not found"));
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(error);
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
