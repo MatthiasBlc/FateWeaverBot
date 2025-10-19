@@ -48,6 +48,7 @@ interface Chantier {
   status: "PLAN" | "IN_PROGRESS" | "COMPLETED";
   townId: string;
   createdBy: string;
+  completionText?: string;
   startDate: Date | null;
   endDate: Date | null;
   createdAt: Date;
@@ -68,7 +69,7 @@ import { logger } from "../../services/logger.js";
 import { checkAdmin } from "../../utils/roles.js";
 import { getStatusText, getStatusEmoji } from "./chantiers.utils.js";
 import { createInfoEmbed } from "../../utils/embeds.js";
-import { CHANTIER, STATUS, ACTIONS } from "../../constants/emojis";
+import { CHANTIER, STATUS, ACTIONS, CHARACTER } from "../../constants/emojis";
 import { ERROR_MESSAGES } from "../../constants/messages.js";
 
 /**
@@ -82,14 +83,14 @@ export async function handleChantiersCommand(interaction: CommandInteraction) {
 
     if (chantiers.length === 0) {
       return interaction.reply({
-        content: "Aucun chantier n'a encore été créé sur ce serveur.",
+        content: "Aucun chantier prévu pour l'instant.\n\nIl faudrait peut-être en discuter avec les autres ?\n\nEt si tu as déjà une idée, tu peux nous écrire pour  https://discord.com/channels/1418955325070905404/1429470751454662707 :hut: ",
         flags: ["Ephemeral"],
       });
     }
 
     const embed = createInfoEmbed(
       `${CHANTIER.ICON} Liste des chantiers`,
-      "Voici la liste des chantiers en cours sur ce serveur :"
+      "Voici la liste des chantiers en cours :"
     );
 
     // Grouper les chantiers par statut
@@ -168,14 +169,14 @@ export async function handleListCommand(interaction: CommandInteraction) {
 
     if (chantiers.length === 0) {
       return interaction.reply({
-        content: "Aucun chantier n'a encore été créé sur ce serveur.",
+        content: "Aucun chantier prévu pour l'instant.\n\nIl faudrait peut-être en discuter avec les autres ?\n\nEt si tu as déjà une idée, tu peux nous écrire pour  https://discord.com/channels/1418955325070905404/1429470751454662707 :hut: ",
         flags: ["Ephemeral"],
       });
     }
 
     const embed = createInfoEmbed(
       `${CHANTIER.ICON} Liste des chantiers`,
-      "Voici la liste des chantiers en cours sur ce serveur :"
+      "Voici la liste des chantiers en cours :"
     );
 
     // Grouper les chantiers par statut
@@ -221,6 +222,29 @@ export async function handleListCommand(interaction: CommandInteraction) {
  */
 export async function handleParticipateButton(interaction: any) {
   try {
+    // Récupérer la ville (townId) à partir du guildId
+    const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
+
+    if (!town) {
+      return interaction.reply({
+        content: "Impossible de trouver la ville associée à ce serveur.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Récupérer le personnage actif dès le début
+    const character = await apiService.characters.getActiveCharacter(
+      interaction.user.id,
+      town.id
+    );
+
+    if (!character) {
+      return interaction.reply({
+        content: "Vous devez d'abord créer un personnage.",
+        flags: ["Ephemeral"],
+      });
+    }
+
     // Récupérer les chantiers de la guilde
     const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
@@ -254,9 +278,8 @@ export async function handleParticipateButton(interaction: any) {
       .addOptions(
         availableChantiers.map((chantier) => ({
           label: chantier.name,
-          description: `${chantier.spendOnIt}/${
-            chantier.cost
-          } PA - ${getStatusText(chantier.status)}`,
+          description: `${chantier.spendOnIt}/${chantier.cost
+            } PA - ${getStatusText(chantier.status)}`,
           value: chantier.id,
         }))
       );
@@ -301,21 +324,20 @@ export async function handleParticipateButton(interaction: any) {
       // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
       const modal = new ModalBuilder()
         .setCustomId(`invest_modal_${selectedChantierId}`)
-        .setTitle(`Investir dans ${selectedChantier.name}`);
+        .setTitle(`Construire ${selectedChantier.name}`);
 
       const actionRows: ActionRowBuilder<ModalActionRowComponentBuilder>[] = [];
 
       // Champ PA (toujours présent)
+      const paRestants = selectedChantier.cost - selectedChantier.spendOnIt;
       const pointsInput = new TextInputBuilder()
         .setCustomId("points_input")
         .setLabel(
-          `PA à investir (max: ${
-            selectedChantier.cost - selectedChantier.spendOnIt
-          } PA)`
+          `${CHARACTER.PA} PA (${character.paTotal}/4)`
         )
         .setStyle(TextInputStyle.Short)
         .setRequired(false) // Optionnel si ressources requises
-        .setPlaceholder("Entrez le nombre de PA (ou 0)")
+        .setPlaceholder(`0-${paRestants}`)
         .setMinLength(1)
         .setMaxLength(2);
 
@@ -327,14 +349,29 @@ export async function handleParticipateButton(interaction: any) {
 
       // Ajouter champs pour les ressources requises (max 4 ressources)
       if (selectedChantier.resourceCosts && selectedChantier.resourceCosts.length > 0) {
+        // Récupérer le stock de ressources de la ville
+        const townResources = await apiService.getResources("CITY", town.id);
+
         const resourceCosts = selectedChantier.resourceCosts.slice(0, 4); // Max 4 ressources (5 champs max - 1 pour PA)
 
         for (const rc of resourceCosts) {
           const remaining = rc.quantityRequired - rc.quantityContributed;
+
+          // Ne pas afficher les ressources déjà complètement contribuées
+          if (remaining <= 0) {
+            continue;
+          }
+
+          // Trouver le stock de cette ressource dans la ville
+          const resourceStock = Array.isArray(townResources)
+            ? townResources.find((r: any) => r.resourceTypeId === rc.resourceTypeId)
+            : null;
+          const stockQuantity = resourceStock?.quantity ?? 0;
+
           const resourceInput = new TextInputBuilder()
             .setCustomId(`resource_${rc.resourceTypeId}`)
             .setLabel(
-              `${rc.resourceType.emoji} ${rc.resourceType.name} (max: ${remaining})`
+              `${rc.resourceType.emoji} ${rc.resourceType.name} (stock : ${stockQuantity})`
             )
             .setStyle(TextInputStyle.Short)
             .setRequired(false)
@@ -419,9 +456,8 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
       .addOptions(
         availableChantiers.map((chantier) => ({
           label: chantier.name,
-          description: `${chantier.spendOnIt}/${
-            chantier.cost
-          } PA - ${getStatusText(chantier.status)}`,
+          description: `${chantier.spendOnIt}/${chantier.cost
+            } PA - ${getStatusText(chantier.status)}`,
           value: chantier.id,
         }))
       );
@@ -466,13 +502,12 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
       // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
       const modal = new ModalBuilder()
         .setCustomId(`invest_modal_${selectedChantierId}`)
-        .setTitle(`Investir dans ${selectedChantier.name}`);
+        .setTitle(`Construire ${selectedChantier.name}`);
 
       const pointsInput = new TextInputBuilder()
         .setCustomId("points_input")
         .setLabel(
-          `PA à investir (max: ${
-            selectedChantier.cost - selectedChantier.spendOnIt
+          `PA à investir (max: ${selectedChantier.cost - selectedChantier.spendOnIt
           } PA)`
         )
         .setStyle(TextInputStyle.Short)
@@ -551,9 +586,18 @@ export async function handleAddChantierCommand(interaction: ChatInputCommandInte
       .setMaxLength(4)
       .setPlaceholder("Ex: 100");
 
+    const completionTextInput = new TextInputBuilder()
+      .setCustomId("chantier_completion_text")
+      .setLabel("Message de fin (optionnel)")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(500)
+      .setPlaceholder("Message affiché quand le chantier est terminé");
+
     modal.addComponents(
       new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(costInput)
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(costInput),
+      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(completionTextInput)
     );
 
     await interaction.showModal(modal);
@@ -620,6 +664,7 @@ export async function handleInvestModalSubmit(
 
     // Parse resource contributions from modal
     const resourceContributions: { resourceTypeId: number; quantity: number }[] = [];
+    const adjustedResources: string[] = [];
 
     if (chantier.resourceCosts && chantier.resourceCosts.length > 0) {
       for (const rc of chantier.resourceCosts) {
@@ -627,7 +672,7 @@ export async function handleInvestModalSubmit(
           const fieldValue = interaction.fields.getTextInputValue(`resource_${rc.resourceTypeId}`);
 
           if (fieldValue && fieldValue.trim() !== "") {
-            const quantity = parseInt(fieldValue.trim(), 10);
+            let quantity = parseInt(fieldValue.trim(), 10);
 
             if (isNaN(quantity) || quantity < 0) {
               await interaction.reply({
@@ -638,10 +683,19 @@ export async function handleInvestModalSubmit(
             }
 
             if (quantity > 0) {
-              resourceContributions.push({
-                resourceTypeId: rc.resourceTypeId,
-                quantity,
-              });
+              // Ajuster la quantité au maximum nécessaire pour finir le chantier
+              const remaining = rc.quantityRequired - rc.quantityContributed;
+              if (quantity > remaining) {
+                adjustedResources.push(`${rc.resourceType.emoji} ${rc.resourceType.name}`);
+                quantity = remaining;
+              }
+
+              if (quantity > 0) {
+                resourceContributions.push({
+                  resourceTypeId: rc.resourceTypeId,
+                  quantity,
+                });
+              }
             }
           }
         } catch (error) {
@@ -736,10 +790,11 @@ export async function handleInvestModalSubmit(
       return;
     }
 
-    if (activeCharacter.paTotal <= 0) {
+    // Vérifier que le personnage a des PA si il veut en investir
+    if (points > 0 && activeCharacter.paTotal <= 0) {
       await interaction.reply({
         content:
-          `${STATUS.ERROR} Votre personnage n'a plus de points d'action pour investir dans ce chantier.`,
+          `${STATUS.ERROR} Votre personnage n'a plus de points d'action. Vous pouvez cependant contribuer uniquement des ressources (entrez 0 PA).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -777,23 +832,31 @@ export async function handleInvestModalSubmit(
         resourceContributions
       );
 
-      const resourcesText = resourceContributions
+      const resourcesTextForMessage = resourceContributions
         .map((rc) => {
           const rcInfo = chantier.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
-          return `${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
+          return `${rc.quantity} ${rcInfo?.resourceType.emoji}`;
         })
         .join(", ");
 
-      responseMessage = `${STATUS.SUCCESS} Vous avez contribué ${resourcesText} au chantier "${chantier.name}".`;
+      // Ajouter message si ressources ajustées
+      if (adjustedResources.length > 0) {
+        responseMessage = `${STATUS.SUCCESS} Oulah, pas besoin de tout ça ! Tu as utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
+      } else {
+        responseMessage = `${STATUS.SUCCESS} Tu as utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
+      }
 
       // Log contribution
-      const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${resourcesText} au chantier "**${chantier.name}**".`;
+      const contributionLogMessage = `🏗️ **${activeCharacter.name}** a utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
       await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
       if (result.chantier.status === "COMPLETED") {
-        responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+        responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-        const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+        let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
+        if (chantier.completionText) {
+          completionLogMessage += `\n${chantier.completionText}`;
+        }
         await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
       }
     }
@@ -825,14 +888,6 @@ export async function handleInvestModalSubmit(
         points
       )) as InvestResult;
 
-      responseMessage = `${STATUS.SUCCESS} Vous avez investi ${points} PA dans le chantier "${chantier.name}".`;
-
-      if (adjustedForChantierLimit) {
-        responseMessage += ` (ajusté aux PA restants nécessaires)`;
-      } else if (usedAllAvailablePA) {
-        responseMessage += ` (tous vos PA disponibles)`;
-      }
-
       // Then contribute resources if any
       if (resourceContributions.length > 0) {
         const resourceResult = await apiService.chantiers.contributeResources(
@@ -841,34 +896,65 @@ export async function handleInvestModalSubmit(
           resourceContributions
         );
 
-        const resourcesText = resourceContributions
+        // Construire le texte des ressources
+        const resourcesTextForMessage = resourceContributions
           .map((rc) => {
             const rcInfo = chantier.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
-            return `${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
+            return `${rc.quantity} ${rcInfo?.resourceType.emoji}`;
           })
           .join(", ");
 
-        responseMessage += `\n+ ${resourcesText}`;
+        // Message de base différent si ressources ajustées
+        if (adjustedResources.length > 0) {
+          responseMessage = `${STATUS.SUCCESS} Oulah, pas besoin de tout ça ! Tu as passé du temps (${points} PA) et utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
+        } else {
+          responseMessage = `${STATUS.SUCCESS} Tu as passé du temps (${points} PA) et utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
+        }
+
+        if (adjustedForChantierLimit) {
+          responseMessage += ``;
+        } else if (usedAllAvailablePA) {
+          responseMessage += ` (tous vos PA disponibles)`;
+        }
+
+        responseMessage += `.`;
 
         // Log contribution with PA + resources
-        const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${points} PA et ${resourcesText} au chantier "**${chantier.name}**".`;
+        const contributionLogMessage = `${CHANTIER.IN_PROGRESS} **${activeCharacter.name}** a travaillé (${points} PA) et utilisé ${resourcesTextForMessage} sur le chantier **${chantier.name}**.`;
         await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
         if (resourceResult.chantier.status === "COMPLETED") {
-          responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-          const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
+          if (chantier.completionText) {
+            completionLogMessage += `\n${chantier.completionText}`;
+          }
           await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
         }
       } else {
+        // Cas où seulement des PA sont investis (sans ressources)
+        responseMessage = `${STATUS.SUCCESS} Tu as passé du temps (${points} PA) sur le chantier **${chantier.name}**`;
+
+        if (adjustedForChantierLimit) {
+          responseMessage += ``;
+        } else if (usedAllAvailablePA) {
+          responseMessage += ` (tous vos PA disponibles)`;
+        }
+
+        responseMessage += `.`;
+
         // Log contribution with only PA
-        const contributionLogMessage = `🏗️ **${activeCharacter.name}** a contribué ${points} PA au chantier "**${chantier.name}**".`;
+        const contributionLogMessage = `${CHANTIER.IN_PROGRESS} **${activeCharacter.name}** a travaillé (${points} PA) sur le chantier **${chantier.name}**.`;
         await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
         if (paResult.isCompleted) {
-          responseMessage += `\n${CHANTIER.CELEBRATION} Félicitations ! Le chantier est maintenant terminé !`;
+          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-          const completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
+          if (chantier.completionText) {
+            completionLogMessage += `\n${chantier.completionText}`;
+          }
           await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
         }
       }
@@ -906,7 +992,7 @@ export async function handleInvestModalSubmit(
 
     await interaction.reply({
       content:
-ERROR_MESSAGES.CHANTIER_PROCESSING_ERROR,
+        ERROR_MESSAGES.CHANTIER_PROCESSING_ERROR,
       flags: ["Ephemeral"],
     });
   }
@@ -937,9 +1023,8 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
       .addOptions(
         chantiers.map((chantier) => ({
           label: chantier.name,
-          description: `${chantier.spendOnIt}/${
-            chantier.cost
-          } PA - ${getStatusText(chantier.status)}`,
+          description: `${chantier.spendOnIt}/${chantier.cost
+            } PA - ${getStatusText(chantier.status)}`,
           value: chantier.id,
         }))
       );

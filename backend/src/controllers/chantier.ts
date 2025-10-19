@@ -13,6 +13,7 @@ export const createChantier = async (req: Request, res: Response) => {
       townId,
       discordGuildId,
       createdBy: requestCreatedBy,
+      completionText,
       resourceCosts, // Optional: [{ resourceTypeId: number, quantity: number }]
     } = req.body;
 
@@ -61,6 +62,7 @@ export const createChantier = async (req: Request, res: Response) => {
       cost: parseInt(cost, 10),
       townId: internalTownId,
       createdBy,
+      completionText: completionText || undefined,
       resourceCosts: resourceCosts || undefined,
     });
 

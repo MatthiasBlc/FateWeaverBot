@@ -106,7 +106,7 @@ async function loadCommandsRecursively(dir: string): Promise<any[]> {
           // ---------------------------------------------------------------------------
           // ----------------------Ignorer les commandes désactivées--------------------
           // ---------------------------------------------------------------------------
-          if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+          if (['expedition'].includes(commandModule.data.name)) {
             logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
             continue;
           }
@@ -158,7 +158,7 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
           // ---------------------------------------------------------------------------
           // ----------------------Ignorer les commandes désactivées--------------------
           // ---------------------------------------------------------------------------
-          if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+          if (['expedition'].includes(commandModule.data.name)) {
             logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
             continue;
           }
@@ -214,7 +214,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
             // ---------------------------------------------------------------------------
             // ----------------------Ignorer les commandes désactivées--------------------
             // ---------------------------------------------------------------------------
-            if (['expedition', 'chantiers'].includes(commandModule.data.name)) {
+            if (['expedition'].includes(commandModule.data.name)) {
               logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
               continue;
             }
