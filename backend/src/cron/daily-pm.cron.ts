@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
 import { logger } from "../services/logger";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
 const prisma = new PrismaClient();
 
@@ -23,14 +24,7 @@ async function updateMentalHealthContagion() {
         pm: 0,
         isDead: false,
       },
-      include: {
-        town: true,
-        expeditionMembers: {
-          include: {
-            expedition: true,
-          },
-        },
-      },
+      ...CharacterQueries.withExpeditions(),
     });
 
     console.log(`${depressedCharacters.length} personnages en dépression trouvés`);
@@ -74,13 +68,7 @@ async function updateMentalHealthContagion() {
             townId: depressedChar.townId,
             isDead: false,
           },
-          include: {
-            expeditionMembers: {
-              include: {
-                expedition: true,
-              },
-            },
-          },
+          ...CharacterQueries.withExpeditions(),
         });
 
         potentialVictims = townCharacters.filter((char) => {
