@@ -851,9 +851,9 @@ export async function handleInvestModalSubmit(
       await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
       if (result.chantier.status === "COMPLETED") {
-        responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+        responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-        let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+        let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
         if (chantier.completionText) {
           completionLogMessage += `\n${chantier.completionText}`;
         }
@@ -924,9 +924,9 @@ export async function handleInvestModalSubmit(
         await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
         if (resourceResult.chantier.status === "COMPLETED") {
-          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
           if (chantier.completionText) {
             completionLogMessage += `\n${chantier.completionText}`;
           }
@@ -949,9 +949,9 @@ export async function handleInvestModalSubmit(
         await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
 
         if (paResult.isCompleted) {
-          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          responseMessage += `\n${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
 
-          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est maintenant terminé !`;
+          let completionLogMessage = `${CHANTIER.CELEBRATION} Le chantier "**${chantier.name}**" est terminé !`;
           if (chantier.completionText) {
             completionLogMessage += `\n${chantier.completionText}`;
           }
