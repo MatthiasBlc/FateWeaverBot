@@ -380,9 +380,9 @@ export class CapabilityService {
   /**
    * Exécute la capacité Miner
    */
-  async executeMiner(characterId: string): Promise<{ 
-    success: boolean; 
-    oreGained: number; 
+  async executeMiner(characterId: string): Promise<{
+    success: boolean;
+    oreGained: number;
     message: string;
     publicMessage: string;
     loot?: { [key: string]: number };
@@ -474,12 +474,13 @@ export class CapabilityService {
       "Miner"
     );
 
-    const message = `Vous avez miné ${oreGained} minerai`;
+    const message = `De retour des montagnes. Tu as trouvé un nouveau filon et extrait ${oreGained} ⚙️`;
+    const publicMessage = `⛏️ ${character.name} a trouvé un joli filon et revient avec ${oreGained} ⚙️`;
     return {
       success: true,
       oreGained,
       message,
-      publicMessage: message, // Ajout du champ publicMessage requis
+      publicMessage,
     };
   }
 
