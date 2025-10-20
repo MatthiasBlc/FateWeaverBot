@@ -28,6 +28,7 @@
     // "resolveJsonModule": true,                    /* Enable importing .json files. */
     /* Emit */
     "outDir": "./dist" /* Redirect output structure to the directory. */,
+    "rootDir": "." /* Specify the root folder within your source files. */,
     // "declaration": true,                          /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     // "sourceMap": true,                            /* Create source map files for emitted JavaScript files. */
     /* Interop Constraints */
@@ -42,13 +43,12 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "shared/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "src/shared",
-    "../shared"
+    "dist"
   ],
   "ts-node": {
     "files": true,

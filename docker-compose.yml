@@ -55,6 +55,7 @@ services:
       - HEALTH_URL=http://localhost:3000/health
     volumes:
       - ./backend:/app
+      - ./shared:/app/shared
       - /app/node_modules
     expose:
       - "3000"
