@@ -106,7 +106,7 @@ export const CAPABILITIES = {
   HEALING: "⚕️", // Used for healing actions
   RESEARCHING: "🔎", // Used for research actions
   CARTOGRAPHING: "🗺️", // Used for cartography actions
-  // AUGURING: "🌦️", // UNUSED (reserved for future)
+  AUGURING: "🌦️", // Used for auspice actions
   // ENTERTAIN: "🎭", // UNUSED (reserved for future)
   GENERIC: "💪", // Used for generic capability display
 } as const;

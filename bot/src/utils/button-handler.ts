@@ -899,6 +899,23 @@ export class ButtonHandler {
       }
     });
 
+    // =================== AUSPICE HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour auspice
+    this.registerHandlerByPrefix("auspice_pa:", async (interaction) => {
+      try {
+        const { handleAuspicePAChoice } = await import(
+          "../features/users/auspice.handlers.js"
+        );
+        await handleAuspicePAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling auspice PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour auspice.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== HEALING HANDLERS ===================
     // Gestionnaire pour le choix de PA pour soigner (1 PA = heal, 2 PA = cataplasme)
     this.registerHandlerByPrefix("healing_pa:", async (interaction) => {
