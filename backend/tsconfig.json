@@ -46,6 +46,7 @@
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "files": true,
+    "require": ["tsconfig-paths/register"],
     "compilerOptions": {
       "module": "commonjs"
     }

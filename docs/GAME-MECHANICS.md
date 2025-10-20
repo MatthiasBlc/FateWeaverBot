@@ -40,8 +40,13 @@ Each character has four primary stats that govern their survival and actions:
 
 Characters can eat to restore hunger:
 
-- **Vivres (Food Supplies):** Restores hunger (exact amount varies)
-- **Nourriture (Prepared Food):** Restores hunger (exact amount varies)
+- **Vivres (Food Supplies):** Restores **+1 hunger point** per vivre consumed
+- **Repas (Prepared Meals):** Restores **+1 hunger point** per repas consumed
+- **Important Rules:**
+  - Each food item **always** restores exactly **1 point** of hunger
+  - Food **never** kills or reduces hunger
+  - Characters can only eat when hunger < 4
+  - Maximum hunger is capped at 4 (Satiété)
 - **Location Matters:**
   - In city → Uses city stocks
   - In DEPARTED expedition → Uses expedition stocks

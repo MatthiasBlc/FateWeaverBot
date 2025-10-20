@@ -327,7 +327,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     if (character.hungerLevel >= 4)
       throw createHttpError(400, "Tu n'as pas faim");
 
-    const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
+    const foodToConsume = 1;
 
     // Récupérer le type de ressource "Vivres"
     const vivresType = await prisma.resourceType.findFirst({
@@ -474,7 +474,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     if (character.hungerLevel >= 4)
       throw createHttpError(400, "Tu n'as pas faim");
 
-    const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
+    const foodToConsume = 1;
 
     // Récupérer le type de ressource demandé
     const resourceType = await prisma.resourceType.findFirst({
