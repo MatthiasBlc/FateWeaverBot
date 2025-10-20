@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { actionPointController } from "../controllers/action-point";
 import { requireAuthOrInternal } from "../middleware/auth";
+import { validate } from "../api/middleware/validation.middleware";
+import {
+  GetActionPointsSchema,
+  UseActionPointSchema
+} from "../api/validators/action-point.schema";
 
 const router = Router();
 
@@ -9,7 +14,7 @@ const router = Router();
  * @description Récupère le nombre de points d'action disponibles pour un personnage
  * @access Public (pour le bot Discord)
  */
-router.get("/:characterId", actionPointController.getPoints.bind(actionPointController));
+router.get("/:characterId", validate(GetActionPointsSchema), actionPointController.getPoints.bind(actionPointController));
 
 /**
  * @route POST /api/action-points/:characterId/use
@@ -19,6 +24,7 @@ router.get("/:characterId", actionPointController.getPoints.bind(actionPointCont
 router.post(
   "/:characterId/use",
   requireAuthOrInternal,
+  validate(UseActionPointSchema),
   actionPointController.usePoint.bind(actionPointController)
 );
 

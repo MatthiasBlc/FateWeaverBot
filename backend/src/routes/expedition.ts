@@ -12,44 +12,54 @@ import {
   toggleEmergencyVote,
   setExpeditionDirection, // NOUVEAU
 } from "../controllers/expedition";
+import { validate } from "../api/middleware/validation.middleware";
+import {
+  CreateExpeditionSchema,
+  GetExpeditionByIdSchema,
+  GetExpeditionsByTownSchema,
+  JoinExpeditionSchema,
+  LeaveExpeditionSchema,
+  GetActiveExpeditionsForCharacterSchema,
+  TransferExpeditionResourceSchema,
+  ToggleEmergencyVoteSchema,
+  SetExpeditionDirectionSchema
+} from "../api/validators/expedition.schema";
 
 const router = Router();
 
 // Créer une nouvelle expédition
-router.post("/", requireAuthOrInternal, createExpedition);
+router.post("/", requireAuthOrInternal, validate(CreateExpeditionSchema), createExpedition);
 
 // Récupérer toutes les expéditions
 router.get("/", requireAuthOrInternal, getAllExpeditions);
 
 // Récupérer une expédition par son ID
-router.get("/:id", requireAuthOrInternal, getExpeditionById);
+router.get("/:id", requireAuthOrInternal, validate(GetExpeditionByIdSchema), getExpeditionById);
 
 // Récupérer toutes les expéditions d'une ville
-router.get("/town/:townId", requireAuthOrInternal, getExpeditionsByTown);
+router.get("/town/:townId", requireAuthOrInternal, validate(GetExpeditionsByTownSchema), getExpeditionsByTown);
 
 // Rejoindre une expédition
-router.post("/:id/join", requireAuthOrInternal, joinExpedition);
+router.post("/:id/join", requireAuthOrInternal, validate(JoinExpeditionSchema), joinExpedition);
 
 // Quitter une expédition
-router.post("/:id/leave", requireAuthOrInternal, leaveExpedition);
+router.post("/:id/leave", requireAuthOrInternal, validate(LeaveExpeditionSchema), leaveExpedition);
 
 // Récupérer les expéditions actives d'un personnage
 router.get(
   "/character/:characterId/active",
   requireAuthOrInternal,
+  validate(GetActiveExpeditionsForCharacterSchema),
   getActiveExpeditionsForCharacter
 );
 
-// Récupérer toutes les expéditions
-router.get("/", requireAuthOrInternal, getAllExpeditions);
-
 // Transférer des ressources (ville <-> expédition)
-router.post("/:id/transfer", requireAuthOrInternal, transferExpeditionResource);
+router.post("/:id/transfer", requireAuthOrInternal, validate(TransferExpeditionResourceSchema), transferExpeditionResource);
 
 // Toggle vote pour retour d'urgence
-router.post("/:id/emergency-vote", requireAuthOrInternal, toggleEmergencyVote);
+router.post("/:id/emergency-vote", requireAuthOrInternal, validate(ToggleEmergencyVoteSchema), toggleEmergencyVote);
 
 // Définir la direction d'une expédition
-router.post("/:id/set-direction", requireAuthOrInternal, setExpeditionDirection);
+router.post("/:id/set-direction", requireAuthOrInternal, validate(SetExpeditionDirectionSchema), setExpeditionDirection);
 
 export default router;
