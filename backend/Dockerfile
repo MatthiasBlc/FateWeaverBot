@@ -24,13 +24,11 @@ COPY ./backend/src ./src
 # Construction de l'application
 RUN npm run build
 
-# Vérification de la structure du build avec plus de détails
+# Vérification de la structure du build
 RUN echo "=== Vérification après build ===" && \
     ls -la /app/dist/ && \
-    echo "=== Fichiers JS générés ===" && \
-    find /app/dist -maxdepth 2 -name "*.js" | head -20 && \
-    echo "=== Vérification server.js à la racine ===" && \
-    test -f /app/dist/server.js && echo "✅ server.js trouvé à /app/dist/server.js" || echo "❌ server.js manquant à la racine"
+    echo "=== Vérification server.js ===" && \
+    test -f /app/dist/src/server.js && echo "✅ server.js trouvé à /app/dist/src/server.js" || echo "❌ server.js manquant"
 
 # Compilation du fichier de seeding
 RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
