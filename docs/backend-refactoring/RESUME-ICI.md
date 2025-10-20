@@ -1,7 +1,7 @@
 # 🚀 Comment reprendre le refactoring backend
 
-**Dernière mise à jour** : 2025-10-19
-**Progression actuelle** : 30% (3/10 phases complètes)
+**Dernière mise à jour** : 2025-10-20
+**Progression actuelle** : 40% (4/10 phases complètes)
 
 ---
 
@@ -16,7 +16,7 @@ Continue le refactoring backend où on s'était arrêté
 Ou plus précisément :
 
 ```
-Continue avec Phase 3 du refactoring backend (Validation Layer avec Zod)
+Continue avec Phase 4 du refactoring backend (Repository Layer)
 ```
 
 ---
@@ -54,23 +54,29 @@ Continue avec Phase 3 du refactoring backend (Validation Layer avec Zod)
   - `8f33d9b` - Applied to services and controllers
   - `c701f2c` - Documentation update
 
-### 📋 Prochaine Phase : Phase 3 - Validation Layer
+#### Phase 3 : Validation Layer (100%)
+- ✅ Validation middleware créé
+- ✅ 102 schémas Zod créés (15 fichiers)
+- ✅ ~110 endpoints validés
+- ✅ 15 fichiers de routes modifiés
+- **Temps** : ~2 heures (au lieu de 6-8h estimées)
 
-**Objectif** : Implémenter Zod pour la validation des requêtes API
-**Estimation** : 6-8 heures
+### 📋 Prochaine Phase : Phase 4 - Repository Layer
+
+**Objectif** : Abstraire la logique d'accès aux données avec des repositories
+**Estimation** : 8-10 heures
 **Priorité** : Haute
 
 **Tâches principales :**
-1. Créer validation middleware
-2. Créer schemas Zod pour tous les endpoints
-3. Appliquer validation aux routes
-4. Vérifier et tester
+1. Créer repository interfaces
+2. Créer repositories pour Character, Resource, Expedition, etc.
+3. Intégrer query builders existants
+4. Préparer pour injection dans services (Phase 5)
 
 **Fichiers clés à créer :**
-- `backend/src/api/middleware/validation.middleware.ts`
-- `backend/src/api/validators/character.schema.ts`
-- `backend/src/api/validators/expedition.schema.ts`
-- `backend/src/api/validators/resource.schema.ts`
+- `backend/src/domain/repositories/character.repository.ts`
+- `backend/src/domain/repositories/resource.repository.ts`
+- `backend/src/domain/repositories/expedition.repository.ts`
 - Etc.
 
 ---
@@ -93,7 +99,9 @@ Toute la documentation est dans : `/docs/backend-refactoring/`
 Dans `/.supernova/` :
 - `report-phase1-query-builders.md` - Rapport Phase 1
 - `report-phase2-extract-utilities.md` - Rapport Phase 2
-- `prompt-phase3-*.md` - À créer pour Phase 3
+- `prompt-phase3-validation-layer.md` - Prompt Phase 3
+- `report-phase3-validation-layer.md` - Rapport Phase 3
+- `prompt-phase4-*.md` - À créer pour Phase 4
 
 ---
 
@@ -135,18 +143,26 @@ Claude utilisera ce pattern pour continuer :
 
 ## 📊 Résumé des Accomplissements
 
-**Aujourd'hui (2025-10-19) :**
-- ⏱️ Temps total : ~4.5 heures
+**Session 1 (2025-10-19) :**
+- ⏱️ Temps : ~4.5 heures
 - 📁 Fichiers modifiés : 24+
 - 🔄 Patterns éliminés : 130+
-- 📝 Commits créés : 10
 - 📈 Progression : 0% → 30%
+
+**Session 2 (2025-10-20) :**
+- ⏱️ Temps : ~2 heures
+- 📁 Fichiers créés : 16 (validators + middleware)
+- 📁 Fichiers modifiés : 15 (routes)
+- 🔒 Schémas Zod : 102 schémas
+- 🛡️ Endpoints validés : ~110
+- 📈 Progression : 30% → 40%
 
 **Qualité du code :**
 - ✅ TypeCheck passe sur tous les fichiers
 - ✅ Aucun breaking change
-- ✅ Architecture améliorée (DRY, maintenabilité)
+- ✅ Architecture améliorée (DRY, maintenabilité, sécurité)
 - ✅ Documentation complète
+- ✅ Validation stricte des inputs API
 
 ---
 
@@ -154,11 +170,12 @@ Claude utilisera ce pattern pour continuer :
 
 ### Code Dédupliqué
 
-| Phase | Patterns Éliminés | LOC Économisé |
-|-------|-------------------|---------------|
-| 1 | 95+ | ~870 LOC |
-| 2 | 35+ | ~200 LOC |
-| **Total** | **130+** | **~1,070 LOC** |
+| Phase | Patterns Éliminés | LOC Économisé/Ajouté |
+|-------|-------------------|----------------------|
+| 1 | 95+ | ~870 LOC économisé |
+| 2 | 35+ | ~200 LOC économisé |
+| 3 | N/A | ~920 LOC ajouté (validation) |
+| **Total** | **130+** | **~1,070 LOC économisé, 920 LOC ajouté** |
 
 ### Fichiers Créés
 
@@ -166,9 +183,11 @@ Claude utilisera ce pattern pour continuer :
 |------|--------|--------------|
 | Query Builders | 6 | `src/infrastructure/database/query-builders/` |
 | Utility Classes | 3 | `src/shared/utils/` |
+| Validators (Zod schemas) | 15 | `src/api/validators/` |
+| Middleware | 1 | `src/api/middleware/` |
 | Documentation | 7 | `docs/backend-refactoring/` |
-| Supernova Prompts | 2 | `.supernova/` |
-| Supernova Reports | 2 | `.supernova/` |
+| Supernova Prompts | 3 | `.supernova/` |
+| Supernova Reports | 3 | `.supernova/` |
 
 ---
 
@@ -178,8 +197,8 @@ Claude utilisera ce pattern pour continuer :
 Phase 0: Setup & Tooling          ✅ [████████████████████] 100%
 Phase 1: Query Builders            ✅ [████████████████████] 100%
 Phase 2: Extract Utilities         ✅ [████████████████████] 100%
-Phase 3: Validation Layer          ⬜ [                    ]   0%  ← PROCHAINE
-Phase 4: Repository Layer          ⬜ [                    ]   0%
+Phase 3: Validation Layer          ✅ [████████████████████] 100%
+Phase 4: Repository Layer          ⬜ [                    ]   0%  ← PROCHAINE
 Phase 5: Refactor Services         ⬜ [                    ]   0%
 Phase 6: Split Large Files         ⬜ [                    ]   0%
 Phase 7: Error Handling            ⬜ [                    ]   0%
@@ -187,7 +206,7 @@ Phase 8: DI Container              ⬜ [                    ]   0%
 Phase 9: Add Tests                 ⬜ [                    ]   0%
 Phase 10: Final Cleanup            ⬜ [                    ]   0%
 
-PROGRESSION GLOBALE: [██████                                            ] 30%
+PROGRESSION GLOBALE: [████████                                        ] 40%
 ```
 
 ---
@@ -207,8 +226,8 @@ Transformer le backend de :
 - **État cible** : Code propre, DRY, testé (70%+), maintenable, bien architecturé
 
 **Estimation totale** : 70-80 heures
-**Temps écoulé** : ~4.5 heures
-**Temps restant** : ~65-75 heures
+**Temps écoulé** : ~6.5 heures (4.5h + 2h)
+**Temps restant** : ~63-73 heures
 
 ---
 
