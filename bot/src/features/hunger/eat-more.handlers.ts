@@ -208,7 +208,7 @@ export async function handleEatVivre1Button(interaction: ButtonInteraction) {
 }
 
 /**
- * Handler pour manger 1 nourriture
+ * Handler pour manger 1 Repas
  */
 export async function handleEatNourriture1Button(
   interaction: ButtonInteraction
@@ -244,7 +244,7 @@ export async function handleEatVivreFull(interaction: ButtonInteraction) {
 }
 
 /**
- * Handler pour manger nourriture à satiété
+ * Handler pour manger Repas à satiété
  */
 export async function handleEatNourritureFull(interaction: ButtonInteraction) {
   try {

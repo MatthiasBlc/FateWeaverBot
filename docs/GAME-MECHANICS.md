@@ -218,12 +218,12 @@ Gather raw resources from the environment:
 
 Transform raw resources into refined goods:
 
-| Capability             | Cost   | Input   | Output     | Formula                  |
-| ---------------------- | ------ | ------- | ---------- | ------------------------ |
-| **Tisser**             | 1-2 PA | Bois    | Tissu      | Random(Input-1, Input×3) |
-| **Forger**             | 1-2 PA | Minerai | Métal      | Random(Input-1, Input×3) |
-| **Travailler le bois** | 1-2 PA | Bois    | Planches   | Random(Input-1, Input×3) |
-| **Cuisiner**           | 1-2 PA | Vivres  | Nourriture | Random(Input-1, Input×3) |
+| Capability             | Cost   | Input   | Output  | Formula                  |
+| ---------------------- | ------ | ------- | ------- | ------------------------ |
+| **Tisser**             | 1-2 PA | Bois    | Tissu   | Random(Input-1, Input×3) |
+| **Forger**             | 1-2 PA | Minerai | Métal   | Random(Input-1, Input×3) |
+| **Travailler le bois** | 1-2 PA | Bois    | Planches| Random(Input-1, Input×3) |
+| **Cuisiner**           | 1-2 PA | Vivres  | Repas   | Random(Input-1, Input×3) |
 
 **Craft Rules:**
 
