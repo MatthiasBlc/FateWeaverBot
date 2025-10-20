@@ -34,8 +34,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       return;
     }
 
-    // Vérifier que le personnage est vivant et a faim
-    if (character.hungerLevel === 0) {
+    // Vérifier que le personnage est vivant
+    if (character.isDead) {
       await replyEphemeral(
         interaction,
         `${STATUS.ERROR} Votre personnage est mort. Impossible de manger.`
@@ -116,9 +116,9 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       alerts.push(
         `${STATUS.WARNING} Aucune ressource alimentaire disponible !`
       );
-    } else if (vivresStock < hungerNeed && nourritureStock === 0) {
+    } else if (vivresStock < hungerNeed && nourritureStock < hungerNeed) {
       alerts.push(
-        `${STATUS.WARNING} Stocks de vivres insuffisants pour atteindre la satiété !`
+        `${STATUS.WARNING} Stocks insuffisants pour atteindre la satiété !`
       );
     }
 
@@ -163,8 +163,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       );
     }
 
-    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= ceil(besoin/2))
-    const nourritureNeed = Math.ceil(hungerNeed / 2);
+    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= besoin)
+    const nourritureNeed = hungerNeed;
     if (hungerNeed > 1 && nourritureStock >= nourritureNeed) {
       buttons.push(
         new ButtonBuilder()
@@ -263,7 +263,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
     }
 
     const hungerNeed = 4 - character.hungerLevel;
-    const nourritureNeed = Math.ceil(hungerNeed / 2);
+    const nourritureNeed = hungerNeed;
     await handleEatResource(interaction, "Repas", nourritureNeed);
   } catch (error: any) {
     logger.error("Erreur dans handleEatNourritureFull:", error);

@@ -558,7 +558,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   }
 
   // Ajouter les boutons Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
-  if (data.character.hungerLevel < 4 && data.character.hungerLevel > 0) {
+  if (data.character.hungerLevel < 4 && !data.character.isDead) {
     // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
     const buttons = [];
 
