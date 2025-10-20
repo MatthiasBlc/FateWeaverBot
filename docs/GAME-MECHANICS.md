@@ -40,13 +40,8 @@ Each character has four primary stats that govern their survival and actions:
 
 Characters can eat to restore hunger:
 
-- **Vivres (Food Supplies):** Restores **+1 hunger point** per vivre consumed
-- **Repas (Prepared Meals):** Restores **+1 hunger point** per repas consumed
-- **Important Rules:**
-  - Each food item **always** restores exactly **1 point** of hunger
-  - Food **never** kills or reduces hunger
-  - Characters can only eat when hunger < 4
-  - Maximum hunger is capped at 4 (Satiété)
+- **Vivres (Food Supplies):** Restores hunger (exact amount varies)
+- **Nourriture (Prepared Food):** Restores hunger (exact amount varies)
 - **Location Matters:**
   - In city → Uses city stocks
   - In DEPARTED expedition → Uses expedition stocks
@@ -67,11 +62,6 @@ Characters can eat to restore hunger:
 
 - **Death Check:** If HP reaches 0, character dies (`isDead=true`) during daily update
 - **Agonie State:** At HP=1, character cannot use PA (any action blocked)
-  - **Entry Triggers:**
-    - HP drops to 1 from any cause (damage, admin edit, etc.) → Agony starts
-    - Hunger reaches 0 from any cause → HP forced to 1 AND agony starts
-  - **Exit Condition:** HP increases to 2 or more → Agony ends (`agonySince` cleared)
-  - **Death Timer:** After 2 days in agony → Death (`isDead=true`, `hp=0`)
 - **Healing Options:**
   - **Natural:** Eating at hunger level 4 (Satiété) → +1 HP per day
   - **Cataplasme:** Use a cataplasme (science resource) → +1 HP instantly
@@ -218,12 +208,12 @@ Gather raw resources from the environment:
 
 Transform raw resources into refined goods:
 
-| Capability             | Cost   | Input   | Output  | Formula                  |
-| ---------------------- | ------ | ------- | ------- | ------------------------ |
-| **Tisser**             | 1-2 PA | Bois    | Tissu   | Random(Input-1, Input×3) |
-| **Forger**             | 1-2 PA | Minerai | Métal   | Random(Input-1, Input×3) |
-| **Travailler le bois** | 1-2 PA | Bois    | Planches| Random(Input-1, Input×3) |
-| **Cuisiner**           | 1-2 PA | Vivres  | Repas   | Random(Input-1, Input×3) |
+| Capability             | Cost   | Input   | Output     | Formula                  |
+| ---------------------- | ------ | ------- | ---------- | ------------------------ |
+| **Tisser**             | 1-2 PA | Bois    | Tissu      | Random(Input-1, Input×3) |
+| **Forger**             | 1-2 PA | Minerai | Métal      | Random(Input-1, Input×3) |
+| **Travailler le bois** | 1-2 PA | Bois    | Planches   | Random(Input-1, Input×3) |
+| **Cuisiner**           | 1-2 PA | Vivres  | Nourriture | Random(Input-1, Input×3) |
 
 **Craft Rules:**
 

@@ -17,7 +17,6 @@ import { getStatusEmoji } from "../expedition-utils";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
-import { EXPEDITION, DIRECTION } from "@shared/constants/emojis";
 
 /**
  * Nouvelle commande principale pour gérer les expéditions
@@ -448,7 +447,7 @@ export async function handleExpeditionInfoCommand(
         const directionButton = new ButtonBuilder()
           .setCustomId(`expedition_choose_direction:${currentExpedition.id}`)
           .setLabel("Choisir Direction")
-          .setEmoji(EXPEDITION.ICON)
+          .setEmoji("🧭")
           .setStyle(ButtonStyle.Primary);
 
         buttonRow.addComponents(directionButton);
@@ -470,17 +469,17 @@ export async function handleExpeditionInfoCommand(
 
 function getDirectionEmoji(direction: string): string {
   const emojis: Record<string, string> = {
-    NORD: DIRECTION.NORTH,
-    NORD_EST: DIRECTION.NORTHEAST,
-    EST: DIRECTION.EAST,
-    SUD_EST: DIRECTION.SOUTHEAST,
-    SUD: DIRECTION.SOUTH,
-    SUD_OUEST: DIRECTION.SOUTHWEST,
-    OUEST: DIRECTION.WEST,
-    NORD_OUEST: DIRECTION.NORTHWEST,
-    UNKNOWN: DIRECTION.UNKNOWN,
+    NORD: "⬆️",
+    NORD_EST: "↗️",
+    EST: "➡️",
+    SUD_EST: "↘️",
+    SUD: "⬇️",
+    SUD_OUEST: "↙️",
+    OUEST: "⬅️",
+    NORD_OUEST: "↖️",
+    UNKNOWN: "❓",
   };
-  return emojis[direction] || DIRECTION.UNKNOWN;
+  return emojis[direction] || "❓";
 }
 
 function getDirectionText(direction: string): string {

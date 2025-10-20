@@ -193,8 +193,10 @@ client.once("clientReady", async () => {
   // Initialize cron jobs
   try {
     const { setupDailyMessagesJob } = await import("./cron/daily-messages.cron.js");
+    const { setupSeasonChangeJob } = await import("./cron/season-change.cron.js");
 
     setupDailyMessagesJob(client);
+    setupSeasonChangeJob(client);
 
     logger.info("✅ Cron jobs initialized successfully");
   } catch (error) {

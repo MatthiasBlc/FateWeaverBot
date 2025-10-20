@@ -1,5 +1,3 @@
-import { PROJECT, CAPABILITIES } from "@shared/constants/emojis";
-
 export function getStatusText(status: string): string {
   switch (status) {
     case "ACTIVE":
@@ -14,23 +12,23 @@ export function getStatusText(status: string): string {
 export function getStatusEmoji(status: string): string {
   switch (status) {
     case "ACTIVE":
-      return PROJECT.ACTIVE;
+      return "🔧";
     case "COMPLETED":
-      return PROJECT.COMPLETED;
+      return "✅";
     default:
-      return PROJECT.UNKNOWN;
+      return "❓";
   }
 }
 
 export function getCraftTypeEmoji(craftType: string): string {
   switch (craftType) {
     case 'TISSER':
-      return CAPABILITIES.WEAVING;
+      return '🧵';
     case 'FORGER':
-      return CAPABILITIES.FORGING;
+      return '🔨';
     case 'MENUISER':
-      return CAPABILITIES.WOODWORKING;
+      return '🪚';
     default:
-      return PROJECT.ICON;
+      return '🛠️';
   }
 }

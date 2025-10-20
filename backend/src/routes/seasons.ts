@@ -13,4 +13,9 @@ router.get("/current", SeasonController.getCurrentSeason);
  */
 router.post("/set", SeasonController.setSeason);
 
+/**
+ * Vérifie si la saison a changé récemment (pour les notifications)
+ */
+router.get("/check-change", SeasonController.checkSeasonChange);
+
 export default router;

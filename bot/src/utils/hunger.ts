@@ -3,8 +3,6 @@
  * Logique alignée avec le backend : 0 = mort, 4 = en bonne santé
  */
 
-import { HUNGER } from "@shared/constants/emojis";
-
 /**
  * Convertit un niveau de faim en texte descriptif (backend: 0 = mort, 4 = en bonne santé)
  */
@@ -31,17 +29,17 @@ export function getHungerLevelText(level: number): string {
 export function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return HUNGER.DEAD;
+      return "💀";
     case 1:
-      return HUNGER.STARVING;
+      return "😰";
     case 2:
-      return HUNGER.HUNGRY;
+      return "😕";
     case 3:
-      return HUNGER.APPETITE;
+      return "🤤";
     case 4:
-      return HUNGER.FED;
+      return "😊";
     default:
-      return HUNGER.UNKNOWN;
+      return "❓";
   }
 }
 

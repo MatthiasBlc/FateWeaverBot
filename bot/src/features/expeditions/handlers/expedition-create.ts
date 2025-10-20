@@ -19,7 +19,6 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
-import { DIRECTION } from "@shared/constants/emojis";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -337,17 +336,17 @@ export async function handleExpeditionDirectionSelect(
 
 function getDirectionEmoji(direction: string): string {
   const emojis: Record<string, string> = {
-    NORD: DIRECTION.NORTH,
-    NORD_EST: DIRECTION.NORTHEAST,
-    EST: DIRECTION.EAST,
-    SUD_EST: DIRECTION.SOUTHEAST,
-    SUD: DIRECTION.SOUTH,
-    SUD_OUEST: DIRECTION.SOUTHWEST,
-    OUEST: DIRECTION.WEST,
-    NORD_OUEST: DIRECTION.NORTHWEST,
-    UNKNOWN: DIRECTION.UNKNOWN,
+    NORD: "⬆️",
+    NORD_EST: "↗️",
+    EST: "➡️",
+    SUD_EST: "↘️",
+    SUD: "⬇️",
+    SUD_OUEST: "↙️",
+    OUEST: "⬅️",
+    NORD_OUEST: "↖️",
+    UNKNOWN: "❓",
   };
-  return emojis[direction] || DIRECTION.UNKNOWN;
+  return emojis[direction] || "❓";
 }
 
 function getDirectionText(direction: string): string {

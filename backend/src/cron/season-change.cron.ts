@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { CronJob } from 'cron';
 import { SeasonService } from '../services/season.service';
+import { discordNotificationService } from '../services/discord-notification.service';
 import { logger } from '../services/logger';
 
 const prisma = new PrismaClient();
@@ -20,7 +21,36 @@ async function checkAndUpdateSeason() {
 
     if (result.changed && result.newSeason) {
       logger.info(`La saison a changé pour : ${result.newSeason.name}`);
-      // Pas de notification Discord pour les changements automatiques
+
+      // Envoyer une notification Discord à tous les guilds configurés
+      const guilds = await prisma.guild.findMany({
+        where: { logChannelId: { not: null } },
+        select: { logChannelId: true, name: true }
+      });
+
+      const seasonEmoji = result.newSeason.name === 'SUMMER' ? '☀️' : '❄️';
+      let notificationsSent = 0;
+
+      for (const guild of guilds) {
+        if (guild.logChannelId) {
+          try {
+            const sent = await discordNotificationService.sendSeasonChangeNotification(
+              guild.logChannelId,
+              result.newSeason.name,
+              seasonEmoji
+            );
+
+            if (sent) {
+              notificationsSent++;
+              logger.info(`Season change notification sent to ${guild.name}`);
+            }
+          } catch (error) {
+            logger.error(`Failed to send season notification to ${guild.name}:`, { error });
+          }
+        }
+      }
+
+      logger.info(`Season change notifications sent to ${notificationsSent} guilds`);
     } else {
       logger.info('Aucun changement de saison nécessaire');
     }

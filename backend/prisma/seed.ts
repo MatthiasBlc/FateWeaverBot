@@ -4,7 +4,7 @@ import {
   SeasonType,
   CapacityBonusType,
 } from "@prisma/client";
-import { RESOURCES } from "../../shared/constants/emojis";
+import { RESOURCES, RESOURCES_EXTENDED } from "../../shared/constants/emojis";
 
 const prisma = new PrismaClient();
 
@@ -23,14 +23,16 @@ async function main() {
         emojiTag: "HUNT",
         category: CapabilityCategory.HARVEST,
         costPA: 2,
-        description: "Chasser du gibier pour obtenir des vivres",
+        description:
+          "Chasser du gibier pour obtenir des vivres",
       },
       {
         name: "Cueillir",
         emojiTag: "GATHER",
         category: CapabilityCategory.HARVEST,
         costPA: 1,
-        description: "Cueillir des plantes comestibles pour obtenir des vivres",
+        description:
+          "Cueillir des plantes comestibles pour obtenir des vivres",
       },
       {
         name: "Pêcher",
@@ -38,7 +40,8 @@ async function main() {
         category: CapabilityCategory.HARVEST,
         costPA: 1,
         hasVariableCost: true,
-        description: "Pêcher du poisson pour obtenir des vivres",
+        description:
+          "Pêcher du poisson pour obtenir des vivres",
       },
       {
         name: "Couper du bois",
@@ -92,7 +95,8 @@ async function main() {
         category: CapabilityCategory.SCIENCE,
         costPA: 1,
         hasVariableCost: true,
-        description: "Soigner 1 personnage",
+        description:
+          "Soigner 1 personnage",
       },
       {
         name: "Rechercher",
@@ -126,7 +130,8 @@ async function main() {
         emojiTag: "ENTERTAIN",
         category: CapabilityCategory.SPECIAL,
         costPA: 1,
-        description: "Divertir le village pour remonter le moral des troupes",
+        description:
+          "Divertir le village pour remonter le moral des troupes",
       },
     ];
 
@@ -153,19 +158,11 @@ async function main() {
       { name: "Mineuse", startingAbility: "Miner", description: " " },
       { name: "Tisserand", startingAbility: "Tisser", description: " " },
       { name: "Forgeronne", startingAbility: "Forger", description: " " },
-      {
-        name: "Menuisier",
-        startingAbility: "Travailler le bois",
-        description: " ",
-      },
+      { name: "Menuisier", startingAbility: "Travailler le bois", description: " " },
       { name: "Cuisinière", startingAbility: "Cuisiner", description: " " },
       { name: "Guérisseur", startingAbility: "Soigner", description: " " },
       { name: "Érudit", startingAbility: "Rechercher", description: " " },
-      {
-        name: "Cartographe",
-        startingAbility: "Cartographier",
-        description: " ",
-      },
+      { name: "Cartographe", startingAbility: "Cartographier", description: " " },
       { name: "Météorologue", startingAbility: "Auspice", description: " " },
       { name: "Artiste", startingAbility: "Divertir", description: " " },
     ];
@@ -176,9 +173,7 @@ async function main() {
       });
 
       if (!startingAbility) {
-        console.error(
-          `❌ Capacité "${jobData.startingAbility}" introuvable pour le métier ${jobData.name}`
-        );
+        console.error(`❌ Capacité "${jobData.startingAbility}" introuvable pour le métier ${jobData.name}`);
         continue;
       }
 
@@ -190,9 +185,7 @@ async function main() {
           optionalAbilityId: null,
         },
       });
-      console.log(
-        `✅ Métier créé : ${jobData.name} (${jobData.startingAbility})`
-      );
+      console.log(`✅ Métier créé : ${jobData.name} (${jobData.startingAbility})`);
     }
   } else {
     console.log(`✅ ${existingJobs.length} métiers déjà présents`);
@@ -281,19 +274,15 @@ async function main() {
     const townsWithVivres = await prisma.resourceStock.findMany({
       where: {
         resourceTypeId: vivresType.id,
-        locationType: "CITY",
+        locationType: "CITY"
       },
       select: {
-        locationId: true,
-      },
+        locationId: true
+      }
     });
 
-    const townsWithVivresIds = new Set(
-      townsWithVivres.map((rs) => rs.locationId)
-    );
-    const citiesWithoutVivres = allTowns.filter(
-      (town) => !townsWithVivresIds.has(town.id)
-    );
+    const townsWithVivresIds = new Set(townsWithVivres.map(rs => rs.locationId));
+    const citiesWithoutVivres = allTowns.filter(town => !townsWithVivresIds.has(town.id));
 
     for (const city of citiesWithoutVivres) {
       await prisma.resourceStock.create({
@@ -385,14 +374,8 @@ async function main() {
       { name: "Bougie", description: "Pour y voir un peu mieux" },
       { name: "Grenouille", description: "Elle monte... et elle redescend" },
       { name: "Couronne de fleurs", description: "Entrelacée par une fée" },
-      {
-        name: "Codex sacré",
-        description: "Paroles, paroles, paroles (mais sacrées !)",
-      },
-      {
-        name: "Nécessaire d'écriture",
-        description: "Indispensable à tout érudit",
-      },
+      { name: "Codex sacré", description: "Paroles, paroles, paroles (mais sacrées !)" },
+      { name: "Nécessaire d'écriture", description: "Indispensable à tout érudit" },
     ];
 
     for (const obj of simpleObjects) {
@@ -424,11 +407,7 @@ async function main() {
         description: "Le tuba de l'été !",
         skills: ["Plonger"],
       },
-      {
-        name: "Corde",
-        description: "Quitte à vivre en hauteur, c'est mieux que de se pendre",
-        skills: ["Noeuds"],
-      },
+      { name: "Corde", description: "Quitte à vivre en hauteur, c'est mieux que de se pendre", skills: ["Noeuds"] },
       {
         name: "Marteau",
         description: "Je cognerais le jour !",
@@ -451,8 +430,7 @@ async function main() {
       },
       {
         name: "Fioles",
-        description:
-          "Pour adoucir le mélange, pressez trois quartiers d'orange",
+        description: "Pour adoucir le mélange, pressez trois quartiers d'orange",
         skills: ["Herboristerie"],
       },
       {
@@ -535,30 +513,21 @@ async function main() {
         name: "Quenouille",
         description: "Gare à l'endormissement !",
         bonuses: [
-          {
-            capabilityTag: "WEAVING",
-            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
-          },
+          { capabilityTag: "WEAVING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
         name: "Enclume",
         description: "Entre le marteau et elle...",
         bonuses: [
-          {
-            capabilityTag: "FORGING",
-            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
-          },
+          { capabilityTag: "FORGING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
         name: "Scie",
         description: "Avec des scies, on mettrait l'île en bouteille",
         bonuses: [
-          {
-            capabilityTag: "WOODWORKING",
-            bonusType: CapacityBonusType.ADMIN_INTERPRETED,
-          },
+          { capabilityTag: "WOODWORKING", bonusType: CapacityBonusType.ADMIN_INTERPRETED },
         ],
       },
       {
@@ -687,11 +656,10 @@ async function main() {
     }
 
     console.log(
-      `✅ Total: ${
-        simpleObjects.length +
-        skillBonusObjects.length +
-        capacityBonusObjects.length +
-        resourceBagObjects.length
+      `✅ Total: ${simpleObjects.length +
+      skillBonusObjects.length +
+      capacityBonusObjects.length +
+      resourceBagObjects.length
       } objets créés`
     );
   } else {
@@ -754,8 +722,7 @@ async function main() {
     }
 
     console.log(
-      `✅ ${
-        lootTablePA1.length + lootTablePA2.length
+      `✅ ${lootTablePA1.length + lootTablePA2.length
       } entrées de loot de pêche créées`
     );
   } else {
