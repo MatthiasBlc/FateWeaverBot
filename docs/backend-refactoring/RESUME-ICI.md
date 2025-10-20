@@ -1,7 +1,7 @@
 # 🚀 Comment reprendre le refactoring backend
 
 **Dernière mise à jour** : 2025-10-20
-**Progression actuelle** : 40% (4/10 phases complètes)
+**Progression actuelle** : 50% (5/10 phases complètes)
 
 ---
 
@@ -16,7 +16,7 @@ Continue le refactoring backend où on s'était arrêté
 Ou plus précisément :
 
 ```
-Continue avec Phase 4 du refactoring backend (Repository Layer)
+Continue avec Phase 5 du refactoring backend (Refactor Services)
 ```
 
 ---
@@ -61,22 +61,30 @@ Continue avec Phase 4 du refactoring backend (Repository Layer)
 - ✅ 15 fichiers de routes modifiés
 - **Temps** : ~2 heures (au lieu de 6-8h estimées)
 
-### 📋 Prochaine Phase : Phase 4 - Repository Layer
+#### Phase 4 : Repository Layer (100%)
+- ✅ 14 repositories créés
+- ✅ 106 méthodes async créées
+- ✅ Utilisation des query builders (Phase 1)
+- ✅ Adaptation au schéma Prisma réel
+- **Temps** : ~2 heures (au lieu de 6-8h estimées)
 
-**Objectif** : Abstraire la logique d'accès aux données avec des repositories
-**Estimation** : 8-10 heures
+### 📋 Prochaine Phase : Phase 5 - Refactor Services
+
+**Objectif** : Refactorer les services pour utiliser les repositories
+**Estimation** : 10-12 heures
 **Priorité** : Haute
 
 **Tâches principales :**
-1. Créer repository interfaces
-2. Créer repositories pour Character, Resource, Expedition, etc.
-3. Intégrer query builders existants
-4. Préparer pour injection dans services (Phase 5)
+1. Modifier CharacterService pour utiliser CharacterRepository
+2. Modifier ResourceService pour utiliser ResourceRepository
+3. Modifier les 12 autres services
+4. Supprimer les appels directs à Prisma
+5. Tester les endpoints critiques
 
-**Fichiers clés à créer :**
-- `backend/src/domain/repositories/character.repository.ts`
-- `backend/src/domain/repositories/resource.repository.ts`
-- `backend/src/domain/repositories/expedition.repository.ts`
+**Fichiers clés à modifier :**
+- `backend/src/services/character.service.ts`
+- `backend/src/services/resource.service.ts`
+- `backend/src/services/expedition.service.ts`
 - Etc.
 
 ---
@@ -101,7 +109,9 @@ Dans `/.supernova/` :
 - `report-phase2-extract-utilities.md` - Rapport Phase 2
 - `prompt-phase3-validation-layer.md` - Prompt Phase 3
 - `report-phase3-validation-layer.md` - Rapport Phase 3
-- `prompt-phase4-*.md` - À créer pour Phase 4
+- `prompt-phase4-repository-layer.md` - Prompt Phase 4
+- `report-phase4-repository-layer.md` - Rapport Phase 4
+- `prompt-phase5-*.md` - À créer pour Phase 5
 
 ---
 
@@ -150,12 +160,14 @@ Claude utilisera ce pattern pour continuer :
 - 📈 Progression : 0% → 30%
 
 **Session 2 (2025-10-20) :**
-- ⏱️ Temps : ~2 heures
-- 📁 Fichiers créés : 16 (validators + middleware)
-- 📁 Fichiers modifiés : 15 (routes)
-- 🔒 Schémas Zod : 102 schémas
-- 🛡️ Endpoints validés : ~110
-- 📈 Progression : 30% → 40%
+- ⏱️ Temps : ~4 heures
+- 📁 Phase 3 - Fichiers créés : 16 (validators + middleware)
+- 📁 Phase 3 - Fichiers modifiés : 15 (routes)
+- 🔒 Phase 3 - Schémas Zod : 102 schémas
+- 🛡️ Phase 3 - Endpoints validés : ~110
+- 📁 Phase 4 - Repositories créés : 14
+- 🔧 Phase 4 - Méthodes async : 106
+- 📈 Progression : 30% → 50%
 
 **Qualité du code :**
 - ✅ TypeCheck passe sur tous les fichiers
@@ -184,10 +196,11 @@ Claude utilisera ce pattern pour continuer :
 | Query Builders | 6 | `src/infrastructure/database/query-builders/` |
 | Utility Classes | 3 | `src/shared/utils/` |
 | Validators (Zod schemas) | 15 | `src/api/validators/` |
+| Repositories | 14 | `src/domain/repositories/` |
 | Middleware | 1 | `src/api/middleware/` |
 | Documentation | 7 | `docs/backend-refactoring/` |
-| Supernova Prompts | 3 | `.supernova/` |
-| Supernova Reports | 3 | `.supernova/` |
+| Supernova Prompts | 4 | `.supernova/` |
+| Supernova Reports | 4 | `.supernova/` |
 
 ---
 
@@ -198,15 +211,15 @@ Phase 0: Setup & Tooling          ✅ [█████████████�
 Phase 1: Query Builders            ✅ [████████████████████] 100%
 Phase 2: Extract Utilities         ✅ [████████████████████] 100%
 Phase 3: Validation Layer          ✅ [████████████████████] 100%
-Phase 4: Repository Layer          ⬜ [                    ]   0%  ← PROCHAINE
-Phase 5: Refactor Services         ⬜ [                    ]   0%
+Phase 4: Repository Layer          ✅ [████████████████████] 100%
+Phase 5: Refactor Services         ⬜ [                    ]   0%  ← PROCHAINE
 Phase 6: Split Large Files         ⬜ [                    ]   0%
 Phase 7: Error Handling            ⬜ [                    ]   0%
 Phase 8: DI Container              ⬜ [                    ]   0%
 Phase 9: Add Tests                 ⬜ [                    ]   0%
 Phase 10: Final Cleanup            ⬜ [                    ]   0%
 
-PROGRESSION GLOBALE: [████████                                        ] 40%
+PROGRESSION GLOBALE: [██████████                                      ] 50%
 ```
 
 ---
@@ -226,8 +239,8 @@ Transformer le backend de :
 - **État cible** : Code propre, DRY, testé (70%+), maintenable, bien architecturé
 
 **Estimation totale** : 70-80 heures
-**Temps écoulé** : ~6.5 heures (4.5h + 2h)
-**Temps restant** : ~63-73 heures
+**Temps écoulé** : ~8.5 heures (4.5h + 4h)
+**Temps restant** : ~61-71 heures
 
 ---
 

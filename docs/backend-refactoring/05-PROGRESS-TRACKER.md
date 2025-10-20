@@ -1,8 +1,8 @@
 # Progress Tracker - Real-Time Status
 
 **Last Updated**: 2025-10-20
-**Current Phase**: 4 (Repository Layer)
-**Overall Progress**: 40%
+**Current Phase**: 5 (Refactor Services)
+**Overall Progress**: 50%
 
 ---
 
@@ -14,7 +14,7 @@
 | 1: Query Builders | ✅ Complete | 100% | 2025-10-19 |
 | 2: Utilities | ✅ Complete | 100% | 2025-10-19 |
 | 3: Validation Layer | ✅ Complete | 100% | 2025-10-20 |
-| 4: Repository Layer | Not Started | 0% | - |
+| 4: Repository Layer | ✅ Complete | 100% | 2025-10-20 |
 | 5: Refactor Services | Not Started | 0% | - |
 | 6: Split Large Files | Not Started | 0% | - |
 | 7: Error Handling | Not Started | 0% | - |
@@ -183,37 +183,40 @@ Successfully created 102 Zod schemas across 15 validator files and applied valid
 
 ## Phase 4: Create Repository Layer
 
-**Status**: Not Started
-**Started**: -
-**Completed**: -
+**Status**: ✅ Complete
+**Started**: 2025-10-20
+**Completed**: 2025-10-20
 
 ### Checklist
 
-- [ ] Create `character.repository.ts`
-  - [ ] `findById()`
-  - [ ] `findActiveCharacter()`
-  - [ ] `findUserByDiscordId()`
-  - [ ] `create()`
-  - [ ] `update()`
-  - [ ] `deactivateOtherCharacters()`
-  - [ ] `addCapability()`
-  - [ ] `getCapabilities()`
-- [ ] Create `resource.repository.ts`
-  - [ ] `findResourceTypeByName()`
-  - [ ] `getStock()`
-  - [ ] `getAllStockForLocation()`
-  - [ ] `upsertStock()`
-  - [ ] `decrementStock()`
-- [ ] Create `expedition.repository.ts`
-- [ ] Create `project.repository.ts`
-- [ ] Create `chantier.repository.ts`
-- [ ] Create `capability.repository.ts`
-- [ ] Verify typecheck passes
-- [ ] Verify build succeeds
+- [x] Create `character.repository.ts` (27 méthodes)
+- [x] Create `resource.repository.ts` (9 méthodes)
+- [x] Create `expedition.repository.ts` (12 méthodes)
+- [x] Create `project.repository.ts` (6 méthodes)
+- [x] Create `chantier.repository.ts` (8 méthodes)
+- [x] Create `capability.repository.ts` (6 méthodes)
+- [x] Create `guild.repository.ts` (6 méthodes)
+- [x] Create `role.repository.ts` (6 méthodes)
+- [x] Create `object.repository.ts` (6 méthodes)
+- [x] Create `town.repository.ts` (6 méthodes)
+- [x] Create `user.repository.ts` (4 méthodes)
+- [x] Create `season.repository.ts` (4 méthodes)
+- [x] Create `job.repository.ts` (3 méthodes)
+- [x] Create `skill.repository.ts` (3 méthodes)
+- [x] Verify typecheck passes
+- [x] Verify build succeeds
 
 ### Notes
 
-_No notes yet_
+Successfully created 14 repository files with 106 async methods total. All repositories use Query Builders from Phase 1. TypeScript checks pass. See `.supernova/report-phase4-repository-layer.md` for full details.
+
+**Key adaptations:**
+- Adapted to real Prisma schema (different from template)
+- Fixed field names: `isDead`, `paTotal`, `resourceStock`
+- Corrected ID types: some entities use `number` instead of `string`
+- Resolved unique constraint issues
+
+**Time**: ~2 hours (estimated 6-8h, saved time with Supernova automation)
 
 ---
 
