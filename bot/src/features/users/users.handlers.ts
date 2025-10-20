@@ -179,7 +179,6 @@ export async function handleProfileCommand(interaction: any) {
             hungerLevel: character.hungerLevel || 0,
             hp: character.hp || 5,
             pm: character.pm || 5,
-            isDead: character.isDead || false,
             job: character.job || null, // Ajouter le métier
             capabilities: capabilities.map((cap) => ({
               id: cap.id,
@@ -268,8 +267,8 @@ export async function handleProfileCommand(interaction: any) {
 function createStatusDisplay(character: any): string | null {
   const statuses: string[] = [];
 
-  // Si le personnage est mort (réellement mort, pas en agonie), afficher uniquement "Mort"
-  if (character.hp <= 0 && character.isDead) {
+  // Si le personnage est mort, afficher uniquement "Mort"
+  if (character.hp <= 0 || character.isDead) {
     return `${HUNGER.DEAD} **Mort**`;
   }
 
@@ -279,7 +278,7 @@ function createStatusDisplay(character: any): string | null {
   }
 
   // Agonie (niveau 1)
-  if (character.hungerLevel === 0) {
+  if (character.hungerLevel === 1) {
     statuses.push(`${CHARACTER.HP_BANDAGED} **Agonie** : 0 PA utilisables`);
   }
 
@@ -298,7 +297,7 @@ function createStatusDisplay(character: any): string | null {
   }
 
   // Affamé (niveau 2)
-  if (character.hungerLevel === 1) {
+  if (character.hungerLevel === 2) {
     statuses.push(`${HUNGER.STARVING} **Affamé** : -1 PA / jour`);
   }
 
@@ -548,9 +547,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       data.user.discordId, // Utiliser l'ID Discord au lieu de l'ID interne
       data.character.id,
       data.actionPoints.points || 0, // Ajouter les PA actuels du personnage
-      data.character.hp, // Ajouter les points de vie actuels du personnage
-      data.character.hungerLevel, // Ajouter le niveau de faim actuel du personnage
-      data.character.isDead // Ajouter l'état mort du personnage
+      data.character.hp // Ajouter les points de vie actuels du personnage
     );
     if (capabilityButtons) {
       components.push(...capabilityButtons); // Étendre le tableau
@@ -1106,9 +1103,7 @@ function createCapabilityButtons(
   userId: string,
   characterId: string,
   currentPA: number,
-  characterHp?: number,
-  characterHungerLevel?: number,
-  characterIsDead?: boolean
+  characterHp?: number
 ): ActionRowBuilder<ButtonBuilder>[] | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
@@ -1147,7 +1142,7 @@ function createCapabilityButtons(
 
       // Vérifier si le personnage a assez de PA pour cette capacité ou s'il est en agonie
       const hasEnoughPA = currentPA >= cap.costPA;
-      const isInAgony = (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
+      const isInAgony = characterHp !== undefined && characterHp <= 1;
       const buttonStyle = hasEnoughPA && !isInAgony
         ? ButtonStyle.Primary
         : ButtonStyle.Secondary;

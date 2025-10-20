@@ -189,7 +189,7 @@ export async function handleEatAlternativeButton(
     // Tenter de faire manger le personnage avec de la nourriture
     const eatResult = await apiService.characters.eatFoodAlternative(
       character.id,
-      "Repas"
+      "Nourriture"
     );
 
     // Créer l'embed de réponse
@@ -211,7 +211,7 @@ export async function handleEatAlternativeButton(
       interaction.guildId!,
       interaction.client,
       `🍽️ **${character.name || user.username
-      }** a mangé de un Repas, il reste **${eatResult.town.foodStock
+      }** a mangé de la nourriture, il reste **${eatResult.town.foodStock
       }** de ${eatResult.resourceTypeConsumed} dans ${stockSource}`
     );
   } catch (error: any) {
@@ -249,10 +249,10 @@ export async function handleEatAlternativeButton(
     ) {
       errorMessage = "❌ Votre personnage est mort et ne peut plus manger.";
     } else if (
-      error.response?.data?.error?.includes("repas") ||
-      error.message?.includes("repas")
+      error.response?.data?.error?.includes("nourriture") ||
+      error.message?.includes("nourriture")
     ) {
-      errorMessage = "❌ L'expédition n'a plus de repas disponible.";
+      errorMessage = "❌ L'expédition n'a plus de nourriture disponible.";
     } else if (
       error.response?.data?.error?.includes("nécessaires") ||
       error.message?.includes("nécessaires")

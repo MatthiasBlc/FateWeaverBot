@@ -83,7 +83,7 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       resources.find((r: any) => r.resourceType.name === "Vivres")?.quantity ||
       0;
     const nourritureStock =
-      resources.find((r: any) => r.resourceType.name === "Repas")
+      resources.find((r: any) => r.resourceType.name === "Nourriture")
         ?.quantity || 0;
 
     // Calculer les besoins
@@ -100,12 +100,12 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
     embed.addFields(
       {
         name: `📦 Stocks disponibles (${locationType === "CITY" ? "Ville" : "Expédition"})`,
-        value: `${RESOURCES.FOOD} Vivres : ${vivresStock}\n${RESOURCES.PREPARED_FOOD} Repas : ${nourritureStock}`,
+        value: `${RESOURCES.FOOD} Vivres : ${vivresStock}\n${RESOURCES.PREPARED_FOOD} Nourriture : ${nourritureStock}`,
         inline: false,
       },
       {
         name: `${STATUS.INFO} Rappel`,
-        value: `• ${RESOURCES.FOOD} Vivres : +1 faim\n• ${RESOURCES.PREPARED_FOOD} Repas : +1 faim`,
+        value: `• ${RESOURCES.FOOD} Vivres : +1 faim\n• ${RESOURCES.PREPARED_FOOD} Nourriture : +2 faim`,
         inline: false,
       }
     );
@@ -213,7 +213,7 @@ export async function handleEatVivre1Button(interaction: ButtonInteraction) {
 export async function handleEatNourriture1Button(
   interaction: ButtonInteraction
 ) {
-  await handleEatResource(interaction, "Repas", 1);
+  await handleEatResource(interaction, "Nourriture", 1);
 }
 
 /**
@@ -264,7 +264,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
 
     const hungerNeed = 4 - character.hungerLevel;
     const nourritureNeed = Math.ceil(hungerNeed / 2);
-    await handleEatResource(interaction, "Repas", nourritureNeed);
+    await handleEatResource(interaction, "Nourriture", nourritureNeed);
   } catch (error: any) {
     logger.error("Erreur dans handleEatNourritureFull:", error);
     await replyError(interaction, "Erreur lors de la consommation.");
@@ -276,7 +276,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
  */
 async function handleEatResource(
   interaction: ButtonInteraction,
-  resourceName: "Vivres" | "Repas",
+  resourceName: "Vivres" | "Nourriture",
   quantity: number
 ) {
   try {
@@ -343,13 +343,13 @@ async function handleEatResource(
 function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return HUNGER.STARVATION;
+      return HUNGER.DEAD;
     case 1:
-      return HUNGER.STARVING;
+      return HUNGER.AGONY;
     case 2:
-      return HUNGER.HUNGRY;
+      return HUNGER.STARVING;
     case 3:
-      return HUNGER.APPETITE;
+      return HUNGER.HUNGRY;
     case 4:
       return HUNGER.FED;
     default:
