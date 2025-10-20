@@ -601,7 +601,6 @@ export class CharacterService {
       // Préparer les données de mise à jour
       const updateData: any = {
         paTotal: character.paTotal - paToDeduct,
-        lastPaUpdate: new Date(),
         updatedAt: new Date(),
       };
 

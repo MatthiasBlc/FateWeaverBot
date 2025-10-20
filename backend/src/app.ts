@@ -41,8 +41,7 @@ if (process.env.NODE_ENV !== "test") {
   console.log("✅ Starting CRON jobs (not in test mode)");
 
   try {
-    const { mainJob } = setupDailyPaJob();
-    mainJob.start();
+    setupDailyPaJob();
     console.log("✅ Daily PA job started");
   } catch (error) {
     console.error("❌ Failed to start Daily PA job:", error);
