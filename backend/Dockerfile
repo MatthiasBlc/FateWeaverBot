@@ -15,14 +15,14 @@ RUN npm ci
 # Génération du client Prisma
 RUN npx prisma generate
 
+# Copie du dossier shared AVANT la compilation (nécessaire pour les imports)
+COPY ./shared ../shared
+
 # Copie du code source
 COPY ./backend/src ./src
 
 # Construction de l'application
 RUN npm run build
-
-# Copie du dossier shared APRÈS la compilation (pour l'exécution seulement)
-COPY ./shared /shared
 
 # Vérification de la structure du build avec plus de détails
 RUN echo "=== Vérification après build ===" && \
