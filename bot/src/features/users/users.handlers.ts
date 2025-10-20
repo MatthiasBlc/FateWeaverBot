@@ -558,7 +558,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   }
 
   // Ajouter les boutons Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
-  if (data.character.hungerLevel < 4 && data.character.hungerLevel > 0) {
+  if (data.character.hungerLevel < 4 && !data.character.isDead) {
     // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
     const buttons = [];
 
@@ -897,6 +897,52 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
         await interaction.editReply({
           content: `${CAPABILITIES.CARTOGRAPHING} **Cartographier** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
+      // Gestion spéciale pour la capacité "Rechercher"
+      if (selectedCapability.name.toLowerCase() === "rechercher") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`researching_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`researching_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `${CAPABILITIES.RESEARCHING} **Rechercher** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
+      // Gestion spéciale pour la capacité "Auspice"
+      if (selectedCapability.name.toLowerCase() === "auspice") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`auspice_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`auspice_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `${CAPABILITIES.AUGURING} **Auspice** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
           components: [paChoiceRow],
         });
         return;

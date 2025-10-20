@@ -1,3 +1,5 @@
+import { CHANTIER } from "@shared/constants/emojis";
+
 export function getStatusText(status: string): string {
   switch (status) {
     case "PLAN":
@@ -14,12 +16,12 @@ export function getStatusText(status: string): string {
 export function getStatusEmoji(status: string): string {
   switch (status) {
     case "PLAN":
-      return "📝";
+      return CHANTIER.PLAN;
     case "IN_PROGRESS":
-      return "🚧";
+      return CHANTIER.IN_PROGRESS;
     case "COMPLETED":
-      return "✅";
+      return CHANTIER.COMPLETED;
     default:
-      return "❓";
+      return CHANTIER.ICON;
   }
 }
