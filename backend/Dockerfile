@@ -12,20 +12,20 @@ COPY ./backend/package*.json ./
 COPY ./backend/prisma ./prisma/
 COPY ./backend/tsconfig.json ./
 
+# Copie du code source
+COPY ./backend .
+
 # Installation des dépendances
 RUN npm ci
 
 # Génération du client Prisma
 RUN npx prisma generate
 
-# Copie du code source
-COPY ./backend .
-
 # Construction de l'application
 RUN npm run build
 
-# Compilation du fichier de seeding
-RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
+# Compilation du fichier de seeding avec tsx
+RUN npx tsx prisma/seed.ts
 
 # Vérification de la structure du build
 RUN echo "=== Contenu de /app/dist ===" && ls -la /app/dist/ && echo "=== Fichiers dans dist ===" && find /app/dist -type f -name "*.js" | head -20
