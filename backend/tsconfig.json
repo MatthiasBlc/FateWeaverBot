@@ -17,7 +17,7 @@
         "src/*"
       ],
       "@shared/*": [
-        "../shared/*"
+        "/shared/*"
       ]
     },
     "typeRoots": [
@@ -46,7 +46,8 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/shared"
   ],
   "ts-node": {
     "files": true,
