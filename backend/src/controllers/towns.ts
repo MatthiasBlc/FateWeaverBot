@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
-import { HUNGER } from "../../../shared/constants/emojis";
+import { HUNGER } from "../../shared/constants/emojis";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {

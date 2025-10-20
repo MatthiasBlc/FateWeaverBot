@@ -16,7 +16,7 @@ RUN npm ci
 RUN npx prisma generate
 
 # Copie du dossier shared AVANT la compilation (nécessaire pour les imports)
-COPY ./shared ../shared
+COPY ./shared ./shared
 
 # Copie du code source
 COPY ./backend/src ./src
@@ -41,13 +41,11 @@ FROM node:18.18-alpine3.17
 
 WORKDIR /app
 
-# Copie du dossier shared
-COPY --from=builder /shared /shared
-
 # Copie des fichiers nécessaires depuis le builder
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/prisma ./prisma
 
 # Installation de Prisma et des outils nécessaires
