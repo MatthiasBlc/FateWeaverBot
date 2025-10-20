@@ -228,8 +228,8 @@ export const executeResearch: RequestHandler = async (req, res, next) => {
       throw createHttpError(400, "characterId requis");
     }
 
-    if (!researchType || !['analyser', 'cartographier', 'auspice'].includes(researchType)) {
-      throw createHttpError(400, "researchType doit être 'analyser', 'cartographier' ou 'auspice'");
+    if (!researchType || !['rechercher', 'cartographier', 'auspice'].includes(researchType)) {
+      throw createHttpError(400, "researchType doit être 'rechercher', 'cartographier' ou 'auspice'");
     }
 
     if (!paSpent || (paSpent !== 1 && paSpent !== 2)) {

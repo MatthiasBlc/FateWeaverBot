@@ -882,6 +882,23 @@ export class ButtonHandler {
       }
     });
 
+    // =================== RESEARCHING HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour rechercher
+    this.registerHandlerByPrefix("researching_pa:", async (interaction) => {
+      try {
+        const { handleResearchingPAChoice } = await import(
+          "../features/users/researching.handlers.js"
+        );
+        await handleResearchingPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling researching PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour rechercher.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== HEALING HANDLERS ===================
     // Gestionnaire pour le choix de PA pour soigner (1 PA = heal, 2 PA = cataplasme)
     this.registerHandlerByPrefix("healing_pa:", async (interaction) => {

@@ -902,6 +902,29 @@ export async function handleProfileButtonInteraction(interaction: any) {
         return;
       }
 
+      // Gestion spéciale pour la capacité "Rechercher"
+      if (selectedCapability.name.toLowerCase() === "rechercher") {
+        // Créer des boutons pour choisir 1 ou 2 PA
+        const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`researching_pa:${characterId}:${userId}:1`)
+            .setLabel("1 PA")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(character.paTotal < 1),
+          new ButtonBuilder()
+            .setCustomId(`researching_pa:${characterId}:${userId}:2`)
+            .setLabel("2 PA")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(character.paTotal < 2)
+        );
+
+        await interaction.editReply({
+          content: `${CAPABILITIES.RESEARCHING} **Rechercher** - Choisissez combien de PA utiliser :\n\nVous avez actuellement **${character.paTotal} PA**.`,
+          components: [paChoiceRow],
+        });
+        return;
+      }
+
       // Gestion spéciale pour la capacité "Soigner"
       if (selectedCapability.name.toLowerCase() === "soigner") {
         // Vérifier le stock de cataplasmes (max 3 total)

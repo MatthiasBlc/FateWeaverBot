@@ -87,16 +87,32 @@ emojis.ts
 
 Dans profil s'il y a plus de 4 capacités, les boutons ne s'affichent pas
 
-1 - Point sur le système de faim:
+1 - Point sur le système de faim: ✅ IMPLÉMENTÉ
 
-Satiété = 4 , ici le character gagne 1 pv / jour (normalement déjà en place)
-Petit creux = 3
-Faim = 2
-Affamé = 1 , Au lieu de gagner 2 PA / jour, il ne gagnera plus qu'1 PA / jour.
-Meurt de faim = 0 (passe directement en status Agonie)
+Satiété = 4 , ici le character gagne 1 pv / jour ✅
+Petit creux = 3 ✅
+Faim = 2 ✅
+Affamé = 1 , Au lieu de gagner 2 PA / jour, il ne gagnera plus qu'1 PA / jour. ✅
+Meurt de faim = 0 (passe directement en status Agonie) ✅
 
-2 - Agonie doit être géré indépendemment (mais il me semble que c'est fait, à confirmer)
-en Agonie, le character ne peut plus utiliser de PA d'aucune manière que ce soit
+**Règles de consommation (CORRIGÉ):**
+
+- Chaque vivre/repas restaure toujours **+1 point de faim** exactement
+- La nourriture ne peut jamais faire consommer plusieurs ressources pour 1 point
+- La nourriture ne peut jamais tuer ou réduire la faim
+- Maximum de faim = 4 (Satiété)
+
+2 - Agonie doit être géré indépendamment ✅ IMPLÉMENTÉ
+
+**Règles d'entrée en Agonie:**
+- Si HP tombe à 1 (de quelconque manière) → Agonie automatique (agonySince défini)
+- Si hunger tombe à 0 (de quelconque manière) → HP forcé à 1 ET Agonie (agonySince défini)
+- Fonctionne partout: CRON quotidiens, /character-admin, cataplasme, nourriture
+
+**Restrictions en Agonie:**
+- Le personnage NE PEUT PLUS utiliser de PA d'aucune manière que ce soit ✅
+- Timer de 2 jours avant mort définitive
+- Sortie d'agonie: HP > 1 (via cataplasme ou satiété)
 
 3 - Comment fonctionne l'agonie dans le code actuellement ?
 
@@ -389,7 +405,6 @@ ferraille -> 10 minerai
 Planches -> 20 bois
 Jambon -> 10 nourriture
 
-
 1- Bug dans le seed des skills et dans le seed des objets skills
 2- Projets dans une commande ? devraient être dans un bouton pour les personnes concernées !
 3 - ✅ RÉSOLU : Catégorie "science" pour ressources = ressources produites par capacités SCIENCE (ex: Cataplasme)
@@ -398,6 +413,7 @@ Jambon -> 10 nourriture
 6 - ✅ RÉSOLU : Commande Character admin - Boutons ajouter/retirer objet et compétence
 
 **Nouvelles fonctionnalités ajoutées :**
+
 - ✅ Bouton "Nouvelle Compétence (Skill)" dans /new-element-admin
 - ✅ Modal de création de compétence (nom + description)
 - ✅ Endpoint backend POST /api/skills pour créer des compétences
@@ -408,6 +424,7 @@ Jambon -> 10 nourriture
   - Conversion en ressource (ObjectResourceConversion)
 
 **Handlers d'ajout de bonus sur objets - TERMINÉ :**
+
 - ✅ Implémentation des handlers pour les boutons d'ajout de bonus sur objets
   - `object_add_skill_bonus:${objectId}` - Ajoute un bonus de compétence à un objet
   - `object_add_capability_bonus:${objectId}` - Ajoute un bonus de capacité à un objet
@@ -418,6 +435,7 @@ Jambon -> 10 nourriture
 - ✅ Méthodes API ajoutées dans ObjectAPIService
 
 **Gestion des objets et compétences dans Character Admin - TERMINÉ :**
+
 - ✅ Boutons "Gérer Objets" et "Gérer Compétences" ajoutés dans /character-admin
 - ✅ Handlers pour afficher les objets/compétences d'un personnage
 - ✅ Boutons pour ajouter/retirer des objets à un personnage
@@ -433,26 +451,25 @@ Jambon -> 10 nourriture
 
 ------------------------------CRON JOB------------------- -------------
 
-> Append Directions devrait faire partie de Daily PA Update (à la suite directement). Daily PA 
-Update Expédition devrait également être dans la même suite de process. 
-Dans Daily PA Update - Expédition, il y a "Give +2 PA first (daily regeneration)", cela ne 
-devrait pas exister, c'est clairement un doublon de logique avec "STEP 5: Regenerate PA (hunger 
-penalty if hungerLevel≤1)" 
+> Append Directions devrait faire partie de Daily PA Update (à la suite directement). Daily PA
+> Update Expédition devrait également être dans la même suite de process.
+> Dans Daily PA Update - Expédition, il y a "Give +2 PA first (daily regeneration)", cela ne
+> devrait pas exister, c'est clairement un doublon de logique avec "STEP 5: Regenerate PA (hunger
+> penalty if hungerLevel≤1)"
 
 If no + catastrophic conditions → Remove from expedition
-       (catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
+(catastrophic = hungerLevel≤1 OR isDead OR hp≤1 OR pm≤2)
 
-       
 Morning, première étape retour d'expédition ? (departed -> returned)
 
-Pourquoi toutes les 10 minutes sur les autres ? 
-
+Pourquoi toutes les 10 minutes sur les autres ?
 
 ## 🐛 Known Issues & TODOs
 
 ### TODO Items
 
 1. **Daily Messages Integration:**
+
    - Implement Discord webhook/API call
    - Currently only logs to console
 
@@ -460,6 +477,71 @@ Pourquoi toutes les 10 minutes sur les autres ?
    - Add Discord notification when season changes
    - Currently only logs to console
 
-
 Nous avons actuellement avec config-channel-admin, la possibilité de choisir un channel pour les notifications d'évènement.
 Serait-il possible d'ajouter à cette commande la sélection d'un nouveau channel (ce peut être le même channel ou un autre) pour le message quotidien (+changement de saison ?) ?
+
+Après lecture de ce document doing.md et une phase Exploration et plan, tu m'as proposé le document suivant : .supernova/prompt-job-system.md
+
+Dans HistoriqueChat.md, tu as l'historique avant d'atteindre la Session limit.
+
+Fais le point sur la situation et continue.
+
+# métiers
+
+Il faut ajouter un système de métier.
+Un métier est défini par un nom, il peut avoir une une description, une capacité de départ, une capacité optionnelle (vide pour les premiers métiers).
+
+Une liste de métiers exisants est disponible en base de données, avec un fonctionnement similaire aux ResourcesType.
+
+Voici la liste des couples métiers / capacités de départ:
+
+- Chasseuse -> Chasser
+- Cueilleur -> Cueillir
+- Pêcheur-> Pêcher
+- Mineuse -> Miner
+- Tisserand -> Tisser
+- Forgeronne -> Forger
+- Menuisier -> Menuiser
+- Cuisinière-> Cuisiner
+- Guérisseur -> Soigner
+- Érudit-> Rechercher
+- Cartographe -> Cartographier
+- Météorologue -> Auspice
+- L'Artiste -> Divertir
+
+Lorsqu'un métier est attribué à un character, il faut vérifier s'il a sa capacité de départ et, si ce n'est pas le cas la lui donner.
+
+Dans /profil, il faut afficher le métier du personnage à la place de son rôle.
+
+Dans /character-admin, dans le bouton adavanced, il faut ajouter un bouton permettant de changer le métier d'un character. Changer le métier d'un character lui retire également la/les capacité liée à son ancien métier et lui donne celles liée à son nouveau métier (capacité de départ et capacités optionnelles si ce n'est pas vide).
+
+Un personnage ne peut avoir qu'un seul métier.
+
+Dans /new-element-admin, il faut ajouter un bouton permettant de créer un nouveau métier.
+
+# Création de personnage.
+
+Lors de la création d'un personnage (premier personnage ou reroll), Ce dernier doit choisir son nom et, il doit choisir son métier dans une liste déroulante.
+
+En réponse sa fiche profil s'affiche alors.
+
+logs de la création de personnages
+
+---
+
+Le système de faim fonctionne maintenant exactement comme
+spécifié :
+
+- Satiété = 4 : +1 HP/jour ✅
+- Petit creux = 3 : État normal ✅
+- Faim = 2 : État normal ✅
+- Affamé = 1 : +1 PA au lieu de +2 PA ✅
+- Meurt de faim = 0 : Passe en Agonie (hp=1), ne meurt pas
+  directement ✅
+
+Consommation de nourriture :
+
+- 1 vivre/repas = toujours +1 point de faim ✅
+- Jamais de consommation multiple ✅
+- Jamais de mort par nourriture ✅
+- Maximum plafonné à 4 ✅

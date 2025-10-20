@@ -5,10 +5,9 @@ const prisma = new PrismaClient();
 class ActionPointService {
   /**
    * Récupère le nombre de points d'action disponibles pour un personnage
-   * Met à jour le compteur si nécessaire
+   * Note: La régénération des PA est gérée automatiquement par le CRON à minuit
    */
   async getAvailablePoints(characterId: string): Promise<number> {
-    await this.updateCharacterPoints(characterId);
     const character = await prisma.character.findUnique({
       where: { id: characterId },
       select: { paTotal: true },
@@ -56,42 +55,6 @@ class ActionPointService {
         },
       });
     });
-  }
-
-  /**
-   * Met à jour les points d'action d'un personnage en fonction de la dernière mise à jour
-   */
-  private async updateCharacterPoints(characterId: string): Promise<void> {
-    const character = await prisma.character.findUnique({
-      where: { id: characterId },
-      select: { lastPaUpdate: true, paTotal: true },
-    });
-
-    if (!character) return;
-
-    const now = new Date();
-    const lastUpdate = character.lastPaUpdate;
-    const daysSinceLastUpdate = Math.floor(
-      (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (daysSinceLastUpdate > 0) {
-      const pointsToAdd = Math.min(
-        daysSinceLastUpdate * 2,
-        4 - character.paTotal
-      );
-
-      if (pointsToAdd > 0) {
-        await prisma.character.update({
-          where: { id: characterId },
-          data: {
-            paTotal: { increment: pointsToAdd },
-            lastPaUpdate: now,
-            updatedAt: now,
-          },
-        });
-      }
-    }
   }
 }
 

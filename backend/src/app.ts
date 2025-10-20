@@ -41,8 +41,7 @@ if (process.env.NODE_ENV !== "test") {
   console.log("✅ Starting CRON jobs (not in test mode)");
 
   try {
-    const { mainJob } = setupDailyPaJob();
-    mainJob.start();
+    setupDailyPaJob();
     console.log("✅ Daily PA job started");
   } catch (error) {
     console.error("❌ Failed to start Daily PA job:", error);
@@ -96,20 +95,6 @@ console.log(`Trust proxy settings: ${isBehindProxy ? "enabled" : "disabled"}`);
 if (isBehindProxy) {
   // Faire confiance au premier proxy
   app.set("trust proxy", 1);
-
-  // Middleware pour logger les informations de la requête (skip health checks)
-  app.use((req, res, next) => {
-    if (req.url !== "/health") {
-      console.log(`[Request] ${JSON.stringify({
-        method: req.method,
-        url: req.url,
-        ip: req.ip,
-        protocol: req.protocol,
-        hostname: req.hostname,
-      })}`);
-    }
-    next();
-  });
 }
 
 // cors needed for dev environment
@@ -120,10 +105,18 @@ app.use(
   })
 );
 
-// Morgan logger - skip health checks
+// Morgan logger - compact format with filters
 app.use(
-  morgan("dev", {
-    skip: (req, _res) => req.url === "/health",
+  morgan(":method :url :status :response-time ms", {
+    skip: (req, res) => {
+      // Skip health checks
+      if (req.url === "/health") return true;
+
+      // Skip 404 errors (bot scanners)
+      if (res.statusCode === 404) return true;
+
+      return false;
+    },
   })
 );
 

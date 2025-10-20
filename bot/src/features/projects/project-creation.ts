@@ -15,7 +15,7 @@ import {
 } from "discord.js";
 import { logger } from "../../services/logger";
 import { apiService } from "../../services/api";
-import { STATUS, PROJECT } from "../../constants/emojis";
+import { STATUS, PROJECT, CAPABILITIES, RESOURCES } from "../../constants/emojis";
 import { getStatusText, getCraftTypeEmoji } from "./projects.utils";
 import { checkAdmin } from "../../utils/roles";
 
@@ -177,9 +177,9 @@ export async function handleSelectCraftTypesButton(interaction: ButtonInteractio
       .setMinValues(1)
       .setMaxValues(3)
       .addOptions([
-        { label: "Tisser", value: "TISSER", emoji: "🧵" },
-        { label: "Forger", value: "FORGER", emoji: "🔨" },
-        { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
+        { label: "Tisser", value: "TISSER", emoji: CAPABILITIES.WEAVING },
+        { label: "Forger", value: "FORGER", emoji: CAPABILITIES.FORGING },
+        { label: "Menuiser", value: "MENUISER", emoji: CAPABILITIES.WOODWORKING },
       ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
@@ -223,8 +223,8 @@ export async function handleSelectOutputButton(interaction: ButtonInteraction) {
       .setCustomId("project_output_type_select")
       .setPlaceholder("Type de sortie")
       .addOptions([
-        { label: "Ressource", value: "resource", emoji: "📦" },
-        { label: "Objet", value: "object", emoji: "🔧" },
+        { label: "Ressource", value: "resource", emoji: RESOURCES.GENERIC },
+        { label: "Objet", value: "object", emoji: PROJECT.ACTIVE },
       ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);

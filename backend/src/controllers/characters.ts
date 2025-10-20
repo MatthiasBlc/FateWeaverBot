@@ -290,7 +290,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     if (character.hungerLevel >= 4)
       throw createHttpError(400, "Tu n'as pas faim");
 
-    const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
+    const foodToConsume = 1;
 
     // Récupérer le type de ressource "Vivres"
     const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
@@ -331,10 +331,24 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     const newHungerLevel = Math.min(4, character.hungerLevel + 1);
 
+    // Apply agony rules when hunger changes
+    const { applyAgonyRules } = await import("../util/agony");
+    const agonyUpdate = applyAgonyRules(
+      character.hp,
+      character.hungerLevel,
+      character.agonySince,
+      undefined, // HP not changing
+      newHungerLevel
+    );
+
     const result = await prisma.$transaction(async (tx) => {
       const updatedCharacter = await tx.character.update({
         where: { id },
-        data: { hungerLevel: newHungerLevel },
+        data: {
+          hungerLevel: agonyUpdate.hungerLevel !== undefined ? agonyUpdate.hungerLevel : newHungerLevel,
+          hp: agonyUpdate.hp,
+          agonySince: agonyUpdate.agonySince,
+        },
         include: { user: true },
       });
 
@@ -413,7 +427,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     if (character.hungerLevel >= 4)
       throw createHttpError(400, "Tu n'as pas faim");
 
-    const foodToConsume = character.hungerLevel === 1 ? 2 : 1;
+    const foodToConsume = 1;
 
     // Récupérer le type de ressource demandé
     const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
@@ -454,10 +468,24 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
     const newHungerLevel = Math.min(4, character.hungerLevel + 1);
 
+    // Apply agony rules when hunger changes
+    const { applyAgonyRules: applyAgonyRules2 } = await import("../util/agony");
+    const agonyUpdate2 = applyAgonyRules2(
+      character.hp,
+      character.hungerLevel,
+      character.agonySince,
+      undefined, // HP not changing
+      newHungerLevel
+    );
+
     const result = await prisma.$transaction(async (tx) => {
       const updatedCharacter = await tx.character.update({
         where: { id },
-        data: { hungerLevel: newHungerLevel },
+        data: {
+          hungerLevel: agonyUpdate2.hungerLevel !== undefined ? agonyUpdate2.hungerLevel : newHungerLevel,
+          hp: agonyUpdate2.hp,
+          agonySince: agonyUpdate2.agonySince,
+        },
         include: { user: true },
       });
 
@@ -766,6 +794,16 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     const { paTotal, hungerLevel, hp, pm, isDead, canReroll, isActive } =
       req.body;
 
+    // Get current character state to apply agony rules
+    const currentCharacter = await prisma.character.findUnique({
+      where: { id },
+      select: { hp: true, hungerLevel: true, agonySince: true },
+    });
+
+    if (!currentCharacter) {
+      throw createHttpError(404, "Personnage non trouvé");
+    }
+
     const updateData: Prisma.CharacterUpdateInput = { updatedAt: new Date() };
 
     if (paTotal !== undefined) updateData.paTotal = paTotal;
@@ -776,7 +814,7 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     if (canReroll !== undefined) updateData.canReroll = canReroll;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    // Vérifier si le personnage doit mourir (PV = 0, PM = 0) - sauf pour la faim qui passe en agonie
+    // Vérifier si le personnage doit mourir (PV = 0, PM = 0)
     const shouldDie =
       (hp !== undefined && hp <= 0) ||
       (pm !== undefined && pm <= 0);
@@ -787,12 +825,29 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
       updateData.hungerLevel = 0;
       updateData.hp = 0;
       updateData.pm = 0;
+      updateData.agonySince = null; // Clear agony on death
     } else if (isDead === true) {
       // Cas où isDead est explicitement défini à true
       updateData.paTotal = 0;
       updateData.hungerLevel = 0;
       updateData.hp = 0;
       updateData.pm = 0;
+      updateData.agonySince = null; // Clear agony on death
+    } else {
+      // Apply agony rules (only if not dying)
+      const { applyAgonyRules } = await import("../util/agony");
+      const agonyUpdate = applyAgonyRules(
+        currentCharacter.hp,
+        currentCharacter.hungerLevel,
+        currentCharacter.agonySince,
+        hp,
+        hungerLevel
+      );
+
+      // Merge agony updates into updateData
+      if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
+      if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
+      if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
     }
 
     const updatedCharacter = await prisma.character.update({
@@ -871,10 +926,26 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
         data: { quantity: { decrement: 1 } },
       });
 
-      // Heal +1 HP
+      // Calculate new HP
+      const newHp = Math.min(5, character.hp + 1);
+
+      // Apply agony rules
+      const { applyAgonyRules } = await import("../util/agony");
+      const agonyUpdate = applyAgonyRules(
+        character.hp,
+        character.hungerLevel,
+        character.agonySince,
+        newHp,
+        undefined // hunger not changing
+      );
+
+      // Heal +1 HP and update agony status
       await tx.character.update({
         where: { id: characterId },
-        data: { hp: Math.min(5, character.hp + 1) },
+        data: {
+          hp: agonyUpdate.hp !== undefined ? agonyUpdate.hp : newHp,
+          agonySince: agonyUpdate.agonySince,
+        },
       });
     });
 

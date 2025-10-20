@@ -1,9 +1,7 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
-import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
-import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
-import { ResourceUtils } from "../shared/utils";
+import { HUNGER } from "@shared/constants/emojis";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -24,7 +22,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
       include: {
         guild: true,
         chantiers: { orderBy: { updatedAt: "desc" } },
-      }
+      },
     });
 
     let town;
@@ -36,12 +34,14 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
         include: {
           guild: true,
           chantiers: { orderBy: { updatedAt: "desc" } },
-        }
+        },
       });
 
       // Mettre à jour le stock de vivres si spécifié
       if (foodStock !== undefined && foodStock >= 0) {
-        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+          "Vivres"
+        );
         if (vivresType) {
           await prisma.resourceStock.upsert({
             where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
@@ -51,8 +51,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
               locationId: town.id,
               resourceTypeId: vivresType.id,
               quantity: foodStock,
-              
-            }
+            },
           });
         }
       }
@@ -61,18 +60,20 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
       town = await prisma.town.create({
         data: {
           name,
-          guild: { connect: { id: guild.id } }
+          guild: { connect: { id: guild.id } },
         },
         include: {
           guild: true,
           chantiers: { orderBy: { updatedAt: "desc" } },
-        }
+        },
       });
 
       // Créer le stock de vivres par défaut ou avec la valeur spécifiée
       const initialFoodStock = foodStock !== undefined ? foodStock : 50;
       if (initialFoodStock >= 0) {
-        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+        const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+          "Vivres"
+        );
 
         if (vivresType) {
           await prisma.resourceStock.upsert({
@@ -83,8 +84,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
               locationId: town.id,
               resourceTypeId: vivresType.id,
               quantity: initialFoodStock,
-              
-            }
+            },
           });
         } else {
           // Créer le type Vivres s'il n'existe pas
@@ -92,9 +92,9 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
             data: {
               name: "Vivres",
               description: "Ressource alimentaire de base",
-              emoji: "🍞",
-              category: "BASE"
-            }
+              emoji: HUNGER.ICON,
+              category: "BASE",
+            },
           });
 
           await prisma.resourceStock.create({
@@ -103,26 +103,27 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
               locationId: town.id,
               resourceTypeId: newVivresType.id,
               quantity: initialFoodStock,
-              
-            }
+            },
           });
         }
       }
     }
 
     // Récupérer le stock de vivres pour compatibilité avec l'interface existante
-    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+      "Vivres"
+    );
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
       });
       foodStockValue = vivresStock?.quantity || 0;
     }
 
     const townWithVivres = {
       ...town,
-      foodStock: foodStockValue
+      foodStock: foodStockValue,
     };
 
     res.status(200).json(townWithVivres);
@@ -134,7 +135,9 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
 export const getTownByGuildId: RequestHandler = async (req, res, next) => {
   try {
     const { guildId } = req.params;
-    const guild = await prisma.guild.findUnique({ where: { discordGuildId: guildId } });
+    const guild = await prisma.guild.findUnique({
+      where: { discordGuildId: guildId },
+    });
 
     if (!guild) {
       throw createHttpError(404, "Guilde non trouvée");
@@ -145,7 +148,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
       include: {
         guild: true,
         chantiers: { orderBy: { updatedAt: "desc" } },
-        },
+      },
     });
 
     if (!town) {
@@ -153,16 +156,20 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     }
 
     // Vérifier et créer automatiquement le stock de vivres si nécessaire
-    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+      "Vivres"
+    );
     let vivresStock = null;
     if (vivresType) {
       vivresStock = await prisma.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
       });
     }
 
     if (!vivresStock) {
-      console.log(`Création automatique du stock de vivres pour la ville ${town.id}`);
+      console.log(
+        `Création automatique du stock de vivres pour la ville ${town.id}`
+      );
 
       try {
         if (vivresType) {
@@ -174,7 +181,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
               locationId: town.id,
               resourceTypeId: vivresType.id,
               quantity: 50,
-            }
+            },
           });
         } else {
           // Créer le type Vivres s'il n'existe pas
@@ -182,9 +189,9 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
             data: {
               name: "Vivres",
               description: "Ressource alimentaire de base",
-              emoji: "🍞",
-              category: "BASE"
-            }
+              emoji: HUNGER.ICON,
+              category: "BASE",
+            },
           });
 
           await prisma.resourceStock.create({
@@ -193,7 +200,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
               locationId: town.id,
               resourceTypeId: newVivresType.id,
               quantity: 50,
-            }
+            },
           });
         }
       } catch (error) {
@@ -204,13 +211,13 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     // Récupérer le stock de vivres final pour l'interface
     if (vivresType && !vivresStock) {
       vivresStock = await prisma.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
       });
     }
 
     const townWithVivres = {
       ...town,
-      foodStock: vivresStock?.quantity || 0
+      foodStock: vivresStock?.quantity || 0,
     };
 
     res.status(200).json(townWithVivres);
@@ -227,7 +234,7 @@ export const getTownById: RequestHandler = async (req, res, next) => {
       include: {
         guild: true,
         chantiers: { orderBy: { updatedAt: "desc" } },
-        },
+      },
     });
 
     if (!town) {
@@ -235,18 +242,20 @@ export const getTownById: RequestHandler = async (req, res, next) => {
     }
 
     // Récupérer le stock de vivres pour compatibilité avec l'interface existante
-    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+      "Vivres"
+    );
     let foodStockValue = 0;
     if (vivresType) {
       const vivresStock = await prisma.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
+        where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
       });
       foodStockValue = vivresStock?.quantity || 0;
     }
 
     const townWithVivres = {
       ...town,
-      foodStock: foodStockValue
+      foodStock: foodStockValue,
     };
 
     res.status(200).json(townWithVivres);
@@ -266,7 +275,9 @@ export const getAllTowns: RequestHandler = async (req, res, next) => {
     });
 
     // Get Vivres type
-    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull("Vivres");
+    const vivresType = await ResourceUtils.getResourceTypeByNameOrNull(
+      "Vivres"
+    );
 
     // For each town, fetch vivres stock
     const townsWithVivres = await Promise.all(
@@ -274,13 +285,13 @@ export const getAllTowns: RequestHandler = async (req, res, next) => {
         let foodStock = 0;
         if (vivresType) {
           const vivresStock = await prisma.resourceStock.findUnique({
-            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id)
+            where: ResourceQueries.stockWhere("CITY", town.id, vivresType.id),
           });
           foodStock = vivresStock?.quantity || 0;
         }
         return {
           ...town,
-          foodStock
+          foodStock,
         };
       })
     );
@@ -297,7 +308,10 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
     const { foodStock } = req.body;
 
     if (foodStock === undefined || foodStock < 0) {
-      throw createHttpError(400, "Le stock de vivres doit être un nombre positif");
+      throw createHttpError(
+        400,
+        "Le stock de vivres doit être un nombre positif"
+      );
     }
 
     // Récupérer le type de ressource "Vivres"
@@ -311,7 +325,7 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
         locationId: id,
         resourceTypeId: vivresType.id,
         quantity: foodStock,
-      }
+      },
     });
 
     res.status(200).json(resourceStock);
@@ -371,7 +385,7 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
     const town = await prisma.town.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!town) {
@@ -382,10 +396,10 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
     const resourceStocks = await prisma.resourceStock.findMany({
       where: {
         locationType: "CITY",
-        locationId: id
+        locationId: id,
       },
       ...ResourceQueries.withResourceType(),
-      orderBy: { resourceType: { name: "asc" } }
+      orderBy: { resourceType: { name: "asc" } },
     });
 
     if (resourceStocks.length === 0) {
@@ -395,7 +409,12 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
 
     // Créer un résumé lisible des stocks
     const summary = resourceStocks
-      .map(stock => `${stock.resourceType.emoji || "📦"} **${stock.resourceType.name}**: ${stock.quantity}`)
+      .map(
+        (stock) =>
+          `${stock.resourceType.emoji || "📦"} **${
+            stock.resourceType.name
+          }**: ${stock.quantity}`
+      )
       .join("\n");
 
     res.status(200).json({ summary });
@@ -407,7 +426,11 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
 /**
  * Récupère un résumé des expéditions en cours pour une ville
  */
-export const getTownExpeditionsSummary: RequestHandler = async (req, res, next) => {
+export const getTownExpeditionsSummary: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { id } = req.params;
     const town = await prisma.town.findUnique({ where: { id } });
@@ -420,14 +443,14 @@ export const getTownExpeditionsSummary: RequestHandler = async (req, res, next) 
     const activeExpeditions = await prisma.expedition.findMany({
       where: {
         townId: id,
-        status: "DEPARTED" // Changed from "EN_COURS" to "DEPARTED" to match the enum
+        status: "DEPARTED", // Changed from "EN_COURS" to "DEPARTED" to match the enum
       },
       include: {
         members: true,
         _count: {
-          select: { members: true }
-        }
-      }
+          select: { members: true },
+        },
+      },
     });
 
     if (activeExpeditions.length === 0) {
@@ -437,12 +460,18 @@ export const getTownExpeditionsSummary: RequestHandler = async (req, res, next) 
 
     // Créer un résumé lisible des expéditions
     const summary = activeExpeditions
-      .map(exp => {
+      .map((exp) => {
         if (!exp.returnAt) {
-          return `🏕️ **${exp.name}** - ${exp._count?.members || 0} membre(s) - Date de retour inconnue`;
+          return `🏕️ **${exp.name}** - ${
+            exp._count?.members || 0
+          } membre(s) - Date de retour inconnue`;
         }
-        const daysRemaining = Math.ceil((exp.returnAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        return `🏕️ **${exp.name}** - ${exp._count?.members || 0} membre(s) - Retour dans ${daysRemaining} jour(s)`;
+        const daysRemaining = Math.ceil(
+          (exp.returnAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        return `🏕️ **${exp.name}** - ${
+          exp._count?.members || 0
+        } membre(s) - Retour dans ${daysRemaining} jour(s)`;
       })
       .join("\n");
 
@@ -451,4 +480,3 @@ export const getTownExpeditionsSummary: RequestHandler = async (req, res, next) 
     next(error);
   }
 };
-

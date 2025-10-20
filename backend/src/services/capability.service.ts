@@ -887,11 +887,11 @@ export class CapabilityService {
   }
 
   /**
-   * Exécute une capacité de recherche (Analyser, Cartographier, Auspice)
+   * Exécute une capacité de recherche (Rechercher, Cartographier, Auspice)
    */
   async executeResearch(
     characterId: string,
-    researchType: 'analyser' | 'cartographier' | 'auspice',
+    researchType: 'rechercher' | 'cartographier' | 'auspice',
     paSpent: 1 | 2,
     _subject: string
   ): Promise<{ success: boolean; message: string }> {
