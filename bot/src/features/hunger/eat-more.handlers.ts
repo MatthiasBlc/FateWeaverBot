@@ -11,6 +11,7 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { sendLogMessage } from "../../utils/channels";
 
 /**
  * Handler pour le bouton "Manger +" qui affiche un menu avancé de gestion de la faim
@@ -295,6 +296,8 @@ async function handleEatResource(
       return;
     }
 
+    const initialHunger = character.hungerLevel;
+
     // Consommer les ressources
     for (let i = 0; i < quantity; i++) {
       try {
@@ -325,10 +328,50 @@ async function handleEatResource(
       interaction.guildId!
     );
 
+    const hungerGained = updatedCharacter.hungerLevel - initialHunger;
     const emoji = resourceName === "Vivres" ? RESOURCES.FOOD : RESOURCES.PREPARED_FOOD;
+
+    // Récupérer la localisation et les stocks restants
+    let locationType = "CITY";
+    let locationId = updatedCharacter.townId;
+    let locationName = "ville";
+
+    try {
+      const expeditions = await apiService.expeditions.getExpeditionsByTown(
+        updatedCharacter.townId
+      );
+
+      const activeExpedition = expeditions.find(
+        (exp: any) =>
+          exp.status === "DEPARTED" &&
+          exp.members?.some((m: any) => m.characterId === updatedCharacter.id)
+      );
+
+      if (activeExpedition) {
+        locationType = "EXPEDITION";
+        locationId = activeExpedition.id;
+        locationName = `expédition "${activeExpedition.name}"`;
+      }
+    } catch (error) {
+      logger.error("Erreur lors de la récupération de l'expédition:", error);
+    }
+
+    // Récupérer les stocks restants
+    const resources = await apiService.getResources(locationType, locationId);
+    const remainingStock =
+      resources.find((r: any) => r.resourceType.name === resourceName)?.quantity || 0;
+
+    // Message ephemeral pour l'utilisateur
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Vous avez mangé ${quantity}x ${emoji} ${resourceName}.\n${HUNGER.ICON} Faim: ${updatedCharacter.hungerLevel}/4 ${getHungerEmoji(updatedCharacter.hungerLevel)}`,
+      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.\n${HUNGER.ICON}`,
     });
+
+    // Message de log public
+    await sendLogMessage(
+      interaction.guildId!,
+      interaction.client,
+      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji} ${resourceName}**, il reste **${remainingStock}** ${resourceName} dans ${locationName}`
+    );
   } catch (error: any) {
     logger.error("Erreur dans handleEatResource:", error);
     await interaction.editReply({

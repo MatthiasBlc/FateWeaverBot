@@ -211,7 +211,7 @@ export async function handleEatAlternativeButton(
       interaction.guildId!,
       interaction.client,
       `🍽️ **${character.name || user.username
-      }** a mangé de un Repas, il reste **${eatResult.town.foodStock
+      }** a mangé un Repas, il reste **${eatResult.town.foodStock
       }** de ${eatResult.resourceTypeConsumed} dans ${stockSource}`
     );
   } catch (error: any) {
