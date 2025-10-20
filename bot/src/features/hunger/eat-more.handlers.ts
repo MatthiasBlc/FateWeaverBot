@@ -11,7 +11,6 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
-import { sendLogMessage } from "../../utils/channels";
 
 /**
  * Handler pour le bouton "Manger +" qui affiche un menu avancé de gestion de la faim
@@ -35,8 +34,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       return;
     }
 
-    // Vérifier que le personnage est vivant
-    if (character.isDead) {
+    // Vérifier que le personnage est vivant et a faim
+    if (character.hungerLevel === 0) {
       await replyEphemeral(
         interaction,
         `${STATUS.ERROR} Votre personnage est mort. Impossible de manger.`
@@ -84,7 +83,7 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       resources.find((r: any) => r.resourceType.name === "Vivres")?.quantity ||
       0;
     const nourritureStock =
-      resources.find((r: any) => r.resourceType.name === "Repas")
+      resources.find((r: any) => r.resourceType.name === "Nourriture")
         ?.quantity || 0;
 
     // Calculer les besoins
@@ -101,12 +100,12 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
     embed.addFields(
       {
         name: `📦 Stocks disponibles (${locationType === "CITY" ? "Ville" : "Expédition"})`,
-        value: `${RESOURCES.FOOD} Vivres : ${vivresStock}\n${RESOURCES.PREPARED_FOOD} Repas : ${nourritureStock}`,
+        value: `${RESOURCES.FOOD} Vivres : ${vivresStock}\n${RESOURCES.PREPARED_FOOD} Nourriture : ${nourritureStock}`,
         inline: false,
       },
       {
         name: `${STATUS.INFO} Rappel`,
-        value: `• ${RESOURCES.FOOD} Vivres : +1 faim\n• ${RESOURCES.PREPARED_FOOD} Repas : +1 faim`,
+        value: `• ${RESOURCES.FOOD} Vivres : +1 faim\n• ${RESOURCES.PREPARED_FOOD} Nourriture : +2 faim`,
         inline: false,
       }
     );
@@ -117,9 +116,9 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       alerts.push(
         `${STATUS.WARNING} Aucune ressource alimentaire disponible !`
       );
-    } else if (vivresStock < hungerNeed && nourritureStock < hungerNeed) {
+    } else if (vivresStock < hungerNeed && nourritureStock === 0) {
       alerts.push(
-        `${STATUS.WARNING} Stocks insuffisants pour atteindre la satiété !`
+        `${STATUS.WARNING} Stocks de vivres insuffisants pour atteindre la satiété !`
       );
     }
 
@@ -164,8 +163,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       );
     }
 
-    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= besoin)
-    const nourritureNeed = hungerNeed;
+    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= ceil(besoin/2))
+    const nourritureNeed = Math.ceil(hungerNeed / 2);
     if (hungerNeed > 1 && nourritureStock >= nourritureNeed) {
       buttons.push(
         new ButtonBuilder()
@@ -209,12 +208,12 @@ export async function handleEatVivre1Button(interaction: ButtonInteraction) {
 }
 
 /**
- * Handler pour manger 1 Repas
+ * Handler pour manger 1 nourriture
  */
 export async function handleEatNourriture1Button(
   interaction: ButtonInteraction
 ) {
-  await handleEatResource(interaction, "Repas", 1);
+  await handleEatResource(interaction, "Nourriture", 1);
 }
 
 /**
@@ -245,7 +244,7 @@ export async function handleEatVivreFull(interaction: ButtonInteraction) {
 }
 
 /**
- * Handler pour manger Repas à satiété
+ * Handler pour manger nourriture à satiété
  */
 export async function handleEatNourritureFull(interaction: ButtonInteraction) {
   try {
@@ -264,8 +263,8 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
     }
 
     const hungerNeed = 4 - character.hungerLevel;
-    const nourritureNeed = hungerNeed;
-    await handleEatResource(interaction, "Repas", nourritureNeed);
+    const nourritureNeed = Math.ceil(hungerNeed / 2);
+    await handleEatResource(interaction, "Nourriture", nourritureNeed);
   } catch (error: any) {
     logger.error("Erreur dans handleEatNourritureFull:", error);
     await replyError(interaction, "Erreur lors de la consommation.");
@@ -277,7 +276,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
  */
 async function handleEatResource(
   interaction: ButtonInteraction,
-  resourceName: "Vivres" | "Repas",
+  resourceName: "Vivres" | "Nourriture",
   quantity: number
 ) {
   try {
@@ -296,14 +295,9 @@ async function handleEatResource(
       return;
     }
 
-    const initialHunger = character.hungerLevel;
-
-    logger.info(`[EAT-MORE] Début consommation: ${quantity}x ${resourceName} pour ${character.name} (faim initiale: ${initialHunger})`);
-
     // Consommer les ressources
     for (let i = 0; i < quantity; i++) {
       try {
-        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity}...`);
         // Utiliser les méthodes API appropriées selon le type de ressource
         if (resourceName === "Vivres") {
           await apiService.characters.eatFood(character.id);
@@ -313,10 +307,9 @@ async function handleEatResource(
             resourceName
           );
         }
-        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity} réussie`);
       } catch (error: any) {
         logger.error(
-          `[EAT-MORE] Erreur lors de la consommation ${i + 1}/${quantity}:`,
+          `Erreur lors de la consommation ${i + 1}/${quantity}:`,
           error
         );
         await interaction.editReply({
@@ -326,59 +319,16 @@ async function handleEatResource(
       }
     }
 
-    logger.info(`[EAT-MORE] Toutes les consommations terminées`);
-
-
     // Récupérer l'état mis à jour
     const updatedCharacter = await getActiveCharacterForUser(
       interaction.user.id,
       interaction.guildId!
     );
 
-    const hungerGained = updatedCharacter.hungerLevel - initialHunger;
     const emoji = resourceName === "Vivres" ? RESOURCES.FOOD : RESOURCES.PREPARED_FOOD;
-
-    // Récupérer la localisation et les stocks restants
-    let locationType = "CITY";
-    let locationId = updatedCharacter.townId;
-    let locationName = "ville";
-
-    try {
-      const expeditions = await apiService.expeditions.getExpeditionsByTown(
-        updatedCharacter.townId
-      );
-
-      const activeExpedition = expeditions.find(
-        (exp: any) =>
-          exp.status === "DEPARTED" &&
-          exp.members?.some((m: any) => m.characterId === updatedCharacter.id)
-      );
-
-      if (activeExpedition) {
-        locationType = "EXPEDITION";
-        locationId = activeExpedition.id;
-        locationName = `expédition "${activeExpedition.name}"`;
-      }
-    } catch (error) {
-      logger.error("Erreur lors de la récupération de l'expédition:", error);
-    }
-
-    // Récupérer les stocks restants
-    const resources = await apiService.getResources(locationType, locationId);
-    const remainingStock =
-      resources.find((r: any) => r.resourceType.name === resourceName)?.quantity || 0;
-
-    // Message ephemeral pour l'utilisateur
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.`,
+      content: `${STATUS.SUCCESS} Vous avez mangé ${quantity}x ${emoji} ${resourceName}.\n${HUNGER.ICON} Faim: ${updatedCharacter.hungerLevel}/4 ${getHungerEmoji(updatedCharacter.hungerLevel)}`,
     });
-
-    // Message de log public
-    await sendLogMessage(
-      interaction.guildId!,
-      interaction.client,
-      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji} ${resourceName}**, il reste **${remainingStock}** ${resourceName} dans ${locationName}`
-    );
   } catch (error: any) {
     logger.error("Erreur dans handleEatResource:", error);
     await interaction.editReply({
@@ -393,13 +343,13 @@ async function handleEatResource(
 function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return HUNGER.STARVATION;
+      return HUNGER.DEAD;
     case 1:
-      return HUNGER.STARVING;
+      return HUNGER.AGONY;
     case 2:
-      return HUNGER.HUNGRY;
+      return HUNGER.STARVING;
     case 3:
-      return HUNGER.APPETITE;
+      return HUNGER.HUNGRY;
     case 4:
       return HUNGER.FED;
     default:

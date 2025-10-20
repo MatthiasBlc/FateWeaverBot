@@ -52,10 +52,10 @@ router.get(
 // Met à jour les statistiques d'un personnage (PA, faim, etc.)
 router.patch("/:id/stats", CharacterController.updateCharacterStats);
 
-// Permettre à un personnage de manger des Vivres
+// Permettre à un personnage de manger de la nourriture
 router.post("/:id/eat", CharacterController.eatFood);
 
-// Permettre à un personnage de manger un type de nourriture alternatif (Repas, etc.)
+// Permettre à un personnage de manger un type de nourriture alternatif
 router.post("/:id/eat-alternative", CharacterController.eatFoodAlternative);
 
 // Gestion des capacités du personnage

@@ -47,7 +47,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=development
-      - TZ=Europe/Paris
       - DATABASE_URL=postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypass}@postgres:5432/${POSTGRES_DB:-mydb}?schema=public
       - PORT=3000
       - CORS_ORIGIN=*
@@ -85,7 +84,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=development
-      - TZ=Europe/Paris
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}

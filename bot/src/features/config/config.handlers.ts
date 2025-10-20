@@ -24,7 +24,6 @@ import {
   replySuccess,
 } from "../../utils/interaction-helpers.js";
 import { logger } from "../../services/logger.js";
-import { CONFIG } from "@shared/constants/emojis";
 
 interface GuildConfig {
   id: string;
@@ -206,14 +205,14 @@ async function showChannelSelection(
   // Limiter à 25 salons (limite Discord)
   const channelsToShow = textChannels.first(25);
 
-  const menuOptions: Array<{label: string; description: string; value: string; emoji?: string}> = channelsToShow.map((channel) => ({
+  const menuOptions = channelsToShow.map((channel) => ({
     label: channel.name,
     description:
       channel.id === currentChannel?.id
         ? `Salon actuel: #${channel.name}`
         : `Salon: #${channel.name}`,
     value: channel.id,
-    emoji: channel.id === currentChannel?.id ? CONFIG.SUCCESS : undefined,
+    emoji: channel.id === currentChannel?.id ? "✅" : undefined,
   }));
 
   // Option pour désactiver
@@ -222,7 +221,7 @@ async function showChannelSelection(
       label: "Aucun salon (désactiver)",
       description: `Désactiver ${channelType === "logs" ? "les logs" : "les messages quotidiens"}`,
       value: "none",
-      emoji: CONFIG.DISABLED,
+      emoji: "🚫",
     });
   }
 
@@ -235,7 +234,7 @@ async function showChannelSelection(
 
   const typeLabel =
     channelType === "logs" ? "logs automatiques" : "messages quotidiens";
-  const typeEmoji = channelType === "logs" ? CONFIG.LIST : CONFIG.SUNRISE;
+  const typeEmoji = channelType === "logs" ? "📋" : "🌅";
 
   let embedDescription = `Choisissez le salon pour **${typeLabel}**.\n\n`;
 

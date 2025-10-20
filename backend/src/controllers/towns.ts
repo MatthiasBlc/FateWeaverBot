@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
-import { HUNGER } from "@shared/constants/emojis";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -102,7 +101,7 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
             data: {
               name: "Vivres",
               description: "Ressource alimentaire de base",
-              emoji: HUNGER.ICON,
+              emoji: "🍞",
               category: "BASE"
             }
           });
@@ -210,7 +209,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
             data: {
               name: "Vivres",
               description: "Ressource alimentaire de base",
-              emoji: HUNGER.ICON,
+              emoji: "🍞",
               category: "BASE"
             }
           });
