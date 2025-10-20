@@ -24,11 +24,16 @@ COPY ./backend .
 # Construction de l'application
 RUN npm run build
 
+# Vérification de la structure du build avec plus de détails
+RUN echo "=== Vérification après build ===" && \
+    ls -la /app/dist/ && \
+    echo "=== Fichiers JS générés ===" && \
+    find /app/dist -name "*.js" | head -20 && \
+    echo "=== Vérification server.js ===" && \
+    test -f /app/dist/server.js && echo "✅ server.js trouvé" || echo "❌ server.js manquant"
+
 # Compilation du fichier de seeding
 RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
-
-# Vérification de la structure du build
-RUN echo "=== Contenu de /app/dist ===" && ls -la /app/dist/ && echo "=== Fichiers dans dist ===" && find /app/dist -type f -name "*.js" | head -20
 
 # Suppression des dépendances de développement
 RUN npm prune --production
