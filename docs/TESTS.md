@@ -557,3 +557,4 @@ Capacité Auspice devrait utiliser :CAPABILITIES.AUGURING
 Capacité Divertir devrait utiliser :CAPABILITIES.ENTERTAIN
 
 Vérifier et documenter les emoji's du fichier shared/constats/emojis.ts avec les emoji's utilisés dans le backend et le seed(actuellement il n'y a que le côté bot qui a été regardé).
+z
