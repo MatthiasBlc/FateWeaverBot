@@ -73,7 +73,7 @@ export async function handleViewStockCommand(interaction: any) {
 
     // Définir l'ordre des groupes de ressources (brut, transformation, science)
     const resourceOrder = [
-      ['Vivres', 'Nourriture'],
+      ['Vivres', 'Repas'],
       ['Bois', 'Planches'],
       ['Minerai', 'Métal'],
       ['Tissu'],
