@@ -127,45 +127,6 @@ export class ButtonHandler {
       }
     });
 
-    // Gestionnaire pour les boutons de nourriture alternative
-    this.registerHandlerByPrefix("eat_nourriture", async (interaction) => {
-      await interaction.deferUpdate();
-
-      try {
-        const { handleEatAlternativeButton } = await import(
-          "../features/hunger/hunger.handlers.js"
-        );
-
-        // Extraire l'ID du personnage de l'ID personnalisé du bouton
-        const characterId = interaction.customId.split(":")[1];
-
-        if (!characterId) {
-          throw new Error("ID du personnage manquant dans l'ID du bouton");
-        }
-
-        // Récupérer le personnage par son ID
-        const character = await apiService.characters.getCharacterById(characterId);
-
-        if (!character) {
-          await interaction.editReply({
-            content: "❌ Personnage introuvable.",
-            embeds: [],
-            components: [],
-          });
-          return;
-        }
-
-        await handleEatAlternativeButton(interaction, character);
-      } catch (error) {
-        logger.error("Error handling eat nourriture button:", { error });
-        await interaction.editReply({
-          content: "❌ Une erreur est survenue lors de l'action de manger.",
-          embeds: [],
-          components: [],
-        });
-      }
-    });
-
     // Gestionnaire pour le bouton "Manger +" (menu avancé)
     this.registerHandlerByPrefix("eat_more", async (interaction) => {
       try {
@@ -877,6 +838,40 @@ export class ButtonHandler {
         logger.error("Error handling cartography PA choice:", { error });
         await interaction.reply({
           content: "❌ Erreur lors du choix de PA pour cartographier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== RESEARCHING HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour rechercher
+    this.registerHandlerByPrefix("researching_pa:", async (interaction) => {
+      try {
+        const { handleResearchingPAChoice } = await import(
+          "../features/users/researching.handlers.js"
+        );
+        await handleResearchingPAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling researching PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour rechercher.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== AUSPICE HANDLERS ===================
+    // Gestionnaire pour le choix de PA pour auspice
+    this.registerHandlerByPrefix("auspice_pa:", async (interaction) => {
+      try {
+        const { handleAuspicePAChoice } = await import(
+          "../features/users/auspice.handlers.js"
+        );
+        await handleAuspicePAChoice(interaction);
+      } catch (error) {
+        logger.error("Error handling auspice PA choice:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du choix de PA pour auspice.",
           flags: ["Ephemeral"],
         });
       }

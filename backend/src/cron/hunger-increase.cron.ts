@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
+import { applyAgonyRules } from "../util/agony";
 
 const prisma = new PrismaClient();
 
@@ -27,24 +28,30 @@ async function increaseAllCharactersHunger() {
       const updateData: any = {};
 
       // STEP 1: Heal HP if hungerLevel = 4 (Satiété) BEFORE decreasing hunger
+      let newHp = character.hp;
       if (character.hungerLevel === 4 && character.hp < 5) {
-        updateData.hp = Math.min(5, character.hp + 1);
+        newHp = Math.min(5, character.hp + 1);
+        updateData.hp = newHp;
         healedCount++;
       }
 
       // STEP 2: Decrease hunger level
-      const newLevel = Math.max(0, character.hungerLevel - 1);
-      updateData.hungerLevel = newLevel;
+      const newHunger = Math.max(0, character.hungerLevel - 1);
+      updateData.hungerLevel = newHunger;
 
-      // STEP 3: When hunger reaches 0, set HP to 1 (Agonie) and mark agonySince if not already set
-      if (newLevel === 0) {
-        updateData.hp = 1;
-        // Mark agony start date if not already in agony
-        if (character.hp !== 1 || !character.agonySince) {
-          updateData.agonySince = new Date();
-        }
-        // Don't set isDead = true - characters in agony are not dead
-      }
+      // STEP 3: Apply agony rules (handles hunger=0 → hp=1 and agonySince)
+      const agonyUpdate = applyAgonyRules(
+        newHp, // Use potentially healed HP
+        character.hungerLevel,
+        character.agonySince,
+        newHp !== character.hp ? newHp : undefined, // Only if HP changed from healing
+        newHunger
+      );
+
+      // Merge agony updates
+      if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
+      if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
+      if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
 
       await prisma.character.update({
         where: { id: character.id },
@@ -53,7 +60,7 @@ async function increaseAllCharactersHunger() {
 
       updatedCount++;
 
-      if (newLevel === 0) {
+      if (newHunger === 0) {
         deaths.push({
           name: character.name || character.user.username,
           guild: character.town.guild.name,

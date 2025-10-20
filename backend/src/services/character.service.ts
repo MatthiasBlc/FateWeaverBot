@@ -583,6 +583,20 @@ export class CharacterService {
           paToUse || 1
         );
         break;
+      case "rechercher":
+        result = await this.useResearchingCapability(
+          character,
+          capability,
+          paToUse || 1
+        );
+        break;
+      case "auspice":
+        result = await this.useAuspiceCapability(
+          character,
+          capability,
+          paToUse || 1
+        );
+        break;
       case "miner":
         if (!this.capabilityService) {
           throw new Error("Service de capacité non initialisé");
@@ -601,7 +615,6 @@ export class CharacterService {
       // Préparer les données de mise à jour
       const updateData: any = {
         paTotal: character.paTotal - paToDeduct,
-        lastPaUpdate: new Date(),
         updatedAt: new Date(),
       };
 
@@ -1034,6 +1047,66 @@ export class CharacterService {
 
     const message = `Vous travaillez sur vos cartes (coût : ${paToUse} PA). Les administrateurs ont été notifiés et vous donneront les résultats de votre exploration.`;
     const publicMessage = `🗺️ **${character.name}** travaille sur ses cartes ! (**${paToUse} PA dépensés** {ADMIN_TAG})`;
+
+    return {
+      success: true,
+      message,
+      publicMessage,
+      loot: {},
+      paUsed: paToUse,
+    };
+  }
+
+  /**
+   * Capacité de recherche
+   */
+  /**
+   * Utilise la capacité de recherche
+   * @param character Le personnage qui utilise la capacité
+   * @param capability La capacité utilisée
+   * @param paToUse Nombre de PA à utiliser (1 ou 2)
+   */
+  private async useResearchingCapability(
+    character: CharacterWithCapabilities,
+    capability: Capability,
+    paToUse: number
+  ): Promise<CapabilityResult> {
+    // La recherche est une capacité admin-interpreted
+    // Elle ne génère pas de loot automatiquement, mais notifie les admins
+
+    const infoCount = paToUse === 1 ? 1 : 3;
+    const message = `Vous effectuez vos recherches (coût : ${paToUse} PA, ${infoCount} info(s)). Les administrateurs ont été notifiés et vous donneront les résultats de vos analyses.`;
+    const publicMessage = `🔎 **${character.name}** effectue des recherches ! (**${paToUse} PA dépensés, ${infoCount} info(s)** {ADMIN_TAG})`;
+
+    return {
+      success: true,
+      message,
+      publicMessage,
+      loot: {},
+      paUsed: paToUse,
+    };
+  }
+
+  /**
+   * Capacité d'auspice (météo)
+   */
+  /**
+   * Utilise la capacité d'auspice
+   * @param character Le personnage qui utilise la capacité
+   * @param capability La capacité utilisée
+   * @param paToUse Nombre de PA à utiliser (1 ou 2)
+   */
+  private async useAuspiceCapability(
+    character: CharacterWithCapabilities,
+    capability: Capability,
+    paToUse: number
+  ): Promise<CapabilityResult> {
+    // L'auspice est une capacité admin-interpreted
+    // Elle ne génère pas de loot automatiquement, mais notifie les admins
+
+    const daysCount = paToUse === 1 ? 1 : 3;
+    const message = `Vous observez les cieux (coût : ${paToUse} PA, ${daysCount} jour(s)). Les administrateurs ont été notifiés et vous donneront les prévisions météorologiques.`;
+    const publicMessage = `🌦️ **${character.name}** observe les cieux pour prédire la météo ! (**${paToUse} PA dépensés, ${daysCount} jour(s)** {ADMIN_TAG})`;
 
     return {
       success: true,
