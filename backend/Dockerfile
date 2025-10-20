@@ -4,9 +4,6 @@ FROM node:18.18-alpine3.17 AS builder
 # Création des dossiers nécessaires
 WORKDIR /app
 
-# Copie du dossier shared dans le parent de /app
-COPY ./shared /shared
-
 # Copie des fichiers de configuration
 COPY ./backend/package*.json ./
 COPY ./backend/prisma ./prisma/
@@ -23,6 +20,9 @@ COPY ./backend/src ./src
 
 # Construction de l'application
 RUN npm run build
+
+# Copie du dossier shared APRÈS la compilation (pour l'exécution seulement)
+COPY ./shared /shared
 
 # Vérification de la structure du build avec plus de détails
 RUN echo "=== Vérification après build ===" && \
