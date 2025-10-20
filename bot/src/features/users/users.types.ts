@@ -8,7 +8,6 @@ export interface ProfileData {
     hungerLevel: number;
     hp: number;
     pm: number;
-    isDead?: boolean;
     job?: {
       id: number;
       name: string;
