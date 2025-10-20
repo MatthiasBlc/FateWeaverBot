@@ -102,8 +102,17 @@ Meurt de faim = 0 (passe directement en status Agonie) ✅
 - La nourriture ne peut jamais tuer ou réduire la faim
 - Maximum de faim = 4 (Satiété)
 
-2 - Agonie doit être géré indépendemment (mais il me semble que c'est fait, à confirmer)
-en Agonie, le character ne peut plus utiliser de PA d'aucune manière que ce soit
+2 - Agonie doit être géré indépendamment ✅ IMPLÉMENTÉ
+
+**Règles d'entrée en Agonie:**
+- Si HP tombe à 1 (de quelconque manière) → Agonie automatique (agonySince défini)
+- Si hunger tombe à 0 (de quelconque manière) → HP forcé à 1 ET Agonie (agonySince défini)
+- Fonctionne partout: CRON quotidiens, /character-admin, cataplasme, nourriture
+
+**Restrictions en Agonie:**
+- Le personnage NE PEUT PLUS utiliser de PA d'aucune manière que ce soit ✅
+- Timer de 2 jours avant mort définitive
+- Sortie d'agonie: HP > 1 (via cataplasme ou satiété)
 
 3 - Comment fonctionne l'agonie dans le code actuellement ?
 

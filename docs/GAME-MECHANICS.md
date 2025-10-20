@@ -67,6 +67,11 @@ Characters can eat to restore hunger:
 
 - **Death Check:** If HP reaches 0, character dies (`isDead=true`) during daily update
 - **Agonie State:** At HP=1, character cannot use PA (any action blocked)
+  - **Entry Triggers:**
+    - HP drops to 1 from any cause (damage, admin edit, etc.) → Agony starts
+    - Hunger reaches 0 from any cause → HP forced to 1 AND agony starts
+  - **Exit Condition:** HP increases to 2 or more → Agony ends (`agonySince` cleared)
+  - **Death Timer:** After 2 days in agony → Death (`isDead=true`, `hp=0`)
 - **Healing Options:**
   - **Natural:** Eating at hunger level 4 (Satiété) → +1 HP per day
   - **Cataplasme:** Use a cataplasme (science resource) → +1 HP instantly
