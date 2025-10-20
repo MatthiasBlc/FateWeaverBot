@@ -54,7 +54,7 @@ function createEatEmbed(
 }
 
 
-// Fonction pour gérer le bouton de nourriture (pour les interactions de boutons)
+// Fonction pour gérer le bouton de Vivres (pour les interactions de boutons)
 export async function handleEatButton(interaction: any, character: any) {
   const member = interaction.member as GuildMember;
   const user = interaction.user;
@@ -157,7 +157,7 @@ export async function handleEatButton(interaction: any, character: any) {
   }
 }
 
-// Fonction pour gérer le bouton de nourriture alternative (pour les interactions de boutons)
+// Fonction pour gérer le bouton de nourriture alternative (Repas, etc.)
 export async function handleEatAlternativeButton(
   interaction: any,
   character: any
@@ -177,7 +177,7 @@ export async function handleEatAlternativeButton(
     }
 
     logger.info(
-      `[handleEatAlternativeButton] Tentative de manger nourriture pour le personnage:`,
+      `[handleEatAlternativeButton] Tentative de manger Repas pour le personnage:`,
       {
         characterId: character.id,
         characterName: character.name,
@@ -186,7 +186,7 @@ export async function handleEatAlternativeButton(
       }
     );
 
-    // Tenter de faire manger le personnage avec de la nourriture
+    // Tenter de faire manger le personnage avec un Repas
     const eatResult = await apiService.characters.eatFoodAlternative(
       character.id,
       "Repas"
@@ -211,11 +211,11 @@ export async function handleEatAlternativeButton(
       interaction.guildId!,
       interaction.client,
       `🍽️ **${character.name || user.username
-      }** a mangé de un Repas, il reste **${eatResult.town.foodStock
+      }** a mangé un Repas, il reste **${eatResult.town.foodStock
       }** de ${eatResult.resourceTypeConsumed} dans ${stockSource}`
     );
   } catch (error: any) {
-    logger.warn("Bouton manger nourriture - situation non-error gérée:", {
+    logger.warn("Bouton manger Repas - situation non-error gérée:", {
       error: error.message,
       responseData: error.response?.data,
       status: error.status,
@@ -258,7 +258,7 @@ export async function handleEatAlternativeButton(
       error.message?.includes("nécessaires")
     ) {
       errorMessage =
-        "❌ L'expédition n'a pas assez de nourriture pour votre repas.";
+        "❌ L'expédition n'a pas assez de Repas.";
     }
 
     // Modifier la réponse avec le message d'erreur et supprimer les boutons

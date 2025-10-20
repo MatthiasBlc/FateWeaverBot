@@ -50,21 +50,16 @@ export class SeasonService {
 
   /**
    * Vérifie et met à jour la saison si nécessaire
+   * Cette méthode est appelée tous les lundis à minuit par le CRON
+   * Elle alterne TOUJOURS la saison, indépendamment des changements manuels
    */
   async checkAndUpdateSeason(): Promise<{ changed: boolean; newSeason?: PrismaSeason }> {
-    if (!this.lastUpdate) {
+    if (!this.currentSeason) {
       await this.initialize();
     }
 
-    const now = new Date();
-    const timeSinceLastUpdate = now.getTime() - this.lastUpdate!.getTime();
-
-    // Vérifier si une semaine s'est écoulée depuis la dernière mise à jour
-    if (timeSinceLastUpdate >= this.SEASON_DURATION) {
-      return this.toggleSeason();
-    }
-
-    return { changed: false };
+    logger.info('Changement automatique de saison (lundi minuit)');
+    return this.toggleSeason();
   }
 
   /**

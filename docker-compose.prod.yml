@@ -42,6 +42,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - TZ=Europe/Paris
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fateweaver-postgres:5432/${POSTGRES_DB}?schema=backend&connection_limit=20&pool_timeout=30
       - PORT=3000
       - NODE_OPTIONS=--max-old-space-size=1024
@@ -75,6 +76,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - TZ=Europe/Paris
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - API_URL=http://fateweaver-backend:3000
