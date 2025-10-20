@@ -2,6 +2,8 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { prisma } from "../util/db";
 import { HUNGER } from "@shared/constants/emojis";
+import { ResourceUtils } from "../shared/utils";
+import { ResourceQueries } from "../infrastructure/database/query-builders";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -398,7 +400,7 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
         locationType: "CITY",
         locationId: id,
       },
-      ...ResourceQueries.withResourceType(),
+      include: { resourceType: true },
       orderBy: { resourceType: { name: "asc" } },
     });
 

@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
 import { applyAgonyRules } from "../util/agony";
+import { CharacterQueries } from "../infrastructure/database/query-builders";
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,11 @@ async function increaseAllCharactersHunger() {
 
     const characters = await prisma.character.findMany({
       where: { isDead: false },
-      ...CharacterQueries.baseInclude(),
+      include: {
+        user: true,
+        town: { include: { guild: true } },
+        job: true
+      }
     });
 
     console.log(
