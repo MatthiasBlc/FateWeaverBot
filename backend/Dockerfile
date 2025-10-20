@@ -10,7 +10,6 @@ COPY ./shared /shared
 # Copie des fichiers de configuration et de dépendances
 COPY ./backend/package*.json ./
 COPY ./backend/prisma ./prisma/
-COPY ./backend/tsconfig.json ./
 
 # Installation des dépendances
 RUN npm ci
@@ -18,8 +17,9 @@ RUN npm ci
 # Génération du client Prisma
 RUN npx prisma generate
 
-# Copie du code source
-COPY ./backend .
+# Copie du code source (sans écraser les fichiers de config déjà copiés)
+COPY ./backend/src ./src
+COPY ./backend/tsconfig.json ./
 
 # Construction de l'application
 RUN npm run build
@@ -28,9 +28,9 @@ RUN npm run build
 RUN echo "=== Vérification après build ===" && \
     ls -la /app/dist/ && \
     echo "=== Fichiers JS générés ===" && \
-    find /app/dist -name "*.js" | head -20 && \
-    echo "=== Vérification server.js ===" && \
-    test -f /app/dist/server.js && echo "✅ server.js trouvé" || echo "❌ server.js manquant"
+    find /app/dist -maxdepth 2 -name "*.js" | head -20 && \
+    echo "=== Vérification server.js à la racine ===" && \
+    test -f /app/dist/server.js && echo "✅ server.js trouvé à /app/dist/server.js" || echo "❌ server.js manquant à la racine"
 
 # Compilation du fichier de seeding
 RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
