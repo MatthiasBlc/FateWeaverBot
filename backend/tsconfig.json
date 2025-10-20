@@ -47,7 +47,8 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/shared"
+    "src/shared",
+    "../shared"
   ],
   "ts-node": {
     "files": true,

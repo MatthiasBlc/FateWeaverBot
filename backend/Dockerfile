@@ -4,9 +4,6 @@ FROM node:18.18-alpine3.17 AS builder
 # Création des dossiers nécessaires
 WORKDIR /app
 
-# Copie du dossier shared dans le parent de /app
-COPY ./shared /shared
-
 # Copie des fichiers de configuration
 COPY ./backend/package*.json ./
 COPY ./backend/prisma ./prisma/
@@ -17,6 +14,9 @@ RUN npm ci
 
 # Génération du client Prisma
 RUN npx prisma generate
+
+# Copie du dossier shared AVANT la compilation (nécessaire pour les imports)
+COPY ./shared ../shared
 
 # Copie du code source
 COPY ./backend/src ./src
