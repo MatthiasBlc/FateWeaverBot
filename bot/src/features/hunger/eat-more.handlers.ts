@@ -298,9 +298,12 @@ async function handleEatResource(
 
     const initialHunger = character.hungerLevel;
 
+    logger.info(`[EAT-MORE] Début consommation: ${quantity}x ${resourceName} pour ${character.name} (faim initiale: ${initialHunger})`);
+
     // Consommer les ressources
     for (let i = 0; i < quantity; i++) {
       try {
+        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity}...`);
         // Utiliser les méthodes API appropriées selon le type de ressource
         if (resourceName === "Vivres") {
           await apiService.characters.eatFood(character.id);
@@ -310,9 +313,10 @@ async function handleEatResource(
             resourceName
           );
         }
+        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity} réussie`);
       } catch (error: any) {
         logger.error(
-          `Erreur lors de la consommation ${i + 1}/${quantity}:`,
+          `[EAT-MORE] Erreur lors de la consommation ${i + 1}/${quantity}:`,
           error
         );
         await interaction.editReply({
@@ -321,6 +325,9 @@ async function handleEatResource(
         return;
       }
     }
+
+    logger.info(`[EAT-MORE] Toutes les consommations terminées`);
+
 
     // Récupérer l'état mis à jour
     const updatedCharacter = await getActiveCharacterForUser(
@@ -363,7 +370,7 @@ async function handleEatResource(
 
     // Message ephemeral pour l'utilisateur
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.\n${HUNGER.ICON}`,
+      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.`,
     });
 
     // Message de log public
