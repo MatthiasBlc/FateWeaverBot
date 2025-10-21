@@ -4,7 +4,11 @@ import {
   CapabilityCategory,
 } from "@prisma/client";
 import { getHuntYield, getGatherYield } from "../util/capacityRandom";
-import { consumePA, validateCanUsePA } from "../util/character-validators";
+import {
+  consumePA,
+  validateCanUsePA,
+  hasLuckyRollBonus,
+} from "../util/character-validators";
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
@@ -14,7 +18,7 @@ type CapabilityWithRelations = PrismaCapability & {
 };
 
 export class CapabilityService {
-  constructor(private prisma: PrismaClient) { }
+  constructor(private prisma: PrismaClient) {}
 
   /**
    * Récupère toutes les capacités disponibles
@@ -193,9 +197,13 @@ export class CapabilityService {
   async executeHarvestCapacity(
     characterId: string,
     capabilityName: string,
-    isSummer: boolean,
-    luckyRoll: boolean = false
-  ): Promise<{ success: boolean; foodGained: number; message: string }> {
+    isSummer: boolean
+  ): Promise<{
+    success: boolean;
+    foodGained: number;
+    message: string;
+    luckyRollUsed?: boolean;
+  }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -216,6 +224,13 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
+    const hasBonus = await hasLuckyRollBonus(
+      characterId,
+      capability.id,
+      this.prisma
+    );
+
     // Vérifier les PA et les restrictions (Agonie, Déprime)
     validateCanUsePA(character, capability.costPA);
 
@@ -225,13 +240,19 @@ export class CapabilityService {
 
     switch (capabilityName.toLowerCase()) {
       case "chasser":
-        foodGained = getHuntYield(isSummer);
+        foodGained = getHuntYield(isSummer, hasBonus);
         message = `🦌 ${character.name} est revenu de la chasse avec ${foodGained} vivres !`;
+        if (hasBonus) {
+          message += " ⭐ (Lucky Roll)";
+        }
         break;
 
       case "cueillir":
-        foodGained = getGatherYield(isSummer);
+        foodGained = getGatherYield(isSummer, hasBonus);
         message = `🌿 ${character.name} a cueilli ${foodGained} vivres.`;
+        if (hasBonus) {
+          message += " ⭐ (Lucky Roll)";
+        }
         break;
 
       default:
@@ -243,20 +264,28 @@ export class CapabilityService {
       this.prisma.character.update({
         where: { id: characterId },
         data: {
-          paTotal: { decrement: capability.costPA * (luckyRoll ? 2 : 1) },
-          paUsedToday: { increment: capability.costPA * (luckyRoll ? 2 : 1) }
+          paTotal: { decrement: capability.costPA },
+          paUsedToday: { increment: capability.costPA },
         },
       }),
       // Ajouter les vivres au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, (await this.prisma.resourceType.findFirst({ where: { name: "Vivres" } }))!.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          (await this.prisma.resourceType.findFirst({
+            where: { name: "Vivres" },
+          }))!.id
+        ),
         update: {
           quantity: { increment: foodGained },
         },
         create: {
           locationType: "CITY",
           locationId: character.townId,
-          resourceTypeId: (await this.prisma.resourceType.findFirst({ where: { name: "Vivres" } }))!.id,
+          resourceTypeId: (await this.prisma.resourceType.findFirst({
+            where: { name: "Vivres" },
+          }))!.id,
           quantity: foodGained,
         },
       }),
@@ -272,13 +301,18 @@ export class CapabilityService {
       capabilityName
     );
 
-    return { success: true, foodGained, message };
+    return { success: true, foodGained, message, luckyRollUsed: hasBonus };
   }
 
   /**
    * Exécute la capacité Couper du bois
    */
-  async executeCouperDuBois(characterId: string): Promise<{ success: boolean; woodGained: number; message: string }> {
+  async executeCouperDuBois(characterId: string): Promise<{
+    success: boolean;
+    woodGained: number;
+    message: string;
+    luckyRollUsed?: boolean;
+  }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -303,19 +337,34 @@ export class CapabilityService {
     const departedExpedition = await this.prisma.expeditionMember.findFirst({
       where: {
         characterId,
-        expedition: { status: "DEPARTED" }
-      }
+        expedition: { status: "DEPARTED" },
+      },
     });
 
     if (departedExpedition) {
       throw new Error("Impossible de Couper du bois en expédition DEPARTED");
     }
 
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
+    const hasBonus = await hasLuckyRollBonus(
+      characterId,
+      capability.id,
+      this.prisma
+    );
+
     // Vérifier les PA et les restrictions (Agonie, Déprime)
     validateCanUsePA(character, capability.costPA);
 
     // Calculer le rendement (2-3 bois)
-    const woodGained = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    let woodGained: number;
+    if (hasBonus) {
+      // LUCKY_ROLL : deux tirages, on garde le meilleur
+      const roll1 = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      const roll2 = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      woodGained = Math.max(roll1, roll2);
+    } else {
+      woodGained = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    }
 
     // Récupérer le type de ressource "Bois"
     const boisType = await ResourceUtils.getResourceTypeByName("Bois");
@@ -331,7 +380,11 @@ export class CapabilityService {
       }),
       // Ajouter le bois au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, boisType.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          boisType.id
+        ),
         update: {
           quantity: { increment: woodGained },
         },
@@ -354,10 +407,15 @@ export class CapabilityService {
       "Couper du bois"
     );
 
+    const message = hasBonus
+      ? `Vous avez récolté ${woodGained} bois ⭐ (Lucky Roll)`
+      : `Vous avez récolté ${woodGained} bois`;
+
     return {
       success: true,
       woodGained,
-      message: `Vous avez récolté ${woodGained} bois`,
+      message,
+      luckyRollUsed: hasBonus,
     };
   }
 
@@ -370,6 +428,7 @@ export class CapabilityService {
     message: string;
     publicMessage: string;
     loot?: { [key: string]: number };
+    luckyRollUsed?: boolean;
   }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
@@ -395,19 +454,34 @@ export class CapabilityService {
     const departedExpedition = await this.prisma.expeditionMember.findFirst({
       where: {
         characterId,
-        expedition: { status: "DEPARTED" }
-      }
+        expedition: { status: "DEPARTED" },
+      },
     });
 
     if (departedExpedition) {
       throw new Error("Impossible de Miner en expédition DEPARTED");
     }
 
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
+    const hasBonus = await hasLuckyRollBonus(
+      characterId,
+      capability.id,
+      this.prisma
+    );
+
     // Vérifier les PA et les restrictions (Agonie, Déprime)
     validateCanUsePA(character, capability.costPA);
 
     // Calculer le rendement (2-6 minerai)
-    const oreGained = Math.floor(Math.random() * 5) + 2; // 2-6
+    let oreGained: number;
+    if (hasBonus) {
+      // LUCKY_ROLL : deux tirages, on garde le meilleur
+      const roll1 = Math.floor(Math.random() * 5) + 2; // 2-6
+      const roll2 = Math.floor(Math.random() * 5) + 2; // 2-6
+      oreGained = Math.max(roll1, roll2);
+    } else {
+      oreGained = Math.floor(Math.random() * 5) + 2; // 2-6
+    }
 
     // Récupérer le type de ressource "Minerai"
     const mineraiType = await ResourceUtils.getResourceTypeByName("Minerai");
@@ -423,7 +497,11 @@ export class CapabilityService {
       }),
       // Ajouter le minerai au stock de la ville
       this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, mineraiType.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          mineraiType.id
+        ),
         update: {
           quantity: { increment: oreGained },
         },
@@ -446,20 +524,34 @@ export class CapabilityService {
       "Miner"
     );
 
-    const message = `De retour des montagnes. Tu as trouvé un nouveau filon et extrait ${oreGained} ⚙️`;
-    const publicMessage = `⛏️ ${character.name} a trouvé un joli filon et revient avec ${oreGained} ⚙️`;
+    const message = hasBonus
+      ? `De retour des montagnes. Tu as trouvé un nouveau filon et extrait ${oreGained} ⚙️ ⭐ (Lucky Roll)`
+      : `De retour des montagnes. Tu as trouvé un nouveau filon et extrait ${oreGained} ⚙️`;
+    const publicMessage = hasBonus
+      ? `⛏️ ${character.name} a trouvé un joli filon et revient avec ${oreGained} ⚙️ ⭐`
+      : `⛏️ ${character.name} a trouvé un joli filon et revient avec ${oreGained} ⚙️`;
     return {
       success: true,
       oreGained,
       message,
       publicMessage,
+      luckyRollUsed: hasBonus,
     };
   }
 
   /**
    * Exécute la capacité Pêcher avec tables de loot depuis la DB (V3)
    */
-  async executeFish(characterId: string, paSpent: 1 | 2): Promise<{ success: boolean; loot?: Record<string, number>; message: string; objectFound?: string }> {
+  async executeFish(
+    characterId: string,
+    paSpent: 1 | 2
+  ): Promise<{
+    success: boolean;
+    loot?: Record<string, number>;
+    message: string;
+    objectFound?: string;
+    luckyRollUsed?: boolean;
+  }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -484,13 +576,20 @@ export class CapabilityService {
     const departedExpedition = await this.prisma.expeditionMember.findFirst({
       where: {
         characterId,
-        expedition: { status: "DEPARTED" }
-      }
+        expedition: { status: "DEPARTED" },
+      },
     });
 
     if (departedExpedition) {
       throw new Error("Impossible de Pêcher en expédition DEPARTED");
     }
+
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
+    const hasBonus = await hasLuckyRollBonus(
+      characterId,
+      capability.id,
+      this.prisma
+    );
 
     // Vérifier les PA et les restrictions (Agonie, Déprime)
     validateCanUsePA(character, paSpent);
@@ -499,26 +598,35 @@ export class CapabilityService {
     const lootEntries = await this.prisma.fishingLootEntry.findMany({
       where: {
         paTable: paSpent,
-        isActive: true
+        isActive: true,
       },
       orderBy: {
-        orderIndex: 'asc'
-      }
+        orderIndex: "asc",
+      },
     });
 
     if (lootEntries.length === 0) {
       throw new Error(`Aucune table de loot trouvée pour ${paSpent} PA`);
     }
 
-    // Tirer aléatoirement une entrée
-    const randomIndex = Math.floor(Math.random() * lootEntries.length);
-    const lootEntry = lootEntries[randomIndex];
+    // Tirer aléatoirement une entrée (ou deux si LUCKY_ROLL)
+    let lootEntry;
+    if (hasBonus) {
+      // LUCKY_ROLL : deux tirages, on garde l'index le plus élevé (meilleur dans la table)
+      const randomIndex1 = Math.floor(Math.random() * lootEntries.length);
+      const randomIndex2 = Math.floor(Math.random() * lootEntries.length);
+      const bestIndex = Math.max(randomIndex1, randomIndex2);
+      lootEntry = lootEntries[bestIndex];
+    } else {
+      const randomIndex = Math.floor(Math.random() * lootEntries.length);
+      lootEntry = lootEntries[randomIndex];
+    }
 
     // Cas spécial pour Coquillage (objet)
     if (lootEntry.resourceName === "Coquillage") {
       // Récupérer l'objet Coquillage
       const coquillageObject = await this.prisma.objectType.findUnique({
-        where: { name: "Coquillage" }
+        where: { name: "Coquillage" },
       });
 
       if (!coquillageObject) {
@@ -527,12 +635,12 @@ export class CapabilityService {
 
       // Ajouter le coquillage à l'inventaire du personnage
       let inventory = await this.prisma.characterInventory.findUnique({
-        where: { characterId }
+        where: { characterId },
       });
 
       if (!inventory) {
         inventory = await this.prisma.characterInventory.create({
-          data: { characterId }
+          data: { characterId },
         });
       }
 
@@ -547,15 +655,20 @@ export class CapabilityService {
         this.prisma.characterInventorySlot.create({
           data: {
             inventoryId: inventory.id,
-            objectTypeId: coquillageObject.id
-          }
-        })
+            objectTypeId: coquillageObject.id,
+          },
+        }),
       ]);
+
+      const message = hasBonus
+        ? `${character.name} a trouvé un coquillage ! ⭐ (Lucky Roll) (-${paSpent} PA)`
+        : `${character.name} a trouvé un coquillage ! (-${paSpent} PA)`;
 
       return {
         success: true,
         objectFound: "Coquillage",
-        message: `${character.name} a trouvé un coquillage ! (-${paSpent} PA)`,
+        message,
+        luckyRollUsed: hasBonus,
       };
     }
 
@@ -565,7 +678,9 @@ export class CapabilityService {
     });
 
     if (!resourceType) {
-      throw new Error(`Type de ressource '${lootEntry.resourceName}' non trouvé`);
+      throw new Error(
+        `Type de ressource '${lootEntry.resourceName}' non trouvé`
+      );
     }
 
     await this.prisma.$transaction([
@@ -577,7 +692,11 @@ export class CapabilityService {
         },
       }),
       this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, resourceType.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          resourceType.id
+        ),
         update: {
           quantity: { increment: lootEntry.quantity },
         },
@@ -600,10 +719,15 @@ export class CapabilityService {
       "Pêcher"
     );
 
+    const message = hasBonus
+      ? `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName} ⭐ (Lucky Roll) (-${paSpent} PA)`
+      : `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName} (-${paSpent} PA)`;
+
     return {
       success: true,
       loot: { [lootEntry.resourceName.toLowerCase()]: lootEntry.quantity },
-      message: `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName} (-${paSpent} PA)`,
+      message,
+      luckyRollUsed: hasBonus,
     };
   }
 
@@ -615,7 +739,12 @@ export class CapabilityService {
     craftType: string,
     inputAmount: number,
     paSpent: 1 | 2
-  ): Promise<{ success: boolean; outputAmount: number; message: string }> {
+  ): Promise<{
+    success: boolean;
+    outputAmount: number;
+    message: string;
+    luckyRollUsed?: boolean;
+  }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -629,8 +758,8 @@ export class CapabilityService {
     const departedExpedition = await this.prisma.expeditionMember.findFirst({
       where: {
         characterId,
-        expedition: { status: "DEPARTED" }
-      }
+        expedition: { status: "DEPARTED" },
+      },
     });
 
     if (departedExpedition) {
@@ -641,27 +770,30 @@ export class CapabilityService {
     validateCanUsePA(character, paSpent);
 
     // Configuration des crafts
-    const CRAFT_CONFIGS: Record<string, { inputResource: string; outputResource: string; verb: string }> = {
+    const CRAFT_CONFIGS: Record<
+      string,
+      { inputResource: string; outputResource: string; verb: string }
+    > = {
       tisser: {
         inputResource: "Bois",
         outputResource: "Tissu",
-        verb: "tissé"
+        verb: "tissé",
       },
       forger: {
         inputResource: "Minerai",
         outputResource: "Fer",
-        verb: "forgé"
+        verb: "forgé",
       },
       menuiser: {
         inputResource: "Bois",
         outputResource: "Planches",
-        verb: "travaillé"
+        verb: "travaillé",
       },
       cuisiner: {
         inputResource: "Vivres",
         outputResource: "Repas",
-        verb: "cuisiné"
-      }
+        verb: "cuisiné",
+      },
     };
 
     const config = CRAFT_CONFIGS[craftType];
@@ -687,11 +819,34 @@ export class CapabilityService {
     }
 
     const inputStock = await this.prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere("CITY", character.townId, inputResourceType.id),
+      where: ResourceQueries.stockWhere(
+        "CITY",
+        character.townId,
+        inputResourceType.id
+      ),
     });
 
     if (!inputStock || inputStock.quantity < inputAmount) {
-      throw new Error(`Stock insuffisant: ${inputStock?.quantity || 0}/${inputAmount} ${config.inputResource}`);
+      throw new Error(
+        `Stock insuffisant: ${inputStock?.quantity || 0}/${inputAmount} ${
+          config.inputResource
+        }`
+      );
+    }
+
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cuisiner
+    let hasBonus = false;
+    if (craftType === "cuisiner") {
+      const capability = await this.prisma.capability.findFirst({
+        where: { name: "Cuisiner" },
+      });
+      if (capability) {
+        hasBonus = await hasLuckyRollBonus(
+          characterId,
+          capability.id,
+          this.prisma
+        );
+      }
     }
 
     // Calculer l'output avec la formule aléatoire
@@ -699,7 +854,19 @@ export class CapabilityService {
     // 2 PA: Output = random(0, Input × 3)
     const minOutput = 0;
     const maxOutput = paSpent === 1 ? inputAmount * 2 : inputAmount * 3;
-    const outputAmount = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+
+    let outputAmount: number;
+    if (hasBonus) {
+      // LUCKY_ROLL : deux tirages, on garde le meilleur
+      const roll1 =
+        Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+      const roll2 =
+        Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+      outputAmount = Math.max(roll1, roll2);
+    } else {
+      outputAmount =
+        Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+    }
 
     // Récupérer le type de ressource d'output
     const outputResourceType = await this.prisma.resourceType.findFirst({
@@ -707,14 +874,20 @@ export class CapabilityService {
     });
 
     if (!outputResourceType) {
-      throw new Error(`Type de ressource '${config.outputResource}' non trouvé`);
+      throw new Error(
+        `Type de ressource '${config.outputResource}' non trouvé`
+      );
     }
 
     // Exécuter le craft
     await this.prisma.$transaction(async (tx) => {
       // Retirer l'input
       await tx.resourceStock.update({
-        where: ResourceQueries.stockWhere("CITY", character.townId, inputResourceType.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          inputResourceType.id
+        ),
         data: {
           quantity: { decrement: inputAmount },
         },
@@ -722,7 +895,11 @@ export class CapabilityService {
 
       // Ajouter l'output
       await tx.resourceStock.upsert({
-        where: ResourceQueries.stockWhere("CITY", character.townId, outputResourceType.id),
+        where: ResourceQueries.stockWhere(
+          "CITY",
+          character.townId,
+          outputResourceType.id
+        ),
         update: {
           quantity: { increment: outputAmount },
         },
@@ -754,10 +931,15 @@ export class CapabilityService {
       craftType.charAt(0).toUpperCase() + craftType.slice(1)
     );
 
+    const message = hasBonus
+      ? `Vous avez obtenu ${outputAmount} ${config.outputResource} ⭐ (Lucky Roll)`
+      : `Vous avez obtenu ${outputAmount} ${config.outputResource}`;
+
     return {
       success: true,
       outputAmount,
-      message: `Vous avez obtenu ${outputAmount} ${config.outputResource}`,
+      message,
+      luckyRollUsed: hasBonus,
     };
   }
 
@@ -766,7 +948,7 @@ export class CapabilityService {
    */
   async executeSoigner(
     characterId: string,
-    mode: 'heal' | 'craft',
+    mode: "heal" | "craft",
     targetCharacterId?: string
   ): Promise<{ success: boolean; message: string }> {
     const character = await this.prisma.character.findUnique({
@@ -789,7 +971,7 @@ export class CapabilityService {
       throw new Error("Le personnage ne possède pas cette capacité");
     }
 
-    if (mode === 'heal') {
+    if (mode === "heal") {
       // Mode 1: Heal target
       if (!targetCharacterId) {
         throw new Error("Cible requise pour soigner");
@@ -809,7 +991,9 @@ export class CapabilityService {
 
       // Vérifier si la cible est en agonie affamé (hungerLevel=0 ET hp=1)
       if (target.hungerLevel === 0 && target.hp === 1) {
-        throw new Error("Impossible de soigner un personnage en agonie affamé. Il doit d'abord manger.");
+        throw new Error(
+          "Impossible de soigner un personnage en agonie affamé. Il doit d'abord manger."
+        );
       }
 
       // Vérifier les PA et les restrictions (Agonie, Déprime) - 1 PA pour heal
@@ -817,7 +1001,7 @@ export class CapabilityService {
 
       await this.prisma.character.update({
         where: { id: targetCharacterId },
-        data: { hp: Math.min(5, target.hp + 1) }
+        data: { hp: Math.min(5, target.hp + 1) },
       });
 
       // Consommer le PA du soigneur
@@ -827,7 +1011,6 @@ export class CapabilityService {
         success: true,
         message: `Vous avez soigné ${target.name} (+1 PV)`,
       };
-
     } else {
       // Mode 2: Craft cataplasme
 
@@ -841,8 +1024,15 @@ export class CapabilityService {
         throw new Error("Limite de cataplasmes atteinte (max 3 par ville)");
       }
 
-      const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
-      await ResourceUtils.upsertStock("CITY", character.townId, cataplasmeType.id, 1);
+      const cataplasmeType = await ResourceUtils.getResourceTypeByName(
+        "Cataplasme"
+      );
+      await ResourceUtils.upsertStock(
+        "CITY",
+        character.townId,
+        cataplasmeType.id,
+        1
+      );
 
       // Consommer les PA
       await consumePA(characterId, 2, this.prisma);
@@ -859,29 +1049,38 @@ export class CapabilityService {
    */
   async getCataplasmeCount(townId: string): Promise<number> {
     // Count cataplasmes in city
-    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName(
+      "Cataplasme"
+    );
 
-    const cityStock = await ResourceUtils.getStock("CITY", townId, cataplasmeType.id);
+    const cityStock = await ResourceUtils.getStock(
+      "CITY",
+      townId,
+      cataplasmeType.id
+    );
 
     // Count cataplasmes in all town expeditions
     // First get all expeditions for this town
     const townExpeditions = await this.prisma.expedition.findMany({
       where: { townId: townId },
-      select: { id: true }
+      select: { id: true },
     });
 
     const expeditionStocks = await this.prisma.resourceStock.findMany({
       where: {
         locationType: "EXPEDITION",
         locationId: {
-          in: townExpeditions.map(exp => exp.id)
+          in: townExpeditions.map((exp) => exp.id),
         },
-        resourceTypeId: cataplasmeType.id
-      }
+        resourceTypeId: cataplasmeType.id,
+      },
     });
 
     const cityCount = cityStock?.quantity || 0;
-    const expeditionCount = expeditionStocks.reduce((sum, stock) => sum + stock.quantity, 0);
+    const expeditionCount = expeditionStocks.reduce(
+      (sum, stock) => sum + stock.quantity,
+      0
+    );
 
     return cityCount + expeditionCount;
   }
@@ -891,9 +1090,8 @@ export class CapabilityService {
    */
   async executeResearch(
     characterId: string,
-    researchType: 'rechercher' | 'cartographier' | 'auspice',
-    paSpent: 1 | 2,
-    _subject: string
+    researchType: "rechercher" | "cartographier" | "auspice",
+    paSpent: 1 | 2
   ): Promise<{ success: boolean; message: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
@@ -903,7 +1101,8 @@ export class CapabilityService {
       throw new Error("Personnage non trouvé");
     }
 
-    const capabilityName = researchType.charAt(0).toUpperCase() + researchType.slice(1);
+    const capabilityName =
+      researchType.charAt(0).toUpperCase() + researchType.slice(1);
     const capability = await this.getCapabilityByName(capabilityName);
     if (!capability) {
       throw new Error("Capacité non trouvée");
@@ -932,15 +1131,17 @@ export class CapabilityService {
   /**
    * Utilise un cataplasme sur un personnage
    */
-  async useCataplasme(characterId: string): Promise<{ success: boolean; message: string }> {
+  async useCataplasme(
+    characterId: string
+  ): Promise<{ success: boolean; message: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: {
         town: true,
         expeditionMembers: {
-          include: { expedition: true }
-        }
-      }
+          include: { expedition: true },
+        },
+      },
     });
 
     if (!character) {
@@ -957,16 +1158,24 @@ export class CapabilityService {
 
     // Determine location (city or DEPARTED expedition)
     const departedExpedition = character.expeditionMembers.find(
-      em => em.expedition.status === "DEPARTED"
+      (em) => em.expedition.status === "DEPARTED"
     );
 
     const locationType = departedExpedition ? "EXPEDITION" : "CITY";
-    const locationId = departedExpedition ? departedExpedition.expeditionId : character.townId;
+    const locationId = departedExpedition
+      ? departedExpedition.expeditionId
+      : character.townId;
 
     // Check cataplasme availability
-    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName(
+      "Cataplasme"
+    );
 
-    const stock = await ResourceUtils.getStock(locationType, locationId, cataplasmeType.id);
+    const stock = await ResourceUtils.getStock(
+      locationType,
+      locationId,
+      cataplasmeType.id
+    );
 
     if (!stock || stock.quantity < 1) {
       throw new Error("Aucun cataplasme disponible");
@@ -977,26 +1186,28 @@ export class CapabilityService {
       // Remove 1 cataplasme
       await tx.resourceStock.update({
         where: { id: stock.id },
-        data: { quantity: { decrement: 1 } }
+        data: { quantity: { decrement: 1 } },
       });
 
       // Heal +1 HP
       await tx.character.update({
         where: { id: characterId },
-        data: { hp: Math.min(5, character.hp + 1) }
+        data: { hp: Math.min(5, character.hp + 1) },
       });
     });
 
     return {
       success: true,
-      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`
+      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`,
     };
   }
 
   /**
    * Exécute la capacité Divertir mise à jour (V2)
    */
-  async executeDivertir(characterId: string): Promise<{ success: boolean; message: string }> {
+  async executeDivertir(
+    characterId: string
+  ): Promise<{ success: boolean; message: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
@@ -1029,15 +1240,14 @@ export class CapabilityService {
         data: {
           divertCounter: newCounter,
           paTotal: { decrement: capability.costPA },
-          paUsedToday: { increment: capability.costPA }
-        }
+          paUsedToday: { increment: capability.costPA },
+        },
       });
 
       return {
         success: true,
         message: `Vous préparez un spectacle (${newCounter}/5)`,
       };
-
     } else {
       // Spectacle ready! +1 PM to all city characters (not in DEPARTED expeditions)
       await this.prisma.$transaction(async (tx) => {
@@ -1047,8 +1257,8 @@ export class CapabilityService {
           data: {
             divertCounter: 0,
             paTotal: { decrement: capability.costPA },
-            paUsedToday: { increment: capability.costPA }
-          }
+            paUsedToday: { increment: capability.costPA },
+          },
         });
 
         // +1 PM to all characters in the same city (not in DEPARTED expeditions)
@@ -1058,17 +1268,17 @@ export class CapabilityService {
             isDead: false,
             expeditionMembers: {
               none: {
-                expedition: { status: "DEPARTED" }
-              }
-            }
-          }
+                expedition: { status: "DEPARTED" },
+              },
+            },
+          },
         });
 
         for (const char of cityCharacters) {
           if (char.pm < 5) {
             await tx.character.update({
               where: { id: char.id },
-              data: { pm: Math.min(5, char.pm + 1) }
+              data: { pm: Math.min(5, char.pm + 1) },
             });
           }
         }

@@ -53,8 +53,10 @@ services:
       - CORS_ORIGIN=*
       - SESSION_SECRET=${SESSION_SECRET}
       - HEALTH_URL=http://localhost:3000/health
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
     volumes:
       - ./backend:/app
+      - ./shared:/app/shared
       - /app/node_modules
     expose:
       - "3000"

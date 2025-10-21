@@ -94,20 +94,20 @@ export const ACTIONS = {
 
 // Capabilities
 export const CAPABILITIES = {
-  // HUNT: "🏹", // UNUSED (legacy reference only)
-  // GATHER: "🌿", // UNUSED (reserved for future)
-  FISH: "🎣", // Used for fishing actions
-  // CHOPPING: "🪓", // UNUSED (reserved for future)
-  // MINING: "⛏️", // UNUSED (reserved for future)
-  WEAVING: "🧵", // Used in project creation (hardcoded, needs refactor)
-  FORGING: "🔨", // Used in project creation (hardcoded, needs refactor)
-  WOODWORKING: "🪚", // Used in project creation (hardcoded, needs refactor)
-  COOKING: "🫕", // Used for cooking actions
-  HEALING: "⚕️", // Used for healing actions
-  RESEARCHING: "🔎", // Used for research actions
-  CARTOGRAPHING: "🗺️", // Used for cartography actions
-  // AUGURING: "🌦️", // UNUSED (reserved for future)
-  // ENTERTAIN: "🎭", // UNUSED (reserved for future)
+  HUNT: "🏹", // Used for hunting actions (seed: Chasser)
+  GATHER: "🌿", // Used for gathering actions (seed: Cueillir)
+  FISH: "🎣", // Used for fishing actions (seed: Pêcher)
+  CHOPPING: "🪓", // Used for wood chopping actions (seed: Couper du bois)
+  MINING: "⛏️", // Used for mining actions (seed: Miner)
+  WEAVING: "🧵", // Used in project creation (hardcoded, needs refactor) (seed: Tisser)
+  FORGING: "🔨", // Used in project creation (hardcoded, needs refactor) (seed: Forger)
+  WOODWORKING: "🪚", // Used in project creation (hardcoded, needs refactor) (seed: Travailler le bois)
+  COOKING: "🫕", // Used for cooking actions (seed: Cuisiner)
+  HEALING: "⚕️", // Used for healing actions (seed: Soigner)
+  RESEARCHING: "🔎", // Used for research actions (seed: Rechercher)
+  CARTOGRAPHING: "🗺️", // Used for cartography actions (seed: Cartographier)
+  AUGURING: "🌦️", // Used for auspice actions (seed: Auspice)
+  ENTERTAIN: "🎭", // Used for entertainment actions (seed: Divertir)
   GENERIC: "💪", // Used for generic capability display
 } as const;
 

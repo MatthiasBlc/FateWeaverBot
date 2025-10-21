@@ -235,4 +235,4 @@ Ce projet est sous licence privée. Voir le fichier LICENSE pour plus de détail
 
 ---
 
-⭐ Si ce projet vous plaît, n'hésitez pas à lui donner une étoile !
+⭐ Si ce projet vous plaît, n'hésitez pas à lui donner une étoile !!

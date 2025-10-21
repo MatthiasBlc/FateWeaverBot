@@ -6,6 +6,7 @@ import { toCharacterDto } from "../util/mappers";
 import { CharacterService } from "../services/character.service";
 import { CapabilityService } from "../services/capability.service";
 import { logger } from "../services/logger";
+import { notifyAgonyEntered } from "../util/agony-notification";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils, CharacterUtils } from "../shared/utils";
@@ -81,12 +82,12 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
     const guildRoles =
       roleIds && roleIds.length > 0
         ? await prisma.role.findMany({
-          where: {
-            guildId: town.guild.id,
-            discordId: { in: roleIds },
-          },
-          select: { id: true },
-        })
+            where: {
+              guildId: town.guild.id,
+              discordId: { in: roleIds },
+            },
+            select: { id: true },
+          })
         : [];
 
     const upsertedCharacter = await prisma.$transaction(async (tx) => {
@@ -319,7 +320,11 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
     // Récupérer le stock approprié
     const foodStock = await prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
+      where: ResourceQueries.stockWhere(
+        locationType,
+        locationId,
+        vivresType.id
+      ),
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
@@ -345,16 +350,30 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       const updatedCharacter = await tx.character.update({
         where: { id },
         data: {
-          hungerLevel: agonyUpdate.hungerLevel !== undefined ? agonyUpdate.hungerLevel : newHungerLevel,
+          hungerLevel:
+            agonyUpdate.hungerLevel !== undefined
+              ? agonyUpdate.hungerLevel
+              : newHungerLevel,
           hp: agonyUpdate.hp,
           agonySince: agonyUpdate.agonySince,
         },
-        include: { user: true },
+        include: {
+          user: true,
+          town: {
+            include: {
+              guild: true,
+            },
+          },
+        },
       });
 
       // Retirer les vivres du stock approprié (ville ou expédition)
       await tx.resourceStock.update({
-        where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
+        where: ResourceQueries.stockWhere(
+          locationType,
+          locationId,
+          vivresType.id
+        ),
         data: {
           quantity: { decrement: foodToConsume },
         },
@@ -362,7 +381,11 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 
       // Récupérer le stock mis à jour pour la réponse
       const updatedStock = await tx.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere(locationType, locationId, vivresType.id),
+        where: ResourceQueries.stockWhere(
+          locationType,
+          locationId,
+          vivresType.id
+        ),
       });
 
       return {
@@ -371,6 +394,18 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         stockName,
       };
     });
+
+    // Send notification if character entered agony (eating food should prevent it, but safety check)
+    if (
+      agonyUpdate.enteredAgony &&
+      result.character.town.guild.discordGuildId
+    ) {
+      await notifyAgonyEntered(
+        result.character.town.guild.discordGuildId,
+        result.character.name || result.character.user.username,
+        "other"
+      );
+    }
 
     res.status(200).json({
       character: {
@@ -430,7 +465,9 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     const foodToConsume = 1;
 
     // Récupérer le type de ressource demandé
-    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
+    const resourceType = await ResourceUtils.getResourceTypeByName(
+      resourceTypeName
+    );
 
     // Déterminer la source des ressources selon la logique demandée
     let locationType: "CITY" | "EXPEDITION";
@@ -456,7 +493,11 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
     // Récupérer le stock approprié
     const foodStock = await prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
+      where: ResourceQueries.stockWhere(
+        locationType,
+        locationId,
+        resourceType.id
+      ),
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
@@ -482,16 +523,30 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
       const updatedCharacter = await tx.character.update({
         where: { id },
         data: {
-          hungerLevel: agonyUpdate2.hungerLevel !== undefined ? agonyUpdate2.hungerLevel : newHungerLevel,
+          hungerLevel:
+            agonyUpdate2.hungerLevel !== undefined
+              ? agonyUpdate2.hungerLevel
+              : newHungerLevel,
           hp: agonyUpdate2.hp,
           agonySince: agonyUpdate2.agonySince,
         },
-        include: { user: true },
+        include: {
+          user: true,
+          town: {
+            include: {
+              guild: true,
+            },
+          },
+        },
       });
 
       // Retirer les ressources du stock approprié (ville ou expédition)
       await tx.resourceStock.update({
-        where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
+        where: ResourceQueries.stockWhere(
+          locationType,
+          locationId,
+          resourceType.id
+        ),
         data: {
           quantity: { decrement: foodToConsume },
         },
@@ -499,7 +554,11 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
       // Récupérer le stock mis à jour pour la réponse
       const updatedStock = await tx.resourceStock.findUnique({
-        where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
+        where: ResourceQueries.stockWhere(
+          locationType,
+          locationId,
+          resourceType.id
+        ),
       });
 
       return {
@@ -509,6 +568,18 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
         resourceTypeName: resourceType.name,
       };
     });
+
+    // Send notification if character entered agony (eating food should prevent it, but safety check)
+    if (
+      agonyUpdate2.enteredAgony &&
+      result.character.town.guild.discordGuildId
+    ) {
+      await notifyAgonyEntered(
+        result.character.town.guild.discordGuildId,
+        result.character.name || result.character.user.username,
+        "other"
+      );
+    }
 
     res.status(200).json({
       character: {
@@ -748,7 +819,8 @@ export const useCharacterCapability: RequestHandler = async (
 ) => {
   try {
     const { id } = req.params;
-    const { capabilityId, capabilityName, isSummer, paToUse, inputQuantity } = req.body;
+    const { capabilityId, capabilityName, isSummer, paToUse, inputQuantity } =
+      req.body;
 
     // Utiliser le nom ou l'ID selon ce qui est fourni
     const capabilityIdentifier = capabilityId || capabilityName;
@@ -773,7 +845,11 @@ export const useCharacterCapability: RequestHandler = async (
         error.message === "Capacité non trouvée"
       ) {
         next(createHttpError(404, error.message));
-      } else if (error.message.includes("PA") || error.message.includes("vivres") || error.message.includes("Vivres")) {
+      } else if (
+        error.message.includes("PA") ||
+        error.message.includes("vivres") ||
+        error.message.includes("Vivres")
+      ) {
         next(createHttpError(400, error.message));
       } else {
         next(
@@ -816,8 +892,10 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
 
     // Vérifier si le personnage doit mourir (PV = 0, PM = 0)
     const shouldDie =
-      (hp !== undefined && hp <= 0) ||
-      (pm !== undefined && pm <= 0);
+      (hp !== undefined && hp <= 0) || (pm !== undefined && pm <= 0);
+
+    // Store agonyUpdate for notification check later
+    let agonyUpdate: any = null;
 
     if (shouldDie) {
       updateData.isDead = true;
@@ -836,7 +914,7 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     } else {
       // Apply agony rules (only if not dying)
       const { applyAgonyRules } = await import("../util/agony");
-      const agonyUpdate = applyAgonyRules(
+      agonyUpdate = applyAgonyRules(
         currentCharacter.hp,
         currentCharacter.hungerLevel,
         currentCharacter.agonySince,
@@ -846,8 +924,10 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
 
       // Merge agony updates into updateData
       if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
-      if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
-      if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
+      if (agonyUpdate.hungerLevel !== undefined)
+        updateData.hungerLevel = agonyUpdate.hungerLevel;
+      if (agonyUpdate.agonySince !== undefined)
+        updateData.agonySince = agonyUpdate.agonySince;
     }
 
     const updatedCharacter = await prisma.character.update({
@@ -858,6 +938,27 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
         town: { include: { guild: true } },
       },
     });
+
+    // Send notification if character entered agony during this update
+    if (
+      agonyUpdate &&
+      agonyUpdate.enteredAgony &&
+      updatedCharacter.town.guild.discordGuildId
+    ) {
+      // Determine cause based on what changed
+      let cause: "hunger" | "damage" | "other" = "other";
+      if (hp !== undefined && hp === 1) {
+        cause = "damage";
+      } else if (hungerLevel !== undefined && hungerLevel === 0) {
+        cause = "hunger";
+      }
+
+      await notifyAgonyEntered(
+        updatedCharacter.town.guild.discordGuildId,
+        updatedCharacter.name || updatedCharacter.user.username,
+        cause
+      );
+    }
 
     res.status(200).json(updatedCharacter);
   } catch (error) {
@@ -908,10 +1009,16 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
       : character.townId;
 
     // Check cataplasme availability
-    const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName(
+      "Cataplasme"
+    );
 
     const stock = await prisma.resourceStock.findUnique({
-      where: ResourceQueries.stockWhere(locationType, locationId, cataplasmeType.id),
+      where: ResourceQueries.stockWhere(
+        locationType,
+        locationId,
+        cataplasmeType.id
+      ),
     });
 
     if (!stock || stock.quantity < 1) {

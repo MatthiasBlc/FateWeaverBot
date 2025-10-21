@@ -11,6 +11,7 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
+import { sendLogMessage } from "../../utils/channels";
 
 /**
  * Handler pour le bouton "Manger +" qui affiche un menu avancé de gestion de la faim
@@ -34,8 +35,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       return;
     }
 
-    // Vérifier que le personnage est vivant et a faim
-    if (character.hungerLevel === 0) {
+    // Vérifier que le personnage est vivant
+    if (character.isDead) {
       await replyEphemeral(
         interaction,
         `${STATUS.ERROR} Votre personnage est mort. Impossible de manger.`
@@ -116,9 +117,9 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       alerts.push(
         `${STATUS.WARNING} Aucune ressource alimentaire disponible !`
       );
-    } else if (vivresStock < hungerNeed && nourritureStock === 0) {
+    } else if (vivresStock < hungerNeed && nourritureStock < hungerNeed) {
       alerts.push(
-        `${STATUS.WARNING} Stocks de vivres insuffisants pour atteindre la satiété !`
+        `${STATUS.WARNING} Stocks insuffisants pour atteindre la satiété !`
       );
     }
 
@@ -163,8 +164,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       );
     }
 
-    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= ceil(besoin/2))
-    const nourritureNeed = Math.ceil(hungerNeed / 2);
+    // Bouton 4: À satiété nourriture (si besoin > 1, stock >= besoin)
+    const nourritureNeed = hungerNeed;
     if (hungerNeed > 1 && nourritureStock >= nourritureNeed) {
       buttons.push(
         new ButtonBuilder()
@@ -263,7 +264,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
     }
 
     const hungerNeed = 4 - character.hungerLevel;
-    const nourritureNeed = Math.ceil(hungerNeed / 2);
+    const nourritureNeed = hungerNeed;
     await handleEatResource(interaction, "Repas", nourritureNeed);
   } catch (error: any) {
     logger.error("Erreur dans handleEatNourritureFull:", error);
@@ -295,9 +296,14 @@ async function handleEatResource(
       return;
     }
 
+    const initialHunger = character.hungerLevel;
+
+    logger.info(`[EAT-MORE] Début consommation: ${quantity}x ${resourceName} pour ${character.name} (faim initiale: ${initialHunger})`);
+
     // Consommer les ressources
     for (let i = 0; i < quantity; i++) {
       try {
+        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity}...`);
         // Utiliser les méthodes API appropriées selon le type de ressource
         if (resourceName === "Vivres") {
           await apiService.characters.eatFood(character.id);
@@ -307,9 +313,10 @@ async function handleEatResource(
             resourceName
           );
         }
+        logger.info(`[EAT-MORE] Consommation ${i + 1}/${quantity} réussie`);
       } catch (error: any) {
         logger.error(
-          `Erreur lors de la consommation ${i + 1}/${quantity}:`,
+          `[EAT-MORE] Erreur lors de la consommation ${i + 1}/${quantity}:`,
           error
         );
         await interaction.editReply({
@@ -319,16 +326,59 @@ async function handleEatResource(
       }
     }
 
+    logger.info(`[EAT-MORE] Toutes les consommations terminées`);
+
+
     // Récupérer l'état mis à jour
     const updatedCharacter = await getActiveCharacterForUser(
       interaction.user.id,
       interaction.guildId!
     );
 
+    const hungerGained = updatedCharacter.hungerLevel - initialHunger;
     const emoji = resourceName === "Vivres" ? RESOURCES.FOOD : RESOURCES.PREPARED_FOOD;
+
+    // Récupérer la localisation et les stocks restants
+    let locationType = "CITY";
+    let locationId = updatedCharacter.townId;
+    let locationName = "ville";
+
+    try {
+      const expeditions = await apiService.expeditions.getExpeditionsByTown(
+        updatedCharacter.townId
+      );
+
+      const activeExpedition = expeditions.find(
+        (exp: any) =>
+          exp.status === "DEPARTED" &&
+          exp.members?.some((m: any) => m.characterId === updatedCharacter.id)
+      );
+
+      if (activeExpedition) {
+        locationType = "EXPEDITION";
+        locationId = activeExpedition.id;
+        locationName = `expédition "${activeExpedition.name}"`;
+      }
+    } catch (error) {
+      logger.error("Erreur lors de la récupération de l'expédition:", error);
+    }
+
+    // Récupérer les stocks restants
+    const resources = await apiService.getResources(locationType, locationId);
+    const remainingStock =
+      resources.find((r: any) => r.resourceType.name === resourceName)?.quantity || 0;
+
+    // Message ephemeral pour l'utilisateur
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Vous avez mangé ${quantity}x ${emoji} ${resourceName}.\n${HUNGER.ICON} Faim: ${updatedCharacter.hungerLevel}/4 ${getHungerEmoji(updatedCharacter.hungerLevel)}`,
+      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.`,
     });
+
+    // Message de log public
+    await sendLogMessage(
+      interaction.guildId!,
+      interaction.client,
+      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji} ${resourceName}**, il reste **${remainingStock}** ${resourceName} dans ${locationName}`
+    );
   } catch (error: any) {
     logger.error("Erreur dans handleEatResource:", error);
     await interaction.editReply({

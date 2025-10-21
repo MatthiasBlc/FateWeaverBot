@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
 import { applyAgonyRules } from "../util/agony";
+import { notifyAgonyEntered } from "../util/agony-notification";
 import { CharacterQueries } from "../infrastructure/database/query-builders";
 
 const prisma = new PrismaClient();
@@ -14,8 +15,8 @@ async function increaseAllCharactersHunger() {
       include: {
         user: true,
         town: { include: { guild: true } },
-        job: true
-      }
+        job: true,
+      },
     });
 
     console.log(
@@ -63,6 +64,15 @@ async function increaseAllCharactersHunger() {
       });
 
       updatedCount++;
+
+      // Send notification if character entered agony
+      if (agonyUpdate.enteredAgony && character.town.guild.discordGuildId) {
+        await notifyAgonyEntered(
+          character.town.guild.discordGuildId,
+          character.name || character.user.username,
+          newHunger === 0 ? "hunger" : "other"
+        );
+      }
 
       if (newHunger === 0) {
         deaths.push({
