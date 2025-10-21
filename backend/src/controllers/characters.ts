@@ -6,6 +6,7 @@ import { toCharacterDto } from "../util/mappers";
 import { CharacterService } from "../services/character.service";
 import { CapabilityService } from "../services/capability.service";
 import { logger } from "../services/logger";
+import { notifyAgonyEntered } from "../util/agony-notification";
 
 // Initialiser les services
 const capabilityService = new CapabilityService(prisma);
@@ -398,7 +399,14 @@ export const eatFood: RequestHandler = async (req, res, next) => {
           hp: agonyUpdate.hp,
           agonySince: agonyUpdate.agonySince,
         },
-        include: { user: true },
+        include: {
+          user: true,
+          town: {
+            include: {
+              guild: true
+            }
+          }
+        },
       });
 
       // Retirer les vivres du stock approprié (ville ou expédition)
@@ -432,6 +440,15 @@ export const eatFood: RequestHandler = async (req, res, next) => {
         stockName,
       };
     });
+
+    // Send notification if character entered agony (eating food should prevent it, but safety check)
+    if (agonyUpdate.enteredAgony && result.character.town.guild.discordGuildId) {
+      await notifyAgonyEntered(
+        result.character.town.guild.discordGuildId,
+        result.character.name || result.character.user.username,
+        'other'
+      );
+    }
 
     res.status(200).json({
       character: {
@@ -562,7 +579,14 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
           hp: agonyUpdate2.hp,
           agonySince: agonyUpdate2.agonySince,
         },
-        include: { user: true },
+        include: {
+          user: true,
+          town: {
+            include: {
+              guild: true
+            }
+          }
+        },
       });
 
       // Retirer les ressources du stock approprié (ville ou expédition)
@@ -597,6 +621,15 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
         resourceTypeName: resourceType.name,
       };
     });
+
+    // Send notification if character entered agony (eating food should prevent it, but safety check)
+    if (agonyUpdate2.enteredAgony && result.character.town.guild.discordGuildId) {
+      await notifyAgonyEntered(
+        result.character.town.guild.discordGuildId,
+        result.character.name || result.character.user.username,
+        'other'
+      );
+    }
 
     res.status(200).json({
       character: {
@@ -907,6 +940,9 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
       (hp !== undefined && hp <= 0) ||
       (pm !== undefined && pm <= 0);
 
+    // Store agonyUpdate for notification check later
+    let agonyUpdate: any = null;
+
     if (shouldDie) {
       updateData.isDead = true;
       updateData.paTotal = 0;
@@ -924,7 +960,7 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     } else {
       // Apply agony rules (only if not dying)
       const { applyAgonyRules } = await import("../util/agony");
-      const agonyUpdate = applyAgonyRules(
+      agonyUpdate = applyAgonyRules(
         currentCharacter.hp,
         currentCharacter.hungerLevel,
         currentCharacter.agonySince,
@@ -946,6 +982,23 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
         town: { include: { guild: true } },
       },
     });
+
+    // Send notification if character entered agony during this update
+    if (agonyUpdate && agonyUpdate.enteredAgony && updatedCharacter.town.guild.discordGuildId) {
+      // Determine cause based on what changed
+      let cause: 'hunger' | 'damage' | 'other' = 'other';
+      if (hp !== undefined && hp === 1) {
+        cause = 'damage';
+      } else if (hungerLevel !== undefined && hungerLevel === 0) {
+        cause = 'hunger';
+      }
+
+      await notifyAgonyEntered(
+        updatedCharacter.town.guild.discordGuildId,
+        updatedCharacter.name || updatedCharacter.user.username,
+        cause
+      );
+    }
 
     res.status(200).json(updatedCharacter);
   } catch (error) {

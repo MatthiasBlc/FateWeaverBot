@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
 import { applyAgonyRules } from "../util/agony";
+import { notifyAgonyEntered } from "../util/agony-notification";
 
 const prisma = new PrismaClient();
 
@@ -59,6 +60,15 @@ async function increaseAllCharactersHunger() {
       });
 
       updatedCount++;
+
+      // Send notification if character entered agony
+      if (agonyUpdate.enteredAgony && character.town.guild.discordGuildId) {
+        await notifyAgonyEntered(
+          character.town.guild.discordGuildId,
+          character.name || character.user.username,
+          newHunger === 0 ? 'hunger' : 'other'
+        );
+      }
 
       if (newHunger === 0) {
         deaths.push({
