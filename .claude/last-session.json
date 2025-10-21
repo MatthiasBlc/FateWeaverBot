@@ -1,12 +1,14 @@
 {
-  "timestamp": "2025-10-20T23:12:22.027Z",
+  "timestamp": "2025-10-21T19:32:17.440Z",
   "context": {
     "task": {
       "type": "continue",
       "description": "**Objectif** : Garantir que le bot reste fonctionnel après refactoring\n\n**Actions :**\n\n- Tests utilisateur des fonctionnalités principales\n- Vérification des interactions (boutons, modals, menus)\n-"
     },
     "suggestions": {
-      "always_load": ["CLAUDE.md"],
+      "always_load": [
+        "CLAUDE.md"
+      ],
       "on_demand": [
         ".claude/reference.md",
         "bot/ARCHITECTURE.md",
