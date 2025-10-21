@@ -23,19 +23,39 @@ export function getRandomFromPool(pool: number[]): number {
 /**
  * Calcule le rendement de chasse selon la saison
  * @param isSummer Indique si c'est l'été
+ * @param luckyRoll Si true, effectue deux tirages et conserve le meilleur
  * @returns Nombre de vivres obtenus (2-10 en été, 0-4 en hiver)
  */
-export function getHuntYield(isSummer: boolean): number {
-  return getRandomFromPool(isSummer ? huntSummer : huntWinter);
+export function getHuntYield(isSummer: boolean, luckyRoll: boolean = false): number {
+  const pool = isSummer ? huntSummer : huntWinter;
+
+  if (!luckyRoll) {
+    return getRandomFromPool(pool);
+  }
+
+  // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
+  const roll1 = getRandomFromPool(pool);
+  const roll2 = getRandomFromPool(pool);
+  return Math.max(roll1, roll2);
 }
 
 /**
  * Calcule le rendement de cueillette selon la saison
  * @param isSummer Indique si c'est l'été
+ * @param luckyRoll Si true, effectue deux tirages et conserve le meilleur
  * @returns Nombre de vivres obtenus (1-3 en été, 0-2 en hiver)
  */
-export function getGatherYield(isSummer: boolean): number {
-  return getRandomFromPool(isSummer ? gatherSummer : gatherWinter);
+export function getGatherYield(isSummer: boolean, luckyRoll: boolean = false): number {
+  const pool = isSummer ? gatherSummer : gatherWinter;
+
+  if (!luckyRoll) {
+    return getRandomFromPool(pool);
+  }
+
+  // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
+  const roll1 = getRandomFromPool(pool);
+  const roll2 = getRandomFromPool(pool);
+  return Math.max(roll1, roll2);
 }
 
 /**

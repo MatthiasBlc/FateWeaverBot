@@ -41,3 +41,46 @@ export async function consumePA(
     }
   });
 }
+
+/**
+ * Vérifie si un personnage possède un objet avec le bonus LUCKY_ROLL pour une capacité donnée
+ * @param characterId ID du personnage
+ * @param capabilityId ID de la capacité
+ * @param prisma Instance Prisma
+ * @returns true si le personnage a le bonus LUCKY_ROLL pour cette capacité
+ */
+export async function hasLuckyRollBonus(
+  characterId: string,
+  capabilityId: string,
+  prisma: PrismaClient
+): Promise<boolean> {
+  // Récupérer l'inventaire du personnage avec les bonus de capacité
+  const inventory = await prisma.characterInventory.findUnique({
+    where: { characterId },
+    include: {
+      slots: {
+        include: {
+          objectType: {
+            include: {
+              capacityBonuses: {
+                where: {
+                  capabilityId,
+                  bonusType: 'LUCKY_ROLL'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!inventory) {
+    return false;
+  }
+
+  // Vérifier si au moins un objet a le bonus LUCKY_ROLL pour cette capacité
+  return inventory.slots.some(
+    slot => slot.objectType.capacityBonuses.length > 0
+  );
+}
