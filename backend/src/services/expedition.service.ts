@@ -319,7 +319,6 @@ export class ExpeditionService {
       directionSetAt: expedition.directionSetAt,
       town: expedition.town,
       members: expedition.members,
-      _count: expedition._count,
     };
   }
 
