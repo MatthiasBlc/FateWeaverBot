@@ -1,5 +1,6 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, CraftType, ProjectStatus } from "@prisma/client";
 import { ProjectQueries } from "../../infrastructure/database/query-builders/project.queries";
+import { ResourceQueries } from "../../infrastructure/database/query-builders/resource.queries";
 
 export class ProjectRepository {
   constructor(private prisma: PrismaClient) {}
@@ -15,6 +16,21 @@ export class ProjectRepository {
     });
   }
 
+  async findByIdWithBlueprint(id: string) {
+    return this.prisma.project.findUnique({
+      where: { id },
+      include: {
+        craftTypes: true,
+        resourceCosts: {
+          ...ResourceQueries.withResourceType()
+        },
+        blueprintResourceCosts: {
+          ...ResourceQueries.withResourceType()
+        }
+      }
+    });
+  }
+
   async findAllAvailable() {
     return this.prisma.project.findMany({
       where: { isBlueprint: true },
@@ -26,8 +42,48 @@ export class ProjectRepository {
   async findByTown(townId: string) {
     return this.prisma.project.findMany({
       where: { townId },
-      ...ProjectQueries.fullInclude(),
-      orderBy: { name: "asc" }
+      include: {
+        craftTypes: true,
+        resourceCosts: {
+          ...ResourceQueries.withResourceType()
+        },
+        blueprintResourceCosts: {
+          ...ResourceQueries.withResourceType()
+        }
+      },
+      orderBy: [
+        { status: "asc" },
+        { createdAt: "asc" }
+      ]
+    });
+  }
+
+  async findActiveProjectsForCraftType(townId: string, craftType: CraftType) {
+    return this.prisma.project.findMany({
+      where: {
+        townId,
+        status: ProjectStatus.ACTIVE,
+        craftTypes: {
+          some: {
+            craftType
+          }
+        }
+      },
+      include: {
+        craftTypes: true,
+        resourceCosts: {
+          ...ResourceQueries.withResourceType()
+        }
+      },
+      orderBy: {
+        createdAt: "asc"
+      }
+    });
+  }
+
+  async findFirst(where: Prisma.ProjectWhereInput) {
+    return this.prisma.project.findFirst({
+      where
     });
   }
 

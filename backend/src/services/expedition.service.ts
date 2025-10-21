@@ -4,6 +4,8 @@ import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
+import { ExpeditionRepository } from "../domain/repositories/expedition.repository";
+import { ResourceRepository } from "../domain/repositories/resource.repository";
 
 const prisma = new PrismaClient();
 
@@ -45,17 +47,22 @@ export interface ExpeditionWithDetails extends Expedition {
 }
 
 export class ExpeditionService {
+  private expeditionRepo: ExpeditionRepository;
+  private resourceRepo: ResourceRepository;
+
+  constructor(
+    expeditionRepo?: ExpeditionRepository,
+    resourceRepo?: ResourceRepository
+  ) {
+    // For backward compatibility, create new repositories if not provided
+    this.expeditionRepo = expeditionRepo || new ExpeditionRepository(prisma);
+    this.resourceRepo = resourceRepo || new ResourceRepository(prisma);
+  }
   /**
    * Récupère les ressources d'une expédition
    */
   async getExpeditionResources(expeditionId: string) {
-    return await prisma.resourceStock.findMany({
-      where: {
-        locationType: "EXPEDITION",
-        locationId: expeditionId,
-      },
-      ...ResourceQueries.withResourceType(),
-    });
+    return await this.resourceRepo.getLocationResources("EXPEDITION", expeditionId);
   }
 
   /**
@@ -289,29 +296,7 @@ export class ExpeditionService {
   }
 
   async getExpeditionById(id: string): Promise<ExpeditionWithDetails | null> {
-    const expedition = await prisma.expedition.findUnique({
-      where: { id },
-      include: {
-        town: {
-          select: { id: true, name: true },
-        },
-        members: {
-          include: {
-            character: {
-              include: {
-                user: {
-                  select: { id: true, discordId: true, username: true },
-                },
-              },
-            },
-          },
-          orderBy: { joinedAt: "asc" },
-        },
-        _count: {
-          select: { members: true },
-        },
-      },
-    });
+    const expedition = await this.expeditionRepo.findById(id);
 
     if (!expedition) return null;
 

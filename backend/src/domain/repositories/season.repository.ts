@@ -7,6 +7,12 @@ export class SeasonRepository {
   // FIND METHODS
   // =====================
 
+  async findById(id: number) {
+    return this.prisma.season.findUnique({
+      where: { id }
+    });
+  }
+
   async getCurrent() {
     return this.prisma.season.findFirst();
   }

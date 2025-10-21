@@ -11,6 +11,7 @@ import { getHuntYield, getGatherYield } from "../util/capacityRandom";
 import { CapabilityService } from "./capability.service";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 import { ResourceUtils } from "../shared/utils";
+import { CharacterRepository } from "../domain/repositories/character.repository";
 
 const prisma = new PrismaClient();
 
@@ -75,130 +76,37 @@ export type CharacterWithDetails = Character & {
 
 export class CharacterService {
   private capabilityService: CapabilityService;
+  private characterRepo: CharacterRepository;
 
-  constructor(capabilityService: CapabilityService) {
+  constructor(
+    capabilityService: CapabilityService,
+    characterRepo?: CharacterRepository
+  ) {
     this.capabilityService = capabilityService;
+    // For backward compatibility, create a new repository if not provided
+    this.characterRepo = characterRepo || new CharacterRepository(prisma);
   }
 
   async getCharacterCapabilities(characterId: string) {
-    return await prisma.characterCapability.findMany({
-      where: { characterId },
-      include: {
-        capability: true,
-      },
-      orderBy: {
-        capability: {
-          name: "asc",
-        },
-      },
-    });
+    return await this.characterRepo.getCapabilities(characterId);
   }
 
   async getActiveCharacter(
     userId: string,
     townId: string
   ): Promise<CharacterWithDetails | null> {
-    return await prisma.character.findFirst({
-      where: { userId, townId, isActive: true, isDead: false },
-      ...CharacterQueries.fullInclude(),
-      orderBy: { createdAt: "desc" },
-    });
+    return await this.characterRepo.findActiveCharacterAlive(userId, townId);
   }
 
   async getRerollableCharacters(
     userId: string,
     townId: string
   ): Promise<Character[]> {
-    return await prisma.character.findMany({
-      where: { userId, townId, isDead: true, canReroll: true, isActive: true },
-      ...CharacterQueries.fullInclude(),
-    });
+    return await this.characterRepo.findRerollableCharacters(userId, townId);
   }
 
   async createCharacter(data: CreateCharacterData): Promise<Character> {
-    return await prisma.$transaction(async (tx) => {
-      // RÈGLE MÉTIER CRITIQUE : Un utilisateur ne peut avoir qu'UN SEUL personnage actif par ville
-      // Désactiver TOUS les personnages actifs (morts ou vivants) avant de créer le nouveau
-      await tx.character.updateMany({
-        where: {
-          userId: data.userId,
-          townId: data.townId,
-          isActive: true,
-          // Pas de filtre isDead : on désactive TOUS les personnages actifs
-        },
-        data: { isActive: false },
-      });
-
-      // Créer le nouveau personnage
-      const character = await tx.character.create({
-        data: {
-          name: data.name,
-          userId: data.userId,
-          townId: data.townId,
-          jobId: data.jobId,
-          paTotal: 2,
-          hungerLevel: 4,
-          hp: 5,
-          pm: 5,
-          isActive: true,
-          divertCounter: 0,
-        },
-      });
-
-      // Lui donner les capacités de base
-      const baseCapabilities = ["Couper du bois"];
-
-      for (const capabilityName of baseCapabilities) {
-        const capability = await tx.capability.findUnique({
-          where: { name: capabilityName },
-        });
-
-        if (capability) {
-          await tx.characterCapability.create({
-            data: {
-              characterId: character.id,
-              capabilityId: capability.id,
-            },
-          });
-        }
-      }
-
-      // Si un métier est fourni, attribuer la capacité de départ
-      if (data.jobId) {
-        const job = await tx.job.findUnique({
-          where: { id: data.jobId },
-          include: { startingAbility: true },
-        });
-
-        if (job && job.startingAbility) {
-          // Vérifier si le personnage a déjà cette capacité
-          const hasCapability = await tx.characterCapability.findUnique({
-            where: {
-              characterId_capabilityId: {
-                characterId: character.id,
-                capabilityId: job.startingAbility.id,
-              },
-            },
-          });
-
-          // Ajouter la capacité si elle n'existe pas
-          if (!hasCapability) {
-            await tx.characterCapability.create({
-              data: {
-                characterId: character.id,
-                capabilityId: job.startingAbility.id,
-              },
-            });
-          }
-        }
-      }
-
-      // Récupérer le personnage avec toutes ses relations (job inclus)
-      return await tx.character.findUniqueOrThrow({
-        where: { id: character.id },
-        ...CharacterQueries.fullInclude(),
-      });
-    });
+    return await this.characterRepo.createCharacterWithCapabilities(data);
   }
 
   async createRerollCharacter(
@@ -206,68 +114,51 @@ export class CharacterService {
     townId: string,
     name: string
   ): Promise<Character> {
-    return await prisma.$transaction(async (prisma) => {
+    console.log(
+      `[createRerollCharacter] Début - userId: ${userId}, townId: ${townId}, name: ${name}`
+    );
+
+    // Find current active character
+    const currentActiveCharacter = await this.characterRepo.findActiveCharacter(userId, townId);
+
+    if (!currentActiveCharacter) {
+      throw new Error("No active character found - this should never happen");
+    }
+
+    console.log(
+      `[createRerollCharacter] Personnage actif actuel: ${currentActiveCharacter.id}, isDead: ${currentActiveCharacter.isDead}, canReroll: ${currentActiveCharacter.canReroll}`
+    );
+
+    // Create new character (automatically deactivates old one)
+    const newCharacterData: CreateCharacterData = {
+      userId,
+      townId,
+      name,
+    };
+
+    const newCharacter = await this.createCharacter(newCharacterData);
+
+    console.log(
+      `[createRerollCharacter] ✅ Nouveau personnage créé: ${newCharacter.id}`
+    );
+
+    // Clean up reroll permission if old character was dead
+    if (currentActiveCharacter.isDead && currentActiveCharacter.canReroll) {
+      await this.characterRepo.update(currentActiveCharacter.id, { canReroll: false });
       console.log(
-        `[createRerollCharacter] Début - userId: ${userId}, townId: ${townId}, name: ${name}`
+        `[createRerollCharacter] Permission de reroll nettoyée: ${currentActiveCharacter.id}`
       );
+    }
 
-      // LOGIQUE SIMPLE : Trouver le personnage ACTIF actuel (mort ou vivant)
-      // Il y a TOUJOURS un personnage actif par utilisateur par ville
-      const currentActiveCharacter = await prisma.character.findFirst({
-        where: { userId, townId, isActive: true },
-        ...CharacterQueries.fullInclude(),
-      });
-
-      if (!currentActiveCharacter) {
-        throw new Error("No active character found - this should never happen");
-      }
-
-      console.log(
-        `[createRerollCharacter] Personnage actif actuel: ${currentActiveCharacter.id}, isDead: ${currentActiveCharacter.isDead}, canReroll: ${currentActiveCharacter.canReroll}`
-      );
-
-      // SOLUTION ULTRA-SIMPLE : Utiliser la fonction createCharacter existante
-      // qui gère déjà correctement la logique de désactivation/création
-      const newCharacterData: CreateCharacterData = {
-        userId,
-        townId,
-        name,
-      };
-
-      // Créer le nouveau personnage (désactive automatiquement l'ancien)
-      const newCharacter = await this.createCharacter(newCharacterData);
-
-      console.log(
-        `[createRerollCharacter] ✅ Nouveau personnage créé: ${newCharacter.id}`
-      );
-
-      // Nettoyer la permission de reroll si l'ancien personnage était mort
-      if (currentActiveCharacter.isDead && currentActiveCharacter.canReroll) {
-        await prisma.character.update({
-          where: { id: currentActiveCharacter.id },
-          data: { canReroll: false },
-        });
-        console.log(
-          `[createRerollCharacter] Permission de reroll nettoyée: ${currentActiveCharacter.id}`
-        );
-      }
-
-      return newCharacter;
-    });
+    return newCharacter;
   }
 
   async killCharacter(characterId: string): Promise<Character> {
-    return await prisma.character.update({
-      where: { id: characterId },
-      data: { isDead: true, hungerLevel: 0, paTotal: 0, hp: 0, pm: 0 },
-    });
+    return await this.characterRepo.killCharacter(characterId);
   }
 
   async grantRerollPermission(characterId: string): Promise<Character> {
-    return await prisma.character.update({
-      where: { id: characterId },
-      data: { canReroll: true },
-    });
+    return await this.characterRepo.grantRerollPermission(characterId);
   }
 
   async switchActiveCharacter(
@@ -275,94 +166,35 @@ export class CharacterService {
     townId: string,
     characterId: string
   ): Promise<Character> {
-    return await prisma.$transaction(async (tx) => {
-      await tx.character.updateMany({
-        where: { userId, townId, isActive: true },
-        data: { isActive: false },
-      });
-      return await tx.character.update({
-        where: { id: characterId, userId, townId, isDead: false },
-        data: { isActive: true },
-      });
-    });
+    return await this.characterRepo.switchActiveCharacterTransaction(userId, townId, characterId);
   }
 
   async getTownCharacters(townId: string): Promise<CharacterWithDetails[]> {
-    return await prisma.character.findMany({
-      where: {
-        townId,
-        // Retourner TOUS les personnages (vivants, morts, actifs, inactifs)
-        // pour que character-admin et /profil puissent voir tous les états
-      },
-      include: {
-        user: true,
-        town: { include: { guild: true } },
-        characterRoles: { include: { role: true } },
-        job: {
-          include: {
-            startingAbility: true,
-            optionalAbility: true,
-          },
-        },
-        expeditionMembers: {
-          include: {
-            expedition: true,
-          },
-        },
-      },
-      orderBy: [
-        { isDead: "asc" }, // Vivants en premier
-        { isActive: "desc" }, // Actifs en premier
-        { createdAt: "desc" }, // Plus récents en premier
-      ],
-    });
+    return await this.characterRepo.findAllByTownWithDetails(townId);
   }
 
   async needsCharacterCreation(
     userId: string,
     townId: string
   ): Promise<boolean> {
-    // Vérifier s'il y a un personnage actif (mort ou vivant)
-    const activeCharacter = await prisma.character.findFirst({
-      where: { userId, townId, isActive: true },
-      ...CharacterQueries.fullInclude(),
-    });
-
-    // Retourne true si aucun personnage actif n'est trouvé (nécessite création)
+    const activeCharacter = await this.characterRepo.findActiveCharacter(userId, townId);
     return !activeCharacter;
   }
 
   async addCharacterCapability(characterId: string, capabilityId: string) {
-    // Vérifier que la capacité existe
-    const capability = await prisma.capability.findUnique({
-      where: { id: capabilityId },
-    });
+    const capability = await this.characterRepo.findCapability(capabilityId);
 
     if (!capability) {
       throw new Error("Capacité non trouvée");
     }
 
-    // Vérifier si le personnage a déjà cette capacité
-    const existingCapability = await prisma.characterCapability.findUnique({
-      where: {
-        characterId_capabilityId: {
-          characterId,
-          capabilityId,
-        },
-      },
-    });
+    const existingCapability = await this.characterRepo.findCharacterCapability(characterId, capabilityId);
 
     if (existingCapability) {
       throw new Error("Le personnage possède déjà cette capacité");
     }
 
-    // Ajouter la capacité au personnage
-    await prisma.characterCapability.create({
-      data: {
-        characterId,
-        capabilityId,
-      },
-    });
+    await this.characterRepo.addCapability(characterId, capabilityId);
 
     return capability;
   }
@@ -371,29 +203,15 @@ export class CharacterService {
    * Retire une capacité d'un personnage
    */
   async removeCharacterCapability(characterId: string, capabilityId: string) {
-    // Vérifier que la capacité existe
-    const capability = await prisma.capability.findUnique({
-      where: { id: capabilityId },
-    });
+    const capability = await this.characterRepo.findCapability(capabilityId);
 
     if (!capability) {
       throw new Error("Capacité non trouvée");
     }
 
-    // Supprimer la capacité du personnage
-    const deleted = await prisma.characterCapability.delete({
-      where: {
-        characterId_capabilityId: {
-          characterId,
-          capabilityId,
-        },
-      },
-      include: {
-        capability: true,
-      },
-    });
+    await this.characterRepo.removeCapability(characterId, capabilityId);
 
-    return deleted.capability;
+    return capability;
   }
 
   /**
@@ -401,27 +219,7 @@ export class CharacterService {
    * (celles qu'il ne possède pas encore)
    */
   async getAvailableCapabilities(characterId: string) {
-    // Récupérer les capacités du personnage
-    const characterCapabilities = await prisma.characterCapability.findMany({
-      where: { characterId },
-      select: { capabilityId: true },
-    });
-
-    const characterCapabilityIds = characterCapabilities.map(
-      (cc) => cc.capabilityId
-    );
-
-    // Récupérer toutes les capacités sauf celles que le personnage possède déjà
-    const availableCapabilities = await prisma.capability.findMany({
-      where: {
-        id: { notIn: characterCapabilityIds },
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    return availableCapabilities;
+    return await this.characterRepo.findAvailableCapabilities(characterId);
   }
 
   /**
@@ -435,16 +233,7 @@ export class CharacterService {
     inputQuantity?: number
   ) {
     // Récupérer le personnage avec ses capacités
-    const character = (await prisma.character.findUnique({
-      where: { id: characterId },
-      include: {
-        capabilities: {
-          include: {
-            capability: true,
-          },
-        },
-      },
-    })) as CharacterWithCapabilities;
+    const character = (await this.characterRepo.findWithCapabilities(characterId)) as CharacterWithCapabilities;
 
     if (!character) {
       throw new Error("Personnage non trouvé");
@@ -1045,106 +834,6 @@ export class CharacterService {
     characterId: string,
     newJobId: number
   ): Promise<Character> {
-    return await prisma.$transaction(async (tx) => {
-      // Récupérer le personnage avec son métier actuel
-      const character = await tx.character.findUnique({
-        where: { id: characterId },
-        include: {
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-        },
-      });
-
-      if (!character) {
-        throw new Error("Character not found");
-      }
-
-      // Récupérer le nouveau métier
-      const newJob = await tx.job.findUnique({
-        where: { id: newJobId },
-        include: {
-          startingAbility: true,
-          optionalAbility: true,
-        },
-      });
-
-      if (!newJob) {
-        throw new Error("Job not found");
-      }
-
-      // Retirer les capacités de l'ancien métier
-      if (character.job) {
-        const oldJobAbilityIds: string[] = [];
-
-        if (character.job.startingAbility) {
-          oldJobAbilityIds.push(character.job.startingAbility.id);
-        }
-
-        if (character.job.optionalAbility) {
-          oldJobAbilityIds.push(character.job.optionalAbility.id);
-        }
-
-        // Supprimer ces capacités du personnage
-        if (oldJobAbilityIds.length > 0) {
-          await tx.characterCapability.deleteMany({
-            where: {
-              characterId: character.id,
-              capabilityId: { in: oldJobAbilityIds },
-            },
-          });
-        }
-      }
-
-      // Ajouter les capacités du nouveau métier
-      const newJobAbilityIds: string[] = [];
-
-      if (newJob.startingAbility) {
-        newJobAbilityIds.push(newJob.startingAbility.id);
-      }
-
-      if (newJob.optionalAbility) {
-        newJobAbilityIds.push(newJob.optionalAbility.id);
-      }
-
-      // Créer les nouvelles capacités
-      for (const abilityId of newJobAbilityIds) {
-        await tx.characterCapability.upsert({
-          where: {
-            characterId_capabilityId: {
-              characterId: character.id,
-              capabilityId: abilityId,
-            },
-          },
-          update: {},
-          create: {
-            characterId: character.id,
-            capabilityId: abilityId,
-          },
-        });
-      }
-
-      // Mettre à jour le personnage avec le nouveau métier
-      return await tx.character.update({
-        where: { id: characterId },
-        data: { jobId: newJobId },
-        include: {
-          job: {
-            include: {
-              startingAbility: true,
-              optionalAbility: true,
-            },
-          },
-          capabilities: {
-            include: {
-              capability: true,
-            },
-          },
-        },
-      });
-    });
+    return await this.characterRepo.changeJobWithCapabilities(characterId, newJobId);
   }
 }

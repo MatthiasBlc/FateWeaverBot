@@ -1,26 +1,21 @@
 import { PrismaClient, LocationType } from "@prisma/client";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
+import { ResourceRepository } from "../domain/repositories/resource.repository";
 
 export class ResourceService {
-  constructor(private prisma: PrismaClient) {}
+  private resourceRepo: ResourceRepository;
+
+  constructor(private prisma: PrismaClient, resourceRepo?: ResourceRepository) {
+    // For backward compatibility, create a new repository if not provided
+    this.resourceRepo = resourceRepo || new ResourceRepository(prisma);
+  }
 
   /**
    * Récupère les ressources d'un lieu (ville ou expédition)
    */
   async getLocationResources(locationType: LocationType, locationId: string) {
-    return await this.prisma.resourceStock.findMany({
-      where: {
-        locationType,
-        locationId
-      },
-      ...ResourceQueries.withResourceType(),
-      orderBy: {
-        resourceType: {
-          name: "asc"
-        }
-      }
-    });
+    return await this.resourceRepo.getLocationResources(locationType, locationId);
   }
 
   /**
@@ -54,18 +49,7 @@ export class ResourceService {
       throw new Error("La quantité ne peut pas être négative");
     }
 
-    await this.prisma.resourceStock.upsert({
-      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
-      update: {
-        quantity: newQuantity
-      },
-      create: {
-        locationType,
-        locationId,
-        resourceTypeId: resourceType.id,
-        quantity: newQuantity
-      }
-    });
+    await this.resourceRepo.setStock(locationType, locationId, resourceType.id, newQuantity);
   }
 
   /**
@@ -90,12 +74,7 @@ export class ResourceService {
       throw new Error(`Pas assez de ${resourceTypeName} disponibles`);
     }
 
-    await this.prisma.resourceStock.update({
-      where: ResourceQueries.stockWhere(locationType, locationId, resourceType.id),
-      data: {
-        quantity: { decrement: quantity }
-      }
-    });
+    await this.resourceRepo.decrementStock(locationType, locationId, resourceType.id, quantity);
   }
 
   /**
@@ -119,29 +98,14 @@ export class ResourceService {
 
     const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
-    // Effectuer le transfert en transaction
-    await this.prisma.$transaction([
-      // Retirer du lieu source
-      this.prisma.resourceStock.update({
-        where: ResourceQueries.stockWhere(fromLocationType, fromLocationId, resourceType.id),
-        data: {
-          quantity: { decrement: quantity }
-        }
-      }),
-      // Ajouter au lieu destination
-      this.prisma.resourceStock.upsert({
-        where: ResourceQueries.stockWhere(toLocationType, toLocationId, resourceType.id),
-        update: {
-          quantity: { increment: quantity }
-        },
-        create: {
-          locationType: toLocationType,
-          locationId: toLocationId,
-          resourceTypeId: resourceType.id,
-          quantity
-        }
-      })
-    ]);
+    await this.resourceRepo.transferResource(
+      fromLocationType,
+      fromLocationId,
+      toLocationType,
+      toLocationId,
+      resourceType.id,
+      quantity
+    );
   }
 
   /**

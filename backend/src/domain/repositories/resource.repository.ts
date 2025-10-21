@@ -105,4 +105,57 @@ export class ResourceRepository {
       where: ResourceQueries.stockWhere(locationType, locationId, resourceTypeId)
     });
   }
+
+  /**
+   * Transfer resources between two locations in a transaction
+   */
+  async transferResource(
+    fromLocationType: LocationType,
+    fromLocationId: string,
+    toLocationType: LocationType,
+    toLocationId: string,
+    resourceTypeId: number,
+    quantity: number
+  ) {
+    return this.prisma.$transaction([
+      // Remove from source location
+      this.prisma.resourceStock.update({
+        where: ResourceQueries.stockWhere(fromLocationType, fromLocationId, resourceTypeId),
+        data: {
+          quantity: { decrement: quantity }
+        }
+      }),
+      // Add to destination location
+      this.prisma.resourceStock.upsert({
+        where: ResourceQueries.stockWhere(toLocationType, toLocationId, resourceTypeId),
+        update: {
+          quantity: { increment: quantity }
+        },
+        create: {
+          locationType: toLocationType,
+          locationId: toLocationId,
+          resourceTypeId: resourceTypeId,
+          quantity
+        }
+      })
+    ]);
+  }
+
+  /**
+   * Get all stocks for a location with resource types
+   */
+  async getLocationResources(locationType: LocationType, locationId: string) {
+    return this.prisma.resourceStock.findMany({
+      where: {
+        locationType,
+        locationId
+      },
+      ...ResourceQueries.withResourceType(),
+      orderBy: {
+        resourceType: {
+          name: "asc"
+        }
+      }
+    });
+  }
 }

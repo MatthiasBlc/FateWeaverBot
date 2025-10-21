@@ -3,6 +3,7 @@ import type { Chantier } from "@prisma/client";
 import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ChantierRepository } from "../domain/repositories/chantier.repository";
 
 const prisma = new PrismaClient();
 
@@ -21,6 +22,11 @@ export interface ResourceContribution {
 }
 
 export class ChantierService {
+  private chantierRepo: ChantierRepository;
+
+  constructor(chantierRepo?: ChantierRepository) {
+    this.chantierRepo = chantierRepo || new ChantierRepository(prisma);
+  }
   /**
    * Create a new chantier with optional resource costs
    */
@@ -100,29 +106,14 @@ export class ChantierService {
    * Get chantiers by town with resource costs included
    */
   async getChantiersByTown(townId: string) {
-    return await prisma.chantier.findMany({
-      where: { townId },
-      include: {
-        resourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-      },
-      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    });
+    return await this.chantierRepo.findAllByTown(townId);
   }
 
   /**
    * Get a single chantier by ID with resource costs
    */
   async getChantierById(chantierId: string) {
-    return await prisma.chantier.findUnique({
-      where: { id: chantierId },
-      include: {
-        resourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-      },
-    });
+    return await this.chantierRepo.findById(chantierId);
   }
 
   /**

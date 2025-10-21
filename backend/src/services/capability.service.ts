@@ -12,42 +12,38 @@ import {
 import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
+import { CapabilityRepository } from "../domain/repositories/capability.repository";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
 };
 
 export class CapabilityService {
-  constructor(private prisma: PrismaClient) {}
+  private capabilityRepo: CapabilityRepository;
+
+  constructor(private prisma: PrismaClient, capabilityRepo?: CapabilityRepository) {
+    this.capabilityRepo = capabilityRepo || new CapabilityRepository(prisma);
+  }
 
   /**
    * Récupère toutes les capacités disponibles
    */
   async getAllCapabilities(): Promise<PrismaCapability[]> {
-    return this.prisma.capability.findMany();
+    return this.capabilityRepo.findAll();
   }
 
   /**
    * Récupère une capacité par son ID
    */
   async getCapabilityById(id: string): Promise<CapabilityWithRelations | null> {
-    return this.prisma.capability.findUnique({
-      where: { id },
-      include: {
-        characters: {
-          select: { characterId: true },
-        },
-      },
-    });
+    return this.capabilityRepo.findByIdWithCharacters(id);
   }
 
   /**
    * Récupère une capacité par son nom
    */
   async getCapabilityByName(name: string): Promise<PrismaCapability | null> {
-    return this.prisma.capability.findUnique({
-      where: { name },
-    });
+    return this.capabilityRepo.findByName(name);
   }
 
   /**
@@ -60,14 +56,12 @@ export class CapabilityService {
     description?: string;
     emojiTag: string;
   }): Promise<PrismaCapability> {
-    return this.prisma.capability.create({
-      data: {
-        name: data.name,
-        category: data.category,
-        costPA: data.costPA,
-        description: data.description,
-        emojiTag: data.emojiTag,
-      },
+    return this.capabilityRepo.create({
+      name: data.name,
+      category: data.category,
+      costPA: data.costPA,
+      description: data.description,
+      emojiTag: data.emojiTag,
     });
   }
 
@@ -83,14 +77,11 @@ export class CapabilityService {
       description?: string | null;
     }
   ): Promise<PrismaCapability> {
-    return this.prisma.capability.update({
-      where: { id },
-      data: {
-        name: data.name,
-        category: data.category,
-        costPA: data.costPA,
-        description: data.description,
-      },
+    return this.capabilityRepo.update(id, {
+      name: data.name,
+      category: data.category,
+      costPA: data.costPA,
+      description: data.description,
     });
   }
 
@@ -98,9 +89,7 @@ export class CapabilityService {
    * Supprime une capacité
    */
   async deleteCapability(id: string): Promise<void> {
-    await this.prisma.capability.delete({
-      where: { id },
-    });
+    await this.capabilityRepo.delete(id);
   }
 
   /**
@@ -110,13 +99,7 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<boolean> {
-    const count = await this.prisma.characterCapability.count({
-      where: {
-        characterId,
-        capabilityId,
-      },
-    });
-    return count > 0;
+    return this.capabilityRepo.hasCharacterCapability(characterId, capabilityId);
   }
 
   /**
@@ -126,12 +109,7 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<void> {
-    await this.prisma.characterCapability.create({
-      data: {
-        characterId,
-        capabilityId,
-      },
-    });
+    await this.capabilityRepo.addCapabilityToCharacter(characterId, capabilityId);
   }
 
   /**
@@ -141,14 +119,7 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<void> {
-    await this.prisma.characterCapability.delete({
-      where: {
-        characterId_capabilityId: {
-          characterId,
-          capabilityId,
-        },
-      },
-    });
+    await this.capabilityRepo.removeCapabilityFromCharacter(characterId, capabilityId);
   }
 
   /**
@@ -157,12 +128,7 @@ export class CapabilityService {
   async getCharacterCapabilities(
     characterId: string
   ): Promise<PrismaCapability[]> {
-    const capabilities = await this.prisma.characterCapability.findMany({
-      where: { characterId },
-      include: { capability: true },
-    });
-
-    return capabilities.map((c) => c.capability);
+    return this.capabilityRepo.getCharacterCapabilities(characterId);
   }
 
   /**
@@ -334,12 +300,7 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.prisma.expeditionMember.findFirst({
-      where: {
-        characterId,
-        expedition: { status: "DEPARTED" },
-      },
-    });
+    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
       throw new Error("Impossible de Couper du bois en expédition DEPARTED");
@@ -451,12 +412,7 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.prisma.expeditionMember.findFirst({
-      where: {
-        characterId,
-        expedition: { status: "DEPARTED" },
-      },
-    });
+    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
       throw new Error("Impossible de Miner en expédition DEPARTED");
@@ -573,12 +529,7 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.prisma.expeditionMember.findFirst({
-      where: {
-        characterId,
-        expedition: { status: "DEPARTED" },
-      },
-    });
+    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
       throw new Error("Impossible de Pêcher en expédition DEPARTED");
@@ -595,15 +546,7 @@ export class CapabilityService {
     validateCanUsePA(character, paSpent);
 
     // Récupérer les entrées de loot depuis la DB
-    const lootEntries = await this.prisma.fishingLootEntry.findMany({
-      where: {
-        paTable: paSpent,
-        isActive: true,
-      },
-      orderBy: {
-        orderIndex: "asc",
-      },
-    });
+    const lootEntries = await this.capabilityRepo.getFishingLootEntries(paSpent);
 
     if (lootEntries.length === 0) {
       throw new Error(`Aucune table de loot trouvée pour ${paSpent} PA`);
@@ -755,12 +698,7 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.prisma.expeditionMember.findFirst({
-      where: {
-        characterId,
-        expedition: { status: "DEPARTED" },
-      },
-    });
+    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
       throw new Error("Impossible de crafter en expédition DEPARTED");
@@ -837,9 +775,7 @@ export class CapabilityService {
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cuisiner
     let hasBonus = false;
     if (craftType === "cuisiner") {
-      const capability = await this.prisma.capability.findFirst({
-        where: { name: "Cuisiner" },
-      });
+      const capability = await this.capabilityRepo.findFirst({ name: "Cuisiner" });
       if (capability) {
         hasBonus = await hasLuckyRollBonus(
           characterId,

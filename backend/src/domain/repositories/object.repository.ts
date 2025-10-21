@@ -9,12 +9,22 @@ export class ObjectRepository {
 
   async findById(id: number) {
     return this.prisma.objectType.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        skillBonuses: { include: { skill: true } },
+        capacityBonuses: { include: { capability: true } },
+        resourceConversions: { include: { resourceType: true } }
+      }
     });
   }
 
   async findAll() {
     return this.prisma.objectType.findMany({
+      include: {
+        skillBonuses: { include: { skill: true } },
+        capacityBonuses: { include: { capability: true } },
+        resourceConversions: { include: { resourceType: true } }
+      },
       orderBy: { name: "asc" }
     });
   }

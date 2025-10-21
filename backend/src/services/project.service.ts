@@ -1,5 +1,6 @@
 import { PrismaClient, CraftType, ProjectStatus } from '@prisma/client';
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ProjectRepository } from "../domain/repositories/project.repository";
 
 const prisma = new PrismaClient();
 
@@ -33,13 +34,17 @@ interface ContributeToProjectInput {
   }>;
 }
 
-export const ProjectService = {
+class ProjectServiceClass {
+  private projectRepo: ProjectRepository;
+
+  constructor(projectRepo?: ProjectRepository) {
+    this.projectRepo = projectRepo || new ProjectRepository(prisma);
+  }
+
   async createProject(input: CreateProjectInput) {
     const { name, paRequired, outputResourceTypeId, outputQuantity, townId, createdBy, craftTypes, resourceCosts, paBlueprintRequired, blueprintResourceCosts } = input;
 
-    const existingProject = await prisma.project.findFirst({
-      where: { name, townId },
-    });
+    const existingProject = await this.projectRepo.findFirst({ name, townId });
 
     if (existingProject) {
       throw new Error(`Un projet nommé "${name}" existe déjà dans cette ville`);
@@ -99,14 +104,11 @@ export const ProjectService = {
     }
 
     return project;
-  },
+  }
 
   async convertToBlueprint(projectId: string): Promise<void> {
-    await prisma.project.update({
-      where: { id: projectId },
-      data: { isBlueprint: true },
-    });
-  },
+    await this.projectRepo.update(projectId, { isBlueprint: true });
+  }
 
   async restartBlueprint(
     blueprintId: string,
@@ -200,53 +202,21 @@ export const ProjectService = {
 
       return newProject;
     });
-  },
+  }
 
   async getActiveProjectsForCraftType(townId: string, craftType: CraftType) {
-    const projects = await prisma.project.findMany({
-      where: {
-        townId,
-        status: ProjectStatus.ACTIVE,
-        craftTypes: {
-          some: {
-            craftType,
-          },
-        },
-      },
-      include: {
-        craftTypes: true,
-        resourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
-
-    return projects;
-  },
+    return this.projectRepo.findActiveProjectsForCraftType(townId, craftType);
+  }
 
   async getProjectById(projectId: string) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
-        craftTypes: true,
-        resourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-        blueprintResourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-      },
-    });
+    const project = await this.projectRepo.findByIdWithBlueprint(projectId);
 
     if (!project) {
       throw new Error('Projet non trouvé');
     }
 
     return project;
-  },
+  }
 
   async contributeToProject(input: ContributeToProjectInput) {
     const { characterId, projectId, paAmount = 0, resourceContributions = [] } = input;
@@ -378,26 +348,11 @@ export const ProjectService = {
 
       return { ...updatedProject, completed: false };
     });
-  },
+  }
 
   async getAllProjectsForTown(townId: string) {
-    return await prisma.project.findMany({
-      where: { townId },
-      include: {
-        craftTypes: true,
-        resourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-        blueprintResourceCosts: {
-          ...ResourceQueries.withResourceType(),
-        },
-      },
-      orderBy: [
-        { status: 'asc' },
-        { createdAt: 'asc' },
-      ],
-    });
-  },
+    return this.projectRepo.findByTown(townId);
+  }
 
   async deleteProject(projectId: string) {
     const project = await this.getProjectById(projectId);
@@ -410,10 +365,10 @@ export const ProjectService = {
       throw new Error('Impossible de supprimer un projet avec des contributions');
     }
 
-    await prisma.project.delete({
-      where: { id: projectId },
-    });
+    await this.projectRepo.delete(projectId);
 
     return { success: true };
-  },
-};
+  }
+}
+
+export const ProjectService = new ProjectServiceClass();

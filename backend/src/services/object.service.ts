@@ -1,73 +1,38 @@
 import { PrismaClient } from "@prisma/client";
+import { ObjectRepository } from "../domain/repositories/object.repository";
 
 const prisma = new PrismaClient();
 
-export const objectService = {
+class ObjectServiceClass {
+  private objectRepo: ObjectRepository;
+
+  constructor(objectRepo?: ObjectRepository) {
+    this.objectRepo = objectRepo || new ObjectRepository(prisma);
+  }
+
   /**
    * Récupère tous les types d'objets
    */
   async getAllObjectTypes() {
-    return await prisma.objectType.findMany({
-      include: {
-        skillBonuses: {
-          include: {
-            skill: true
-          }
-        },
-        capacityBonuses: {
-          include: {
-            capability: true
-          }
-        },
-        resourceConversions: {
-          include: {
-            resourceType: true
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
-  },
+    return this.objectRepo.findAll();
+  }
 
   /**
    * Récupère un type d'objet par ID
    */
   async getObjectTypeById(id: number) {
-    return await prisma.objectType.findUnique({
-      where: { id },
-      include: {
-        skillBonuses: {
-          include: {
-            skill: true
-          }
-        },
-        capacityBonuses: {
-          include: {
-            capability: true
-          }
-        },
-        resourceConversions: {
-          include: {
-            resourceType: true
-          }
-        }
-      }
-    });
-  },
+    return this.objectRepo.findById(id);
+  }
 
   /**
    * Crée un nouveau type d'objet (admin)
    */
   async createObjectType(data: { name: string; description?: string }) {
-    return await prisma.objectType.create({
-      data: {
-        name: data.name,
-        description: data.description
-      }
+    return this.objectRepo.create({
+      name: data.name,
+      description: data.description
     });
-  },
+  }
 
   /**
    * Récupère l'inventaire d'un personnage
@@ -98,7 +63,7 @@ export const objectService = {
     });
 
     return inventory;
-  },
+  }
 
   /**
    * Ajoute un objet à l'inventaire d'un personnage
@@ -193,7 +158,7 @@ export const objectService = {
 
       return { success: true, converted: false, slot };
     });
-  },
+  }
 
   /**
    * Retire un objet de l'inventaire
@@ -202,7 +167,7 @@ export const objectService = {
     return await prisma.characterInventorySlot.delete({
       where: { id: slotId }
     });
-  },
+  }
 
   /**
    * Récupère les types d'objets d'un personnage (pour l'admin)
@@ -268,7 +233,7 @@ export const objectService = {
     });
 
     return Array.from(objectTypesMap.values());
-  },
+  }
 
   /**
    * Supprime un objet d'un personnage par objectTypeId
@@ -300,7 +265,7 @@ export const objectService = {
     return await prisma.characterInventorySlot.delete({
       where: { id: slot.id }
     });
-  },
+  }
 
   /**
    * Transfère un objet entre personnages
@@ -382,4 +347,6 @@ export const objectService = {
       return { success: true, newSlot };
     });
   }
-};
+}
+
+export const objectService = new ObjectServiceClass();

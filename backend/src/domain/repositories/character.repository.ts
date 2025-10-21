@@ -26,6 +26,32 @@ export class CharacterRepository {
     });
   }
 
+  async findActiveCharacterAlive(userId: string, townId: string) {
+    return this.prisma.character.findFirst({
+      where: {
+        userId,
+        townId,
+        isActive: true,
+        isDead: false
+      },
+      ...CharacterQueries.fullInclude(),
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  async findRerollableCharacters(userId: string, townId: string) {
+    return this.prisma.character.findMany({
+      where: {
+        userId,
+        townId,
+        isDead: true,
+        canReroll: true,
+        isActive: true
+      },
+      ...CharacterQueries.fullInclude()
+    });
+  }
+
   async findUserByDiscordId(discordId: string) {
     return this.prisma.user.findUnique({
       where: { discordId },
@@ -60,6 +86,46 @@ export class CharacterRepository {
     });
   }
 
+  async findAllByTownWithDetails(townId: string) {
+    return this.prisma.character.findMany({
+      where: { townId },
+      include: {
+        user: true,
+        town: { include: { guild: true } },
+        characterRoles: { include: { role: true } },
+        job: {
+          include: {
+            startingAbility: true,
+            optionalAbility: true
+          }
+        },
+        expeditionMembers: {
+          include: {
+            expedition: true
+          }
+        }
+      },
+      orderBy: [
+        { isDead: "asc" },
+        { isActive: "desc" },
+        { createdAt: "desc" }
+      ]
+    });
+  }
+
+  async findWithCapabilities(characterId: string) {
+    return this.prisma.character.findUnique({
+      where: { id: characterId },
+      include: {
+        capabilities: {
+          include: {
+            capability: true
+          }
+        }
+      }
+    });
+  }
+
   // =====================
   // CREATE METHODS
   // =====================
@@ -78,6 +144,113 @@ export class CharacterRepository {
         username,
         discriminator
       }
+    });
+  }
+
+  /**
+   * Creates a character with base capabilities and job-specific abilities
+   * Handles the full transaction logic including deactivating old characters
+   */
+  async createCharacterWithCapabilities(data: {
+    name: string;
+    userId: string;
+    townId: string;
+    jobId?: number;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      // Deactivate all active characters for this user in this town
+      await tx.character.updateMany({
+        where: {
+          userId: data.userId,
+          townId: data.townId,
+          isActive: true
+        },
+        data: { isActive: false }
+      });
+
+      // Create the new character
+      const character = await tx.character.create({
+        data: {
+          name: data.name,
+          userId: data.userId,
+          townId: data.townId,
+          jobId: data.jobId,
+          paTotal: 2,
+          hungerLevel: 4,
+          hp: 5,
+          pm: 5,
+          isActive: true,
+          divertCounter: 0
+        }
+      });
+
+      // Add base capabilities
+      const baseCapabilities = ["Couper du bois"];
+
+      for (const capabilityName of baseCapabilities) {
+        const capability = await tx.capability.findUnique({
+          where: { name: capabilityName }
+        });
+
+        if (capability) {
+          await tx.characterCapability.create({
+            data: {
+              characterId: character.id,
+              capabilityId: capability.id
+            }
+          });
+        }
+      }
+
+      // If a job is provided, assign the starting ability
+      if (data.jobId) {
+        const job = await tx.job.findUnique({
+          where: { id: data.jobId },
+          include: { startingAbility: true }
+        });
+
+        if (job && job.startingAbility) {
+          const hasCapability = await tx.characterCapability.findUnique({
+            where: {
+              characterId_capabilityId: {
+                characterId: character.id,
+                capabilityId: job.startingAbility.id
+              }
+            }
+          });
+
+          if (!hasCapability) {
+            await tx.characterCapability.create({
+              data: {
+                characterId: character.id,
+                capabilityId: job.startingAbility.id
+              }
+            });
+          }
+        }
+      }
+
+      // Return the character with full details
+      return tx.character.findUniqueOrThrow({
+        where: { id: character.id },
+        ...CharacterQueries.fullInclude()
+      });
+    });
+  }
+
+  /**
+   * Switch active character transaction
+   */
+  async switchActiveCharacterTransaction(userId: string, townId: string, characterId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.character.updateMany({
+        where: { userId, townId, isActive: true },
+        data: { isActive: false }
+      });
+      return tx.character.update({
+        where: { id: characterId, userId, townId, isDead: false },
+        data: { isActive: true }
+      });
     });
   }
 
@@ -149,6 +322,24 @@ export class CharacterRepository {
     });
   }
 
+  async killCharacter(characterId: string) {
+    return this.prisma.character.update({
+      where: { id: characterId },
+      data: { isDead: true, hungerLevel: 0, paTotal: 0, hp: 0, pm: 0 }
+    });
+  }
+
+  async grantRerollPermission(characterId: string) {
+    return this.prisma.character.update({
+      where: { id: characterId },
+      data: { canReroll: true }
+    });
+  }
+
+  async updateManyCharacters(where: any, data: any) {
+    return this.prisma.character.updateMany({ where, data });
+  }
+
   // =====================
   // CAPABILITY METHODS
   // =====================
@@ -193,6 +384,51 @@ export class CharacterRepository {
       }
     });
     return capability !== null;
+  }
+
+  async findCapability(capabilityId: string) {
+    return this.prisma.capability.findUnique({
+      where: { id: capabilityId }
+    });
+  }
+
+  async findCapabilityByName(name: string) {
+    return this.prisma.capability.findUnique({
+      where: { name }
+    });
+  }
+
+  async findCharacterCapability(characterId: string, capabilityId: string) {
+    return this.prisma.characterCapability.findUnique({
+      where: {
+        characterId_capabilityId: {
+          characterId,
+          capabilityId
+        }
+      }
+    });
+  }
+
+  async findAllCapabilities() {
+    return this.prisma.capability.findMany({
+      orderBy: { name: "asc" }
+    });
+  }
+
+  async findAvailableCapabilities(characterId: string) {
+    const characterCapabilities = await this.prisma.characterCapability.findMany({
+      where: { characterId },
+      select: { capabilityId: true }
+    });
+
+    const characterCapabilityIds = characterCapabilities.map(cc => cc.capabilityId);
+
+    return this.prisma.capability.findMany({
+      where: {
+        id: { notIn: characterCapabilityIds }
+      },
+      orderBy: { name: "asc" }
+    });
   }
 
   // =====================
@@ -305,5 +541,146 @@ export class CharacterRepository {
       where: { characterId },
       include: { role: true }
     });
+  }
+
+  // =====================
+  // JOB METHODS
+  // =====================
+
+  async findJob(jobId: number) {
+    return this.prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        startingAbility: true,
+        optionalAbility: true
+      }
+    });
+  }
+
+  /**
+   * Changes character job and swaps capabilities
+   * Full transaction handling
+   */
+  async changeJobWithCapabilities(characterId: string, newJobId: number) {
+    return this.prisma.$transaction(async (tx) => {
+      // Fetch character with current job
+      const character = await tx.character.findUnique({
+        where: { id: characterId },
+        include: {
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true
+            }
+          }
+        }
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Fetch new job
+      const newJob = await tx.job.findUnique({
+        where: { id: newJobId },
+        include: {
+          startingAbility: true,
+          optionalAbility: true
+        }
+      });
+
+      if (!newJob) {
+        throw new Error("Job not found");
+      }
+
+      // Remove old job capabilities
+      if (character.job) {
+        const oldJobAbilityIds: string[] = [];
+
+        if (character.job.startingAbility) {
+          oldJobAbilityIds.push(character.job.startingAbility.id);
+        }
+
+        if (character.job.optionalAbility) {
+          oldJobAbilityIds.push(character.job.optionalAbility.id);
+        }
+
+        if (oldJobAbilityIds.length > 0) {
+          await tx.characterCapability.deleteMany({
+            where: {
+              characterId: character.id,
+              capabilityId: { in: oldJobAbilityIds }
+            }
+          });
+        }
+      }
+
+      // Add new job capabilities
+      const newJobAbilityIds: string[] = [];
+
+      if (newJob.startingAbility) {
+        newJobAbilityIds.push(newJob.startingAbility.id);
+      }
+
+      if (newJob.optionalAbility) {
+        newJobAbilityIds.push(newJob.optionalAbility.id);
+      }
+
+      for (const abilityId of newJobAbilityIds) {
+        await tx.characterCapability.upsert({
+          where: {
+            characterId_capabilityId: {
+              characterId: character.id,
+              capabilityId: abilityId
+            }
+          },
+          update: {},
+          create: {
+            characterId: character.id,
+            capabilityId: abilityId
+          }
+        });
+      }
+
+      // Update character with new job
+      return tx.character.update({
+        where: { id: characterId },
+        data: { jobId: newJobId },
+        include: {
+          job: {
+            include: {
+              startingAbility: true,
+              optionalAbility: true
+            }
+          },
+          capabilities: {
+            include: {
+              capability: true
+            }
+          }
+        }
+      });
+    });
+  }
+
+  //  =====================
+  // CITY CHARACTERS METHODS
+  // =====================
+
+  async findCityCharacters(townId: string, excludeStatus?: string) {
+    const where: any = {
+      townId,
+      isDead: false
+    };
+
+    if (excludeStatus === "DEPARTED") {
+      where.expeditionMembers = {
+        none: {
+          expedition: { status: "DEPARTED" }
+        }
+      };
+    }
+
+    return this.prisma.character.findMany({ where });
   }
 }

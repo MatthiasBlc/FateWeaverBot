@@ -36,4 +36,49 @@ export class JobRepository {
       }
     });
   }
+
+  // =====================
+  // CREATE/UPDATE METHODS
+  // =====================
+
+  async create(data: {
+    name: string;
+    description?: string;
+    startingAbilityId: string;
+    optionalAbilityId?: string | null;
+  }) {
+    return this.prisma.job.create({
+      data,
+      include: {
+        startingAbility: true,
+        optionalAbility: true
+      }
+    });
+  }
+
+  async update(id: number, data: {
+    name?: string;
+    description?: string;
+    startingAbilityId?: string;
+    optionalAbilityId?: string | null;
+  }) {
+    return this.prisma.job.update({
+      where: { id },
+      data,
+      include: {
+        startingAbility: true,
+        optionalAbility: true
+      }
+    });
+  }
+
+  // =====================
+  // CAPABILITY METHODS
+  // =====================
+
+  async findCapability(capabilityId: string) {
+    return this.prisma.capability.findUnique({
+      where: { id: capabilityId }
+    });
+  }
 }

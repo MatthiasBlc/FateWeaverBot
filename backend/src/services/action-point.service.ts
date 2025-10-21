@@ -1,17 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { CharacterRepository } from "../domain/repositories/character.repository";
 
 const prisma = new PrismaClient();
 
 class ActionPointService {
+  private characterRepo: CharacterRepository;
+
+  constructor(characterRepo?: CharacterRepository) {
+    this.characterRepo = characterRepo || new CharacterRepository(prisma);
+  }
+
   /**
    * Récupère le nombre de points d'action disponibles pour un personnage
    * Note: La régénération des PA est gérée automatiquement par le CRON à minuit
    */
   async getAvailablePoints(characterId: string): Promise<number> {
-    const character = await prisma.character.findUnique({
-      where: { id: characterId },
-      select: { paTotal: true },
-    });
+    const character = await this.characterRepo.findById(characterId);
     return character?.paTotal || 0;
   }
 
