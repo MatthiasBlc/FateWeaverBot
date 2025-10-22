@@ -35,8 +35,8 @@ RUN echo "=== Vérification après build ===" && \
     echo "=== Vérification server.js ===" && \
     test -f /app/dist/src/server.js && echo "✅ server.js trouvé à /app/dist/src/server.js" || echo "❌ server.js manquant"
 
-# Compilation du fichier de seeding avec tsconfig Docker
-RUN npx tsc prisma/seed.ts -p tsconfig.docker.json --module commonjs --target es2020 --moduleResolution node --allowJs --outDir prisma
+# Compilation du fichier de seeding (déjà ajusté par le script)
+RUN npx tsc prisma/seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs --outDir prisma
 
 # Suppression des dépendances de développement
 RUN npm prune --production
