@@ -3,16 +3,16 @@ import { z } from "zod";
 // GET /resources/:locationType/:locationId
 export const GetResourcesSchema = z.object({
   params: z.object({
-    locationType: z.enum(["town", "expedition"]),
-    locationId: z.string().uuid()
+    locationType: z.enum(["CITY", "EXPEDITION"]),
+    locationId: z.string().cuid()
   })
 });
 
 // POST /resources/:locationType/:locationId/:resourceTypeId
 export const AddResourceSchema = z.object({
   params: z.object({
-    locationType: z.enum(["town", "expedition"]),
-    locationId: z.string().uuid(),
+    locationType: z.enum(["CITY", "EXPEDITION"]),
+    locationId: z.string().cuid(),
     resourceTypeId: z.string().regex(/^\d+$/).transform(Number)
   }),
   body: z.object({
@@ -23,8 +23,8 @@ export const AddResourceSchema = z.object({
 // PUT /resources/:locationType/:locationId/:resourceTypeId
 export const UpdateResourceSchema = z.object({
   params: z.object({
-    locationType: z.enum(["town", "expedition"]),
-    locationId: z.string().uuid(),
+    locationType: z.enum(["CITY", "EXPEDITION"]),
+    locationId: z.string().cuid(),
     resourceTypeId: z.string().regex(/^\d+$/).transform(Number)
   }),
   body: z.object({
@@ -35,8 +35,8 @@ export const UpdateResourceSchema = z.object({
 // DELETE /resources/:locationType/:locationId/:resourceTypeId
 export const RemoveResourceSchema = z.object({
   params: z.object({
-    locationType: z.enum(["town", "expedition"]),
-    locationId: z.string().uuid(),
+    locationType: z.enum(["CITY", "EXPEDITION"]),
+    locationId: z.string().cuid(),
     resourceTypeId: z.string().regex(/^\d+$/).transform(Number)
   }),
   body: z.object({
@@ -47,10 +47,10 @@ export const RemoveResourceSchema = z.object({
 // POST /resources/:fromLocationType/:fromLocationId/:toLocationType/:toLocationId/:resourceTypeId/transfer
 export const TransferResourceSchema = z.object({
   params: z.object({
-    fromLocationType: z.enum(["town", "expedition"]),
-    fromLocationId: z.string().uuid(),
-    toLocationType: z.enum(["town", "expedition"]),
-    toLocationId: z.string().uuid(),
+    fromLocationType: z.enum(["CITY", "EXPEDITION"]),
+    fromLocationId: z.string().cuid(),
+    toLocationType: z.enum(["CITY", "EXPEDITION"]),
+    toLocationId: z.string().cuid(),
     resourceTypeId: z.string().regex(/^\d+$/).transform(Number)
   }),
   body: z.object({

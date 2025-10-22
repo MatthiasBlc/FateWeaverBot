@@ -10,7 +10,7 @@ import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
 import session from "express-session";
 import env from "./util/validateEnv";
-import { requireAuth } from "./middleware/auth";
+import { requireAuth, requireAuthOrInternal } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
@@ -149,15 +149,15 @@ app.use("/api/skills", skillsRoutes);
 app.use("/api/towns", townRoutes);
 app.use("/api/resources", resourcesRoutes);
 
-// Routes protégées - Nécessitent authentification utilisateur
-app.use("/api/characters", requireAuth, characterRoutes);
-app.use("/api/action-points", requireAuth, actionPointRoutes);
-app.use("/api/objects", requireAuth, objectsRoutes);
-app.use("/api/expeditions", requireAuth, expeditionRoutes);
-app.use("/api/chantiers", requireAuth, chantierRoutes);
-app.use("/api/projects", requireAuth, projectsRoutes);
-app.use("/api/seasons", requireAuth, seasonsRoutes);
-app.use("/api/jobs", requireAuth, jobRoutes);
+// Routes protégées - Nécessitent authentification utilisateur OU appel interne (bot Discord)
+app.use("/api/characters", requireAuthOrInternal, characterRoutes);
+app.use("/api/action-points", requireAuthOrInternal, actionPointRoutes);
+app.use("/api/objects", requireAuthOrInternal, objectsRoutes);
+app.use("/api/expeditions", requireAuthOrInternal, expeditionRoutes);
+app.use("/api/chantiers", requireAuthOrInternal, chantierRoutes);
+app.use("/api/projects", requireAuthOrInternal, projectsRoutes);
+app.use("/api/seasons", requireAuthOrInternal, seasonsRoutes);
+app.use("/api/jobs", requireAuthOrInternal, jobRoutes);
 
 // Routes admin (double protection)
 app.use("/api/admin/expeditions", requireAuth, expeditionAdminRoutes);

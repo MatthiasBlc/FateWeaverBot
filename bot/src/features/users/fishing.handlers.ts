@@ -43,8 +43,17 @@ async function executeFishing(
   paToUse: number
 ) {
   try {
+    // Récupérer la capacité Pêcher pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const fishingCapability = capabilities.find((cap: any) => cap.capability.name === "Pêcher");
+
+    if (!fishingCapability) {
+      throw new Error("Capacité Pêcher non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Pêcher",
+      capabilityId: fishingCapability.capability.id,
       paToUse,
     });
 

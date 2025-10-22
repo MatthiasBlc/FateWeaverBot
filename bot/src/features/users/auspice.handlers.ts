@@ -44,8 +44,17 @@ async function executeAuspice(
   try {
     logger.info("Executing auspice with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Auspice pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const auspiceCapability = capabilities.find((cap: any) => cap.capability.name === "Auspice");
+
+    if (!auspiceCapability) {
+      throw new Error("Capacité Auspice non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Auspice",
+      capabilityId: auspiceCapability.capability.id,
       paToUse,
     });
 

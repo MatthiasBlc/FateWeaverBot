@@ -21,7 +21,7 @@ export const GetGuildByDiscordIdSchema = z.object({
 // GET /guilds/:id
 export const GetGuildByIdSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
@@ -48,6 +48,6 @@ export const UpdateGuildDailyMessageChannelSchema = z.object({
 // DELETE /guilds/:id
 export const DeleteGuildSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });

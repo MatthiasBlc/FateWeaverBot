@@ -56,7 +56,7 @@ export function generateDynamicHelpSections(
 
     if (command.data.name.includes("profil") || command.data.name.includes("stock")) {
       category = "🍖 Survie";
-    } else if (command.data.name.includes("expedition")) {
+    } else if (command.data.name.includes("EXPEDITION")) {
       category = "🚀 Aventure";
     } else if (command.data.name.includes("chantier")) {
       category = "🏗️ Communauté";

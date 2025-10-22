@@ -19,14 +19,14 @@ export const GetTownByGuildIdSchema = z.object({
 // GET /towns/:id
 export const GetTownByIdSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
 // PATCH /towns/:id/vivres-stock
 export const UpdateTownVivresStockSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   }),
   body: z.object({
     quantity: z.number().int().min(0)
@@ -36,27 +36,27 @@ export const UpdateTownVivresStockSchema = z.object({
 // GET /towns/:id/weather
 export const GetTownWeatherSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
 // GET /towns/:id/actions-recap
 export const GetTownActionsRecapSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
 // GET /towns/:id/stocks-summary
 export const GetTownStocksSummarySchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
 // GET /towns/:id/expeditions-summary
 export const GetTownExpeditionsSummarySchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });

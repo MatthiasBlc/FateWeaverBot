@@ -44,8 +44,17 @@ async function executeCartography(
   try {
     logger.info("Executing cartography with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Cartographier pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const cartographyCapability = capabilities.find((cap: any) => cap.capability.name === "Cartographier");
+
+    if (!cartographyCapability) {
+      throw new Error("Capacité Cartographier non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Cartographier",
+      capabilityId: cartographyCapability.capability.id,
       paToUse,
     });
 

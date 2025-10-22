@@ -44,8 +44,17 @@ async function executeResearching(
   try {
     logger.info("Executing researching with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Rechercher pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const researchingCapability = capabilities.find((cap: any) => cap.capability.name === "Rechercher");
+
+    if (!researchingCapability) {
+      throw new Error("Capacité Rechercher non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Rechercher",
+      capabilityId: researchingCapability.capability.id,
       paToUse,
     });
 

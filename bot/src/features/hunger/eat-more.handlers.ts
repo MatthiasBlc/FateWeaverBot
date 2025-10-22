@@ -72,8 +72,8 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
         locationType = "EXPEDITION";
         locationId = activeExpedition.id;
       }
-    } catch (error) {
-      logger.error("Erreur lors de la vérification des expéditions:", error);
+    } catch (error: any) {
+      logger.error("Erreur lors de la vérification des expéditions:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
       // Continue avec la ville par défaut
     }
 
@@ -193,7 +193,7 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       flags: ["Ephemeral"],
     });
   } catch (error: any) {
-    logger.error("Erreur dans handleEatMoreButton:", error);
+    logger.error("Erreur dans handleEatMoreButton:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await replyError(
       interaction,
       "Erreur lors de l'affichage du menu de gestion de la faim."
@@ -239,7 +239,7 @@ export async function handleEatVivreFull(interaction: ButtonInteraction) {
     const hungerNeed = 4 - character.hungerLevel;
     await handleEatResource(interaction, "Vivres", hungerNeed);
   } catch (error: any) {
-    logger.error("Erreur dans handleEatVivreFull:", error);
+    logger.error("Erreur dans handleEatVivreFull:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await replyError(interaction, "Erreur lors de la consommation.");
   }
 }
@@ -267,7 +267,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
     const nourritureNeed = hungerNeed;
     await handleEatResource(interaction, "Repas", nourritureNeed);
   } catch (error: any) {
-    logger.error("Erreur dans handleEatNourritureFull:", error);
+    logger.error("Erreur dans handleEatNourritureFull:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await replyError(interaction, "Erreur lors de la consommation.");
   }
 }
@@ -317,7 +317,11 @@ async function handleEatResource(
       } catch (error: any) {
         logger.error(
           `[EAT-MORE] Erreur lors de la consommation ${i + 1}/${quantity}:`,
-          error
+          {
+            message: error?.message,
+            status: error?.response?.status,
+            data: error?.response?.data
+          }
         );
         await interaction.editReply({
           content: `${STATUS.ERROR} Erreur après ${i} consommation(s): ${error.message || "Ressources insuffisantes"}`,
@@ -359,8 +363,8 @@ async function handleEatResource(
         locationId = activeExpedition.id;
         locationName = `expédition "${activeExpedition.name}"`;
       }
-    } catch (error) {
-      logger.error("Erreur lors de la récupération de l'expédition:", error);
+    } catch (error: any) {
+      logger.error("Erreur lors de la récupération de l'expédition:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     }
 
     // Récupérer les stocks restants
@@ -380,7 +384,7 @@ async function handleEatResource(
       `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji} ${resourceName}**, il reste **${remainingStock}** ${resourceName} dans ${locationName}`
     );
   } catch (error: any) {
-    logger.error("Erreur dans handleEatResource:", error);
+    logger.error("Erreur dans handleEatResource:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await interaction.editReply({
       content: `${STATUS.ERROR} ${error.message || "Erreur lors de la consommation."}`,
     });

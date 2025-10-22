@@ -21,11 +21,11 @@ export class CharacterQueries {
             optionalAbility: true
           }
         },
-        characterCapabilities: {
+        capabilities: {
           include: { capability: true },
           orderBy: { capability: { name: "asc" as const } }
         },
-        characterSkills: { include: { skill: true } },
+        skills: { include: { skill: true } },
         expeditionMembers: { include: { expedition: true } },
         inventory: {
           include: {
@@ -43,7 +43,7 @@ export class CharacterQueries {
         town: { include: { guild: true } },
         characterRoles: { include: { role: true } },
         job: true,
-        characterCapabilities: {
+        capabilities: {
           include: { capability: true },
           orderBy: { capability: { name: "asc" as const } }
         }

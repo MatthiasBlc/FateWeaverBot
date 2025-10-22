@@ -139,8 +139,17 @@ async function executeCooking(
   inputQuantity: number
 ) {
   try {
+    // Récupérer la capacité Cuisiner pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const cookingCapability = capabilities.find((cap: any) => cap.capability.name === "Cuisiner");
+
+    if (!cookingCapability) {
+      throw new Error("Capacité Cuisiner non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Cuisiner",
+      capabilityId: cookingCapability.capability.id,
       paToUse,
       inputQuantity,
     });

@@ -166,10 +166,10 @@ export const eatFood: RequestHandler = async (req, res, next) => {
 export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { resourceTypeName } = req.body; // Nom du type de ressource à consommer
+    const { foodType } = req.body; // Nom du type de ressource à consommer
 
-    if (!resourceTypeName) {
-      throw new BadRequestError("resourceTypeName est requis");
+    if (!foodType) {
+      throw new BadRequestError("foodType est requis");
     }
 
     // Récupérer le personnage avec ses informations d'expédition
@@ -194,7 +194,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
 
     // Récupérer le type de ressource demandé
     const resourceType = await ResourceUtils.getResourceTypeByName(
-      resourceTypeName
+      foodType
     );
 
     // Déterminer la source des ressources selon la logique demandée

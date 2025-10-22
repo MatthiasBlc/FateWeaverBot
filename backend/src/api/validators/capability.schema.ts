@@ -13,42 +13,42 @@ export const CreateCapabilitySchema = z.object({
 // GET /capabilities/cataplasme-count/:townId
 export const GetCataplasmeCountSchema = z.object({
   params: z.object({
-    townId: z.string().uuid()
+    townId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/couper-du-bois
 export const ExecuteCouperDuBoisSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/miner
 export const ExecuteMinerSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/pecher
 export const ExecuteFishSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/harvest
 export const ExecuteHarvestSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/craft
 export const ExecuteCraftSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   }),
   body: z.object({
     blueprintId: z.number().int().positive(),
@@ -59,17 +59,17 @@ export const ExecuteCraftSchema = z.object({
 // POST /capabilities/:characterId/soigner
 export const ExecuteSoignerSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   }),
   body: z.object({
-    targetCharacterId: z.string().uuid()
+    targetCharacterId: z.string().cuid()
   })
 });
 
 // POST /capabilities/:characterId/research
 export const ExecuteResearchSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   }),
   body: z.object({
     blueprintId: z.number().int().positive()
@@ -79,6 +79,6 @@ export const ExecuteResearchSchema = z.object({
 // POST /capabilities/:characterId/divertir
 export const ExecuteDivertirSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   })
 });

@@ -32,6 +32,6 @@ export const UpdateUserByDiscordIdSchema = z.object({
 // DELETE /users/:id
 export const DeleteUserSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });

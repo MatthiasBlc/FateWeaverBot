@@ -28,16 +28,16 @@ export const GetGuildRolesSchema = z.object({
 // DELETE /roles/:id
 export const DeleteRoleSchema = z.object({
   params: z.object({
-    id: z.string().uuid()
+    id: z.string().cuid()
   })
 });
 
 // PUT /roles/character/:characterId
 export const UpdateCharacterRolesSchema = z.object({
   params: z.object({
-    characterId: z.string().uuid()
+    characterId: z.string().cuid()
   }),
   body: z.object({
-    roleIds: z.array(z.string().uuid())
+    roleIds: z.array(z.string().cuid())
   })
 });
