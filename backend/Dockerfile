@@ -38,6 +38,9 @@ RUN echo "=== Vérification après build ===" && \
 # Compilation du fichier de seeding (déjà ajusté par le script)
 RUN npx tsc prisma/seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs --outDir prisma
 
+# Fix imports dans les fichiers JS compilés
+RUN sh ./scripts/fix-docker-imports-js.sh
+
 # Suppression des dépendances de développement
 RUN npm prune --production
 
