@@ -23,9 +23,6 @@ COPY ./shared ./shared
 COPY ./backend/src ./src
 COPY ./backend/scripts ./scripts
 
-# Fix imports pour Docker (rootDir: . au lieu de ../)
-RUN sh ./scripts/fix-docker-imports.sh
-
 # Construction de l'application avec tsconfig Docker
 RUN npx tsc -p tsconfig.docker.json
 
@@ -34,12 +31,6 @@ RUN echo "=== Vérification après build ===" && \
     ls -la /app/dist/ && \
     echo "=== Vérification server.js ===" && \
     test -f /app/dist/src/server.js && echo "✅ server.js trouvé à /app/dist/src/server.js" || echo "❌ server.js manquant"
-
-# Compilation du fichier de seeding (déjà ajusté par le script)
-RUN npx tsc prisma/seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs --outDir prisma
-
-# Fix imports dans les fichiers JS compilés
-RUN sh ./scripts/fix-docker-imports-js.sh
 
 # Suppression des dépendances de développement
 RUN npm prune --production
@@ -55,6 +46,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/tsconfig*.json ./
+COPY --from=builder /app/src ./src
 
 # Installation de Prisma et des outils nécessaires
 RUN npm install -g prisma && \
