@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { ObjectRepository } from "../domain/repositories/object.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -81,7 +82,7 @@ class ObjectServiceClass {
       });
 
       if (!objectType) {
-        throw new Error(`ObjectType ${objectTypeId} not found`);
+        throw new NotFoundError("ObjectType", objectTypeId);
       }
 
       // 2. Si l'objet a des conversions de ressources (sac de ressources)
@@ -98,7 +99,7 @@ class ObjectServiceClass {
         });
 
         if (!character) {
-          throw new Error(`Character ${characterId} not found`);
+          throw new NotFoundError("Character", characterId);
         }
 
         // Déterminer la destination des ressources
@@ -252,14 +253,14 @@ class ObjectServiceClass {
     });
 
     if (!inventory) {
-      throw new Error('Character has no inventory');
+      throw new NotFoundError('Character inventory', characterId);
     }
 
     // Trouver le premier slot avec ce type d'objet
     const slot = inventory.slots.find(s => s.objectType.id === objectTypeId);
 
     if (!slot) {
-      throw new Error('Object not found in character inventory');
+      throw new NotFoundError('Object in character inventory', objectTypeId);
     }
 
     return await prisma.characterInventorySlot.delete({
@@ -293,7 +294,7 @@ class ObjectServiceClass {
       });
 
       if (!sourceSlot) {
-        throw new Error('Slot source not found');
+        throw new NotFoundError('Inventory slot', slotId);
       }
 
       // 2. Récupérer le personnage cible
@@ -308,7 +309,7 @@ class ObjectServiceClass {
       });
 
       if (!targetCharacter) {
-        throw new Error('Target character not found');
+        throw new NotFoundError('Target character', targetCharacterId);
       }
 
       const sourceChar = sourceSlot.inventory.character;
@@ -321,7 +322,7 @@ class ObjectServiceClass {
                               sourceExpedition.id === targetExpedition.id;
 
       if (!sameCity && !sameExpedition) {
-        throw new Error('Characters must be in same city or same DEPARTED expedition');
+        throw new BadRequestError('Characters must be in same city or same DEPARTED expedition');
       }
 
       // 4. Créer l'inventaire cible si nécessaire

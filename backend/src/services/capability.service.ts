@@ -13,6 +13,7 @@ import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
 import { CapabilityRepository } from "../domain/repositories/capability.repository";
+import { NotFoundError, BadRequestError, ValidationError } from "../shared/errors";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -176,18 +177,18 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName(capabilityName);
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', capabilityName);
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
@@ -222,7 +223,7 @@ export class CapabilityService {
         break;
 
       default:
-        throw new Error("Capacité de récolte non reconnue");
+      throw new BadRequestError("Capacité de récolte non reconnue");
     }
 
     // Mettre à jour les PA et ajouter les ressources à la ville
@@ -285,25 +286,25 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName("Couper du bois");
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', 'Couper du bois');
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
     const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
-      throw new Error("Impossible de Couper du bois en expédition DEPARTED");
+      throw new BadRequestError("Impossible de Couper du bois en expédition DEPARTED");
     }
 
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
@@ -397,25 +398,25 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName("Miner");
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', 'Miner');
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
     const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
-      throw new Error("Impossible de Miner en expédition DEPARTED");
+      throw new BadRequestError("Impossible de Miner en expédition DEPARTED");
     }
 
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
@@ -514,25 +515,25 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName("Pêcher");
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', 'Pêcher');
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
     const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
-      throw new Error("Impossible de Pêcher en expédition DEPARTED");
+      throw new BadRequestError("Impossible de Pêcher en expédition DEPARTED");
     }
 
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
@@ -549,7 +550,7 @@ export class CapabilityService {
     const lootEntries = await this.capabilityRepo.getFishingLootEntries(paSpent);
 
     if (lootEntries.length === 0) {
-      throw new Error(`Aucune table de loot trouvée pour ${paSpent} PA`);
+      throw new BadRequestError(`Aucune table de loot trouvée pour ${paSpent} PA`);
     }
 
     // Tirer aléatoirement une entrée (ou deux si LUCKY_ROLL)
@@ -573,7 +574,7 @@ export class CapabilityService {
       });
 
       if (!coquillageObject) {
-        throw new Error("Objet Coquillage non trouvé");
+        throw new NotFoundError('Object', 'Coquillage');
       }
 
       // Ajouter le coquillage à l'inventaire du personnage
@@ -621,9 +622,7 @@ export class CapabilityService {
     });
 
     if (!resourceType) {
-      throw new Error(
-        `Type de ressource '${lootEntry.resourceName}' non trouvé`
-      );
+      throw new NotFoundError('Resource type', lootEntry.resourceName);
     }
 
     await this.prisma.$transaction([
@@ -694,14 +693,14 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
     const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
 
     if (departedExpedition) {
-      throw new Error("Impossible de crafter en expédition DEPARTED");
+      throw new BadRequestError("Impossible de crafter en expédition DEPARTED");
     }
 
     // Vérifier les PA et les restrictions (Agonie, Déprime) AVANT de check le craft type
@@ -736,15 +735,15 @@ export class CapabilityService {
 
     const config = CRAFT_CONFIGS[craftType];
     if (!config) {
-      throw new Error("Type de craft non reconnu");
+      throw new BadRequestError("Type de craft non reconnu");
     }
 
     // Vérifier les PA vs quantité d'input
     if (paSpent === 1 && (inputAmount < 1 || inputAmount > 2)) {
-      throw new Error("1 PA permet 1-2 ressources en entrée");
+      throw new ValidationError("1 PA permet 1-2 ressources en entrée");
     }
     if (paSpent === 2 && (inputAmount < 2 || inputAmount > 5)) {
-      throw new Error("2 PA permet 2-5 ressources en entrée");
+      throw new ValidationError("2 PA permet 2-5 ressources en entrée");
     }
 
     // Vérifier le stock d'input
@@ -753,7 +752,7 @@ export class CapabilityService {
     });
 
     if (!inputResourceType) {
-      throw new Error(`Type de ressource '${config.inputResource}' non trouvé`);
+      throw new NotFoundError('Resource type', config.inputResource);
     }
 
     const inputStock = await this.prisma.resourceStock.findUnique({
@@ -765,7 +764,7 @@ export class CapabilityService {
     });
 
     if (!inputStock || inputStock.quantity < inputAmount) {
-      throw new Error(
+      throw new BadRequestError(
         `Stock insuffisant: ${inputStock?.quantity || 0}/${inputAmount} ${
           config.inputResource
         }`
@@ -810,9 +809,7 @@ export class CapabilityService {
     });
 
     if (!outputResourceType) {
-      throw new Error(
-        `Type de ressource '${config.outputResource}' non trouvé`
-      );
+      throw new NotFoundError('Resource type', config.outputResource);
     }
 
     // Exécuter le craft
@@ -893,24 +890,24 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName("Soigner");
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', 'Soigner');
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     if (mode === "heal") {
       // Mode 1: Heal target
       if (!targetCharacterId) {
-        throw new Error("Cible requise pour soigner");
+        throw new ValidationError("Cible requise pour soigner");
       }
 
       const target = await this.prisma.character.findUnique({
@@ -918,16 +915,16 @@ export class CapabilityService {
       });
 
       if (!target) {
-        throw new Error("Personnage cible non trouvé");
+        throw new NotFoundError('Target character', targetCharacterId);
       }
 
       if (target.hp >= 5) {
-        throw new Error("La cible a déjà tous ses PV");
+        throw new BadRequestError("La cible a déjà tous ses PV");
       }
 
       // Vérifier si la cible est en agonie affamé (hungerLevel=0 ET hp=1)
       if (target.hungerLevel === 0 && target.hp === 1) {
-        throw new Error(
+        throw new BadRequestError(
           "Impossible de soigner un personnage en agonie affamé. Il doit d'abord manger."
         );
       }
@@ -957,7 +954,7 @@ export class CapabilityService {
       const cataplasmeCount = await this.getCataplasmeCount(character.townId);
 
       if (cataplasmeCount >= 3) {
-        throw new Error("Limite de cataplasmes atteinte (max 3 par ville)");
+        throw new BadRequestError("Limite de cataplasmes atteinte (max 3 par ville)");
       }
 
       const cataplasmeType = await ResourceUtils.getResourceTypeByName(
@@ -1034,20 +1031,20 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capabilityName =
       researchType.charAt(0).toUpperCase() + researchType.slice(1);
     const capability = await this.getCapabilityByName(capabilityName);
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', capabilityName);
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier les PA et les restrictions (Agonie, Déprime)
@@ -1081,15 +1078,15 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     if (character.isDead) {
-      throw new Error("Personnage mort");
+      throw new BadRequestError("Personnage mort");
     }
 
     if (character.hp >= 5) {
-      throw new Error("PV déjà au maximum");
+      throw new BadRequestError("PV déjà au maximum");
     }
 
     // Determine location (city or DEPARTED expedition)
@@ -1114,7 +1111,7 @@ export class CapabilityService {
     );
 
     if (!stock || stock.quantity < 1) {
-      throw new Error("Aucun cataplasme disponible");
+      throw new BadRequestError("Aucun cataplasme disponible");
     }
 
     // Use cataplasme
@@ -1150,18 +1147,18 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError('Character', characterId);
     }
 
     const capability = await this.getCapabilityByName("Divertir");
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError('Capability', 'Divertir');
     }
 
     // Vérifier que le personnage a la capacité
     const hasCapability = await this.hasCapability(characterId, capability.id);
     if (!hasCapability) {
-      throw new Error("Le personnage ne possède pas cette capacité");
+      throw new BadRequestError("Le personnage ne possède pas cette capacité");
     }
 
     // Vérifier les PA et les restrictions (Agonie, Déprime)

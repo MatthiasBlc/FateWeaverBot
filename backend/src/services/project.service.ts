@@ -1,6 +1,7 @@
 import { PrismaClient, CraftType, ProjectStatus } from '@prisma/client';
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ProjectRepository } from "../domain/repositories/project.repository";
+import { NotFoundError, BadRequestError, ValidationError } from "../shared/errors";
 
 const prisma = new PrismaClient();
 
@@ -47,7 +48,7 @@ class ProjectServiceClass {
     const existingProject = await this.projectRepo.findFirst({ name, townId });
 
     if (existingProject) {
-      throw new Error(`Un projet nommé "${name}" existe déjà dans cette ville`);
+      throw new BadRequestError(`Un projet nommé "${name}" existe déjà dans cette ville`);
     }
 
     const outputResource = await prisma.resourceType.findUnique({
@@ -55,11 +56,11 @@ class ProjectServiceClass {
     });
 
     if (!outputResource) {
-      throw new Error('Type de ressource de sortie invalide');
+      throw new BadRequestError('Type de ressource de sortie invalide');
     }
 
     if (craftTypes.length === 0) {
-      throw new Error('Au moins un type d\'artisanat doit être spécifié');
+      throw new ValidationError('Au moins un type d\'artisanat doit être spécifié');
     }
 
     const project = await prisma.project.create({
@@ -127,11 +128,11 @@ class ProjectServiceClass {
       });
 
       if (!blueprint) {
-        throw new Error("Blueprint not found");
+        throw new NotFoundError('Blueprint', blueprintId);
       }
 
       if (!blueprint.isBlueprint) {
-        throw new Error("This project is not a blueprint");
+        throw new BadRequestError("This project is not a blueprint");
       }
 
       // Use blueprint costs if available, otherwise use original costs
@@ -212,7 +213,7 @@ class ProjectServiceClass {
     const project = await this.projectRepo.findByIdWithBlueprint(projectId);
 
     if (!project) {
-      throw new Error('Projet non trouvé');
+      throw new NotFoundError('Project', projectId);
     }
 
     return project;
@@ -233,7 +234,7 @@ class ProjectServiceClass {
     });
 
     if (!character) {
-      throw new Error('Personnage non trouvé');
+      throw new NotFoundError('Character', characterId);
     }
 
     const departedExpedition = character.expeditionMembers.find(
@@ -241,24 +242,24 @@ class ProjectServiceClass {
     );
 
     if (departedExpedition) {
-      throw new Error('Impossible de contribuer à un projet en étant en expédition DEPARTED');
+      throw new BadRequestError('Impossible de contribuer à un projet en étant en expédition DEPARTED');
     }
 
     const project = await this.getProjectById(projectId);
 
     if (project.status === ProjectStatus.COMPLETED) {
-      throw new Error('Ce projet est déjà terminé');
+      throw new BadRequestError('Ce projet est déjà terminé');
     }
 
     if (project.townId !== character.townId) {
-      throw new Error('Le personnage n\'appartient pas à la ville de ce projet');
+      throw new BadRequestError('Le personnage n\'appartient pas à la ville de ce projet');
     }
 
     return await prisma.$transaction(async tx => {
       if (paAmount > 0) {
         const newPaContributed = project.paContributed + paAmount;
         if (newPaContributed > project.paRequired) {
-          throw new Error(`Vous ne pouvez contribuer que ${project.paRequired - project.paContributed} PA maximum`);
+          throw new ValidationError(`Vous ne pouvez contribuer que ${project.paRequired - project.paContributed} PA maximum`);
         }
 
         await tx.project.update({
@@ -273,12 +274,12 @@ class ProjectServiceClass {
         );
 
         if (!resourceCost) {
-          throw new Error(`Cette ressource n'est pas requise pour ce projet`);
+          throw new BadRequestError(`Cette ressource n'est pas requise pour ce projet`);
         }
 
         const newQuantityContributed = resourceCost.quantityContributed + contribution.quantity;
         if (newQuantityContributed > resourceCost.quantityRequired) {
-          throw new Error(
+          throw new ValidationError(
             `Vous ne pouvez contribuer que ${resourceCost.quantityRequired - resourceCost.quantityContributed} ${resourceCost.resourceType.name} maximum`
           );
         }
@@ -291,7 +292,7 @@ class ProjectServiceClass {
         });
 
         if (!currentStock || currentStock.quantity < contribution.quantity) {
-          throw new Error(`Stock insuffisant de ${resourceCost.resourceType.name} dans la ville`);
+          throw new BadRequestError(`Stock insuffisant de ${resourceCost.resourceType.name} dans la ville`);
         }
 
         await tx.resourceStock.update({
@@ -358,11 +359,11 @@ class ProjectServiceClass {
     const project = await this.getProjectById(projectId);
 
     if (project.status === ProjectStatus.COMPLETED) {
-      throw new Error('Impossible de supprimer un projet terminé');
+      throw new BadRequestError('Impossible de supprimer un projet terminé');
     }
 
     if (project.paContributed > 0 || project.resourceCosts.some(rc => rc.quantityContributed > 0)) {
-      throw new Error('Impossible de supprimer un projet avec des contributions');
+      throw new BadRequestError('Impossible de supprimer un projet avec des contributions');
     }
 
     await this.projectRepo.delete(projectId);

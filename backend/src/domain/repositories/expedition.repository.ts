@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma, ExpeditionStatus } from "@prisma/client";
 import { ExpeditionQueries } from "../../infrastructure/database/query-builders/expedition.queries";
+import { NotFoundError } from "../../shared/errors";
 
 export class ExpeditionRepository {
   constructor(private prisma: PrismaClient) {}
@@ -99,7 +100,7 @@ export class ExpeditionRepository {
     });
 
     if (!member) {
-      throw new Error(`Expedition member not found for expedition ${expeditionId} and character ${characterId}`);
+      throw new NotFoundError('Expedition member', expeditionId);
     }
 
     return this.prisma.expeditionMember.delete({

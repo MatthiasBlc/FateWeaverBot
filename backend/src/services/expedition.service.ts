@@ -6,6 +6,7 @@ import { ResourceQueries } from "../infrastructure/database/query-builders/resou
 import { ResourceUtils } from "../shared/utils";
 import { ExpeditionRepository } from "../domain/repositories/expedition.repository";
 import { ResourceRepository } from "../domain/repositories/resource.repository";
+import { NotFoundError, BadRequestError, ValidationError } from "../shared/errors";
 
 const prisma = new PrismaClient();
 
@@ -95,17 +96,17 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error(
+        throw new BadRequestError(
           "Cannot transfer resources for expedition that is not in PLANNING status"
         );
       }
 
       if (amount <= 0) {
-        throw new Error("Transfer amount must be positive");
+        throw new ValidationError("Transfer amount must be positive");
       }
 
       const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
@@ -117,7 +118,7 @@ export class ExpeditionService {
         });
 
         if (!townStock || townStock.quantity < amount) {
-          throw new Error(`Not enough ${resourceTypeName} in town`);
+          throw new BadRequestError(`Not enough ${resourceTypeName} in town`);
         }
 
         await Promise.all([
@@ -147,7 +148,7 @@ export class ExpeditionService {
         });
 
         if (!expeditionStock || expeditionStock.quantity < amount) {
-          throw new Error(`Not enough ${resourceTypeName} in expedition`);
+          throw new BadRequestError(`Not enough ${resourceTypeName} in expedition`);
         }
 
         await Promise.all([
@@ -190,17 +191,17 @@ export class ExpeditionService {
       });
 
       if (!town) {
-        throw new Error("Town not found");
+        throw new NotFoundError('Town', data.townId);
       }
 
       if (data.duration < 1) {
-        throw new Error("Expedition duration must be at least 1 day");
+        throw new ValidationError("Expedition duration must be at least 1 day");
       }
 
       // Validate initial resources and check if town has enough
       for (const resource of data.initialResources) {
         if (resource.quantity <= 0) {
-          throw new Error(
+          throw new ValidationError(
             `Resource quantity must be positive for ${resource.resourceTypeName}`
           );
         }
@@ -215,7 +216,7 @@ export class ExpeditionService {
         const availableQuantity = townStock?.quantity || 0;
 
         if (!townStock || availableQuantity < resource.quantity) {
-          throw new Error(
+          throw new BadRequestError(
             `Ressources insuffisantes : ${resource.resourceTypeName} (demandé: ${resource.quantity}, disponible: ${availableQuantity})`
           );
         }
@@ -370,11 +371,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error(
+        throw new BadRequestError(
           "Cannot join expedition that is not in PLANNING status"
         );
       }
@@ -388,7 +389,7 @@ export class ExpeditionService {
       });
 
       if (existingMember) {
-        throw new Error("Character is already a member of this expedition");
+        throw new BadRequestError("Character is already a member of this expedition");
       }
 
       // Check if character is already on another active expedition
@@ -409,7 +410,7 @@ export class ExpeditionService {
       });
 
       if (activeExpedition) {
-        throw new Error(
+        throw new BadRequestError(
           `Character is already on expedition: ${activeExpedition.expedition.name}`
         );
       }
@@ -454,11 +455,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error(
+        throw new BadRequestError(
           "Cannot leave expedition that is not in PLANNING status"
         );
       }
@@ -473,7 +474,7 @@ export class ExpeditionService {
       });
 
       if (!member) {
-        throw new Error("Character is not a member of this expedition");
+        throw new BadRequestError("Character is not a member of this expedition");
       }
 
       // Remove member
@@ -508,11 +509,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error("Can only lock expeditions in PLANNING status");
+        throw new BadRequestError("Can only lock expeditions in PLANNING status");
       }
 
       // Check if expedition has members
@@ -521,7 +522,7 @@ export class ExpeditionService {
       });
 
       if (memberCount === 0) {
-        throw new Error("Cannot lock expedition with no members");
+        throw new BadRequestError("Cannot lock expedition with no members");
       }
 
       const updatedExpedition = await tx.expedition.update({
@@ -548,11 +549,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.LOCKED) {
-        throw new Error("Can only depart expeditions in LOCKED status");
+        throw new BadRequestError("Can only depart expeditions in LOCKED status");
       }
 
       const returnAt = new Date();
@@ -604,11 +605,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.DEPARTED) {
-        throw new Error("Can only return expeditions in DEPARTED status");
+        throw new BadRequestError("Can only return expeditions in DEPARTED status");
       }
 
       // Return food to town and clear expedition food stock
@@ -618,7 +619,7 @@ export class ExpeditionService {
       });
 
       if (!town) {
-        throw new Error("Town not found");
+        throw new NotFoundError('Town', expedition.townId);
       }
 
       const [, updatedExpedition] = await Promise.all([
@@ -686,11 +687,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.DEPARTED) {
-        throw new Error("Can only vote for emergency return on DEPARTED expeditions");
+        throw new BadRequestError("Can only vote for emergency return on DEPARTED expeditions");
       }
 
       // Check userId properly via character relation
@@ -702,7 +703,7 @@ export class ExpeditionService {
       });
 
       if (memberCharacters.length === 0) {
-        throw new Error("User is not a member of this expedition");
+        throw new BadRequestError("User is not a member of this expedition");
       }
 
       // Check if vote already exists
@@ -913,11 +914,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.PLANNING) {
-        throw new Error(
+        throw new BadRequestError(
           "Can only add members to expeditions in PLANNING status"
         );
       }
@@ -929,7 +930,7 @@ export class ExpeditionService {
       });
 
       if (!character) {
-        throw new Error("Character not found");
+        throw new NotFoundError('Character', characterId);
       }
 
       // Check if character is already in expedition
@@ -943,7 +944,7 @@ export class ExpeditionService {
       });
 
       if (existingMember) {
-        throw new Error("Character is already in this expedition");
+        throw new BadRequestError("Character is already in this expedition");
       }
 
       const member = await tx.expeditionMember.create({
@@ -1044,7 +1045,7 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       // Check if member exists
@@ -1058,7 +1059,7 @@ export class ExpeditionService {
       });
 
       if (!member) {
-        throw new Error("Character is not a member of this expedition");
+        throw new BadRequestError("Character is not a member of this expedition");
       }
 
       await tx.expeditionMember.delete({
@@ -1092,11 +1093,11 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.DEPARTED) {
-        throw new Error("Can only remove members from DEPARTED expeditions");
+        throw new BadRequestError("Can only remove members from DEPARTED expeditions");
       }
 
       // Check if character is a member
@@ -1113,7 +1114,7 @@ export class ExpeditionService {
       });
 
       if (!member) {
-        throw new Error("Character is not a member of this expedition");
+        throw new BadRequestError("Character is not a member of this expedition");
       }
 
       // Set character PA to 0
@@ -1167,15 +1168,15 @@ export class ExpeditionService {
       });
 
       if (!expedition) {
-        throw new Error("Expedition not found");
+        throw new NotFoundError('Expedition', expeditionId);
       }
 
       if (expedition.status !== ExpeditionStatus.DEPARTED) {
-        throw new Error("Can only set direction for DEPARTED expeditions");
+        throw new BadRequestError("Can only set direction for DEPARTED expeditions");
       }
 
       if (expedition.currentDayDirection) {
-        throw new Error("Direction already set for today");
+        throw new BadRequestError("Direction already set for today");
       }
 
       // Verify character is member of expedition
@@ -1187,7 +1188,7 @@ export class ExpeditionService {
       });
 
       if (!member) {
-        throw new Error("Character is not a member of this expedition");
+        throw new BadRequestError("Character is not a member of this expedition");
       }
 
       // Set direction

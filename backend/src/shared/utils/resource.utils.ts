@@ -1,6 +1,7 @@
 import { prisma } from "../../util/db";
 import { LocationType } from "@prisma/client";
 import { ResourceQueries } from "../../infrastructure/database/query-builders/resource.queries";
+import { NotFoundError } from "../errors";
 
 export class ResourceUtils {
   static async getResourceTypeByName(name: string) {
@@ -9,7 +10,7 @@ export class ResourceUtils {
     });
 
     if (!resourceType) {
-      throw new Error(`Type de ressource '${name}' introuvable`);
+      throw new NotFoundError('Type de ressource', name);
     }
 
     return resourceType;
@@ -40,8 +41,8 @@ export class ResourceUtils {
     const stock = await this.getStock(locationType, locationId, resourceTypeId);
 
     if (!stock) {
-      throw new Error(
-        `Stock introuvable pour locationType=${locationType}, locationId=${locationId}, resourceTypeId=${resourceTypeId}`
+      throw new NotFoundError(
+        `Stock pour locationType=${locationType}, locationId=${locationId}, resourceTypeId=${resourceTypeId}`
       );
     }
 

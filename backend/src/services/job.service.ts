@@ -1,5 +1,6 @@
 import { PrismaClient, Job } from "@prisma/client";
 import { JobRepository } from "../domain/repositories/job.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -46,14 +47,14 @@ class JobServiceClass {
     const startingAbility = await this.jobRepo.findCapability(data.startingAbilityId);
 
     if (!startingAbility) {
-      throw new Error("Starting ability not found");
+      throw new NotFoundError("Starting ability", data.startingAbilityId);
     }
 
     if (data.optionalAbilityId) {
       const optionalAbility = await this.jobRepo.findCapability(data.optionalAbilityId);
 
       if (!optionalAbility) {
-        throw new Error("Optional ability not found");
+        throw new NotFoundError("Optional ability", data.optionalAbilityId);
       }
     }
 
@@ -69,7 +70,7 @@ class JobServiceClass {
       const startingAbility = await this.jobRepo.findCapability(data.startingAbilityId);
 
       if (!startingAbility) {
-        throw new Error("Starting ability not found");
+        throw new NotFoundError("Starting ability", data.startingAbilityId);
       }
     }
 
@@ -77,7 +78,7 @@ class JobServiceClass {
       const optionalAbility = await this.jobRepo.findCapability(data.optionalAbilityId);
 
       if (!optionalAbility) {
-        throw new Error("Optional ability not found");
+        throw new NotFoundError("Optional ability", data.optionalAbilityId);
       }
     }
 

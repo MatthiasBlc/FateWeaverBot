@@ -1,6 +1,7 @@
 import { prisma } from "../../util/db";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { Character } from "@prisma/client";
+import { NotFoundError, BadRequestError } from "../errors";
 
 export class CharacterUtils {
   static async getActiveCharacter(userId: string, townId: string) {
@@ -14,7 +15,7 @@ export class CharacterUtils {
     const character = await this.getActiveCharacter(userId, townId);
 
     if (!character) {
-      throw new Error(
+      throw new NotFoundError(
         `Aucun personnage actif trouvé pour userId=${userId}, townId=${townId}`
       );
     }
@@ -32,7 +33,7 @@ export class CharacterUtils {
     const user = await this.getUserByDiscordId(discordId);
 
     if (!user) {
-      throw new Error(`Utilisateur avec discordId=${discordId} introuvable`);
+      throw new NotFoundError('Utilisateur', discordId);
     }
 
     return user;
@@ -49,7 +50,7 @@ export class CharacterUtils {
     const character = await this.getCharacterById(id);
 
     if (!character) {
-      throw new Error(`Personnage avec id=${id} introuvable`);
+      throw new NotFoundError('Personnage', id);
     }
 
     return character;
@@ -57,15 +58,15 @@ export class CharacterUtils {
 
   static async validateCanUsePA(character: Character, paRequired: number): Promise<void> {
     if (character.hp <= 1) {
-      throw new Error("Personnage en agonie : impossible d'utiliser des PA");
+      throw new BadRequestError("Personnage en agonie : impossible d'utiliser des PA");
     }
 
     if (character.pm <= 1 && character.paUsedToday + paRequired > 1) {
-      throw new Error("Déprime : vous ne pouvez utiliser qu'1 PA par jour");
+      throw new BadRequestError("Déprime : vous ne pouvez utiliser qu'1 PA par jour");
     }
 
     if (character.paTotal < paRequired) {
-      throw new Error(
+      throw new BadRequestError(
         `Pas assez de points d'action (requis: ${paRequired}, disponible: ${character.paTotal})`
       );
     }

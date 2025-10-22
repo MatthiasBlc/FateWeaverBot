@@ -2,6 +2,7 @@ import { PrismaClient, LocationType } from "@prisma/client";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
 import { ResourceRepository } from "../domain/repositories/resource.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 export class ResourceService {
   private resourceRepo: ResourceRepository;
@@ -46,7 +47,7 @@ export class ResourceService {
     const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (newQuantity < 0) {
-      throw new Error("La quantité ne peut pas être négative");
+      throw new BadRequestError("La quantité ne peut pas être négative");
     }
 
     await this.resourceRepo.setStock(locationType, locationId, resourceType.id, newQuantity);
@@ -64,14 +65,14 @@ export class ResourceService {
     const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (quantity <= 0) {
-      throw new Error("La quantité à retirer doit être positive");
+      throw new BadRequestError("La quantité à retirer doit être positive");
     }
 
     // Vérifier que le lieu a assez de ressources
     const currentStock = await ResourceUtils.getStock(locationType, locationId, resourceType.id);
 
     if (!currentStock || currentStock.quantity < quantity) {
-      throw new Error(`Pas assez de ${resourceTypeName} disponibles`);
+      throw new BadRequestError(`Pas assez de ${resourceTypeName} disponibles`);
     }
 
     await this.resourceRepo.decrementStock(locationType, locationId, resourceType.id, quantity);
@@ -89,11 +90,11 @@ export class ResourceService {
     quantity: number
   ): Promise<void> {
     if (fromLocationType === toLocationType && fromLocationId === toLocationId) {
-      throw new Error("Impossible de transférer vers le même lieu");
+      throw new BadRequestError("Impossible de transférer vers le même lieu");
     }
 
     if (quantity <= 0) {
-      throw new Error("La quantité doit être positive");
+      throw new BadRequestError("La quantité doit être positive");
     }
 
     const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);

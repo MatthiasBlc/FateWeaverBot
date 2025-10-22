@@ -1,5 +1,6 @@
 import { Character } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
+import { BadRequestError } from "../shared/errors";
 
 /**
  * Valide qu'un personnage peut utiliser des PA
@@ -8,20 +9,20 @@ import { PrismaClient } from "@prisma/client";
 export function validateCanUsePA(character: Character, paRequired: number): void {
   // Agonie (HP=1) : ne peut plus utiliser de PA
   if (character.hp <= 1) {
-    throw new Error("Personnage en agonie : impossible d'utiliser des PA");
+    throw new BadRequestError("Personnage en agonie : impossible d'utiliser des PA");
   }
 
   // Déprime (PM=1) ou Dépression (PM=0) : max 1 PA/jour
   if (character.pm <= 1) {
     if (character.paUsedToday + paRequired > 1) {
       const status = character.pm === 1 ? "Déprime" : "Dépression";
-      throw new Error(`${status} : vous ne pouvez utiliser qu'1 PA par jour`);
+      throw new BadRequestError(`${status} : vous ne pouvez utiliser qu'1 PA par jour`);
     }
   }
 
   // PA insuffisants
   if (character.paTotal < paRequired) {
-    throw new Error("Pas assez de points d'action");
+    throw new BadRequestError("Pas assez de points d'action");
   }
 }
 

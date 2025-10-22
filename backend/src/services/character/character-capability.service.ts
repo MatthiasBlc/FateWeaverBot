@@ -8,6 +8,7 @@ import { getHuntYield, getGatherYield } from "../../util/capacityRandom";
 import { CapabilityService } from "../capability.service";
 import { CharacterRepository } from "../../domain/repositories/character.repository";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -60,13 +61,13 @@ export class CharacterCapabilityService {
     const capability = await this.characterRepo.findCapability(capabilityId);
 
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError("Capability", capabilityId);
     }
 
     const existingCapability = await this.characterRepo.findCharacterCapability(characterId, capabilityId);
 
     if (existingCapability) {
-      throw new Error("Le personnage possède déjà cette capacité");
+      throw new BadRequestError("Le personnage possède déjà cette capacité");
     }
 
     await this.characterRepo.addCapability(characterId, capabilityId);
@@ -81,7 +82,7 @@ export class CharacterCapabilityService {
     const capability = await this.characterRepo.findCapability(capabilityId);
 
     if (!capability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError("Capability", capabilityId);
     }
 
     await this.characterRepo.removeCapability(characterId, capabilityId);
@@ -111,12 +112,12 @@ export class CharacterCapabilityService {
     const character = (await this.characterRepo.findWithCapabilities(characterId)) as CharacterWithCapabilities;
 
     if (!character) {
-      throw new Error("Personnage non trouvé");
+      throw new NotFoundError("Character", characterId);
     }
 
     // Vérifier que les capacités sont chargées
     if (!character.capabilities || character.capabilities.length === 0) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError("Capability", capabilityIdentifier);
     }
 
     // Trouver la capacité par ID ou par nom
@@ -127,7 +128,7 @@ export class CharacterCapabilityService {
     );
 
     if (!characterCapability) {
-      throw new Error("Capacité non trouvée");
+      throw new NotFoundError("Capability", capabilityIdentifier);
     }
 
     const capability = characterCapability.capability;
@@ -144,11 +145,11 @@ export class CharacterCapabilityService {
 
     // Vérifier les PA nécessaires
     if (character.paTotal <= 0) {
-      throw new Error(
+      throw new BadRequestError(
         `Vous n'avez plus de PA disponibles. Attendez la prochaine régénération quotidienne pour utiliser vos capacités.`
       );
     } else if (character.paTotal < paRequired) {
-      throw new Error(
+      throw new BadRequestError(
         `PA insuffisants : vous avez ${character.paTotal} PA mais cette action nécessite ${paRequired} PA.`
       );
     }
@@ -215,12 +216,12 @@ export class CharacterCapabilityService {
         break;
       case "miner":
         if (!this.capabilityService) {
-          throw new Error("Service de capacité non initialisé");
+          throw new BadRequestError("Service de capacité non initialisé");
         }
         result = await this.capabilityService.executeMiner(characterId);
         break;
       default:
-        throw new Error("Capacité non implémentée");
+        throw new BadRequestError("Capacité non implémentée");
     }
 
     // Mettre à jour les PA du personnage et ajouter les ressources à la ville
@@ -357,7 +358,7 @@ export class CharacterCapabilityService {
     });
 
     if (!updatedCharacter) {
-      throw new Error("Erreur lors de la mise à jour du personnage");
+      throw new BadRequestError("Erreur lors de la mise à jour du personnage");
     }
 
     result.updatedCharacter = updatedCharacter;
@@ -547,12 +548,12 @@ export class CharacterCapabilityService {
 
     // Valider que le nombre de PA est correct
     if (actualPaToUse !== 1 && actualPaToUse !== 2) {
-      throw new Error("Vous devez utiliser 1 ou 2 PA pour cuisiner");
+      throw new BadRequestError("Vous devez utiliser 1 ou 2 PA pour cuisiner");
     }
 
     // Vérifier que le personnage a assez de PA
     if (character.paTotal < actualPaToUse) {
-      throw new Error(
+      throw new BadRequestError(
         `PA insuffisants : vous avez ${character.paTotal} PA mais vous voulez en utiliser ${actualPaToUse}.`
       );
     }
@@ -573,10 +574,10 @@ export class CharacterCapabilityService {
       // L'utilisateur a spécifié une quantité
       const minInput = actualPaToUse === 1 ? 1 : 2;
       if (inputQuantity < minInput) {
-        throw new Error(`Avec ${actualPaToUse} PA, vous devez utiliser au moins ${minInput} vivre${minInput > 1 ? 's' : ''}`);
+        throw new BadRequestError(`Avec ${actualPaToUse} PA, vous devez utiliser au moins ${minInput} vivre${minInput > 1 ? 's' : ''}`);
       }
       if (inputQuantity > maxInput) {
-        throw new Error(
+        throw new BadRequestError(
           `Avec ${actualPaToUse} PA, vous ne pouvez utiliser que ${maxInput} vivres maximum`
         );
       }
@@ -588,7 +589,7 @@ export class CharacterCapabilityService {
 
     // Vérifier qu'il y a assez de vivres
     if (vivresAvailable < vivresToConsume) {
-      throw new Error(
+      throw new BadRequestError(
         `Vivres insuffisants : il y a ${vivresAvailable} vivres dans le stock de la ville mais vous voulez en utiliser ${vivresToConsume}.`
       );
     }

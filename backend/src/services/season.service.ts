@@ -1,6 +1,7 @@
 import { PrismaClient, Season as PrismaSeason, SeasonType } from '@prisma/client';
 import { logger } from './logger';
 import { SeasonRepository } from '../domain/repositories/season.repository';
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 export class SeasonService {
   private currentSeason: PrismaSeason | null = null;
@@ -129,7 +130,7 @@ export class SeasonService {
    */
   getNextSeasonChangeDate(): Date {
     if (!this.lastUpdate) {
-      throw new Error('Service des saisons non initialisé');
+      throw new BadRequestError('Service des saisons non initialisé');
     }
 
     const nextChange = new Date(this.lastUpdate);

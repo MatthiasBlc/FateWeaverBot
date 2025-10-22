@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
+import { NotFoundError } from "../../shared/errors";
 
 export class CharacterRepository {
   constructor(private prisma: PrismaClient) {}
@@ -452,7 +453,7 @@ export class CharacterRepository {
     });
 
     if (!inventory) {
-      throw new Error(`No inventory found for character ${characterId}`);
+      throw new NotFoundError('Inventory', characterId);
     }
 
     return this.prisma.characterInventorySlot.create({
@@ -528,7 +529,7 @@ export class CharacterRepository {
     });
 
     if (!characterRole) {
-      throw new Error(`Role assignment not found for character ${characterId} and role ${roleId}`);
+      throw new NotFoundError('Role assignment', characterId);
     }
 
     return this.prisma.characterRole.delete({
@@ -577,7 +578,7 @@ export class CharacterRepository {
       });
 
       if (!character) {
-        throw new Error("Character not found");
+        throw new NotFoundError('Character', characterId);
       }
 
       // Fetch new job
@@ -590,7 +591,7 @@ export class CharacterRepository {
       });
 
       if (!newJob) {
-        throw new Error("Job not found");
+        throw new NotFoundError('Job', newJobId);
       }
 
       // Remove old job capabilities

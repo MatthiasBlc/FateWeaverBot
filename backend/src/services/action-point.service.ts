@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { CharacterRepository } from "../domain/repositories/character.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -31,16 +32,16 @@ class ActionPointService {
       });
 
       if (!character) {
-        throw new Error("Personnage non trouvé");
+        throw new NotFoundError("Character", characterId);
       }
 
       if (character.isDead) {
-        throw new Error("Ce personnage est mort");
+        throw new BadRequestError("Ce personnage est mort");
       }
 
       // Block PA usage if HP ≤ 1 (Agonie)
       if (character.hp <= 1) {
-        throw new Error("Vous êtes en agonie et ne pouvez pas utiliser de PA");
+        throw new BadRequestError("Vous êtes en agonie et ne pouvez pas utiliser de PA");
       }
 
       // PM ≤ 1 (Déprime or Dépression): limit to 1 PA/day
@@ -48,7 +49,7 @@ class ActionPointService {
       // No need to block here, just let the daily limit apply
 
       if (character.paTotal <= 0) {
-        throw new Error("Pas assez de points d'action disponibles");
+        throw new BadRequestError("Pas assez de points d'action disponibles");
       }
 
       return await tx.character.update({

@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { CharacterRepository } from "../../domain/repositories/character.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -80,7 +81,7 @@ export class CharacterService {
     const currentActiveCharacter = await this.characterRepo.findActiveCharacter(userId, townId);
 
     if (!currentActiveCharacter) {
-      throw new Error("No active character found - this should never happen");
+      throw new NotFoundError("Active character", userId);
     }
 
     console.log(
