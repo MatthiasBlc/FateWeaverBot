@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
+import { container } from "../infrastructure/container";
 
 const prisma = new PrismaClient();
 
@@ -247,11 +248,7 @@ async function deductExpeditionPA() {
           else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
           else if (character.pm <= 2) reason = "dépression";
 
-          // Remove member catastrophically
-          const expeditionService = (await import("../services/expedition.service")).ExpeditionService;
-          const service = new expeditionService();
-
-          await service.removeMemberCatastrophic(expedition.id, character.id, reason);
+          await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id, reason);
 
           catastrophicReturns++;
           console.log(`  - ${character.name}: Retrait catastrophique (${reason})`);

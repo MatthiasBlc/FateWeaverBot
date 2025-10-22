@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
-import { ExpeditionService } from "../services/expedition.service";
+import { container } from "../infrastructure/container";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
-
-const expeditionService = new ExpeditionService();
 
 export const createExpedition = async (req: Request, res: Response) => {
   try {
@@ -68,7 +66,7 @@ export const createExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Nom, ressources initiales et durée requis" });
     }
 
-    const expedition = await expeditionService.createExpedition({
+    const expedition = await container.expeditionService.createExpedition({
       name,
       townId: internalTownId,
       initialResources: initialResources,  // ✅ Utiliser directement initialResources
@@ -108,7 +106,7 @@ export const getExpeditionById = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.getExpeditionById(id);
+    const expedition = await container.expeditionService.getExpeditionById(id);
 
     if (!expedition) {
       return res.status(404).json({ error: "Expédition non trouvée" });
@@ -130,7 +128,7 @@ export const getExpeditionsByTown = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de ville requis" });
     }
 
-    const expeditions = await expeditionService.getExpeditionsByTown(
+    const expeditions = await container.expeditionService.getExpeditionsByTown(
       townId,
       includeReturned === "true"
     );
@@ -187,7 +185,7 @@ export const joinExpedition = async (req: Request, res: Response) => {
       }
     }
 
-    const member = await expeditionService.joinExpedition(id, characterId);
+    const member = await container.expeditionService.joinExpedition(id, characterId);
 
     res.status(201).json(member);
   } catch (error) {
@@ -245,7 +243,7 @@ export const leaveExpedition = async (req: Request, res: Response) => {
       }
     }
 
-    await expeditionService.leaveExpedition(id, characterId);
+    await container.expeditionService.leaveExpedition(id, characterId);
 
     res.status(204).send();
   } catch (error) {
@@ -266,7 +264,7 @@ export const getActiveExpeditionsForCharacter = async (req: Request, res: Respon
       return res.status(400).json({ error: "ID de personnage requis" });
     }
 
-    const expeditions = await expeditionService.getActiveExpeditionsForCharacter(
+    const expeditions = await container.expeditionService.getActiveExpeditionsForCharacter(
       characterId
     );
 
@@ -280,7 +278,7 @@ export const getActiveExpeditionsForCharacter = async (req: Request, res: Respon
 export const getAllExpeditions = async (req: Request, res: Response) => {
   try {
     const includeReturned = req.query.includeReturned === 'true';
-    const expeditions = await expeditionService.getAllExpeditions(includeReturned);
+    const expeditions = await container.expeditionService.getAllExpeditions(includeReturned);
     res.json(expeditions);
   } catch (error) {
     console.error('Error getting all expeditions:', error);
@@ -296,7 +294,7 @@ export const getExpeditionResources = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const resources = await expeditionService.getExpeditionResources(id);
+    const resources = await container.expeditionService.getExpeditionResources(id);
     res.json(resources);
   } catch (error) {
     console.error("Erreur lors de la récupération des ressources:", error);
@@ -328,7 +326,7 @@ export const transferExpeditionResource = async (req: Request, res: Response) =>
       return res.status(400).json({ error: "Direction invalide (to_town ou from_town)" });
     }
 
-    await expeditionService.transferResource(
+    await container.expeditionService.transferResource(
       id,
       resourceType,
       parseInt(amount, 10),
@@ -366,7 +364,7 @@ export const toggleEmergencyVote = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "userId requis" });
     }
 
-    const result = await expeditionService.toggleEmergencyVote(expeditionId, userId);
+    const result = await container.expeditionService.toggleEmergencyVote(expeditionId, userId);
 
     res.status(200).json({
       success: true,
@@ -420,7 +418,7 @@ export const setExpeditionDirection = async (
       return;
     }
 
-    const expedition = expeditionService;
+    const expedition = container.expeditionService;
     await expedition.setNextDirection(id, direction, characterId);
 
     res.status(200).json({ message: "Direction set successfully" });

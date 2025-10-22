@@ -10,6 +10,3 @@ export class CharacterStatsService {
     // - Health calculations
   }
 }
-
-// Export singleton instance for backward compatibility
-export const characterStatsService = new CharacterStatsService();

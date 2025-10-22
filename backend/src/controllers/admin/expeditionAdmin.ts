@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 import { prisma } from "../../util/db";
-import { ExpeditionService } from "../../services/expedition.service";
-
-const expeditionService = new ExpeditionService();
+import { container } from "../../infrastructure/container";
 
 export const getAllExpeditions = async (req: Request, res: Response) => {
   try {
@@ -11,7 +9,7 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
 
     // If townId is provided, get expeditions for that town
     if (townId) {
-      const expeditions = await expeditionService.getExpeditionsByTown(
+      const expeditions = await container.expeditionService.getExpeditionsByTown(
         townId as string,
         includeReturned === "true"
       );
@@ -74,7 +72,7 @@ export const modifyExpedition = async (req: Request, res: Response) => {
     }
 
     // Get current expedition
-    const expedition = await expeditionService.getExpeditionById(id);
+    const expedition = await container.expeditionService.getExpeditionById(id);
     if (!expedition) {
       return res.status(404).json({ error: "Expédition non trouvée" });
     }
@@ -137,7 +135,7 @@ export const forceReturnExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.returnExpedition(id);
+    const expedition = await container.expeditionService.returnExpedition(id);
 
     res.json(expedition);
   } catch (error) {
@@ -158,7 +156,7 @@ export const lockExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.lockExpedition(id);
+    const expedition = await container.expeditionService.lockExpedition(id);
 
     res.json(expedition);
   } catch (error) {
@@ -184,7 +182,7 @@ export const addMemberToExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID du personnage requis" });
     }
 
-    const member = await expeditionService.addMemberToExpedition(id, characterId);
+    const member = await container.expeditionService.addMemberToExpedition(id, characterId);
 
     res.json(member);
   } catch (error) {
@@ -205,7 +203,7 @@ export const departExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.departExpedition(id);
+    const expedition = await container.expeditionService.departExpedition(id);
 
     res.json(expedition);
   } catch (error) {
@@ -230,7 +228,7 @@ export const removeMemberFromExpedition = async (req: Request, res: Response) =>
       return res.status(400).json({ error: "ID du personnage requis" });
     }
 
-    await expeditionService.removeMemberFromExpedition(id, characterId);
+    await container.expeditionService.removeMemberFromExpedition(id, characterId);
 
     res.json({ success: true });
   } catch (error) {

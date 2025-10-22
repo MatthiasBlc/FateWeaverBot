@@ -1,13 +1,11 @@
 import { RequestHandler } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
-import { CapabilityService } from "../services/capability.service";
-
-const capabilityService = new CapabilityService(prisma);
+import { container } from "../infrastructure/container";
 
 export const getAllCapabilities: RequestHandler = async (req, res, next) => {
   try {
-    const capabilities = await capabilityService.getAllCapabilities();
+    const capabilities = await container.capabilityService.getAllCapabilities();
     res.status(200).json(capabilities);
   } catch (error) {
     next(error);
@@ -58,7 +56,7 @@ export const getCataplasmeCount: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("townId requis");
     }
 
-    const count = await capabilityService.getCataplasmeCount(townId);
+    const count = await container.capabilityService.getCataplasmeCount(townId);
 
     res.status(200).json({ count });
   } catch (error) {
@@ -74,7 +72,7 @@ export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await capabilityService.executeCouperDuBois(characterId);
+    const result = await container.capabilityService.executeCouperDuBois(characterId);
 
     res.status(200).json(result);
   } catch (error) {
@@ -100,7 +98,7 @@ export const executeMiner: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await capabilityService.executeMiner(characterId);
+    const result = await container.capabilityService.executeMiner(characterId);
 
     res.status(200).json(result);
   } catch (error) {
@@ -131,7 +129,7 @@ export const executeFish: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
-    const result = await capabilityService.executeFish(characterId, paSpent);
+    const result = await container.capabilityService.executeFish(characterId, paSpent);
 
     res.status(200).json(result);
   } catch (error) {
@@ -170,7 +168,7 @@ export const executeCraft: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
-    const result = await capabilityService.executeCraft(
+    const result = await container.capabilityService.executeCraft(
       characterId,
       craftType,
       inputAmount,
@@ -215,7 +213,7 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("targetCharacterId requis pour le mode heal");
     }
 
-    const result = await capabilityService.executeSoigner(
+    const result = await container.capabilityService.executeSoigner(
       characterId,
       mode,
       targetCharacterId
@@ -267,7 +265,7 @@ export const executeResearch: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("subject requis");
     }
 
-    const result = await capabilityService.executeResearch(
+    const result = await container.capabilityService.executeResearch(
       characterId,
       researchType,
       paSpent
@@ -297,7 +295,7 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await capabilityService.executeDivertir(characterId);
+    const result = await container.capabilityService.executeDivertir(characterId);
 
     res.status(200).json(result);
   } catch (error) {
@@ -328,11 +326,9 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("capabilityName requis (Chasser ou Cueillir)");
     }
 
-    const { SeasonService } = await import("../services/season.service");
-    const seasonServiceInstance = new SeasonService(prisma);
-    const isSummer = await seasonServiceInstance.isSummer();
+    const isSummer = await container.seasonService.isSummer();
 
-    const result = await capabilityService.executeHarvestCapacity(
+    const result = await container.capabilityService.executeHarvestCapacity(
       characterId,
       capabilityName,
       isSummer

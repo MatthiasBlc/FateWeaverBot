@@ -3,7 +3,7 @@ import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } fr
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../util/db";
 import { toCharacterDto } from "../../util/mappers";
-import { characterService } from "../../services/character";
+import { container } from "../../infrastructure/container";
 import { logger } from "../../services/logger";
 import { notifyAgonyEntered } from "../../util/agony-notification";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
@@ -32,7 +32,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
     }
 
     // Récupérer le personnage actif
-    const character = await characterService.getActiveCharacter(
+    const character = await container.characterService.getActiveCharacter(
       user.id,
       townId
     );
@@ -265,7 +265,7 @@ export const deleteCharacter: RequestHandler = async (req, res, next) => {
 export const getTownCharacters: RequestHandler = async (req, res, next) => {
   try {
     const { townId } = req.params;
-    const characters = await characterService.getTownCharacters(townId);
+    const characters = await container.characterService.getTownCharacters(townId);
     res.status(200).json(characters);
   } catch (error) {
     next(error);
@@ -275,7 +275,7 @@ export const getTownCharacters: RequestHandler = async (req, res, next) => {
 export const killCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const character = await characterService.killCharacter(id);
+    const character = await container.characterService.killCharacter(id);
     res.status(200).json(character);
   } catch (error) {
     next(error);
@@ -285,7 +285,7 @@ export const killCharacter: RequestHandler = async (req, res, next) => {
 export const grantRerollPermission: RequestHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const character = await characterService.grantRerollPermission(id);
+    const character = await container.characterService.grantRerollPermission(id);
     res.status(200).json(character);
   } catch (error) {
     next(error);
@@ -295,7 +295,7 @@ export const grantRerollPermission: RequestHandler = async (req, res, next) => {
 export const createRerollCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { userId, townId, name } = req.body;
-    const character = await characterService.createRerollCharacter(
+    const character = await container.characterService.createRerollCharacter(
       userId,
       townId,
       name
@@ -309,7 +309,7 @@ export const createRerollCharacter: RequestHandler = async (req, res, next) => {
 export const switchActiveCharacter: RequestHandler = async (req, res, next) => {
   try {
     const { userId, townId, characterId } = req.body;
-    const character = await characterService.switchActiveCharacter(
+    const character = await container.characterService.switchActiveCharacter(
       userId,
       townId,
       characterId
@@ -327,7 +327,7 @@ export const getRerollableCharacters: RequestHandler = async (
 ) => {
   try {
     const { userId, townId } = req.params;
-    const characters = await characterService.getRerollableCharacters(
+    const characters = await container.characterService.getRerollableCharacters(
       userId,
       townId
     );
@@ -344,7 +344,7 @@ export const needsCharacterCreation: RequestHandler = async (
 ) => {
   try {
     const { userId, townId } = req.params;
-    const needsCreation = await characterService.needsCharacterCreation(
+    const needsCreation = await container.characterService.needsCharacterCreation(
       userId,
       townId
     );
@@ -366,7 +366,7 @@ export const changeCharacterJob: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("jobId is required");
     }
 
-    const character = await characterService.changeCharacterJob(id, jobId);
+    const character = await container.characterService.changeCharacterJob(id, jobId);
 
     res.status(200).json(character);
   } catch (error) {

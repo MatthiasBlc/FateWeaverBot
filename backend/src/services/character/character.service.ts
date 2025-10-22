@@ -147,6 +147,3 @@ export class CharacterService {
     return await this.characterRepo.changeJobWithCapabilities(characterId, newJobId);
   }
 }
-
-// Export singleton instance for backward compatibility
-export const characterService = new CharacterService();

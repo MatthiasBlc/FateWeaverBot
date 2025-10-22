@@ -713,6 +713,3 @@ export class CharacterCapabilityService {
     return await ResourceUtils.getStock(locationType, locationId, resourceTypeId);
   }
 }
-
-// Export singleton instance for backward compatibility
-export const characterCapabilityService = new CharacterCapabilityService(new CapabilityService(prisma));

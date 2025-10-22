@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
-import { characterCapabilityService } from "../../services/character";
+import { container } from "../../infrastructure/container";
 import { logger } from "../../services/logger";
 
 /**
@@ -13,7 +13,7 @@ export const getCharacterCapabilities: RequestHandler = async (
 ) => {
   try {
     const { id } = req.params;
-    const capabilities = await characterCapabilityService.getCharacterCapabilities(id);
+    const capabilities = await container.characterCapabilityService.getCharacterCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
     next(new Error("Erreur lors de la récupération des capacités"));
@@ -31,7 +31,7 @@ export const getAvailableCapabilities: RequestHandler = async (
 ) => {
   try {
     const { id } = req.params;
-    const capabilities = await characterCapabilityService.getAvailableCapabilities(id);
+    const capabilities = await container.characterCapabilityService.getAvailableCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
     next(new Error("Erreur lors de la récupération des capacités disponibles"));
@@ -51,7 +51,7 @@ export const addCharacterCapability: RequestHandler = async (
     logger.info(
       `Tentative d'ajout de capacité ${capabilityId} au personnage ${id}`
     );
-    const capability = await characterCapabilityService.addCharacterCapability(
+    const capability = await container.characterCapabilityService.addCharacterCapability(
       id,
       capabilityId
     );
@@ -90,7 +90,7 @@ export const removeCharacterCapability: RequestHandler = async (
 ) => {
   try {
     const { id, capabilityId } = req.params;
-    await characterCapabilityService.removeCharacterCapability(id, capabilityId);
+    await container.characterCapabilityService.removeCharacterCapability(id, capabilityId);
     res.status(204).send();
   } catch (error) {
     if (error instanceof Error) {
@@ -132,7 +132,7 @@ export const useCharacterCapability: RequestHandler = async (
       throw new BadRequestError("capabilityId ou capabilityName requis");
     }
 
-    const result = await characterCapabilityService.useCharacterCapability(
+    const result = await container.characterCapabilityService.useCharacterCapability(
       id,
       capabilityIdentifier,
       isSummer,

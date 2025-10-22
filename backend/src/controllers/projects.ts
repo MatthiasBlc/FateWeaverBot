@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
-import { ProjectService } from '../services/project.service';
+import { container } from '../infrastructure/container';
 import { CraftType } from '@prisma/client';
 
 export const createProject = async (req: Request, res: Response) => {
@@ -11,7 +11,7 @@ export const createProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Champs manquants' });
     }
 
-    const project = await ProjectService.createProject({
+    const project = await container.projectService.createProject({
       name,
       paRequired,
       outputResourceTypeId,
@@ -37,7 +37,7 @@ export const getProjectsByCraftType = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Type d\'artisanat invalide' });
     }
 
-    const projects = await ProjectService.getActiveProjectsForCraftType(townId, craftType as CraftType);
+    const projects = await container.projectService.getActiveProjectsForCraftType(townId, craftType as CraftType);
 
     return res.status(200).json(projects);
   } catch (error: any) {
@@ -50,7 +50,7 @@ export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
 
-    const project = await ProjectService.getProjectById(projectId);
+    const project = await container.projectService.getProjectById(projectId);
 
     return res.status(200).json(project);
   } catch (error: any) {
@@ -68,7 +68,7 @@ export const contributeToProject = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Au moins une contribution (PA ou ressources) est requise' });
     }
 
-    const result = await ProjectService.contributeToProject({
+    const result = await container.projectService.contributeToProject({
       characterId,
       projectId,
       paAmount,
@@ -86,7 +86,7 @@ export const getAllProjectsForTown = async (req: Request, res: Response) => {
   try {
     const { townId } = req.params;
 
-    const projects = await ProjectService.getAllProjectsForTown(townId);
+    const projects = await container.projectService.getAllProjectsForTown(townId);
 
     return res.status(200).json(projects);
   } catch (error: any) {
@@ -99,7 +99,7 @@ export const deleteProject = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
 
-    const result = await ProjectService.deleteProject(projectId);
+    const result = await container.projectService.deleteProject(projectId);
 
     return res.status(200).json(result);
   } catch (error: any) {
@@ -117,7 +117,7 @@ export const restartBlueprint = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Created by is required" });
     }
 
-    const newProject = await ProjectService.restartBlueprint(
+    const newProject = await container.projectService.restartBlueprint(
       projectId,
       createdBy
     );

@@ -10,6 +10,3 @@ export class CharacterInventoryService {
     // - Inventory operations
   }
 }
-
-// Export singleton instance for backward compatibility
-export const characterInventoryService = new CharacterInventoryService();

@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
-import { ExpeditionService } from "../services/expedition.service";
+import { container } from "../infrastructure/container";
 import { logger } from "../services/logger";
 
 const prisma = new PrismaClient();
-const expeditionService = new ExpeditionService();
 
 async function lockExpeditionsDue() {
   try {
@@ -27,7 +26,7 @@ async function lockExpeditionsDue() {
     let lockedCount = 0;
     for (const expedition of expeditionsToLock) {
       try {
-        await expeditionService.lockExpedition(expedition.id);
+        await container.expeditionService.lockExpedition(expedition.id);
 
         // Set UNKNOWN direction if not set
         if (!expedition.initialDirection || expedition.initialDirection === "UNKNOWN") {
@@ -66,7 +65,7 @@ async function departExpeditionsDue() {
     let departedCount = 0;
     for (const expedition of expeditionsToDepart) {
       try {
-        await expeditionService.departExpedition(expedition.id);
+        await container.expeditionService.departExpedition(expedition.id);
 
         // Initialize path with initial direction (default to UNKNOWN if null)
         await prisma.expedition.update({
@@ -108,7 +107,7 @@ async function returnExpeditionsDue() {
     let returnedCount = 0;
     for (const expedition of expeditionsToReturn) {
       try {
-        await expeditionService.returnExpedition(expedition.id);
+        await container.expeditionService.returnExpedition(expedition.id);
         returnedCount++;
       } catch (error) {
         logger.error(`Failed to return expedition ${expedition.id}:`, { error });
@@ -125,7 +124,7 @@ async function processEmergencyReturns() {
   try {
     logger.debug("Starting emergency return check");
 
-    const emergencyCount = await expeditionService.forceEmergencyReturns();
+    const emergencyCount = await container.expeditionService.forceEmergencyReturns();
 
     if (emergencyCount > 0) {
       logger.info(`Processed ${emergencyCount} emergency returns`);
