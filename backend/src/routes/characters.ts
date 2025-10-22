@@ -1,5 +1,8 @@
 import express from "express";
-import * as CharacterController from "../controllers/characters";
+import * as characterController from "../controllers/character/character.controller";
+import * as statsController from "../controllers/character/character-stats.controller";
+import * as capabilitiesController from "../controllers/character/character-capabilities.controller";
+import * as fishingController from "../controllers/character/fishing.controller";
 import { objectsController } from "../controllers/objects";
 import * as SkillsController from "../controllers/skills";
 import { validate } from "../api/middleware/validation.middleware";
@@ -43,80 +46,80 @@ const router = express.Router();
 router.get(
   "/active/:discordId/:townId",
   validate(GetActiveCharacterSchema),
-  CharacterController.getActiveCharacterByDiscordId
+  characterController.getActiveCharacterByDiscordId
 );
 
 // Créer ou mettre à jour un personnage
-router.post("/", validate(UpsertCharacterSchema), CharacterController.upsertCharacter);
+router.post("/", validate(UpsertCharacterSchema), characterController.upsertCharacter);
 
 // Récupérer un personnage par son ID
-router.get("/:id", validate(GetCharacterByIdSchema), CharacterController.getCharacterById);
+router.get("/:id", validate(GetCharacterByIdSchema), characterController.getCharacterById);
 
 // Récupérer tous les personnages d'une guilde (legacy)
-router.get("/guild/:guildId", validate(GetGuildCharactersSchema), CharacterController.getGuildCharacters);
+router.get("/guild/:guildId", validate(GetGuildCharactersSchema), characterController.getGuildCharacters);
 
 // NOUVEAUX ENDPOINTS POUR LE SYSTÈME TOWN-BASED
 
 // Récupérer tous les personnages d'une ville
-router.get("/town/:townId", validate(GetTownCharactersSchema), CharacterController.getTownCharacters);
+router.get("/town/:townId", validate(GetTownCharactersSchema), characterController.getTownCharacters);
 
 // Tuer un personnage
-router.post("/:id/kill", validate(KillCharacterSchema), CharacterController.killCharacter);
+router.post("/:id/kill", validate(KillCharacterSchema), characterController.killCharacter);
 
 // Donner l'autorisation de reroll à un personnage
-router.post("/:id/grant-reroll", validate(GrantRerollPermissionSchema), CharacterController.grantRerollPermission);
+router.post("/:id/grant-reroll", validate(GrantRerollPermissionSchema), characterController.grantRerollPermission);
 
 // Créer un personnage reroll
-router.post("/reroll", validate(CreateRerollCharacterSchema), CharacterController.createRerollCharacter);
+router.post("/reroll", validate(CreateRerollCharacterSchema), characterController.createRerollCharacter);
 
 // Changer le personnage actif d'un utilisateur
-router.post("/switch-active", validate(SwitchActiveCharacterSchema), CharacterController.switchActiveCharacter);
+router.post("/switch-active", validate(SwitchActiveCharacterSchema), characterController.switchActiveCharacter);
 
 // Récupérer les personnages morts éligibles pour reroll
 router.get(
   "/rerollable/:userId/:townId",
   validate(GetRerollableCharactersSchema),
-  CharacterController.getRerollableCharacters
+  characterController.getRerollableCharacters
 );
 
 // Vérifier si un utilisateur a besoin de créer un personnage
 router.get(
   "/needs-creation/:userId/:townId",
   validate(NeedsCharacterCreationSchema),
-  CharacterController.needsCharacterCreation
+  characterController.needsCharacterCreation
 );
 
 // Met à jour les statistiques d'un personnage (PA, faim, etc.)
-router.patch("/:id/stats", validate(UpdateCharacterStatsSchema), CharacterController.updateCharacterStats);
+router.patch("/:id/stats", validate(UpdateCharacterStatsSchema), statsController.updateCharacterStats);
 
 // Permettre à un personnage de manger des Vivres
-router.post("/:id/eat", validate(EatFoodSchema), CharacterController.eatFood);
+router.post("/:id/eat", validate(EatFoodSchema), statsController.eatFood);
 
 // Permettre à un personnage de manger un type de nourriture alternatif (Repas, etc.)
-router.post("/:id/eat-alternative", validate(EatFoodAlternativeSchema), CharacterController.eatFoodAlternative);
+router.post("/:id/eat-alternative", validate(EatFoodAlternativeSchema), statsController.eatFoodAlternative);
 
 // Gestion des capacités du personnage
-router.get("/:id/capabilities", validate(GetCharacterCapabilitiesSchema), CharacterController.getCharacterCapabilities);
+router.get("/:id/capabilities", validate(GetCharacterCapabilitiesSchema), capabilitiesController.getCharacterCapabilities);
 router.get(
   "/:id/available-capabilities",
   validate(GetAvailableCapabilitiesSchema),
-  CharacterController.getAvailableCapabilities
+  capabilitiesController.getAvailableCapabilities
 );
 // Les routes spécifiques doivent venir avant les routes avec paramètres
 router.post(
   "/:id/capabilities/use",
   validate(UseCharacterCapabilitySchema),
-  CharacterController.useCharacterCapability
+  capabilitiesController.useCharacterCapability
 );
 router.post(
   "/:id/capabilities/:capabilityId",
   validate(AddCharacterCapabilitySchema),
-  CharacterController.addCharacterCapability
+  capabilitiesController.addCharacterCapability
 );
 router.delete(
   "/:id/capabilities/:capabilityId",
   validate(RemoveCharacterCapabilitySchema),
-  CharacterController.removeCharacterCapability
+  capabilitiesController.removeCharacterCapability
 );
 
 // Skill management routes (for admin)
@@ -140,9 +143,9 @@ router.delete(
 router.post("/:id/inventory/transfer", validate(TransferObjectSchema), objectsController.transferObject);
 
 // Job management
-router.post("/:id/job", validate(ChangeCharacterJobSchema), CharacterController.changeCharacterJob);
+router.post("/:id/job", validate(ChangeCharacterJobSchema), characterController.changeCharacterJob);
 
 // Cataplasme
-router.post("/:id/use-cataplasme", validate(UseCataplasmeSchema), CharacterController.useCataplasme);
+router.post("/:id/use-cataplasme", validate(UseCataplasmeSchema), statsController.useCataplasme);
 
 export default router;

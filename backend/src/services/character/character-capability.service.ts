@@ -2,27 +2,23 @@ import {
   Prisma,
   PrismaClient,
   Character,
-  User,
-  Town,
-  Guild,
   Capability,
 } from "@prisma/client";
-import { getHuntYield, getGatherYield } from "../util/capacityRandom";
-import { CapabilityService } from "./capability.service";
-import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
-import { ResourceUtils } from "../shared/utils";
-import { CharacterRepository } from "../domain/repositories/character.repository";
+import { getHuntYield, getGatherYield } from "../../util/capacityRandom";
+import { CapabilityService } from "../capability.service";
+import { CharacterRepository } from "../../domain/repositories/character.repository";
+import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 
 const prisma = new PrismaClient();
 
-/**
- * Interface pour les données de création d'un personnage
- */
-export interface CreateCharacterData {
-  name: string;
-  userId: string;
-  townId: string;
-  jobId?: number;
+export interface CharacterWithCapabilities extends Character {
+  capabilities?: Array<{
+    characterId: string;
+    capabilityId: string;
+    capability: Capability;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 }
 
 /**
@@ -44,37 +40,7 @@ export interface CapabilityResult {
   paUsed?: number;
 }
 
-export interface CharacterWithCapabilities extends Character {
-  capabilities?: Array<{
-    characterId: string;
-    capabilityId: string;
-    capability: Capability;
-    createdAt: Date;
-    updatedAt: Date;
-  }>;
-}
-
-/**
- * Type pour un personnage avec ses détails complets
- */
-export type CharacterWithDetails = Character & {
-  user: User;
-  town: Town & { guild: Guild };
-  characterRoles: Array<{
-    id: string;
-    characterId: string;
-    roleId: string;
-    assignedAt: Date;
-    role: {
-      id: string;
-      discordId: string;
-      name: string;
-      color: string | null;
-    };
-  }>;
-};
-
-export class CharacterService {
+export class CharacterCapabilityService {
   private capabilityService: CapabilityService;
   private characterRepo: CharacterRepository;
 
@@ -83,102 +49,11 @@ export class CharacterService {
     characterRepo?: CharacterRepository
   ) {
     this.capabilityService = capabilityService;
-    // For backward compatibility, create a new repository if not provided
     this.characterRepo = characterRepo || new CharacterRepository(prisma);
   }
 
   async getCharacterCapabilities(characterId: string) {
     return await this.characterRepo.getCapabilities(characterId);
-  }
-
-  async getActiveCharacter(
-    userId: string,
-    townId: string
-  ): Promise<CharacterWithDetails | null> {
-    return await this.characterRepo.findActiveCharacterAlive(userId, townId);
-  }
-
-  async getRerollableCharacters(
-    userId: string,
-    townId: string
-  ): Promise<Character[]> {
-    return await this.characterRepo.findRerollableCharacters(userId, townId);
-  }
-
-  async createCharacter(data: CreateCharacterData): Promise<Character> {
-    return await this.characterRepo.createCharacterWithCapabilities(data);
-  }
-
-  async createRerollCharacter(
-    userId: string,
-    townId: string,
-    name: string
-  ): Promise<Character> {
-    console.log(
-      `[createRerollCharacter] Début - userId: ${userId}, townId: ${townId}, name: ${name}`
-    );
-
-    // Find current active character
-    const currentActiveCharacter = await this.characterRepo.findActiveCharacter(userId, townId);
-
-    if (!currentActiveCharacter) {
-      throw new Error("No active character found - this should never happen");
-    }
-
-    console.log(
-      `[createRerollCharacter] Personnage actif actuel: ${currentActiveCharacter.id}, isDead: ${currentActiveCharacter.isDead}, canReroll: ${currentActiveCharacter.canReroll}`
-    );
-
-    // Create new character (automatically deactivates old one)
-    const newCharacterData: CreateCharacterData = {
-      userId,
-      townId,
-      name,
-    };
-
-    const newCharacter = await this.createCharacter(newCharacterData);
-
-    console.log(
-      `[createRerollCharacter] ✅ Nouveau personnage créé: ${newCharacter.id}`
-    );
-
-    // Clean up reroll permission if old character was dead
-    if (currentActiveCharacter.isDead && currentActiveCharacter.canReroll) {
-      await this.characterRepo.update(currentActiveCharacter.id, { canReroll: false });
-      console.log(
-        `[createRerollCharacter] Permission de reroll nettoyée: ${currentActiveCharacter.id}`
-      );
-    }
-
-    return newCharacter;
-  }
-
-  async killCharacter(characterId: string): Promise<Character> {
-    return await this.characterRepo.killCharacter(characterId);
-  }
-
-  async grantRerollPermission(characterId: string): Promise<Character> {
-    return await this.characterRepo.grantRerollPermission(characterId);
-  }
-
-  async switchActiveCharacter(
-    userId: string,
-    townId: string,
-    characterId: string
-  ): Promise<Character> {
-    return await this.characterRepo.switchActiveCharacterTransaction(userId, townId, characterId);
-  }
-
-  async getTownCharacters(townId: string): Promise<CharacterWithDetails[]> {
-    return await this.characterRepo.findAllByTownWithDetails(townId);
-  }
-
-  async needsCharacterCreation(
-    userId: string,
-    townId: string
-  ): Promise<boolean> {
-    const activeCharacter = await this.characterRepo.findActiveCharacter(userId, townId);
-    return !activeCharacter;
   }
 
   async addCharacterCapability(characterId: string, capabilityId: string) {
@@ -382,7 +257,7 @@ export class CharacterService {
         result.loot.foodSupplies !== 0
       ) {
         // Récupérer le type de ressource "Vivres"
-        const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
+        const vivresType = await this.getResourceTypeByName("Vivres");
 
         if (vivresType) {
           if (result.loot.foodSupplies > 0) {
@@ -425,7 +300,7 @@ export class CharacterService {
 
       // Ajouter les repas générés au stock de la ville (pour la capacité cuisiner)
       if (result.loot && result.loot.preparedFood && result.loot.preparedFood > 0) {
-        const repasType = await ResourceUtils.getResourceTypeByName("Repas");
+        const repasType = await this.getResourceTypeByName("Repas");
 
         if (repasType) {
           await tx.resourceStock.upsert({
@@ -451,7 +326,7 @@ export class CharacterService {
 
       // Ajouter le bois généré au stock de la ville (pour la capacité couper du bois)
       if (result.loot && result.loot.wood && result.loot.wood > 0) {
-        const boisType = await ResourceUtils.getResourceTypeByName("Bois");
+        const boisType = await this.getResourceTypeByName("Bois");
 
         if (boisType) {
           await tx.resourceStock.upsert({
@@ -579,7 +454,7 @@ export class CharacterService {
     paToUse: number
   ): Promise<CapabilityResult> {
     // Utiliser le service capability pour exécuter la pêche avec les tables de loot de la DB
-    const { CapabilityService } = await import('./capability.service');
+    const { CapabilityService } = await import('../capability.service');
     const capabilityService = new CapabilityService(prisma);
 
     const fishResult = await capabilityService.executeFish(character.id, paToUse as 1 | 2);
@@ -686,9 +561,9 @@ export class CharacterService {
     const maxInput = actualPaToUse === 1 ? 2 : 5;
 
     // Vérifier qu'il y a des vivres disponibles dans la ville
-    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
+    const vivresType = await this.getResourceTypeByName("Vivres");
 
-    const vivresStock = await ResourceUtils.getStock("CITY", character.townId, vivresType.id);
+    const vivresStock = await this.getStock("CITY", character.townId, vivresType.id);
 
     const vivresAvailable = vivresStock?.quantity || 0;
 
@@ -826,14 +701,17 @@ export class CharacterService {
     };
   }
 
-  /**
-   * Changer le métier d'un personnage
-   * Retire les capacités de l'ancien métier et ajoute celles du nouveau
-   */
-  async changeCharacterJob(
-    characterId: string,
-    newJobId: number
-  ): Promise<Character> {
-    return await this.characterRepo.changeJobWithCapabilities(characterId, newJobId);
+  // Helper methods - need to be imported from original service or utils
+  private async getResourceTypeByName(name: string) {
+    const { ResourceUtils } = await import("../../shared/utils");
+    return await ResourceUtils.getResourceTypeByName(name);
+  }
+
+  private async getStock(locationType: "CITY" | "EXPEDITION", locationId: string, resourceTypeId: number) {
+    const { ResourceUtils } = await import("../../shared/utils");
+    return await ResourceUtils.getStock(locationType, locationId, resourceTypeId);
   }
 }
+
+// Export singleton instance for backward compatibility
+export const characterCapabilityService = new CharacterCapabilityService(new CapabilityService(prisma));
