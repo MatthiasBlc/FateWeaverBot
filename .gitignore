@@ -8,3 +8,4 @@ postgresql/data/
 botold/
 
 # TODO.mdshared/constants/*.js
+backend/shared
