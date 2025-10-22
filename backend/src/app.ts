@@ -111,8 +111,8 @@ app.use(
       // Skip health checks
       if (req.url === "/health") return true;
 
-      // Don't skip 404 for debugging chantiers issue
-      // if (res.statusCode === 404) return true;
+      // Skip 404 errors (bot scanners)
+      if (res.statusCode === 404) return true;
 
       return false;
     },
@@ -170,11 +170,8 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use((req, _res, next) => {
-  console.error(`🔴 404 NOT FOUND: ${req.method} ${req.originalUrl || req.url}`);
-  console.error(`🔴 Query params:`, req.query);
-  console.error(`🔴 Body:`, req.body);
-  next(createHttpError(404, `Endpoint not found: ${req.method} ${req.originalUrl || req.url}`));
+app.use((_req, _res, next) => {
+  next(createHttpError(404, "Endpoint not found"));
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
