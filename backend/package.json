@@ -13,7 +13,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "start:migrate:prod": "prisma migrate deploy && node prisma/seed.js && node dist/src/server.js",
+    "start:migrate:prod": "prisma migrate deploy && prisma db seed && node dist/src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
@@ -24,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
