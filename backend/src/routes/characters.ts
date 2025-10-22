@@ -2,7 +2,6 @@ import express from "express";
 import * as characterController from "../controllers/character/character.controller";
 import * as statsController from "../controllers/character/character-stats.controller";
 import * as capabilitiesController from "../controllers/character/character-capabilities.controller";
-import * as fishingController from "../controllers/character/fishing.controller";
 import { objectsController } from "../controllers/objects";
 import * as SkillsController from "../controllers/skills";
 import { validate } from "../api/middleware/validation.middleware";

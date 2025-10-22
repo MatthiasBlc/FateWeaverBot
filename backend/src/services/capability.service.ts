@@ -227,6 +227,10 @@ export class CapabilityService {
     }
 
     // Mettre à jour les PA et ajouter les ressources à la ville
+    const vivresType = await this.prisma.resourceType.findFirst({
+      where: { name: "Vivres" },
+    });
+
     await this.prisma.$transaction([
       this.prisma.character.update({
         where: { id: characterId },
@@ -240,9 +244,7 @@ export class CapabilityService {
         where: ResourceQueries.stockWhere(
           "CITY",
           character.townId,
-          (await this.prisma.resourceType.findFirst({
-            where: { name: "Vivres" },
-          }))!.id
+          vivresType!.id
         ),
         update: {
           quantity: { increment: foodGained },
@@ -250,9 +252,7 @@ export class CapabilityService {
         create: {
           locationType: "CITY",
           locationId: character.townId,
-          resourceTypeId: (await this.prisma.resourceType.findFirst({
-            where: { name: "Vivres" },
-          }))!.id,
+          resourceTypeId: vivresType!.id,
           quantity: foodGained,
         },
       }),
@@ -578,15 +578,11 @@ export class CapabilityService {
       }
 
       // Ajouter le coquillage à l'inventaire du personnage
-      let inventory = await this.prisma.characterInventory.findUnique({
+      const inventory = await this.prisma.characterInventory.upsert({
         where: { characterId },
+        create: { characterId },
+        update: {}, // No updates needed if it already exists
       });
-
-      if (!inventory) {
-        inventory = await this.prisma.characterInventory.create({
-          data: { characterId },
-        });
-      }
 
       await this.prisma.$transaction([
         this.prisma.character.update({

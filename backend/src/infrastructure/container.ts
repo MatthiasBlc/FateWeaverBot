@@ -30,8 +30,6 @@ import { ProjectService } from "../services/project.service";
 import { ResourceService } from "../services/resource.service";
 import { SeasonService } from "../services/season.service";
 import { CharacterService } from "../services/character/character.service";
-import { CharacterStatsService } from "../services/character/character-stats.service";
-import { CharacterInventoryService } from "../services/character/character-inventory.service";
 import { CharacterCapabilityService } from "../services/character/character-capability.service";
 
 // Import Discord Client
@@ -60,7 +58,7 @@ export class Container {
   public townRepo: TownRepository;
   public userRepo: UserRepository;
 
-  // Services (18) - using singleton instances where available, classes where needed
+  // Services (16) - using singleton instances where available, classes where needed
   public actionPointService: any;
   public capabilityService: CapabilityService;
   public chantierService: ChantierService;
@@ -74,8 +72,6 @@ export class Container {
   public resourceService: ResourceService;
   public seasonService: SeasonService;
   public characterService: CharacterService;
-  public characterStatsService: any;
-  public characterInventoryService: any;
   public characterCapabilityService: CharacterCapabilityService;
 
   private constructor() {
@@ -120,8 +116,6 @@ export class Container {
 
     // Character services (with dependencies)
     this.characterService = new CharacterService(this.characterRepo);
-    this.characterStatsService = new CharacterStatsService();
-    this.characterInventoryService = new CharacterInventoryService();
     this.characterCapabilityService = new CharacterCapabilityService(this.capabilityService, this.characterRepo);
 
     // Services that don't need dependencies or use other services

@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import userRoutes from "./routes/users";
 import guildRoutes from "./routes/guilds";
@@ -11,7 +10,7 @@ import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
 import session from "express-session";
 import env from "./util/validateEnv";
-// import { requireAuth } from "./middleware/auth";
+import { requireAuth } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupDailyPaJob } from "./cron/daily-pa.cron";
@@ -139,9 +138,11 @@ app.use(
   })
 );
 
-// Routes publiques
+// Routes publiques (authentification, inscription, etc.)
 app.use("/api/users", userRoutes);
 app.use("/api/guilds", guildRoutes);
+
+// Routes publiques (temporairement pour la compilation)
 app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
@@ -156,8 +157,8 @@ app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);
 app.use("/api/jobs", jobRoutes);
 
-// Routes admin
-app.use("/api/admin/expeditions", expeditionAdminRoutes);
+// Routes admin (double protection)
+app.use("/api/admin/expeditions", requireAuth, expeditionAdminRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
