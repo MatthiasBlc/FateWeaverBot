@@ -54,8 +54,14 @@
 **Option B : Phase 9 - Tests (Optionnel)**
 - Tests unitaires + intégration
 - Coverage >70%
-- Temps estimé: 10-15 heures
+- Temps estimé: 12-15 heures
 - Peut être ajouté progressivement
+- **📚 Documentation complète disponible** (220 KB, 5 fichiers)
+  - `README-TESTS.md` - Vue d'ensemble et recommandations
+  - `09-TESTING-STRATEGY.md` - Stratégie détaillée
+  - `09-TEST-EXAMPLES.md` - Code prêt à l'emploi
+  - `09-QUICK-START-TESTS.md` - Démarrage en 5 minutes
+  - `09-VISUAL-OVERVIEW.md` - Schémas et flowcharts
 
 ---
 
@@ -111,14 +117,24 @@ PROGRESSION GLOBALE: [███████████████████�
 
 ## 📚 Documentation
 
+### Rapports de Phase
 **Rapport Phase 10** : `.supernova/report-phase10-final-cleanup.md`
 **Prompt Phase 10** : `.supernova/prompt-phase10-final-cleanup.md`
 **Prompt Phase 8** : `.supernova/prompt-phase8-di-container.md`
 **Rapport Phase 7** : `.supernova/report-phase7-error-handling.md`
 **Rapport Phase 6** : `.supernova/report-phase6-split-large-files.md`
 **Rapport Phase 5** : `.supernova/report-phase5-refactor-services.md`
+
+### Documentation Refactoring
 **Progress Tracker** : `docs/backend-refactoring/05-PROGRESS-TRACKER.md`
 **Plan détaillé** : `docs/backend-refactoring/04-IMPLEMENTATION-PLAN.md`
+
+### Documentation Tests (Phase 9 - Optionnelle)
+**📖 Commencer ici** : `docs/backend-refactoring/README-TESTS.md`
+**📚 Stratégie** : `docs/backend-refactoring/09-TESTING-STRATEGY.md`
+**💻 Exemples** : `docs/backend-refactoring/09-TEST-EXAMPLES.md`
+**⚡ Quick Start** : `docs/backend-refactoring/09-QUICK-START-TESTS.md`
+**👁️ Schémas** : `docs/backend-refactoring/09-VISUAL-OVERVIEW.md`
 
 ---
 
