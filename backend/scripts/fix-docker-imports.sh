@@ -4,10 +4,12 @@
 
 echo "🔧 Fixing imports for Docker build..."
 
-# Fix towns.ts: ../../../shared -> ../../shared
-sed -i 's|"../../../shared/|"../../shared/|g' src/controllers/towns.ts
+# Fix towns.ts: ../../../shared -> ../../shared (Alpine sed compatible)
+sed -i.bak 's|"../../../shared/|"../../shared/|g' src/controllers/towns.ts && rm src/controllers/towns.ts.bak
 
-# Fix seed.ts: ../../shared -> ../shared
-sed -i 's|"../../shared/|"../shared/|g' prisma/seed.ts
+# Fix seed.ts: ../../shared -> ../shared (Alpine sed compatible)
+sed -i.bak 's|"../../shared/|"../shared/|g' prisma/seed.ts && rm prisma/seed.ts.bak
 
 echo "✅ Imports fixed for Docker (rootDir: .)"
+echo "Checking seed.ts import:"
+grep "shared/constants" prisma/seed.ts || echo "⚠️  Warning: Could not verify seed.ts import"
