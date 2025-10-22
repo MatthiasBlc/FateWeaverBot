@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../util/db";
 import { toCharacterDto } from "../../util/mappers";
@@ -19,8 +19,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
     const { discordId, townId } = req.params;
 
     if (!discordId || !townId) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "Les paramètres discordId et townId sont requis"
       );
     }
@@ -29,7 +28,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
     const user = await CharacterUtils.getUserByDiscordId(discordId);
 
     if (!user) {
-      throw createHttpError(404, "Utilisateur non trouvé");
+      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     // Récupérer le personnage actif
@@ -39,8 +38,7 @@ export const getActiveCharacterByDiscordId: RequestHandler = async (
     );
 
     if (!character) {
-      throw createHttpError(
-        404,
+      throw new NotFoundError(
         "Aucun personnage actif trouvé pour cet utilisateur dans cette ville"
       );
     }
@@ -56,7 +54,7 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
     const { userId, townId, name, roleIds, jobId } = req.body;
 
     if (!userId || !townId) {
-      throw createHttpError(400, "Les champs userId et townId sont requis");
+      throw new BadRequestError("Les champs userId et townId sont requis");
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -65,8 +63,8 @@ export const upsertCharacter: RequestHandler = async (req, res, next) => {
       include: { guild: true },
     });
 
-    if (!user) throw createHttpError(404, "Utilisateur non trouvé");
-    if (!town) throw createHttpError(404, "Ville non trouvée");
+    if (!user) throw new NotFoundError("Utilisateur non trouvé");
+    if (!town) throw new NotFoundError("Ville non trouvée");
 
     const characterName = name || user.username;
 
@@ -205,7 +203,7 @@ export const getCharacterById: RequestHandler = async (req, res, next) => {
     });
 
     if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Personnage non trouvé");
     }
 
     res.status(200).json(toCharacterDto(character));
@@ -230,7 +228,7 @@ export const getCharacterByDiscordIds: RequestHandler = async (
     });
 
     if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Personnage non trouvé");
     }
 
     res.status(200).json(character);
@@ -365,7 +363,7 @@ export const changeCharacterJob: RequestHandler = async (req, res, next) => {
     const { jobId } = req.body;
 
     if (!jobId) {
-      throw createHttpError(400, "jobId is required");
+      throw new BadRequestError("jobId is required");
     }
 
     const character = await characterService.changeCharacterJob(id, jobId);
@@ -377,14 +375,12 @@ export const changeCharacterJob: RequestHandler = async (req, res, next) => {
         error.message === "Character not found" ||
         error.message === "Job not found"
       ) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else {
-        next(
-          createHttpError(500, "Error changing character job", { cause: error })
-        );
+        next(new Error("Error changing character job"));
       }
     } else {
-      next(createHttpError(500, "An unknown error occurred"));
+      next(new Error("An unknown error occurred"));
     }
   }
 };

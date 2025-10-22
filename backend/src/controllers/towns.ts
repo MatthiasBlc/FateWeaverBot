@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { HUNGER } from "../../shared/constants/emojis";
 import { ResourceUtils } from "../shared/utils";
@@ -10,12 +10,12 @@ export const upsertTown: RequestHandler = async (req, res, next) => {
     const { name, foodStock, guildId } = req.body;
 
     if (!name || !guildId) {
-      throw createHttpError(400, "Les champs name et guildId sont requis");
+      throw new BadRequestError("Les champs name et guildId sont requis");
     }
 
     const guild = await prisma.guild.findUnique({ where: { id: guildId } });
     if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+      throw new NotFoundError("Guilde non trouvée");
     }
 
     // Chercher la ville par l'ID de guilde Discord
@@ -142,7 +142,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     });
 
     if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+      throw new NotFoundError("Guilde non trouvée");
     }
 
     const town = await prisma.town.findUnique({
@@ -154,7 +154,7 @@ export const getTownByGuildId: RequestHandler = async (req, res, next) => {
     });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // Vérifier et créer automatiquement le stock de vivres si nécessaire
@@ -240,7 +240,7 @@ export const getTownById: RequestHandler = async (req, res, next) => {
     });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // Récupérer le stock de vivres pour compatibilité avec l'interface existante
@@ -310,8 +310,7 @@ export const updateTownFoodStock: RequestHandler = async (req, res, next) => {
     const { foodStock } = req.body;
 
     if (foodStock === undefined || foodStock < 0) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "Le stock de vivres doit être un nombre positif"
       );
     }
@@ -346,7 +345,7 @@ export const getTownWeather: RequestHandler = async (req, res, next) => {
     const town = await prisma.town.findUnique({ where: { id } });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // TODO: Implémenter un système de météo dynamique basé sur la saison actuelle
@@ -368,7 +367,7 @@ export const getTownActionsRecap: RequestHandler = async (req, res, next) => {
     const town = await prisma.town.findUnique({ where: { id } });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // TODO: Récupérer les actions des dernières 24h depuis une table de logs
@@ -391,7 +390,7 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
     });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // Fetch resourceStocks separately
@@ -438,7 +437,7 @@ export const getTownExpeditionsSummary: RequestHandler = async (
     const town = await prisma.town.findUnique({ where: { id } });
 
     if (!town) {
-      throw createHttpError(404, "Ville non trouvée");
+      throw new NotFoundError("Ville non trouvée");
     }
 
     // Récupérer les expéditions en cours (non retournées)

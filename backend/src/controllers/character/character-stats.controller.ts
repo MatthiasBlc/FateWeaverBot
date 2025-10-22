@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../util/db";
 import { logger } from "../../services/logger";
@@ -25,10 +25,10 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       },
     });
 
-    if (!character) throw createHttpError(404, "Personnage non trouvé");
-    if (character.isDead) throw createHttpError(400, "Ce personnage est mort");
+    if (!character) throw new NotFoundError("Character", id);
+    if (character.isDead) throw new BadRequestError("Ce personnage est mort");
     if (character.hungerLevel >= 4)
-      throw createHttpError(400, "Tu n'as pas faim");
+      throw new BadRequestError("Tu n'as pas faim");
 
     const foodToConsume = 1;
 
@@ -67,8 +67,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         `${stockName} n'a que ${foodStock?.quantity || 0} vivres`
       );
     }
@@ -170,7 +169,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     const { resourceTypeName } = req.body; // Nom du type de ressource à consommer
 
     if (!resourceTypeName) {
-      throw createHttpError(400, "resourceTypeName est requis");
+      throw new BadRequestError("resourceTypeName est requis");
     }
 
     // Récupérer le personnage avec ses informations d'expédition
@@ -186,10 +185,10 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
       },
     });
 
-    if (!character) throw createHttpError(404, "Personnage non trouvé");
-    if (character.isDead) throw createHttpError(400, "Ce personnage est mort");
+    if (!character) throw new NotFoundError("Character", id);
+    if (character.isDead) throw new BadRequestError("Ce personnage est mort");
     if (character.hungerLevel >= 4)
-      throw createHttpError(400, "Tu n'as pas faim");
+      throw new BadRequestError("Tu n'as pas faim");
 
     const foodToConsume = 1;
 
@@ -230,8 +229,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
     });
 
     if (!foodStock || foodStock.quantity < foodToConsume) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         `${stockName} n'a que ${foodStock?.quantity || 0} ${resourceType.name}`
       );
     }
@@ -342,7 +340,7 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
     });
 
     if (!currentCharacter) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Character", id);
     }
 
     const updateData: Prisma.CharacterUpdateInput = { updatedAt: new Date() };
@@ -445,21 +443,20 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     });
 
     if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Character", characterId);
     }
 
     if (character.isDead) {
-      throw createHttpError(400, "Personnage mort");
+      throw new BadRequestError("Personnage mort");
     }
 
     if (character.hp >= 5) {
-      throw createHttpError(400, "PV déjà au maximum");
+      throw new BadRequestError("PV déjà au maximum");
     }
 
     // Vérifier si le personnage est en agonie affamé (hungerLevel=0 ET hp=1)
     if (character.hungerLevel === 0 && character.hp === 1) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "Impossible d'utiliser un cataplasme sur un personnage en agonie affamé"
       );
     }
@@ -488,7 +485,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     });
 
     if (!stock || stock.quantity < 1) {
-      throw createHttpError(400, "Aucun cataplasme disponible");
+      throw new BadRequestError("Aucun cataplasme disponible");
     }
 
     // Use cataplasme

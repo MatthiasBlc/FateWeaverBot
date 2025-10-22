@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 // import bcrypt from "bcrypt";
@@ -40,7 +40,7 @@ export const signUp: RequestHandler<
 
   try {
     if (!username || !passwordRaw) {
-      throw createHttpError(400, "Username and password are required.");
+      throw new BadRequestError("Username and password are required.");
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -54,8 +54,7 @@ export const signUp: RequestHandler<
     });
 
     if (existingUser) {
-      throw createHttpError(
-        409,
+      throw new BadRequestError(
         "Username already taken. Please choose a different one or log in instead."
       );
     }
@@ -104,7 +103,7 @@ export const login: RequestHandler<
 
   try {
     if (!username || !password) {
-      throw createHttpError(400, "Parameters missing");
+      throw new BadRequestError("Parameters missing");
     }
 
     const user = await prisma.user.findUnique({
@@ -120,13 +119,12 @@ export const login: RequestHandler<
     });
 
     if (!user) {
-      throw createHttpError(401, "Invalid credentials");
+      throw new UnauthorizedError("Invalid credentials");
     }
 
     // const passwordMatch = await bcrypt.compare(password, user.password);
 
     // if (!passwordMatch) {
-    //   throw createHttpError(401, "Invalid credentials");
     // }
 
     req.session.userId = user.id;
@@ -156,7 +154,7 @@ export const getUserByDiscordId: RequestHandler = async (req, res, next) => {
     const { discordId } = req.params;
 
     if (!discordId) {
-      throw createHttpError(400, "L'ID Discord est requis");
+      throw new BadRequestError("L'ID Discord est requis");
     }
 
     // Vérifier si l'utilisateur existe déjà
@@ -191,7 +189,7 @@ export const upsertUser: RequestHandler = async (req, res, next) => {
     const { discordId, username, discriminator, globalName, avatar } = req.body;
 
     if (!discordId) {
-      throw createHttpError(400, "L'ID Discord est requis");
+      throw new BadRequestError("L'ID Discord est requis");
     }
 
     const user = await prisma.user.upsert({
@@ -249,7 +247,7 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
     const { id } = req.params;
 
     if (!id) {
-      throw createHttpError(400, "L'ID de l'utilisateur est requis");
+      throw new BadRequestError("L'ID de l'utilisateur est requis");
     }
 
     // Vérifier d'abord si l'utilisateur existe
@@ -263,7 +261,7 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
     });
 
     if (!user) {
-      throw createHttpError(404, "Utilisateur non trouvé");
+      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     // Récupérer les IDs des personnages
@@ -307,7 +305,7 @@ export const updateDiscordUser: RequestHandler = async (req, res, next) => {
     });
 
     if (!existingUser) {
-      throw createHttpError(404, "Utilisateur non trouvé");
+      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     // Mettre à jour l'utilisateur
@@ -342,7 +340,7 @@ export const updateUserByDiscordId: RequestHandler = async (req, res, next) => {
     const { username, discriminator, globalName, avatar } = req.body;
 
     if (!discordId) {
-      throw createHttpError(400, "L'ID Discord est requis");
+      throw new BadRequestError("L'ID Discord est requis");
     }
 
     // Vérifier si l'utilisateur existe
@@ -351,7 +349,7 @@ export const updateUserByDiscordId: RequestHandler = async (req, res, next) => {
     });
 
     if (!existingUser) {
-      throw createHttpError(404, "Utilisateur non trouvé");
+      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     // Mettre à jour l'utilisateur
@@ -370,7 +368,7 @@ export const updateUserByDiscordId: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
-        return next(createHttpError(404, "Utilisateur non trouvé"));
+        return next(new NotFoundError("Utilisateur non trouvé"));
       }
     }
     next(error);

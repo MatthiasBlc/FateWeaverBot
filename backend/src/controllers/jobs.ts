@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { JobService } from "../services/job.service";
 
 /**

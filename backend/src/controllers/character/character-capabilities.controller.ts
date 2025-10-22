@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 import { characterCapabilityService } from "../../services/character";
 import { logger } from "../../services/logger";
 
@@ -16,11 +16,7 @@ export const getCharacterCapabilities: RequestHandler = async (
     const capabilities = await characterCapabilityService.getCharacterCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
-    next(
-      createHttpError(500, "Erreur lors de la récupération des capacités", {
-        cause: error,
-      })
-    );
+    next(new Error("Erreur lors de la récupération des capacités"));
   }
 };
 
@@ -38,13 +34,7 @@ export const getAvailableCapabilities: RequestHandler = async (
     const capabilities = await characterCapabilityService.getAvailableCapabilities(id);
     res.status(200).json(capabilities);
   } catch (error) {
-    next(
-      createHttpError(
-        500,
-        "Erreur lors de la récupération des capacités disponibles",
-        { cause: error }
-      )
-    );
+    next(new Error("Erreur lors de la récupération des capacités disponibles"));
   }
 };
 
@@ -76,20 +66,16 @@ export const addCharacterCapability: RequestHandler = async (
         error.message === "Personnage non trouvé" ||
         error.message === "Capacité non trouvée"
       ) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (
         error.message === "Le personnage possède déjà cette capacité"
       ) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(
-          createHttpError(500, "Erreur lors de l'ajout de la capacité", {
-            cause: error,
-          })
-        );
+        next(new Error("Erreur lors de l'ajout de la capacité"));
       }
     } else {
-      next(createHttpError(500, "Une erreur inconnue est survenue"));
+      next(new Error("Une erreur inconnue est survenue"));
     }
   }
 };
@@ -112,20 +98,16 @@ export const removeCharacterCapability: RequestHandler = async (
         error.message === "Personnage non trouvé" ||
         error.message === "Capacité non trouvée"
       ) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (
         error.message === "Le personnage ne possède pas cette capacité"
       ) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(
-          createHttpError(500, "Erreur lors de la suppression de la capacité", {
-            cause: error,
-          })
-        );
+        next(new Error("Erreur lors de la suppression de la capacité"));
       }
     } else {
-      next(createHttpError(500, "Une erreur inconnue est survenue"));
+      next(new Error("Une erreur inconnue est survenue"));
     }
   }
 };
@@ -147,7 +129,7 @@ export const useCharacterCapability: RequestHandler = async (
     const capabilityIdentifier = capabilityId || capabilityName;
 
     if (!capabilityIdentifier) {
-      throw createHttpError(400, "capabilityId ou capabilityName requis");
+      throw new BadRequestError("capabilityId ou capabilityName requis");
     }
 
     const result = await characterCapabilityService.useCharacterCapability(
@@ -165,22 +147,18 @@ export const useCharacterCapability: RequestHandler = async (
         error.message === "Personnage non trouvé" ||
         error.message === "Capacité non trouvée"
       ) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (
         error.message.includes("PA") ||
         error.message.includes("vivres") ||
         error.message.includes("Vivres")
       ) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(
-          createHttpError(500, "Erreur lors de l'utilisation de la capacité", {
-            cause: error,
-          })
-        );
+        next(new Error("Erreur lors de l'utilisation de la capacité"));
       }
     } else {
-      next(createHttpError(500, "Une erreur inconnue est survenue"));
+      next(new Error("Une erreur inconnue est survenue"));
     }
   }
 };

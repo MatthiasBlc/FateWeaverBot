@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 
 export const getAllSkills: RequestHandler = async (req, res, next) => {
@@ -18,7 +18,7 @@ export const getSkillById: RequestHandler = async (req, res, next) => {
     const { id } = req.params;
 
     if (!id) {
-      throw createHttpError(400, "id requis");
+      throw new BadRequestError("id requis");
     }
 
     const skill = await prisma.skill.findUnique({
@@ -26,7 +26,7 @@ export const getSkillById: RequestHandler = async (req, res, next) => {
     });
 
     if (!skill) {
-      throw createHttpError(404, "Compétence non trouvée");
+      throw new NotFoundError("Compétence non trouvée");
     }
 
     res.status(200).json(skill);
@@ -40,7 +40,7 @@ export const createSkill: RequestHandler = async (req, res, next) => {
     const { name, description } = req.body;
 
     if (!name || !description) {
-      throw createHttpError(400, "name et description sont requis");
+      throw new BadRequestError("name et description sont requis");
     }
 
     // Vérifier si une compétence avec ce nom existe déjà
@@ -49,7 +49,7 @@ export const createSkill: RequestHandler = async (req, res, next) => {
     });
 
     if (existingSkill) {
-      throw createHttpError(400, `Une compétence nommée "${name}" existe déjà`);
+      throw new BadRequestError(`Une compétence nommée "${name}" existe déjà`);
     }
 
     const skill = await prisma.skill.create({
@@ -74,7 +74,7 @@ export const getCharacterSkills: RequestHandler = async (req, res, next) => {
     const { id } = req.params;
 
     if (!id) {
-      throw createHttpError(400, "Character ID requis");
+      throw new BadRequestError("Character ID requis");
     }
 
     const characterSkills = await prisma.characterSkill.findMany({
@@ -102,7 +102,7 @@ export const addCharacterSkill: RequestHandler = async (req, res, next) => {
     const { id, skillId } = req.params;
 
     if (!id || !skillId) {
-      throw createHttpError(400, "Character ID et Skill ID requis");
+      throw new BadRequestError("Character ID et Skill ID requis");
     }
 
     // Vérifier si le personnage existe
@@ -111,7 +111,7 @@ export const addCharacterSkill: RequestHandler = async (req, res, next) => {
     });
 
     if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Personnage non trouvé");
     }
 
     // Vérifier si la compétence existe
@@ -120,7 +120,7 @@ export const addCharacterSkill: RequestHandler = async (req, res, next) => {
     });
 
     if (!skill) {
-      throw createHttpError(404, "Compétence non trouvée");
+      throw new NotFoundError("Compétence non trouvée");
     }
 
     // Vérifier si le personnage possède déjà cette compétence
@@ -134,7 +134,7 @@ export const addCharacterSkill: RequestHandler = async (req, res, next) => {
     });
 
     if (existing) {
-      throw createHttpError(400, "Le personnage possède déjà cette compétence");
+      throw new BadRequestError("Le personnage possède déjà cette compétence");
     }
 
     // Ajouter la compétence
@@ -163,7 +163,7 @@ export const removeCharacterSkill: RequestHandler = async (req, res, next) => {
     const { id, skillId } = req.params;
 
     if (!id || !skillId) {
-      throw createHttpError(400, "Character ID et Skill ID requis");
+      throw new BadRequestError("Character ID et Skill ID requis");
     }
 
     // Vérifier si le personnage possède cette compétence
@@ -177,7 +177,7 @@ export const removeCharacterSkill: RequestHandler = async (req, res, next) => {
     });
 
     if (!existing) {
-      throw createHttpError(404, "Le personnage ne possède pas cette compétence");
+      throw new NotFoundError("Le personnage ne possède pas cette compétence");
     }
 
     // Retirer la compétence

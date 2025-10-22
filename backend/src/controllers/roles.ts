@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 
 export const upsertRole: RequestHandler = async (req, res, next) => {
@@ -7,12 +7,12 @@ export const upsertRole: RequestHandler = async (req, res, next) => {
     const { discordId, name, color, guildId } = req.body;
 
     if (!discordId || !name || !guildId) {
-      throw createHttpError(400, "Les champs discordId, name et guildId sont requis");
+      throw new BadRequestError("Les champs discordId, name et guildId sont requis");
     }
 
     const guild = await prisma.guild.findUnique({ where: { id: guildId } });
     if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+      throw new NotFoundError("Guilde non trouvée");
     }
 
     const existingRole = await prisma.role.findFirst({ where: { discordId, guildId } });
@@ -43,7 +43,7 @@ export const getRoleByDiscordId: RequestHandler = async (req, res, next) => {
     const role = await prisma.role.findFirst({ where: { discordId, guildId } });
 
     if (!role) {
-      throw createHttpError(404, "Rôle non trouvé");
+      throw new NotFoundError("Rôle non trouvé");
     }
 
     res.status(200).json(role);
@@ -87,7 +87,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
     });
 
     if (!character) {
-      throw createHttpError(404, "Personnage non trouvé");
+      throw new NotFoundError("Personnage non trouvé");
     }
 
     if (roleIds && roleIds.length > 0) {
@@ -95,7 +95,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
         where: { id: { in: roleIds }, guildId: character.town.guildId },
       });
       if (roles.length !== roleIds.length) {
-        throw createHttpError(400, "Un ou plusieurs rôles sont invalides");
+        throw new BadRequestError("Un ou plusieurs rôles sont invalides");
       }
     }
 
@@ -108,7 +108,7 @@ export const updateCharacterRoles: RequestHandler = async (req, res, next) => {
       ]);
 
       if (!characterWithUser) {
-        throw createHttpError(404, "Personnage non trouvé");
+        throw new NotFoundError("Personnage non trouvé");
       }
 
       await prisma.characterRole.createMany({

@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 
 /**

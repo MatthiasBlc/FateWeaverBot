@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 
 // TODO: Implement fishing-related endpoints
 // This controller is created for consistency with the refactoring plan

@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { CapabilityService } from "../services/capability.service";
 
@@ -19,21 +19,19 @@ export const createCapability: RequestHandler = async (req, res, next) => {
     const { name, emojiTag, category, costPA, description } = req.body;
 
     if (!name || !emojiTag || !category || !costPA) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "name, emojiTag, category et costPA sont requis"
       );
     }
 
     if (!["HARVEST", "CRAFT", "SCIENCE", "SPECIAL"].includes(category)) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "category doit être HARVEST, CRAFT, SCIENCE ou SPECIAL"
       );
     }
 
     if (costPA < 1 || costPA > 4) {
-      throw createHttpError(400, "costPA doit être entre 1 et 4");
+      throw new BadRequestError("costPA doit être entre 1 et 4");
     }
 
     const capability = await prisma.capability.create({
@@ -57,7 +55,7 @@ export const getCataplasmeCount: RequestHandler = async (req, res, next) => {
     const { townId } = req.params;
 
     if (!townId) {
-      throw createHttpError(400, "townId requis");
+      throw new BadRequestError("townId requis");
     }
 
     const count = await capabilityService.getCataplasmeCount(townId);
@@ -73,7 +71,7 @@ export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
     const { characterId } = req.params;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     const result = await capabilityService.executeCouperDuBois(characterId);
@@ -82,14 +80,14 @@ export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -99,7 +97,7 @@ export const executeMiner: RequestHandler = async (req, res, next) => {
     const { characterId } = req.params;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     const result = await capabilityService.executeMiner(characterId);
@@ -108,14 +106,14 @@ export const executeMiner: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -126,11 +124,11 @@ export const executeFish: RequestHandler = async (req, res, next) => {
     const { paSpent } = req.body;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     if (!paSpent || (paSpent !== 1 && paSpent !== 2)) {
-      throw createHttpError(400, "paSpent doit être 1 ou 2");
+      throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
     const result = await capabilityService.executeFish(characterId, paSpent);
@@ -139,14 +137,14 @@ export const executeFish: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -157,19 +155,19 @@ export const executeCraft: RequestHandler = async (req, res, next) => {
     const { craftType, inputAmount, paSpent } = req.body;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     if (!craftType || !inputAmount || !paSpent) {
-      throw createHttpError(400, "craftType, inputAmount et paSpent requis");
+      throw new BadRequestError("craftType, inputAmount et paSpent requis");
     }
 
     if (!Number.isInteger(inputAmount) || inputAmount < 1) {
-      throw createHttpError(400, "inputAmount doit être un entier positif");
+      throw new BadRequestError("inputAmount doit être un entier positif");
     }
 
     if (paSpent !== 1 && paSpent !== 2) {
-      throw createHttpError(400, "paSpent doit être 1 ou 2");
+      throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
     const result = await capabilityService.executeCraft(
@@ -183,19 +181,19 @@ export const executeCraft: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (
         error.message.includes("Pas assez") ||
         error.message.includes("Stock insuffisant") ||
         error.message.includes("PA permet") ||
         error.message.includes("expédition DEPARTED")
       ) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -206,15 +204,15 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
     const { mode, targetCharacterId } = req.body;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     if (!mode || (mode !== "heal" && mode !== "craft")) {
-      throw createHttpError(400, "mode doit être 'heal' ou 'craft'");
+      throw new BadRequestError("mode doit être 'heal' ou 'craft'");
     }
 
     if (mode === "heal" && !targetCharacterId) {
-      throw createHttpError(400, "targetCharacterId requis pour le mode heal");
+      throw new BadRequestError("targetCharacterId requis pour le mode heal");
     }
 
     const result = await capabilityService.executeSoigner(
@@ -227,18 +225,18 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (
         error.message.includes("Pas assez") ||
         error.message.includes("tous ses PV") ||
         error.message.includes("Limite de cataplasmes")
       ) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -249,25 +247,24 @@ export const executeResearch: RequestHandler = async (req, res, next) => {
     const { researchType, paSpent, subject } = req.body;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     if (
       !researchType ||
       !["rechercher", "cartographier", "auspice"].includes(researchType)
     ) {
-      throw createHttpError(
-        400,
+      throw new BadRequestError(
         "researchType doit être 'rechercher', 'cartographier' ou 'auspice'"
       );
     }
 
     if (!paSpent || (paSpent !== 1 && paSpent !== 2)) {
-      throw createHttpError(400, "paSpent doit être 1 ou 2");
+      throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
     if (!subject) {
-      throw createHttpError(400, "subject requis");
+      throw new BadRequestError("subject requis");
     }
 
     const result = await capabilityService.executeResearch(
@@ -280,14 +277,14 @@ export const executeResearch: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -297,7 +294,7 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
     const { characterId } = req.params;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     const result = await capabilityService.executeDivertir(characterId);
@@ -306,14 +303,14 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
@@ -324,11 +321,11 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
     const { capabilityName } = req.body;
 
     if (!characterId) {
-      throw createHttpError(400, "characterId requis");
+      throw new BadRequestError("characterId requis");
     }
 
     if (!capabilityName) {
-      throw createHttpError(400, "capabilityName requis (Chasser ou Cueillir)");
+      throw new BadRequestError("capabilityName requis (Chasser ou Cueillir)");
     }
 
     const { SeasonService } = await import("../services/season.service");
@@ -345,14 +342,14 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
-        next(createHttpError(404, error.message));
+        next(new NotFoundError(error.message));
       } else if (error.message.includes("Pas assez")) {
-        next(createHttpError(400, error.message));
+        next(new BadRequestError(error.message));
       } else {
-        next(createHttpError(500, error.message));
+        next(new Error(error.message));
       }
     } else {
-      next(createHttpError(500, "Erreur inconnue"));
+      next(new Error("Erreur inconnue"));
     }
   }
 };
