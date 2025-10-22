@@ -309,17 +309,31 @@ export async function handleParticipateButton(interaction: any) {
       if (!response) return;
 
       const selectedChantierId = response.values[0];
+      logger.info("🏗️ [PARTICIPATE] Chantier sélectionné", {
+        chantierId: selectedChantierId,
+        userId: interaction.user.id
+      });
+
       const selectedChantier = availableChantiers.find(
         (c) => c.id === selectedChantierId
       );
 
       if (!selectedChantier) {
+        logger.error("🏗️ [PARTICIPATE] Chantier non trouvé", { chantierId: selectedChantierId });
         await response.update({
           content: "Chantier non trouvé. Veuillez réessayer.",
           components: [],
         });
         return;
       }
+
+      logger.info("🏗️ [PARTICIPATE] Détails du chantier", {
+        name: selectedChantier.name,
+        status: selectedChantier.status,
+        hasResourceCosts: !!selectedChantier.resourceCosts?.length,
+        resourceCostsCount: selectedChantier.resourceCosts?.length || 0,
+        townId: town.id
+      });
 
       // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
       const modal = new ModalBuilder()
@@ -349,8 +363,15 @@ export async function handleParticipateButton(interaction: any) {
 
       // Ajouter champs pour les ressources requises (max 4 ressources)
       if (selectedChantier.resourceCosts && selectedChantier.resourceCosts.length > 0) {
+        logger.info("🏗️ [PARTICIPATE] Récupération des ressources de la ville", {
+          locationType: "CITY",
+          townId: town.id
+        });
         // Récupérer le stock de ressources de la ville
         const townResources = await apiService.getResources("CITY", town.id);
+        logger.info("🏗️ [PARTICIPATE] Ressources récupérées", {
+          resourcesCount: Array.isArray(townResources) ? townResources.length : 0
+        });
 
         const resourceCosts = selectedChantier.resourceCosts.slice(0, 4); // Max 4 ressources (5 champs max - 1 pour PA)
 
@@ -389,7 +410,14 @@ export async function handleParticipateButton(interaction: any) {
 
       modal.addComponents(...actionRows);
 
+      logger.info("🏗️ [PARTICIPATE] Affichage du modal", {
+        chantierId: selectedChantierId,
+        actionRowsCount: actionRows.length
+      });
+
       await response.showModal(modal);
+
+      logger.info("🏗️ [PARTICIPATE] Modal affiché avec succès");
 
       // La soumission du modal sera gérée par handleInvestModalSubmit via le système centralisé
     } catch (error) {
