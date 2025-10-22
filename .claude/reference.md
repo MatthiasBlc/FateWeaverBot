@@ -97,11 +97,24 @@ backend/                 # REST API (Express + Prisma)
 │   │   └── season-change.cron.ts     # Season cycling
 │   ├── middleware/      # Express middleware
 │   └── util/            # Utilities
+├── shared/              # ⚠️ SYMLINK to ../shared (local dev only)
 ├── prisma/
 │   ├── schema.prisma    # Database schema
 │   ├── migrations/      # Migration history
 │   └── seed.ts          # Database seeding
+
+shared/                  # Code partagé entre bot et backend
+└── constants/
+    └── emojis.ts        # Constantes emoji partagées
 ```
+
+**⚠️ Important - Shared Directory Setup:**
+- The `backend/shared` is a **symlink** to `../shared` for local development
+- Required for TypeScript compilation and `@shared/*` imports to work locally
+- **Not needed in production**: Docker copies real files
+- **Setup**: `cd backend && ln -sfn ../shared shared`
+- **Troubleshooting**: If you get "Cannot find module '@shared/...'", recreate the symlink
+- See `backend/SETUP.md` for detailed instructions
 
 ### Key Concepts
 

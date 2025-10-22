@@ -79,7 +79,17 @@
    # Éditer .env avec vos configurations
    ```
 
-3. **Lancer les services**
+3. **Configuration du dossier partagé (développement local uniquement)**
+
+   ```bash
+   cd backend
+   ln -sfn ../shared shared
+   cd ..
+   ```
+
+   **Note** : Ce symlink est nécessaire uniquement pour le développement local. En production, Docker copie automatiquement les fichiers nécessaires.
+
+4. **Lancer les services**
 
    ```bash
    # Développement
@@ -125,7 +135,10 @@ FateWeaverBot/
 │   │   ├── controllers/ # Endpoints API
 │   │   ├── routes/      # Définition des routes
 │   │   └── services/    # Logique métier
+│   ├── shared/         # Symlink vers ../shared (local uniquement)
 │   └── package.json
+├── shared/             # Code partagé entre bot et backend
+│   └── constants/      # Constantes partagées (emojis, etc.)
 ├── frontend/           # Interface React (optionnelle)
 └── common.yml         # Configuration Docker partagée
 ```

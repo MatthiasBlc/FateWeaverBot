@@ -53,6 +53,17 @@ This directory contains all context files and documentation specifically for Cla
 
 ---
 
+### 🏗️ production-build.md
+**Production build configuration and troubleshooting**
+- TypeScript path mappings resolution with `tsconfig-paths`
+- Shared directory handling (symlink local, copied in Docker)
+- Docker build verification steps
+- Common issues and solutions
+
+**When to read:** Fixing compilation errors, setting up new dev environment, production deployment issues
+
+---
+
 ### 📁 commands/ subdirectory
 **Slash command definitions for Claude Code**
 - `epct.md` - Explore-Plan-Code-Test workflow definition
