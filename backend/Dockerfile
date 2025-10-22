@@ -8,6 +8,7 @@ WORKDIR /app
 COPY ./backend/package*.json ./
 COPY ./backend/prisma ./prisma/
 COPY ./backend/tsconfig.json ./
+COPY ./backend/tsconfig.docker.json ./
 
 # Installation des dépendances
 RUN npm ci
@@ -18,11 +19,15 @@ RUN npx prisma generate
 # Copie du dossier shared AVANT la compilation (nécessaire pour les imports)
 COPY ./shared ./shared
 
-# Copie du code source
+# Copie du code source et scripts
 COPY ./backend/src ./src
+COPY ./backend/scripts ./scripts
 
-# Construction de l'application
-RUN npm run build
+# Fix imports pour Docker (rootDir: . au lieu de ../)
+RUN sh ./scripts/fix-docker-imports.sh
+
+# Construction de l'application avec tsconfig Docker
+RUN npx tsc -p tsconfig.docker.json
 
 # Vérification de la structure du build
 RUN echo "=== Vérification après build ===" && \
@@ -30,8 +35,8 @@ RUN echo "=== Vérification après build ===" && \
     echo "=== Vérification server.js ===" && \
     test -f /app/dist/src/server.js && echo "✅ server.js trouvé à /app/dist/src/server.js" || echo "❌ server.js manquant"
 
-# Compilation du fichier de seeding
-RUN cd prisma && npx tsc seed.ts --module commonjs --target es2020 --moduleResolution node --allowJs
+# Compilation du fichier de seeding avec tsconfig Docker
+RUN npx tsc prisma/seed.ts -p tsconfig.docker.json --module commonjs --target es2020 --moduleResolution node --allowJs --outDir prisma
 
 # Suppression des dépendances de développement
 RUN npm prune --production
