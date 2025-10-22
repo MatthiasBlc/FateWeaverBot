@@ -48,6 +48,9 @@ web_modules/
 # TypeScript cache
 *.tsbuildinfo
 
+# Compiled seed file
+prisma/seed.js
+
 # Optional npm cache directory
 .npm
 
