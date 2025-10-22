@@ -1,5 +1,3 @@
-# Est-ce que toutes les routes sont publiques, est-ce que certaines doivent être protégées par requireAuth ?
-
 # Ts doit compiler. + build les images : docker compose up -d --build
 
 > [backenddev builder 10/13] RUN npm run build:
