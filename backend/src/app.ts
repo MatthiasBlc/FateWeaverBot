@@ -140,22 +140,24 @@ app.use(
 
 // Routes publiques (authentification, inscription, etc.)
 app.use("/api/users", userRoutes);
-app.use("/api/guilds", guildRoutes);
 
-// Routes publiques (temporairement pour la compilation)
-app.use("/api/characters", characterRoutes);
+// Routes publiques pour le bot Discord (protection individuelle avec requireAuthOrInternal)
+app.use("/api/guilds", guildRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
 app.use("/api/skills", skillsRoutes);
-app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
-app.use("/api/objects", objectsRoutes);
-app.use("/api/expeditions", expeditionRoutes);
-app.use("/api/chantiers", chantierRoutes);
-app.use("/api/seasons", seasonsRoutes);
-app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);
-app.use("/api/jobs", jobRoutes);
+
+// Routes protégées - Nécessitent authentification utilisateur
+app.use("/api/characters", requireAuth, characterRoutes);
+app.use("/api/action-points", requireAuth, actionPointRoutes);
+app.use("/api/objects", requireAuth, objectsRoutes);
+app.use("/api/expeditions", requireAuth, expeditionRoutes);
+app.use("/api/chantiers", requireAuth, chantierRoutes);
+app.use("/api/projects", requireAuth, projectsRoutes);
+app.use("/api/seasons", requireAuth, seasonsRoutes);
+app.use("/api/jobs", requireAuth, jobRoutes);
 
 // Routes admin (double protection)
 app.use("/api/admin/expeditions", requireAuth, expeditionAdminRoutes);
