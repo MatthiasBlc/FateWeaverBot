@@ -16,7 +16,7 @@
     "start:migrate:prod": "prisma migrate deploy && prisma db seed && node dist/src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "tsx --tsconfig tsconfig.json prisma/seed.ts",
     "migrate:full": "prisma migrate dev && npm run prisma:seed",
     "postinstall": "prisma generate"
   },
@@ -24,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "sh scripts/seed-docker.sh"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
