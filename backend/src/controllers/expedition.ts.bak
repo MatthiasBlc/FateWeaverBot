@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { container } from "../infrastructure/container";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
-export const createExpedition = async (req: Request, res: Response, next: NextFunction) => {
+export const createExpedition = async (req: Request, res: Response) => {
   try {
     const {
       name,
@@ -89,15 +89,16 @@ export const createExpedition = async (req: Request, res: Response, next: NextFu
 
     res.status(201).json(safeExpedition);
   } catch (error) {
+    console.error("Erreur lors de la création de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
 
-export const getExpeditionById = async (req: Request, res: Response, next: NextFunction) => {
+export const getExpeditionById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -113,11 +114,12 @@ export const getExpeditionById = async (req: Request, res: Response, next: NextF
 
     res.json(expedition);
   } catch (error) {
-    next(error);
+    console.error("Erreur lors de la récupération de l'expédition:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const getExpeditionsByTown = async (req: Request, res: Response, next: NextFunction) => {
+export const getExpeditionsByTown = async (req: Request, res: Response) => {
   try {
     const { townId } = req.params;
     const { includeReturned } = req.query;
@@ -133,11 +135,12 @@ export const getExpeditionsByTown = async (req: Request, res: Response, next: Ne
 
     res.json(expeditions);
   } catch (error) {
-    next(error);
+    console.error("Erreur lors de la récupération des expéditions:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const joinExpedition = async (req: Request, res: Response, next: NextFunction) => {
+export const joinExpedition = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { characterId } = req.body;
@@ -186,15 +189,16 @@ export const joinExpedition = async (req: Request, res: Response, next: NextFunc
 
     res.status(201).json(member);
   } catch (error) {
+    console.error("Erreur lors de la participation à l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
 
-export const leaveExpedition = async (req: Request, res: Response, next: NextFunction) => {
+export const leaveExpedition = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { characterId } = req.body;
@@ -243,15 +247,16 @@ export const leaveExpedition = async (req: Request, res: Response, next: NextFun
 
     res.status(204).send();
   } catch (error) {
+    console.error("Erreur lors du départ de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
 
-export const getActiveExpeditionsForCharacter = async (req: Request, res: Response, next: NextFunction) => {
+export const getActiveExpeditionsForCharacter = async (req: Request, res: Response) => {
   try {
     const { characterId } = req.params;
 
@@ -265,11 +270,12 @@ export const getActiveExpeditionsForCharacter = async (req: Request, res: Respon
 
     res.json(expeditions);
   } catch (error) {
-    next(error);
+    console.error("Erreur lors de la récupération des expéditions actives:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const getAllExpeditions = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllExpeditions = async (req: Request, res: Response) => {
   try {
     const includeReturned = req.query.includeReturned === 'true';
     const expeditions = await container.expeditionService.getAllExpeditions(includeReturned);
@@ -280,7 +286,7 @@ export const getAllExpeditions = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const getExpeditionResources = async (req: Request, res: Response, next: NextFunction) => {
+export const getExpeditionResources = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -291,15 +297,16 @@ export const getExpeditionResources = async (req: Request, res: Response, next: 
     const resources = await container.expeditionService.getExpeditionResources(id);
     res.json(resources);
   } catch (error) {
+    console.error("Erreur lors de la récupération des ressources:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
 
-export const transferExpeditionResource = async (req: Request, res: Response, next: NextFunction) => {
+export const transferExpeditionResource = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { resourceType, amount, direction } = req.body;
@@ -328,10 +335,11 @@ export const transferExpeditionResource = async (req: Request, res: Response, ne
 
     res.status(204).send();
   } catch (error) {
+    console.error("Erreur lors du transfert de ressources:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
@@ -340,7 +348,7 @@ export const transferExpeditionResource = async (req: Request, res: Response, ne
  * Toggle emergency return vote for an expedition
  * POST /expeditions/:id/emergency-vote
  */
-export const toggleEmergencyVote = async (req: Request, res: Response, next: NextFunction) => {
+export const toggleEmergencyVote = async (req: Request, res: Response) => {
   try {
     const { id: expeditionId } = req.params;
     const { userId } = req.body;
@@ -363,10 +371,11 @@ export const toggleEmergencyVote = async (req: Request, res: Response, next: Nex
       data: result,
     });
   } catch (error) {
+    console.error("Erreur lors du vote d'urgence:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      next(error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   }
 };
@@ -414,6 +423,7 @@ export const setExpeditionDirection = async (
 
     res.status(200).json({ message: "Direction set successfully" });
   } catch (error: unknown) {
+    console.error("Error setting expedition direction:", error);
     res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
   }
 };

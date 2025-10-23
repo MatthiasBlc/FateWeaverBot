@@ -3,7 +3,7 @@ import { z } from "zod";
 // GET /skills/:id
 export const GetSkillByIdSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/).transform(Number)
+    id: z.string().cuid()
   })
 });
 

@@ -180,12 +180,14 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
 
-  if (isHttpError(error)) {
+  // Check for AppError (custom error classes)
+  if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
+    statusCode = (error as any).statusCode;
+    errorMessage = (error as any).message;
+  } else if (isHttpError(error)) {
     statusCode = error.status;
     errorMessage = error.message;
-  }
-
-  if (createHttpError.isHttpError(error)) {
+  } else if (createHttpError.isHttpError(error)) {
     statusCode = error.status;
   }
 

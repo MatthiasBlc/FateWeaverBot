@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { objectService } from "../services/object.service";
 import { logger } from "../services/logger";
@@ -7,20 +7,20 @@ export const objectsController = {
   /**
    * GET /api/objects
    */
-  async getAllObjectTypes(req: Request, res: Response, next: NextFunction) {
+  async getAllObjectTypes(req: Request, res: Response) {
     try {
       const objects = await objectService.getAllObjectTypes();
       res.json(objects);
     } catch (error: any) {
       logger.error("Error in getAllObjectTypes:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * GET /api/objects/:id
    */
-  async getObjectTypeById(req: Request, res: Response, next: NextFunction) {
+  async getObjectTypeById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
       const object = await objectService.getObjectTypeById(id);
@@ -32,14 +32,14 @@ export const objectsController = {
       res.json(object);
     } catch (error: any) {
       logger.error("Error in getObjectTypeById:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * POST /api/objects
    */
-  async createObjectType(req: Request, res: Response, next: NextFunction) {
+  async createObjectType(req: Request, res: Response) {
     try {
       const { name, description } = req.body;
 
@@ -51,14 +51,14 @@ export const objectsController = {
       res.status(201).json(object);
     } catch (error: any) {
       logger.error("Error in createObjectType:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * GET /api/characters/:id/inventory
    */
-  async getCharacterInventory(req: Request, res: Response, next: NextFunction) {
+  async getCharacterInventory(req: Request, res: Response) {
     try {
       const characterId = req.params.id;
       const inventory = await objectService.getCharacterInventory(characterId);
@@ -66,7 +66,7 @@ export const objectsController = {
       res.json(inventory || { slots: [] });
     } catch (error: any) {
       logger.error("Error in getCharacterInventory:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
@@ -74,7 +74,7 @@ export const objectsController = {
    * GET /api/characters/:id/objects
    * Retourne la liste des types d'objets (dédupliqués) pour l'admin
    */
-  async getCharacterObjects(req: Request, res: Response, next: NextFunction) {
+  async getCharacterObjects(req: Request, res: Response) {
     try {
       const characterId = req.params.id;
       const objects = await objectService.getCharacterObjects(characterId);
@@ -82,14 +82,14 @@ export const objectsController = {
       res.json(objects);
     } catch (error: any) {
       logger.error("Error in getCharacterObjects:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * POST /api/characters/:id/inventory/add
    */
-  async addObjectToCharacter(req: Request, res: Response, next: NextFunction) {
+  async addObjectToCharacter(req: Request, res: Response) {
     try {
       const characterId = req.params.id;
       const { objectTypeId } = req.body;
@@ -102,14 +102,14 @@ export const objectsController = {
       res.json(result);
     } catch (error: any) {
       logger.error("Error in addObjectToCharacter:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * DELETE /api/characters/:id/inventory/:slotId
    */
-  async removeObjectFromCharacter(req: Request, res: Response, next: NextFunction) {
+  async removeObjectFromCharacter(req: Request, res: Response) {
     try {
       const { slotId } = req.params;
 
@@ -117,14 +117,14 @@ export const objectsController = {
       res.json({ success: true });
     } catch (error: any) {
       logger.error("Error in removeObjectFromCharacter:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
   /**
    * POST /api/characters/:id/inventory/transfer
    */
-  async transferObject(req: Request, res: Response, next: NextFunction) {
+  async transferObject(req: Request, res: Response) {
     try {
       const { slotId, targetCharacterId } = req.body;
 
@@ -136,7 +136,7 @@ export const objectsController = {
       res.json(result);
     } catch (error: any) {
       logger.error("Error in transferObject:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
@@ -144,7 +144,7 @@ export const objectsController = {
    * POST /api/characters/:id/objects/:objectId
    * Ajoute un objet au personnage (pour l'admin)
    */
-  async addObjectToCharacterById(req: Request, res: Response, next: NextFunction) {
+  async addObjectToCharacterById(req: Request, res: Response) {
     try {
       const characterId = req.params.id;
       const objectTypeId = parseInt(req.params.objectId, 10);
@@ -157,7 +157,7 @@ export const objectsController = {
       res.json(result);
     } catch (error: any) {
       logger.error("Error in addObjectToCharacterById:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   },
 
@@ -165,7 +165,7 @@ export const objectsController = {
    * DELETE /api/characters/:id/objects/:objectId
    * Retire un objet du personnage par type (pour l'admin)
    */
-  async removeObjectFromCharacterById(req: Request, res: Response, next: NextFunction) {
+  async removeObjectFromCharacterById(req: Request, res: Response) {
     try {
       const characterId = req.params.id;
       const objectTypeId = parseInt(req.params.objectId, 10);
@@ -178,7 +178,7 @@ export const objectsController = {
       res.json({ success: true });
     } catch (error: any) {
       logger.error("Error in removeObjectFromCharacterById:", error);
-      next(error);
+      res.status(500).json({ error: error.message });
     }
   }
 };

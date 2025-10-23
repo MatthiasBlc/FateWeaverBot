@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { container } from '../infrastructure/container';
 import { CraftType } from '@prisma/client';
 
-export const createProject = async (req: Request, res: Response, next: NextFunction) => {
+export const createProject = async (req: Request, res: Response) => {
   try {
     const { name, paRequired, outputResourceTypeId, outputQuantity, townId, createdBy, craftTypes, resourceCosts } = req.body;
 
@@ -29,7 +29,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const getProjectsByCraftType = async (req: Request, res: Response, next: NextFunction) => {
+export const getProjectsByCraftType = async (req: Request, res: Response) => {
   try {
     const { townId, craftType } = req.params;
 
@@ -46,7 +46,7 @@ export const getProjectsByCraftType = async (req: Request, res: Response, next: 
   }
 };
 
-export const getProjectById = async (req: Request, res: Response, next: NextFunction) => {
+export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
 
@@ -59,7 +59,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const contributeToProject = async (req: Request, res: Response, next: NextFunction) => {
+export const contributeToProject = async (req: Request, res: Response) => {
   try {
     const { characterId, projectId } = req.params;
     const { paAmount, resourceContributions } = req.body;
@@ -82,7 +82,7 @@ export const contributeToProject = async (req: Request, res: Response, next: Nex
   }
 };
 
-export const getAllProjectsForTown = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllProjectsForTown = async (req: Request, res: Response) => {
   try {
     const { townId } = req.params;
 
@@ -95,7 +95,7 @@ export const getAllProjectsForTown = async (req: Request, res: Response, next: N
   }
 };
 
-export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteProject = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
 
@@ -108,7 +108,7 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const restartBlueprint = async (req: Request, res: Response, next: NextFunction) => {
+export const restartBlueprint = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
     const { createdBy } = req.body;
@@ -124,6 +124,7 @@ export const restartBlueprint = async (req: Request, res: Response, next: NextFu
 
     return res.status(201).json(newProject);
   } catch (error: any) {
+    console.error("Error restarting blueprint:", error);
     return res.status(500).json({ error: error.message || "Internal server error" });
   }
 };

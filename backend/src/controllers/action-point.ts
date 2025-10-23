@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { actionPointService } from "../services/action-point.service";
 import { prisma } from "../util/db";
@@ -7,11 +7,11 @@ export class ActionPointController {
   /**
    * Récupère le nombre de points d'action disponibles pour un personnage
    */
-  async getPoints(req: Request, res: Response) {
+  async getPoints(req: Request, res: Response, next: NextFunction) {
     try {
       const { characterId } = req.params;
       if (!characterId) {
-        return res.status(400).json({ error: "L'ID du personnage est requis" });
+        throw new BadRequestError("L'ID du personnage est requis");
       }
 
       const character = await prisma.character.findUnique({
@@ -24,7 +24,7 @@ export class ActionPointController {
       });
 
       if (!character) {
-        return res.status(404).json({ error: "Personnage non trouvé" });
+        throw new NotFoundError("Personnage", characterId);
       }
 
       return res.json({
@@ -32,19 +32,18 @@ export class ActionPointController {
         lastUpdated: character.lastPaUpdate,
       });
     } catch (error) {
-      console.error("Erreur lors de la récupération des points:", error);
-      return res.status(500).json({ error: "Erreur interne du serveur" });
+      next(error);
     }
   }
 
   /**
    * Utilise un point d'action pour un personnage
    */
-  async usePoint(req: Request, res: Response) {
+  async usePoint(req: Request, res: Response, next: NextFunction) {
     try {
       const { characterId } = req.params;
       if (!characterId) {
-        return res.status(400).json({ error: "L'ID du personnage est requis" });
+        throw new BadRequestError("L'ID du personnage est requis");
       }
 
       // Vérifier que l'utilisateur est bien propriétaire du personnage
@@ -53,9 +52,7 @@ export class ActionPointController {
       });
 
       if (!character) {
-        return res
-          .status(404)
-          .json({ error: "Personnage non trouvé ou accès non autorisé" });
+        throw new NotFoundError("Personnage", characterId);
       }
 
       const updatedCharacter = await actionPointService.useActionPoint(
@@ -66,8 +63,7 @@ export class ActionPointController {
         remainingPoints: updatedCharacter.paTotal,
       });
     } catch (error) {
-      console.error("Erreur lors de l'utilisation du point d'action:", error);
-      return res.status(500).json({ error: "Erreur interne du serveur" });
+      next(error);
     }
   }
 }

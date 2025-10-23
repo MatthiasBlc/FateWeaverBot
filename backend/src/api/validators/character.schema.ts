@@ -146,7 +146,7 @@ export const UseCharacterCapabilitySchema = z.object({
 export const AddCharacterCapabilitySchema = z.object({
   params: z.object({
     id: z.string().cuid(),
-    capabilityId: z.string().regex(/^\d+$/).transform(Number)
+    capabilityId: z.string().cuid()
   })
 });
 
@@ -154,7 +154,7 @@ export const AddCharacterCapabilitySchema = z.object({
 export const RemoveCharacterCapabilitySchema = z.object({
   params: z.object({
     id: z.string().cuid(),
-    capabilityId: z.string().regex(/^\d+$/).transform(Number)
+    capabilityId: z.string().cuid()
   })
 });
 
@@ -169,7 +169,7 @@ export const GetCharacterSkillsSchema = z.object({
 export const AddCharacterSkillSchema = z.object({
   params: z.object({
     id: z.string().cuid(),
-    skillId: z.string().regex(/^\d+$/).transform(Number)
+    skillId: z.string().cuid()
   })
 });
 
@@ -177,7 +177,7 @@ export const AddCharacterSkillSchema = z.object({
 export const RemoveCharacterSkillSchema = z.object({
   params: z.object({
     id: z.string().cuid(),
-    skillId: z.string().regex(/^\d+$/).transform(Number)
+    skillId: z.string().cuid()
   })
 });
 

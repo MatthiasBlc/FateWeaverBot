@@ -12,7 +12,8 @@ export const CreateJobSchema = z.object({
   body: z.object({
     name: z.string().min(1).max(100),
     description: z.string().optional(),
-    icon: z.string().optional()
+    startingAbilityId: z.string().cuid(),
+    optionalAbilityId: z.string().cuid().optional()
   })
 });
 
@@ -24,6 +25,7 @@ export const UpdateJobSchema = z.object({
   body: z.object({
     name: z.string().min(1).max(100).optional(),
     description: z.string().optional(),
-    icon: z.string().optional()
+    startingAbilityId: z.string().cuid().optional(),
+    optionalAbilityId: z.string().cuid().optional()
   })
 });

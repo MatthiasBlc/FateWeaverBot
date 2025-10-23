@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { actionPointService } from "../services/action-point.service";
@@ -8,7 +8,7 @@ import { validateCanUsePA } from "../util/character-validators";
 import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
 import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
-export const createChantier = async (req: Request, res: Response, next: NextFunction) => {
+export const createChantier = async (req: Request, res: Response) => {
   try {
     const {
       name,
@@ -75,11 +75,11 @@ export const createChantier = async (req: Request, res: Response, next: NextFunc
     res.status(201).json(fullChantier);
   } catch (error) {
     logger.error("Error creating chantier", { error });
-    next(error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const getChantiersByGuild = async (req: Request, res: Response, next: NextFunction) => {
+export const getChantiersByGuild = async (req: Request, res: Response) => {
   try {
     const { guildId } = req.params;
     const isDiscordId = /^\d{17,19}$/.test(guildId);
@@ -105,11 +105,11 @@ export const getChantiersByGuild = async (req: Request, res: Response, next: Nex
     res.json(chantiers);
   } catch (error) {
     logger.error("Error fetching chantiers", { error });
-    next(error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const getChantierById = async (req: Request, res: Response, next: NextFunction) => {
+export const getChantierById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const chantier = await chantierService.getChantierById(id);
@@ -121,21 +121,22 @@ export const getChantierById = async (req: Request, res: Response, next: NextFun
     res.json(chantier);
   } catch (error) {
     logger.error("Error fetching chantier", { error });
-    next(error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const deleteChantier = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteChantier = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await prisma.chantier.delete({ where: { id } });
     res.status(200).json({ message: "Chantier supprimé avec succès" });
   } catch (error) {
-    next(error);
+    console.error("Erreur lors de la suppression du chantier:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const investInChantier = async (req: Request, res: Response, next: NextFunction) => {
+export const investInChantier = async (req: Request, res: Response) => {
   try {
     const { chantierId } = req.params;
     const { characterId, points } = req.body;
@@ -237,11 +238,11 @@ export const investInChantier = async (req: Request, res: Response, next: NextFu
     });
   } catch (error) {
     logger.error("Error investing in chantier", { error });
-    next(error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-export const contributeResources = async (req: Request, res: Response, next: NextFunction) => {
+export const contributeResources = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { characterId, contributions } = req.body;
@@ -305,6 +306,6 @@ export const contributeResources = async (req: Request, res: Response, next: Nex
       }
     }
 
-    next(error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
