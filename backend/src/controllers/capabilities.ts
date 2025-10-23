@@ -452,3 +452,75 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
     }
   }
 };
+
+export const updateCapability: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, emojiTag, category, costPA, description } = req.body;
+
+    if (!id) {
+      throw new BadRequestError("ID de la capacité requis");
+    }
+
+    // Vérifier que la capacité existe
+    const existing = await prisma.capability.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Capacité", id);
+    }
+
+    if (category && !["HARVEST", "CRAFT", "SCIENCE", "SPECIAL"].includes(category)) {
+      throw new BadRequestError(
+        "category doit être HARVEST, CRAFT, SCIENCE ou SPECIAL"
+      );
+    }
+
+    if (costPA && (costPA < 1 || costPA > 4)) {
+      throw new BadRequestError("costPA doit être entre 1 et 4");
+    }
+
+    const capability = await prisma.capability.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(emojiTag && { emojiTag }),
+        ...(category && { category }),
+        ...(costPA && { costPA }),
+        ...(description !== undefined && { description: description || null })
+      }
+    });
+
+    res.status(200).json(capability);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteCapability: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new BadRequestError("ID de la capacité requis");
+    }
+
+    // Vérifier que la capacité existe
+    const existing = await prisma.capability.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Capacité", id);
+    }
+
+    const capability = await prisma.capability.delete({
+      where: { id }
+    });
+
+    res.status(200).json(capability);
+  } catch (error) {
+    next(error);
+  }
+};

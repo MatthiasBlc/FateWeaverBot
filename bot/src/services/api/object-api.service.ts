@@ -6,6 +6,11 @@ export interface CreateObjectTypeDto {
   description?: string;
 }
 
+export interface UpdateObjectTypeDto {
+  name?: string;
+  description?: string;
+}
+
 export interface AddSkillBonusDto {
   skillId: string;
   bonusValue: number;
@@ -71,6 +76,22 @@ export class ObjectAPIService extends BaseAPIService {
    */
   async addResourceConversion(objectId: string, data: AddResourceConversionDto) {
     const response = await this.api.post(`/objects/${objectId}/resource-conversion`, data);
+    return response.data;
+  }
+
+  /**
+   * Met à jour un type d'objet
+   */
+  async updateObjectType(id: number, data: UpdateObjectTypeDto) {
+    const response = await this.api.patch(`/objects/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Supprime un type d'objet
+   */
+  async deleteObjectType(id: number) {
+    const response = await this.api.delete(`/objects/${id}`);
     return response.data;
   }
 }

@@ -2,6 +2,8 @@ import express from "express";
 import {
   getAllCapabilities,
   createCapability,
+  updateCapability,
+  deleteCapability,
   executeCouperDuBois,
   executeMiner,
   executeFish,
@@ -34,6 +36,12 @@ router.get("/", requireAuthOrInternal, getAllCapabilities);
 
 // Crée une nouvelle capacité
 router.post("/", requireAuthOrInternal, validate(CreateCapabilitySchema), createCapability);
+
+// Met à jour une capacité
+router.patch("/:id", requireAuthOrInternal, updateCapability);
+
+// Supprime une capacité
+router.delete("/:id", requireAuthOrInternal, deleteCapability);
 
 // Récupère le nombre de cataplasmes pour une ville
 router.get("/cataplasme-count/:townId", requireAuthOrInternal, validate(GetCataplasmeCountSchema), getCataplasmeCount);

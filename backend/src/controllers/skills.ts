@@ -195,3 +195,66 @@ export const removeCharacterSkill: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateSkill: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    if (!id) {
+      throw new BadRequestError("id requis");
+    }
+
+    if (!name && !description) {
+      throw new BadRequestError("Au moins un champ (name ou description) est requis");
+    }
+
+    // Vérifier que la compétence existe
+    const existing = await prisma.skill.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Compétence non trouvée");
+    }
+
+    const skill = await prisma.skill.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(description && { description })
+      }
+    });
+
+    res.status(200).json(skill);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteSkill: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new BadRequestError("id requis");
+    }
+
+    // Vérifier que la compétence existe
+    const existing = await prisma.skill.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Compétence non trouvée");
+    }
+
+    const skill = await prisma.skill.delete({
+      where: { id }
+    });
+
+    res.status(200).json(skill);
+  } catch (error) {
+    next(error);
+  }
+};

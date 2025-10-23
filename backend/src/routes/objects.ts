@@ -12,5 +12,7 @@ const router = Router();
 router.get("/", objectsController.getAllObjectTypes);
 router.get("/:id", validate(GetObjectTypeByIdSchema), objectsController.getObjectTypeById);
 router.post("/", validate(CreateObjectTypeSchema), objectsController.createObjectType);
+router.patch("/:id", objectsController.updateObjectType);
+router.delete("/:id", objectsController.deleteObjectType);
 
 export default router;

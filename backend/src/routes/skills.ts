@@ -3,6 +3,8 @@ import {
   getAllSkills,
   getSkillById,
   createSkill,
+  updateSkill,
+  deleteSkill,
 } from "../controllers/skills";
 import { requireAuthOrInternal } from "../middleware/auth";
 import { validate } from "../api/middleware/validation.middleware";
@@ -21,5 +23,11 @@ router.get("/:id", requireAuthOrInternal, validate(GetSkillByIdSchema), getSkill
 
 // Crée une nouvelle compétence
 router.post("/", requireAuthOrInternal, validate(CreateSkillSchema), createSkill);
+
+// Met à jour une compétence
+router.patch("/:id", requireAuthOrInternal, updateSkill);
+
+// Supprime une compétence
+router.delete("/:id", requireAuthOrInternal, deleteSkill);
 
 export default router;

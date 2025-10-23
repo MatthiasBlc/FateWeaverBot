@@ -472,6 +472,135 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // =================== EDIT/DELETE SELECT MENUS ===================
+    // Gestionnaire pour la sélection d'une ressource à modifier
+    this.registerHandler("select_resource_to_edit", async (interaction) => {
+      try {
+        const { handleSelectResourceToEditMenu } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleSelectResourceToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select resource to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une ressource à supprimer
+    this.registerHandler("select_resource_to_delete", async (interaction) => {
+      try {
+        const { handleSelectResourceToDeleteMenu } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleSelectResourceToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select resource to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un objet à modifier
+    this.registerHandler("select_object_to_edit", async (interaction) => {
+      try {
+        const { handleSelectObjectToEditMenu } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleSelectObjectToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select object to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un objet à supprimer
+    this.registerHandler("select_object_to_delete", async (interaction) => {
+      try {
+        const { handleSelectObjectToDeleteMenu } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleSelectObjectToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select object to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une compétence à modifier
+    this.registerHandler("select_skill_to_edit", async (interaction) => {
+      try {
+        const { handleSelectSkillToEditMenu } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleSelectSkillToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select skill to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une compétence à supprimer
+    this.registerHandler("select_skill_to_delete", async (interaction) => {
+      try {
+        const { handleSelectSkillToDeleteMenu } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleSelectSkillToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select skill to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une capacité à modifier
+    this.registerHandler("select_capability_to_edit", async (interaction) => {
+      try {
+        const { handleSelectCapabilityToEditMenu } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleSelectCapabilityToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select capability to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une capacité à supprimer
+    this.registerHandler("select_capability_to_delete", async (interaction) => {
+      try {
+        const { handleSelectCapabilityToDeleteMenu } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleSelectCapabilityToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select capability to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

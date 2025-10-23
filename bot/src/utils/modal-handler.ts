@@ -478,6 +478,71 @@ export class ModalHandler {
         });
       }
     });
+
+    // =================== EDIT/DELETE MODALS ===================
+    // Gestionnaire pour le modal de modification de ressource
+    this.registerHandler("edit_resource_modal:", async (interaction) => {
+      try {
+        const { handleEditResourceModalSubmit } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleEditResourceModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit resource modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification d'objet
+    this.registerHandler("edit_object_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de compétence
+    this.registerHandler("edit_skill_modal:", async (interaction) => {
+      try {
+        const { handleEditSkillModalSubmit } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleEditSkillModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit skill modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de capacité
+    this.registerHandler("edit_capability_modal:", async (interaction) => {
+      try {
+        const { handleEditCapabilityModalSubmit } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleEditCapabilityModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit capability modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

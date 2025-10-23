@@ -180,5 +180,58 @@ export const objectsController = {
       logger.error("Error in removeObjectFromCharacterById:", error);
       next(error);
     }
+  },
+
+  /**
+   * PATCH /api/objects/:id
+   */
+  async updateObjectType(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { name, description } = req.body;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid object ID" });
+      }
+
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+
+      const object = await objectService.updateObjectType(id, { name, description });
+
+      if (!object) {
+        return res.status(404).json({ error: "Object type not found" });
+      }
+
+      res.json(object);
+    } catch (error: any) {
+      logger.error("Error in updateObjectType:", error);
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/objects/:id
+   */
+  async deleteObjectType(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid object ID" });
+      }
+
+      const object = await objectService.deleteObjectType(id);
+
+      if (!object) {
+        return res.status(404).json({ error: "Object type not found" });
+      }
+
+      res.json(object);
+    } catch (error: any) {
+      logger.error("Error in deleteObjectType:", error);
+      next(error);
+    }
   }
 };

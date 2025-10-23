@@ -31,46 +31,94 @@ export async function handleNewElementAdminCommand(
       return;
     }
 
-    // Créer les boutons
-    const capabilityButton = new ButtonBuilder()
-      .setCustomId("new_element_capability")
-      .setLabel("➕ Nouvelle Capacité")
+    const resourceButton = new ButtonBuilder()
+      .setCustomId("element_category_resource")
+      .setLabel("📦 Ressources")
       .setStyle(ButtonStyle.Primary);
 
-    const resourceButton = new ButtonBuilder()
-      .setCustomId("new_element_resource")
-      .setLabel("➕ Nouvelle Ressource")
-      .setStyle(ButtonStyle.Success);
-
     const objectButton = new ButtonBuilder()
-      .setCustomId("new_element_object")
-      .setLabel("➕ Nouvel Objet")
-      .setStyle(ButtonStyle.Secondary);
+      .setCustomId("element_category_object")
+      .setLabel("🎒 Objets")
+      .setStyle(ButtonStyle.Primary);
 
     const skillButton = new ButtonBuilder()
-      .setCustomId("new_element_skill")
-      .setLabel("➕ Nouvelle Compétence")
-      .setStyle(ButtonStyle.Danger);
+      .setCustomId("element_category_skill")
+      .setLabel("⚔️ Compétences")
+      .setStyle(ButtonStyle.Primary);
 
-    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      capabilityButton,
-      resourceButton
-    );
+    const capabilityButton = new ButtonBuilder()
+      .setCustomId("element_category_capability")
+      .setLabel("✨ Capacités")
+      .setStyle(ButtonStyle.Primary);
 
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      resourceButton,
       objectButton,
-      skillButton
+      skillButton,
+      capabilityButton
     );
 
     await interaction.reply({
-      content: "**Que souhaitez-vous créer ?**",
-      components: [row1, row2],
+      content: "**Gestion des éléments**\n\nSélectionnez une catégorie :",
+      components: [row],
       flags: ["Ephemeral"],
     });
   } catch (error) {
     logger.error("Erreur dans handleNewElementAdminCommand", {
       error: error instanceof Error ? error.message : error,
       guildId: interaction.guildId,
+      userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Une erreur est survenue.`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gère la sélection d'une catégorie d'éléments
+ */
+export async function handleElementCategoryButton(interaction: ButtonInteraction) {
+  try {
+    const category = interaction.customId.split('_')[2];
+
+    const addButton = new ButtonBuilder()
+      .setCustomId(`new_element_${category}`)
+      .setLabel("➕ Ajouter")
+      .setStyle(ButtonStyle.Success);
+
+    const editButton = new ButtonBuilder()
+      .setCustomId(`edit_element_${category}`)
+      .setLabel("✏️ Modifier")
+      .setStyle(ButtonStyle.Primary);
+
+    const deleteButton = new ButtonBuilder()
+      .setCustomId(`delete_element_${category}`)
+      .setLabel("🗑️ Supprimer")
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      addButton,
+      editButton,
+      deleteButton
+    );
+
+    const categoryNames: Record<string, string> = {
+      resource: "Ressources",
+      object: "Objets",
+      skill: "Compétences",
+      capability: "Capacités",
+    };
+
+    await interaction.update({
+      content: `**${categoryNames[category]}**\n\nSélectionnez une action :`,
+      components: [row],
+    });
+  } catch (error) {
+    logger.error("Erreur dans handleElementCategoryButton", {
+      error: error instanceof Error ? error.message : error,
       userId: interaction.user.id,
     });
 
@@ -234,7 +282,7 @@ export async function handleCapabilityModalSubmit(interaction: ModalSubmitIntera
     }
 
     // Appeler l'API backend pour créer la capacité
-    const response = await apiService.capabilities.createCapability({
+    await apiService.capabilities.createCapability({
       name,
       emojiTag,
       category,
@@ -299,7 +347,7 @@ export async function handleResourceModalSubmit(interaction: ModalSubmitInteract
     }
 
     // Appeler l'API backend pour créer le type de ressource
-    const response = await apiService.resources.createResourceType({
+    await apiService.resources.createResourceType({
       name,
       emoji,
       category,
@@ -510,7 +558,7 @@ export async function handleSkillModalSubmit(interaction: ModalSubmitInteraction
     await interaction.deferReply({ flags: ["Ephemeral"] });
 
     // Appeler l'API backend pour créer la compétence
-    const response = await apiService.skills.createSkill({
+    await apiService.skills.createSkill({
       name,
       description,
     });
@@ -845,6 +893,23 @@ export async function handleObjectResourceConversionModalSubmit(interaction: Mod
 
     await interaction.editReply({
       content: `${STATUS.ERROR} Erreur lors de l'ajout : ${errorMessage}`,
+    });
+  }
+}
+
+/**
+ * Gère l'annulation de suppression
+ */
+export async function handleCancelDeleteButton(interaction: ButtonInteraction) {
+  try {
+    await interaction.update({
+      content: `${STATUS.SUCCESS} Suppression annulée.`,
+      components: [],
+    });
+  } catch (error) {
+    logger.error("Erreur dans handleCancelDeleteButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
     });
   }
 }

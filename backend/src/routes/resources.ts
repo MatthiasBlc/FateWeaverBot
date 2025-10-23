@@ -8,6 +8,8 @@ import {
   transferResource,
   getAllResourceTypes,
   createResourceType,
+  updateResourceType,
+  deleteResourceType,
 } from "../controllers/resources";
 import { validate } from "../api/middleware/validation.middleware";
 import {
@@ -29,6 +31,12 @@ router.get("/resource-types", requireAuthOrInternal, getAllResourceTypes);
 
 // Créer un nouveau type de ressource
 router.post("/types", requireAuthOrInternal, validate(CreateResourceTypeSchema), createResourceType);
+
+// Mettre à jour un type de ressource
+router.patch("/types/:id", requireAuthOrInternal, updateResourceType);
+
+// Supprimer un type de ressource
+router.delete("/types/:id", requireAuthOrInternal, deleteResourceType);
 
 // Récupérer les ressources d'un lieu (ville ou expédition)
 router.get("/:locationType/:locationId", requireAuthOrInternal, validate(GetResourcesSchema), getResources);

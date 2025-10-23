@@ -8,6 +8,13 @@ export interface CreateResourceTypeDto {
   description?: string;
 }
 
+export interface UpdateResourceTypeDto {
+  name?: string;
+  emoji?: string;
+  category?: string;
+  description?: string;
+}
+
 export class ResourceAPIService extends BaseAPIService {
   constructor(api: AxiosInstance) {
     super(api);
@@ -34,6 +41,22 @@ export class ResourceAPIService extends BaseAPIService {
    */
   async getResourceTypeById(id: number) {
     const response = await this.api.get(`/resources/types/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Met à jour un type de ressource
+   */
+  async updateResourceType(id: number, data: UpdateResourceTypeDto) {
+    const response = await this.api.patch(`/resources/types/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Supprime un type de ressource
+   */
+  async deleteResourceType(id: number) {
+    const response = await this.api.delete(`/resources/types/${id}`);
     return response.data;
   }
 }

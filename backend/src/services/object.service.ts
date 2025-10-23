@@ -348,6 +348,23 @@ class ObjectServiceClass {
       return { success: true, newSlot };
     });
   }
+
+  /**
+   * Met à jour un type d'objet (admin)
+   */
+  async updateObjectType(id: number, data: { name?: string; description?: string }) {
+    return this.objectRepo.update(id, {
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description || null })
+    });
+  }
+
+  /**
+   * Supprime un type d'objet (admin)
+   */
+  async deleteObjectType(id: number) {
+    return this.objectRepo.delete(id);
+  }
 }
 
 export const objectService = new ObjectServiceClass();

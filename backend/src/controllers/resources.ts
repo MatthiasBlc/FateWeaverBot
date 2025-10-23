@@ -282,3 +282,74 @@ export const createResourceType: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateResourceType: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, emoji, category, description } = req.body;
+
+    if (!id) {
+      throw new BadRequestError("L'ID du type de ressource est requis");
+    }
+
+    const resourceTypeId = parseInt(id);
+    if (isNaN(resourceTypeId)) {
+      throw new BadRequestError("L'ID du type de ressource doit être un nombre");
+    }
+
+    // Vérifier que le type de ressource existe
+    const existingResourceType = await prisma.resourceType.findUnique({
+      where: { id: resourceTypeId },
+    });
+
+    if (!existingResourceType) {
+      throw new NotFoundError("Resource type", resourceTypeId);
+    }
+
+    const resourceType = await prisma.resourceType.update({
+      where: { id: resourceTypeId },
+      data: {
+        ...(name && { name }),
+        ...(emoji && { emoji }),
+        ...(category && { category }),
+        ...(description !== undefined && { description: description || null }),
+      },
+    });
+
+    res.status(200).json(resourceType);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteResourceType: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new BadRequestError("L'ID du type de ressource est requis");
+    }
+
+    const resourceTypeId = parseInt(id);
+    if (isNaN(resourceTypeId)) {
+      throw new BadRequestError("L'ID du type de ressource doit être un nombre");
+    }
+
+    // Vérifier que le type de ressource existe
+    const existingResourceType = await prisma.resourceType.findUnique({
+      where: { id: resourceTypeId },
+    });
+
+    if (!existingResourceType) {
+      throw new NotFoundError("Resource type", resourceTypeId);
+    }
+
+    const resourceType = await prisma.resourceType.delete({
+      where: { id: resourceTypeId },
+    });
+
+    res.status(200).json(resourceType);
+  } catch (error) {
+    next(error);
+  }
+};
