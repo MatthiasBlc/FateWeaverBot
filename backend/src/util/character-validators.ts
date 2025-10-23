@@ -85,3 +85,89 @@ export async function hasLuckyRollBonus(
     slot => slot.objectType.capacityBonuses.length > 0
   );
 }
+
+/**
+ * Vérifie si un personnage possède un objet avec le bonus HEAL_EXTRA pour une capacité donnée
+ * @param characterId ID du personnage
+ * @param capabilityId ID de la capacité
+ * @param prisma Instance Prisma
+ * @returns true si le personnage a le bonus HEAL_EXTRA pour cette capacité
+ */
+export async function hasHealExtraBonus(
+  characterId: string,
+  capabilityId: string,
+  prisma: PrismaClient
+): Promise<boolean> {
+  // Récupérer l'inventaire du personnage avec les bonus de capacité
+  const inventory = await prisma.characterInventory.findUnique({
+    where: { characterId },
+    include: {
+      slots: {
+        include: {
+          objectType: {
+            include: {
+              capacityBonuses: {
+                where: {
+                  capabilityId,
+                  bonusType: 'HEAL_EXTRA'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!inventory) {
+    return false;
+  }
+
+  // Vérifier si au moins un objet a le bonus HEAL_EXTRA pour cette capacité
+  return inventory.slots.some(
+    slot => slot.objectType.capacityBonuses.length > 0
+  );
+}
+
+/**
+ * Vérifie si un personnage possède un objet avec le bonus ENTERTAIN_BURST pour une capacité donnée
+ * @param characterId ID du personnage
+ * @param capabilityId ID de la capacité
+ * @param prisma Instance Prisma
+ * @returns true si le personnage a le bonus ENTERTAIN_BURST pour cette capacité
+ */
+export async function hasDivertExtraBonus(
+  characterId: string,
+  capabilityId: string,
+  prisma: PrismaClient
+): Promise<boolean> {
+  // Récupérer l'inventaire du personnage avec les bonus de capacité
+  const inventory = await prisma.characterInventory.findUnique({
+    where: { characterId },
+    include: {
+      slots: {
+        include: {
+          objectType: {
+            include: {
+              capacityBonuses: {
+                where: {
+                  capabilityId,
+                  bonusType: 'ENTERTAIN_BURST'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!inventory) {
+    return false;
+  }
+
+  // Vérifier si au moins un objet a le bonus ENTERTAIN_BURST pour cette capacité
+  return inventory.slots.some(
+    slot => slot.objectType.capacityBonuses.length > 0
+  );
+}

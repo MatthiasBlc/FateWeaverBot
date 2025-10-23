@@ -295,7 +295,13 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await container.capabilityService.executeDivertir(characterId);
+    // Récupérer la capacité Divertir
+    const capability = await container.capabilityService.getCapabilityByName("Divertir");
+    if (!capability) {
+      throw new NotFoundError("Capability", "Divertir");
+    }
+
+    const result = await container.capabilityService.executeDivertir(characterId, capability.id);
 
     res.status(200).json(result);
   } catch (error) {
