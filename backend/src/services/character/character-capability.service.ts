@@ -449,23 +449,38 @@ export class CharacterCapabilityService {
         }
       }
 
-      // Traiter les effects (changements de HP, etc.)
+      // Traiter les effects (changements de HP, PM, etc.)
       if (result.effects && result.effects.length > 0) {
         for (const effect of result.effects) {
-          if (effect.targetCharacterId && effect.hpChange !== undefined) {
-            // Récupérer le personnage cible
-            const targetCharacter = await tx.character.findUnique({
-              where: { id: effect.targetCharacterId },
-            });
+          if (!effect.targetCharacterId) continue;
 
-            if (targetCharacter) {
+          // Récupérer le personnage cible
+          const targetCharacter = await tx.character.findUnique({
+            where: { id: effect.targetCharacterId },
+          });
+
+          if (targetCharacter) {
+            const updateData: any = {};
+
+            // Traiter les changements de HP
+            if (effect.hpChange !== undefined) {
               // Calculer les nouveaux HP (min 0, max 5)
               const newHp = Math.max(0, Math.min(5, targetCharacter.hp + effect.hpChange));
+              updateData.hp = newHp;
+            }
 
-              // Mettre à jour le personnage cible
+            // Traiter les changements de PM
+            if (effect.pmChange !== undefined) {
+              // Calculer les nouveaux PM (min 0, max 5)
+              const newPm = Math.max(0, Math.min(5, targetCharacter.pm + effect.pmChange));
+              updateData.pm = newPm;
+            }
+
+            // Mettre à jour le personnage cible si des changements
+            if (Object.keys(updateData).length > 0) {
               await tx.character.update({
                 where: { id: effect.targetCharacterId },
-                data: { hp: newHp },
+                data: updateData,
               });
             }
           }

@@ -77,8 +77,8 @@ export class DivertirCapability extends BaseCapability {
       // Préparation du spectacle
       return {
         success: true,
-        message: `Vous préparez un spectacle (${newCounter}/5). Continuez à divertir pour déclencher le concert !`,
-        publicMessage: `🎵 ${character.name} prépare un spectacle (${newCounter}/5)`,
+        message: `Vous préparez un spectacle. Continuez à divertir pour déclencher le concert !`,
+        publicMessage: `🎵 ${character.name} prépare un spectacle`,
         paConsumed: 1,
         metadata: {
           divertCounter: newCounter,
