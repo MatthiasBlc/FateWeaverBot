@@ -379,13 +379,29 @@ export class CharacterCapabilityService {
     capability: Capability,
     isSummer?: boolean
   ): Promise<CapabilityResult> {
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Chasser
+    const { hasLuckyRollBonus } = await import("../../util/character-validators");
+    const hasBonus = await hasLuckyRollBonus(
+      character.id,
+      capability.id,
+      prisma
+    );
+
     // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
-    const foodAmount = getHuntYield(isSummer ?? true);
+    const foodAmount = getHuntYield(isSummer ?? true, hasBonus);
+
+    const message = hasBonus
+      ? `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
+      : `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`;
+
+    const publicMessage = hasBonus
+      ? `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres ⭐`
+      : `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`;
 
     return {
       success: foodAmount > 0,
-      message: `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
-      publicMessage: `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`,
+      message,
+      publicMessage,
       loot: { foodSupplies: foodAmount },
     };
   }
@@ -404,13 +420,29 @@ export class CharacterCapabilityService {
     capability: Capability,
     isSummer?: boolean
   ): Promise<CapabilityResult> {
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cueillir
+    const { hasLuckyRollBonus } = await import("../../util/character-validators");
+    const hasBonus = await hasLuckyRollBonus(
+      character.id,
+      capability.id,
+      prisma
+    );
+
     // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
-    const foodAmount = getGatherYield(isSummer ?? true);
+    const foodAmount = getGatherYield(isSummer ?? true, hasBonus);
+
+    const message = hasBonus
+      ? `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
+      : `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`;
+
+    const publicMessage = hasBonus
+      ? `🌿 ${character.name} a cueilli ${foodAmount} vivres ⭐`
+      : `🌿 ${character.name} a cueilli ${foodAmount} vivres.`;
 
     return {
       success: foodAmount > 0,
-      message: `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`,
-      publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres.`,
+      message,
+      publicMessage,
       loot: { foodSupplies: foodAmount },
     };
   }
@@ -594,17 +626,43 @@ export class CharacterCapabilityService {
       );
     }
 
+    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cuisiner
+    const { hasLuckyRollBonus } = await import("../../util/character-validators");
+    const hasBonus = await hasLuckyRollBonus(
+      character.id,
+      capability.id,
+      prisma
+    );
+
     // Calculer le nombre de repas créés avec la formule aléatoire
     // 1 PA: Output = random(0, Input × 2)
     // 2 PA: Output = random(0, Input × 3)
     const minOutput = 0;
     const maxOutput = actualPaToUse === 1 ? vivresToConsume * 2 : vivresToConsume * 3;
-    const repasCreated = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+
+    let repasCreated: number;
+    if (hasBonus) {
+      // LUCKY_ROLL : deux tirages, on garde le meilleur
+      const roll1 = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+      const roll2 = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+      repasCreated = Math.max(roll1, roll2);
+      console.log(`[LUCKY COOK] PA: ${actualPaToUse} | Vivres: ${vivresToConsume} | Max possible: ${maxOutput} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${repasCreated}`);
+    } else {
+      repasCreated = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
+    }
+
+    const message = hasBonus
+      ? `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas ⭐ (Lucky Roll) (coût : ${actualPaToUse} PA).`
+      : `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas (coût : ${actualPaToUse} PA).`;
+
+    const publicMessage = hasBonus
+      ? `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres ⭐`
+      : `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres`;
 
     return {
       success: true,
-      message: `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas (coût : ${actualPaToUse} PA).`,
-      publicMessage: `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres.`,
+      message,
+      publicMessage,
       loot: {
         foodSupplies: -vivresToConsume, // Consommation de vivres
         preparedFood: repasCreated, // Production de repas

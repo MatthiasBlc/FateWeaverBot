@@ -36,7 +36,9 @@ export function getHuntYield(isSummer: boolean, luckyRoll: boolean = false): num
   // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
   const roll1 = getRandomFromPool(pool);
   const roll2 = getRandomFromPool(pool);
-  return Math.max(roll1, roll2);
+  const result = Math.max(roll1, roll2);
+  console.log(`[LUCKY HUNT] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`);
+  return result;
 }
 
 /**
@@ -55,7 +57,9 @@ export function getGatherYield(isSummer: boolean, luckyRoll: boolean = false): n
   // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
   const roll1 = getRandomFromPool(pool);
   const roll2 = getRandomFromPool(pool);
-  return Math.max(roll1, roll2);
+  const result = Math.max(roll1, roll2);
+  console.log(`[LUCKY GATHER] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`);
+  return result;
 }
 
 /**

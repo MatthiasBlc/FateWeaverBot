@@ -1,22 +1,19 @@
 ------------------------------TRUC A Corriger------------------- -------------
 
-
 ------------------------------CRON JOB------------------- -------------
 
-Comment passer les messages perso meteo 
-+ Seed Messages type dans daily messages
+Comment passer les messages perso meteo
 
+- Seed Messages type dans daily messages
 
-
+met en place les tests qu'il reste à faire dans backend-refactoring. n'oublie pas que tout est lancé en docker compose, bdd y compris. Quelle solution est la plus optimisée pour tester le backend dans ces conditions ?
 
 ------------------------------TRUC A Corriger------------------- -------------
 
-est-ce que la fonction getParisTime set encore à quelquechose ?  (/profil)
+est-ce que la fonction getParisTime set encore à quelquechose ? (/profil)
 
 Vérifier si existe (Commandes add objet et add compétences char et db)
 Mettre une différence entre resources de base et resources de craft dans les resourcesTypes
-
-
 
 -------------------------Todo-------------------------
 Finir HistoriqueChat
@@ -58,9 +55,8 @@ Update Docs, Update Backend
 
 ------------------------------TRUC------------------- -------------
 
-New-element-admin
-  3. Optionnel : Créer des commandes séparées pour gérer les relations complexes d'objets
-  (ajouter des bonus à un objet existant)
+New-element-admin 3. Optionnel : Créer des commandes séparées pour gérer les relations complexes d'objets
+(ajouter des bonus à un objet existant)
 
 remplacer nourriture en repas ?
 
@@ -258,5 +254,3 @@ Si ce nest pas le cas, un nouveau character est créer (couple ville / user)
 -------------------------Done-------------------------
 
 -------------------------Notes-------------------------
-
-

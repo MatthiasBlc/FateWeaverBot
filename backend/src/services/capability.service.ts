@@ -346,6 +346,7 @@ export class CapabilityService {
       const roll1 = Math.floor(Math.random() * 2) + 2; // 2 or 3
       const roll2 = Math.floor(Math.random() * 2) + 2; // 2 or 3
       woodGained = Math.max(roll1, roll2);
+      console.log(`[LUCKY WOOD] Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${woodGained}`);
     } else {
       woodGained = Math.floor(Math.random() * 2) + 2; // 2 or 3
     }
@@ -461,6 +462,7 @@ export class CapabilityService {
       const roll1 = Math.floor(Math.random() * 5) + 2; // 2-6
       const roll2 = Math.floor(Math.random() * 5) + 2; // 2-6
       oreGained = Math.max(roll1, roll2);
+      console.log(`[LUCKY MINE] Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${oreGained}`);
     } else {
       oreGained = Math.floor(Math.random() * 5) + 2; // 2-6
     }
@@ -593,6 +595,7 @@ export class CapabilityService {
       const randomIndex2 = Math.floor(Math.random() * lootEntries.length);
       const bestIndex = Math.max(randomIndex1, randomIndex2);
       lootEntry = lootEntries[bestIndex];
+      console.log(`[LUCKY FISH] PA: ${paSpent} | Index 1: ${randomIndex1} (${lootEntries[randomIndex1].resourceName} x${lootEntries[randomIndex1].quantity}) | Index 2: ${randomIndex2} (${lootEntries[randomIndex2].resourceName} x${lootEntries[randomIndex2].quantity}) | Meilleur index: ${bestIndex} | Résultat: ${lootEntry.resourceName} x${lootEntry.quantity}`);
     } else {
       const randomIndex = Math.floor(Math.random() * lootEntries.length);
       lootEntry = lootEntries[randomIndex];

@@ -1,5 +1,27 @@
-met en place les tests qu'il reste à faire dans backend-refactoring. n'oublie pas que tout est lancé en docker compose, bdd y compris. Quelle solution est la plus optimisée pour tester le backend dans ces conditions ?
+/new-element-admin
+Boutons :
 
-
-fais un tour de toutes les commandes, de tous les boutons et de tous les menus déroulants du @bot/ et vérifie les
-  validations et autres erreurs en mirroir côté @backend/  
+- Ressource
+  - Ajouter
+  - Modifier
+    - Doit avoir la même structure de sélection que pour ajouter un objet avec character admin. Je te laisse faire des catégories intelligentes
+  - Supprimer
+    - Doit avoir la même structure de sélection que pour retirer un objet avec character admin
+- Objet
+  - Ajouter
+  - Modifier
+    - Doit avoir la même structure de sélection que pour ajouter un objet avec character admin
+  - Supprimer
+    - Doit avoir la même structure de sélection que pour retirer un objet avec character admin
+- Compétence
+  - Ajouter
+  - Modifier
+    - Doit avoir la même structure de sélection que pour ajouter une compétence avec character admin
+  - Supprimer
+    - Doit avoir la même structure de sélection que pour retirer une compétence avec character admin
+- Capacités
+  - Ajouter
+  - Modifier
+    - Doit avoir la même structure de sélection que pour ajouter une compétence avec character admin. Les catégories sont : collecter, artisanat, science
+  - Supprimer
+    - Doit avoir la même structure de sélection que pour retirer une compétence avec character admin
