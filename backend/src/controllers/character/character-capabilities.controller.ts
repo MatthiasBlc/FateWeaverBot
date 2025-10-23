@@ -142,6 +142,9 @@ export const useCharacterCapability: RequestHandler = async (
 
     res.status(200).json(result);
   } catch (error) {
+    // Log the actual error for debugging
+    console.error("Error in useCharacterCapability:", error);
+
     if (error instanceof Error) {
       if (
         error.message === "Personnage non trouvé" ||
@@ -151,10 +154,12 @@ export const useCharacterCapability: RequestHandler = async (
       } else if (
         error.message.includes("PA") ||
         error.message.includes("vivres") ||
-        error.message.includes("Vivres")
+        error.message.includes("Vivres") ||
+        error.message.includes("Capacité non implémentée")
       ) {
         next(new BadRequestError(error.message));
       } else {
+        console.error("Unhandled error in useCharacterCapability:", error.message, error.stack);
         next(new Error("Erreur lors de l'utilisation de la capacité"));
       }
     } else {

@@ -380,6 +380,11 @@ export class CharacterCapabilityService {
       if (result.loot) {
         // Lister les clés déjà traitées spécifiquement
         const handledKeys = ["foodSupplies", "food", "preparedFood", "wood"];
+        // Mapping des noms anglais vers français pour les ressources converties
+        const nameMapping: Record<string, string> = {
+          ore: "Minerai",
+          morale: "Morale",
+        };
 
         for (const [resourceName, quantity] of Object.entries(result.loot)) {
           // Ignorer les ressources déjà traitées
@@ -388,8 +393,17 @@ export class CharacterCapabilityService {
           // Ignorer les quantités nulles ou négatives (sauf si c'est une consommation)
           if (typeof quantity !== "number") continue;
 
+          // Convertir le nom si c'est un alias anglais
+          const actualResourceName = nameMapping[resourceName] || resourceName;
+
           // Récupérer le type de ressource
-          const resourceType = await this.getResourceTypeByName(resourceName);
+          let resourceType;
+          try {
+            resourceType = await this.getResourceTypeByName(actualResourceName);
+          } catch (error) {
+            // Ignorer les ressources qui n'existent pas
+            continue;
+          }
 
           if (resourceType) {
             if (quantity > 0) {
