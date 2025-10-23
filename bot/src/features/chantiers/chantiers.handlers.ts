@@ -640,31 +640,37 @@ export async function handleInvestModalSubmit(
     }
 
     // Parse PA input (now optional)
-    const inputValue = interaction.fields.getTextInputValue("points_input");
     let points = 0;
 
-    if (inputValue && inputValue.trim() !== "") {
-      // Vérifier si c'est un nombre décimal
-      if (inputValue.includes('.') || inputValue.includes(',')) {
-        await interaction.reply({
-          content:
-            `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
-          flags: ["Ephemeral"],
-        });
-        return;
-      }
+    try {
+      const inputValue = interaction.fields.getTextInputValue("points_input");
 
-      points = parseInt(inputValue, 10);
+      if (inputValue && inputValue.trim() !== "") {
+        // Vérifier si c'est un nombre décimal
+        if (inputValue.includes('.') || inputValue.includes(',')) {
+          await interaction.reply({
+            content:
+              `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
+            flags: ["Ephemeral"],
+          });
+          return;
+        }
 
-      // Validation des points
-      if (isNaN(points) || points < 0) {
-        await interaction.reply({
-          content:
-            `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, 0 ou plus).`,
-          flags: ["Ephemeral"],
-        });
-        return;
+        points = parseInt(inputValue, 10);
+
+        // Validation des points
+        if (isNaN(points) || points < 0) {
+          await interaction.reply({
+            content:
+              `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, 0 ou plus).`,
+            flags: ["Ephemeral"],
+          });
+          return;
+        }
       }
+    } catch (error) {
+      // Field is empty or doesn't exist - that's ok, points = 0
+      points = 0;
     }
 
     // Parse resource contributions from modal

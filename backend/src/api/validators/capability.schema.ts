@@ -62,7 +62,8 @@ export const ExecuteSoignerSchema = z.object({
     characterId: z.string().cuid()
   }),
   body: z.object({
-    targetCharacterId: z.string().cuid()
+    mode: z.string().optional(),
+    targetCharacterId: z.string().cuid().optional()
   })
 });
 

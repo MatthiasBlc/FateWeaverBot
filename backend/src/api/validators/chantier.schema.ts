@@ -3,11 +3,13 @@ import { z } from "zod";
 // POST /chantier
 export const CreateChantierSchema = z.object({
   body: z.object({
-    guildId: z.string().min(1),
     name: z.string().min(1).max(100),
-    description: z.string().optional(),
-    requiredInvestment: z.number().int().positive(),
-    requiredResources: z.array(z.object({
+    cost: z.number().int().positive().optional(),
+    discordGuildId: z.string().optional(),
+    townId: z.string().cuid().optional(),
+    createdBy: z.string().optional(),
+    completionText: z.string().optional(),
+    resourceCosts: z.array(z.object({
       resourceTypeId: z.number().int().positive(),
       quantity: z.number().int().positive()
     })).optional()
@@ -42,7 +44,7 @@ export const InvestInChantierSchema = z.object({
   }),
   body: z.object({
     characterId: z.string().cuid(),
-    actionPoints: z.number().int().positive()
+    points: z.number().int().positive()
   })
 });
 
@@ -52,10 +54,15 @@ export const ContributeResourcesSchema = z.object({
     id: z.string().cuid()
   }),
   body: z.object({
-    townId: z.string().cuid(),
+    characterId: z.string().cuid().optional(),
+    townId: z.string().cuid().optional(),
+    contributions: z.array(z.object({
+      resourceTypeId: z.number().int().positive(),
+      quantity: z.number().int().positive()
+    })).optional(),
     resources: z.array(z.object({
       resourceTypeId: z.number().int().positive(),
       quantity: z.number().int().positive()
-    }))
+    })).optional()
   })
 });

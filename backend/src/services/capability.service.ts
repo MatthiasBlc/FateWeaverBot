@@ -13,7 +13,12 @@ import { dailyEventLogService } from "./daily-event-log.service";
 import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../shared/utils";
 import { CapabilityRepository } from "../domain/repositories/capability.repository";
-import { NotFoundError, BadRequestError, ValidationError } from "../shared/errors";
+import {
+  NotFoundError,
+  BadRequestError,
+  ValidationError,
+} from "../shared/errors";
+import { RESOURCES } from "@shared/index";
 
 type CapabilityWithRelations = PrismaCapability & {
   characters: { characterId: string }[];
@@ -22,7 +27,10 @@ type CapabilityWithRelations = PrismaCapability & {
 export class CapabilityService {
   private capabilityRepo: CapabilityRepository;
 
-  constructor(private prisma: PrismaClient, capabilityRepo?: CapabilityRepository) {
+  constructor(
+    private prisma: PrismaClient,
+    capabilityRepo?: CapabilityRepository
+  ) {
     this.capabilityRepo = capabilityRepo || new CapabilityRepository(prisma);
   }
 
@@ -100,7 +108,10 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<boolean> {
-    return this.capabilityRepo.hasCharacterCapability(characterId, capabilityId);
+    return this.capabilityRepo.hasCharacterCapability(
+      characterId,
+      capabilityId
+    );
   }
 
   /**
@@ -110,7 +121,10 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<void> {
-    await this.capabilityRepo.addCapabilityToCharacter(characterId, capabilityId);
+    await this.capabilityRepo.addCapabilityToCharacter(
+      characterId,
+      capabilityId
+    );
   }
 
   /**
@@ -120,7 +134,10 @@ export class CapabilityService {
     characterId: string,
     capabilityId: string
   ): Promise<void> {
-    await this.capabilityRepo.removeCapabilityFromCharacter(characterId, capabilityId);
+    await this.capabilityRepo.removeCapabilityFromCharacter(
+      characterId,
+      capabilityId
+    );
   }
 
   /**
@@ -177,12 +194,12 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName(capabilityName);
     if (!capability) {
-      throw new NotFoundError('Capability', capabilityName);
+      throw new NotFoundError("Capability", capabilityName);
     }
 
     // Vérifier que le personnage a la capacité
@@ -223,7 +240,7 @@ export class CapabilityService {
         break;
 
       default:
-      throw new BadRequestError("Capacité de récolte non reconnue");
+        throw new BadRequestError("Capacité de récolte non reconnue");
     }
 
     // Mettre à jour les PA et ajouter les ressources à la ville
@@ -286,12 +303,12 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName("Couper du bois");
     if (!capability) {
-      throw new NotFoundError('Capability', 'Couper du bois');
+      throw new NotFoundError("Capability", "Couper du bois");
     }
 
     // Vérifier que le personnage a la capacité
@@ -301,10 +318,15 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
+    const departedExpedition =
+      await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(
+        characterId
+      );
 
     if (departedExpedition) {
-      throw new BadRequestError("Impossible de Couper du bois en expédition DEPARTED");
+      throw new BadRequestError(
+        "Impossible de Couper du bois en expédition DEPARTED"
+      );
     }
 
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour cette capacité
@@ -398,12 +420,12 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName("Miner");
     if (!capability) {
-      throw new NotFoundError('Capability', 'Miner');
+      throw new NotFoundError("Capability", "Miner");
     }
 
     // Vérifier que le personnage a la capacité
@@ -413,7 +435,10 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
+    const departedExpedition =
+      await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(
+        characterId
+      );
 
     if (departedExpedition) {
       throw new BadRequestError("Impossible de Miner en expédition DEPARTED");
@@ -515,12 +540,12 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName("Pêcher");
     if (!capability) {
-      throw new NotFoundError('Capability', 'Pêcher');
+      throw new NotFoundError("Capability", "Pêcher");
     }
 
     // Vérifier que le personnage a la capacité
@@ -530,7 +555,10 @@ export class CapabilityService {
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
+    const departedExpedition =
+      await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(
+        characterId
+      );
 
     if (departedExpedition) {
       throw new BadRequestError("Impossible de Pêcher en expédition DEPARTED");
@@ -547,10 +575,14 @@ export class CapabilityService {
     validateCanUsePA(character, paSpent);
 
     // Récupérer les entrées de loot depuis la DB
-    const lootEntries = await this.capabilityRepo.getFishingLootEntries(paSpent);
+    const lootEntries = await this.capabilityRepo.getFishingLootEntries(
+      paSpent
+    );
 
     if (lootEntries.length === 0) {
-      throw new BadRequestError(`Aucune table de loot trouvée pour ${paSpent} PA`);
+      throw new BadRequestError(
+        `Aucune table de loot trouvée pour ${paSpent} PA`
+      );
     }
 
     // Tirer aléatoirement une entrée (ou deux si LUCKY_ROLL)
@@ -574,7 +606,7 @@ export class CapabilityService {
       });
 
       if (!coquillageObject) {
-        throw new NotFoundError('Object', 'Coquillage');
+        throw new NotFoundError("Object", "Coquillage");
       }
 
       // Ajouter le coquillage à l'inventaire du personnage
@@ -618,7 +650,7 @@ export class CapabilityService {
     });
 
     if (!resourceType) {
-      throw new NotFoundError('Resource type', lootEntry.resourceName);
+      throw new NotFoundError("Resource type", lootEntry.resourceName);
     }
 
     await this.prisma.$transaction([
@@ -689,11 +721,14 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     // Vérifier que le personnage n'est pas en expédition DEPARTED
-    const departedExpedition = await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(characterId);
+    const departedExpedition =
+      await this.capabilityRepo.findExpeditionMemberWithDepartedExpedition(
+        characterId
+      );
 
     if (departedExpedition) {
       throw new BadRequestError("Impossible de crafter en expédition DEPARTED");
@@ -748,7 +783,7 @@ export class CapabilityService {
     });
 
     if (!inputResourceType) {
-      throw new NotFoundError('Resource type', config.inputResource);
+      throw new NotFoundError("Resource type", config.inputResource);
     }
 
     const inputStock = await this.prisma.resourceStock.findUnique({
@@ -770,7 +805,9 @@ export class CapabilityService {
     // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cuisiner
     let hasBonus = false;
     if (craftType === "cuisiner") {
-      const capability = await this.capabilityRepo.findFirst({ name: "Cuisiner" });
+      const capability = await this.capabilityRepo.findFirst({
+        name: "Cuisiner",
+      });
       if (capability) {
         hasBonus = await hasLuckyRollBonus(
           characterId,
@@ -805,7 +842,7 @@ export class CapabilityService {
     });
 
     if (!outputResourceType) {
-      throw new NotFoundError('Resource type', config.outputResource);
+      throw new NotFoundError("Resource type", config.outputResource);
     }
 
     // Exécuter le craft
@@ -879,19 +916,19 @@ export class CapabilityService {
     characterId: string,
     mode: "heal" | "craft",
     targetCharacterId?: string
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; publicMessage?: string }> {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
       include: { town: true },
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName("Soigner");
     if (!capability) {
-      throw new NotFoundError('Capability', 'Soigner');
+      throw new NotFoundError("Capability", "Soigner");
     }
 
     // Vérifier que le personnage a la capacité
@@ -911,7 +948,7 @@ export class CapabilityService {
       });
 
       if (!target) {
-        throw new NotFoundError('Target character', targetCharacterId);
+        throw new NotFoundError("Target character", targetCharacterId);
       }
 
       if (target.hp >= 5) {
@@ -950,7 +987,9 @@ export class CapabilityService {
       const cataplasmeCount = await this.getCataplasmeCount(character.townId);
 
       if (cataplasmeCount >= 3) {
-        throw new BadRequestError("Limite de cataplasmes atteinte (max 3 par ville)");
+        throw new BadRequestError(
+          "Limite de cataplasmes atteinte (max 3 par ville)"
+        );
       }
 
       const cataplasmeType = await ResourceUtils.getResourceTypeByName(
@@ -969,6 +1008,7 @@ export class CapabilityService {
       return {
         success: true,
         message: "Vous avez préparé un cataplasme",
+        publicMessage: `${character.name} a préparé un ${RESOURCES.CATAPLASM}.`,
       };
     }
   }
@@ -1027,14 +1067,14 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capabilityName =
       researchType.charAt(0).toUpperCase() + researchType.slice(1);
     const capability = await this.getCapabilityByName(capabilityName);
     if (!capability) {
-      throw new NotFoundError('Capability', capabilityName);
+      throw new NotFoundError("Capability", capabilityName);
     }
 
     // Vérifier que le personnage a la capacité
@@ -1074,7 +1114,7 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     if (character.isDead) {
@@ -1143,12 +1183,12 @@ export class CapabilityService {
     });
 
     if (!character) {
-      throw new NotFoundError('Character', characterId);
+      throw new NotFoundError("Character", characterId);
     }
 
     const capability = await this.getCapabilityByName("Divertir");
     if (!capability) {
-      throw new NotFoundError('Capability', 'Divertir');
+      throw new NotFoundError("Capability", "Divertir");
     }
 
     // Vérifier que le personnage a la capacité
