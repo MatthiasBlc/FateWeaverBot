@@ -213,13 +213,23 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("targetCharacterId requis pour le mode heal");
     }
 
-    const result = await container.capabilityService.executeSoigner(
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const paToUse = mode === "craft" ? 2 : 1;
+    const result = await characterCapabilityService.useCharacterCapability(
       characterId,
-      mode,
-      targetCharacterId
+      "Soigner",
+      false, // isSummer
+      paToUse,
+      targetCharacterId as any // Pass target ID as inputQuantity for now (for heal mode)
     );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
@@ -227,7 +237,8 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
       } else if (
         error.message.includes("Pas assez") ||
         error.message.includes("tous ses PV") ||
-        error.message.includes("Limite de cataplasmes")
+        error.message.includes("Limite de cataplasmes") ||
+        error.message.includes("Capacité non implémentée")
       ) {
         next(new BadRequestError(error.message));
       } else {
