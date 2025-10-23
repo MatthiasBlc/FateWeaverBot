@@ -1,14 +1,12 @@
 import {
-  Prisma,
   PrismaClient,
   Character,
   Capability,
 } from "@prisma/client";
-import { getHuntYield, getGatherYield } from "../../util/capacityRandom";
 import { CapabilityService } from "../capability.service";
 import { CharacterRepository } from "../../domain/repositories/character.repository";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
-import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
+import { NotFoundError, BadRequestError } from '../../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -164,61 +162,75 @@ export class CharacterCapabilityService {
 
     switch (capabilityNameLower) {
       case "chasser":
-        result = await this.useHuntingCapability(
-          character,
-          capability,
-          isSummer
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const chasserResult = await this.capabilityService.executeChasser(characterId, capability.id, isSummer);
+        result = this.convertExecutionResultToCapabilityResult(chasserResult);
         break;
       case "cueillir":
-        result = await this.useGatheringCapability(
-          character,
-          capability,
-          isSummer
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const cueillirResult = await this.capabilityService.executeCueillir(characterId, capability.id, isSummer);
+        result = this.convertExecutionResultToCapabilityResult(cueillirResult);
         break;
       case "pêcher":
-        result = await this.useFishingCapability(
-          character,
-          capability,
-          paToUse || 1
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const pecherPa = (paToUse === 2 ? 2 : 1) as 1 | 2;
+        const pecherResult = await this.capabilityService.executePecherV2(characterId, capability.id, pecherPa);
+        result = this.convertExecutionResultToCapabilityResult(pecherResult);
         break;
       case "divertir":
-        result = await this.useEntertainmentCapability(character, capability);
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const divertirResult = await this.capabilityService.executeDivertir(characterId, capability.id);
+        result = this.convertExecutionResultToCapabilityResult(divertirResult);
         break;
       case "couper du bois":
-        result = await this.useLoggingCapability(character, capability);
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const couperResult = await this.capabilityService.executeCouperDuBoisV2(characterId, capability.id);
+        result = this.convertExecutionResultToCapabilityResult(couperResult);
         break;
       case "cuisiner":
-        result = await this.useCookingCapability(character, capability, paToUse, inputQuantity);
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const cuisinerResult = await this.capabilityService.executeCuisinerV2(characterId, capability.id, paToUse || 1, inputQuantity || 0);
+        result = this.convertExecutionResultToCapabilityResult(cuisinerResult);
         break;
       case "cartographier":
-        result = await this.useCartographyCapability(
-          character,
-          capability,
-          paToUse || 1
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const cartResult = await this.capabilityService.executeCartographierV2(characterId, capability.id, paToUse || 1);
+        result = this.convertExecutionResultToCapabilityResult(cartResult);
         break;
       case "rechercher":
-        result = await this.useResearchingCapability(
-          character,
-          capability,
-          paToUse || 1
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const rechResult = await this.capabilityService.executeRechercherV2(characterId, capability.id, paToUse || 1);
+        result = this.convertExecutionResultToCapabilityResult(rechResult);
         break;
       case "auspice":
-        result = await this.useAuspiceCapability(
-          character,
-          capability,
-          paToUse || 1
-        );
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const auspResult = await this.capabilityService.executeAuspiceV2(characterId, capability.id, paToUse || 1);
+        result = this.convertExecutionResultToCapabilityResult(auspResult);
         break;
       case "miner":
         if (!this.capabilityService) {
           throw new BadRequestError("Service de capacité non initialisé");
         }
-        result = await this.capabilityService.executeMiner(characterId);
+        const minerResult = await this.capabilityService.executeMinerV2(characterId, capability.id);
+        result = this.convertExecutionResultToCapabilityResult(minerResult);
         break;
       default:
         throw new BadRequestError("Capacité non implémentée");
@@ -365,401 +377,6 @@ export class CharacterCapabilityService {
     return result;
   }
 
-  /**
-   * Capacité de chasse
-   */
-  /**
-   * Utilise la capacité de chasse
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param isSummer Si c'est l'été (affecte le taux de réussite)
-   */
-  private async useHuntingCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    isSummer?: boolean
-  ): Promise<CapabilityResult> {
-    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Chasser
-    const { hasLuckyRollBonus } = await import("../../util/character-validators");
-    const hasBonus = await hasLuckyRollBonus(
-      character.id,
-      capability.id,
-      prisma
-    );
-
-    // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
-    const foodAmount = getHuntYield(isSummer ?? true, hasBonus);
-
-    const message = hasBonus
-      ? `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
-      : `Vous avez chassé avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`;
-
-    const publicMessage = hasBonus
-      ? `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres ⭐`
-      : `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`;
-
-    return {
-      success: foodAmount > 0,
-      message,
-      publicMessage,
-      loot: { foodSupplies: foodAmount },
-    };
-  }
-
-  /**
-   * Capacité de cueillette
-   */
-  /**
-   * Utilise la capacité de cueillette
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param isSummer Si c'est l'été (affecte le taux de réussite)
-   */
-  private async useGatheringCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    isSummer?: boolean
-  ): Promise<CapabilityResult> {
-    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cueillir
-    const { hasLuckyRollBonus } = await import("../../util/character-validators");
-    const hasBonus = await hasLuckyRollBonus(
-      character.id,
-      capability.id,
-      prisma
-    );
-
-    // Utiliser les nouvelles fonctions de tirage pondéré selon la saison
-    const foodAmount = getGatherYield(isSummer ?? true, hasBonus);
-
-    const message = hasBonus
-      ? `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
-      : `Vous avez cueilli avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${foodAmount} vivres.`;
-
-    const publicMessage = hasBonus
-      ? `🌿 ${character.name} a cueilli ${foodAmount} vivres ⭐`
-      : `🌿 ${character.name} a cueilli ${foodAmount} vivres.`;
-
-    return {
-      success: foodAmount > 0,
-      message,
-      publicMessage,
-      loot: { foodSupplies: foodAmount },
-    };
-  }
-
-  /**
-   * Capacité de bûcheronnage
-   */
-  /**
-   * Utilise la capacité de bûcheronnage
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param isSummer Si c'est l'été (affecte le taux de réussite)
-   */
-  private async useLoggingCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability
-  ): Promise<CapabilityResult> {
-    // Logique de bûcheronnage : produit du bois (à implémenter selon les besoins)
-    // Pour l'instant, on utilise une logique similaire à la pêche
-    const woodAmount = Math.floor(Math.random() * 3) + 1; // 1-3 unités de bois
-
-    return {
-      success: woodAmount > 0,
-      message: `Vous avez bûcheronné avec succès ! Vous avez dépensé ${capability.costPA} PA et obtenu ${woodAmount} unités de bois.`,
-      publicMessage: `🌲 ${character.name} a coupé du bois et a obtenu ${woodAmount} unités.`,
-      loot: { wood: woodAmount },
-    };
-  }
-
-  /**
-   * Capacité de pêche
-   */
-  /**
-   * Utilise la capacité de pêche
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param paToUse Nombre de PA à utiliser (1 ou 2)
-   */
-  private async useFishingCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    paToUse: number
-  ): Promise<CapabilityResult> {
-    // Utiliser le service capability pour exécuter la pêche avec les tables de loot de la DB
-    const { CapabilityService } = await import('../capability.service');
-    const capabilityService = new CapabilityService(prisma);
-
-    const fishResult = await capabilityService.executeFish(character.id, paToUse as 1 | 2);
-
-    return {
-      success: fishResult.success,
-      message: fishResult.message,
-      publicMessage: `🎣 ${character.name} ${fishResult.message.includes('coquillage') ? 'a trouvé un coquillage !' : fishResult.message}`,
-      loot: fishResult.loot || {},
-      paUsed: paToUse, // Retourner le nombre de PA utilisés
-    };
-  }
-
-  /**
-   * Capacité de divertissement
-   */
-  /**
-   * Utilise la capacité de divertissement
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   */
-  private async useEntertainmentCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability
-  ): Promise<CapabilityResult> {
-    // Incrémenter le compteur de divertissement
-    const newDivertCounter = (character.divertCounter || 0) + 1;
-
-    const pmGained = newDivertCounter >= 5 ? 1 : 0;
-
-    let message = `🎭 Un moment de tranquillité à réviser tes gammes.`;
-    let publicMessage = `🎭 ${character.name} a joué du violon pendant des heures… avec quelques fausses notes !`;
-
-    if (pmGained > 0) {
-      message = `🎭 C'est le grand jour ! Installez tréteaux et calicots, le spectacle commence !`;
-      publicMessage = `🎭 ${character.name} a donné un grand spectacle qui met du baume au cœur. Tous les spectateurs gagnent 1 PM !`;
-
-      // Appliquer +1 PM à tous les personnages de la ville (pas en expédition DEPARTED)
-      await prisma.$transaction(async (tx) => {
-        const cityCharacters = await tx.character.findMany({
-          where: {
-            townId: character.townId,
-            isDead: false,
-            expeditionMembers: {
-              none: {
-                expedition: { status: "DEPARTED" }
-              }
-            }
-          }
-        });
-
-        for (const char of cityCharacters) {
-          if (char.pm < 5) {
-            await tx.character.update({
-              where: { id: char.id },
-              data: { pm: Math.min(5, char.pm + 1) }
-            });
-          }
-        }
-      });
-    }
-
-    return {
-      success: true,
-      message,
-      publicMessage,
-      divertCounter: newDivertCounter,
-      pmGained,
-    };
-  }
-
-  /**
-   * Capacité de cuisine
-   */
-  /**
-   * Utilise la capacité de cuisine
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param paToUse Nombre de PA à utiliser (1 ou 2)
-   * @param inputQuantity Nombre de vivres à transformer (optionnel)
-   */
-  private async useCookingCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    paToUse?: number,
-    inputQuantity?: number
-  ): Promise<CapabilityResult> {
-    // Déterminer le nombre de PA à utiliser (par défaut 1)
-    const actualPaToUse = paToUse || 1;
-
-    // Valider que le nombre de PA est correct
-    if (actualPaToUse !== 1 && actualPaToUse !== 2) {
-      throw new BadRequestError("Vous devez utiliser 1 ou 2 PA pour cuisiner");
-    }
-
-    // Vérifier que le personnage a assez de PA
-    if (character.paTotal < actualPaToUse) {
-      throw new BadRequestError(
-        `PA insuffisants : vous avez ${character.paTotal} PA mais vous voulez en utiliser ${actualPaToUse}.`
-      );
-    }
-
-    // Déterminer le nombre maximum de vivres utilisables selon les PA
-    const maxInput = actualPaToUse === 1 ? 2 : 5;
-
-    // Vérifier qu'il y a des vivres disponibles dans la ville
-    const vivresType = await this.getResourceTypeByName("Vivres");
-
-    const vivresStock = await this.getStock("CITY", character.townId, vivresType.id);
-
-    const vivresAvailable = vivresStock?.quantity || 0;
-
-    // Déterminer combien de vivres utiliser
-    let vivresToConsume: number;
-    if (inputQuantity !== undefined) {
-      // L'utilisateur a spécifié une quantité
-      const minInput = actualPaToUse === 1 ? 1 : 2;
-      if (inputQuantity < minInput) {
-        throw new BadRequestError(`Avec ${actualPaToUse} PA, vous devez utiliser au moins ${minInput} vivre${minInput > 1 ? 's' : ''}`);
-      }
-      if (inputQuantity > maxInput) {
-        throw new BadRequestError(
-          `Avec ${actualPaToUse} PA, vous ne pouvez utiliser que ${maxInput} vivres maximum`
-        );
-      }
-      vivresToConsume = inputQuantity;
-    } else {
-      // Utiliser le maximum possible
-      vivresToConsume = Math.min(vivresAvailable, maxInput);
-    }
-
-    // Vérifier qu'il y a assez de vivres
-    if (vivresAvailable < vivresToConsume) {
-      throw new BadRequestError(
-        `Vivres insuffisants : il y a ${vivresAvailable} vivres dans le stock de la ville mais vous voulez en utiliser ${vivresToConsume}.`
-      );
-    }
-
-    // Vérifier si le personnage a le bonus LUCKY_ROLL pour Cuisiner
-    const { hasLuckyRollBonus } = await import("../../util/character-validators");
-    const hasBonus = await hasLuckyRollBonus(
-      character.id,
-      capability.id,
-      prisma
-    );
-
-    // Calculer le nombre de repas créés avec la formule aléatoire
-    // 1 PA: Output = random(0, Input × 2)
-    // 2 PA: Output = random(0, Input × 3)
-    const minOutput = 0;
-    const maxOutput = actualPaToUse === 1 ? vivresToConsume * 2 : vivresToConsume * 3;
-
-    let repasCreated: number;
-    if (hasBonus) {
-      // LUCKY_ROLL : deux tirages, on garde le meilleur
-      const roll1 = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
-      const roll2 = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
-      repasCreated = Math.max(roll1, roll2);
-      console.log(`[LUCKY COOK] PA: ${actualPaToUse} | Vivres: ${vivresToConsume} | Max possible: ${maxOutput} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${repasCreated}`);
-    } else {
-      repasCreated = Math.floor(Math.random() * (maxOutput - minOutput + 1)) + minOutput;
-    }
-
-    const message = hasBonus
-      ? `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas ⭐ (Lucky Roll) (coût : ${actualPaToUse} PA).`
-      : `Vous avez cuisiné avec succès ! Vous avez transformé ${vivresToConsume} vivres en ${repasCreated} repas (coût : ${actualPaToUse} PA).`;
-
-    const publicMessage = hasBonus
-      ? `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres ⭐`
-      : `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${vivresToConsume} vivres`;
-
-    return {
-      success: true,
-      message,
-      publicMessage,
-      loot: {
-        foodSupplies: -vivresToConsume, // Consommation de vivres
-        preparedFood: repasCreated, // Production de repas
-      },
-      paUsed: actualPaToUse, // Retourner le nombre de PA utilisés
-    };
-  }
-
-  /**
-   * Capacité de cartographie
-   */
-  /**
-   * Utilise la capacité de cartographie
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param paToUse Nombre de PA à utiliser (1 ou 2)
-   */
-  private async useCartographyCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    paToUse: number
-  ): Promise<CapabilityResult> {
-    // La cartographie est une capacité admin-interpreted
-    // Elle ne génère pas de loot automatiquement, mais notifie les admins
-
-    const message = `Vous travaillez sur vos cartes (coût : ${paToUse} PA). Les administrateurs ont été notifiés et vous donneront les résultats de votre exploration.`;
-    const publicMessage = `🗺️ **${character.name}** travaille sur ses cartes ! (**${paToUse} PA dépensés** {ADMIN_TAG})`;
-
-    return {
-      success: true,
-      message,
-      publicMessage,
-      loot: {},
-      paUsed: paToUse,
-    };
-  }
-
-  /**
-   * Capacité de recherche
-   */
-  /**
-   * Utilise la capacité de recherche
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param paToUse Nombre de PA à utiliser (1 ou 2)
-   */
-  private async useResearchingCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    paToUse: number
-  ): Promise<CapabilityResult> {
-    // La recherche est une capacité admin-interpreted
-    // Elle ne génère pas de loot automatiquement, mais notifie les admins
-
-    const infoCount = paToUse === 1 ? 1 : 3;
-    const message = `Vous effectuez vos recherches (coût : ${paToUse} PA, ${infoCount} info(s)). Les administrateurs ont été notifiés et vous donneront les résultats de vos analyses.`;
-    const publicMessage = `🔎 **${character.name}** effectue des recherches ! (**${paToUse} PA dépensés, ${infoCount} info(s)** {ADMIN_TAG})`;
-
-    return {
-      success: true,
-      message,
-      publicMessage,
-      loot: {},
-      paUsed: paToUse,
-    };
-  }
-
-  /**
-   * Capacité d'auspice (météo)
-   */
-  /**
-   * Utilise la capacité d'auspice
-   * @param character Le personnage qui utilise la capacité
-   * @param capability La capacité utilisée
-   * @param paToUse Nombre de PA à utiliser (1 ou 2)
-   */
-  private async useAuspiceCapability(
-    character: CharacterWithCapabilities,
-    capability: Capability,
-    paToUse: number
-  ): Promise<CapabilityResult> {
-    // L'auspice est une capacité admin-interpreted
-    // Elle ne génère pas de loot automatiquement, mais notifie les admins
-
-    const daysCount = paToUse === 1 ? 1 : 3;
-    const message = `Vous observez les cieux (coût : ${paToUse} PA, ${daysCount} jour(s)). Les administrateurs ont été notifiés et vous donneront les prévisions météorologiques.`;
-    const publicMessage = `🌦️ **${character.name}** observe les cieux pour prédire la météo ! (**${paToUse} PA dépensés, ${daysCount} jour(s)** {ADMIN_TAG})`;
-
-    return {
-      success: true,
-      message,
-      publicMessage,
-      loot: {},
-      paUsed: paToUse,
-    };
-  }
-
   // Helper methods - need to be imported from original service or utils
   private async getResourceTypeByName(name: string) {
     const { ResourceUtils } = await import("../../shared/utils");
@@ -769,5 +386,48 @@ export class CharacterCapabilityService {
   private async getStock(locationType: "CITY" | "EXPEDITION", locationId: string, resourceTypeId: number) {
     const { ResourceUtils } = await import("../../shared/utils");
     return await ResourceUtils.getStock(locationType, locationId, resourceTypeId);
+  }
+
+  /**
+   * Convertit CapabilityExecutionResult (nouveau format) vers CapabilityResult (ancien format)
+   * Utilisé pour la compatibilité avec le code existant
+   */
+  private convertExecutionResultToCapabilityResult(execResult: any): CapabilityResult {
+    const result: CapabilityResult = {
+      success: execResult.success,
+      message: execResult.message,
+      publicMessage: execResult.publicMessage || "",
+      loot: {},
+      paUsed: execResult.paConsumed,
+    };
+
+    // Mapper les ressources du nouveau format vers l'ancien
+    if (execResult.loot) {
+      // Vivres → food ou foodSupplies
+      if (execResult.loot["Vivres"]) {
+        result.loot!.foodSupplies = execResult.loot["Vivres"];
+        result.loot!.food = execResult.loot["Vivres"]; // pour compatibilité
+      }
+      // Autres ressources
+      if (execResult.loot["Bois"]) result.loot!.wood = execResult.loot["Bois"];
+      if (execResult.loot["Minerai"]) result.loot!.ore = execResult.loot["Minerai"];
+      if (execResult.loot["Morale"]) result.loot!.morale = execResult.loot["Morale"];
+      // Copier les autres loot comme-est
+      Object.keys(execResult.loot).forEach(key => {
+        if (!["Vivres", "Bois", "Minerai", "Morale"].includes(key)) {
+          result.loot![key] = execResult.loot[key];
+        }
+      });
+    }
+
+    // Mapper les métadonnées spéciales
+    if (execResult.metadata?.divertCounter !== undefined) {
+      result.divertCounter = execResult.metadata.divertCounter;
+    }
+    if (execResult.metadata?.pmGained) {
+      result.pmGained = execResult.metadata.pmGained;
+    }
+
+    return result;
   }
 }
