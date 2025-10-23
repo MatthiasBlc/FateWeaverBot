@@ -37,14 +37,10 @@ export class ChasserCapability extends BaseCapability {
 
     const foodAmount = getHuntYield(isSummer, hasBonus);
 
-    const message = hasBonus
-      ? `Vous avez chassé avec succès ! Vous avez obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
-      : `Vous avez chassé avec succès ! Vous avez obtenu ${foodAmount} vivres.`;
-
     return {
       success: foodAmount > 0,
-      message,
-      publicMessage: `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres${hasBonus ? ' ⭐' : ' !'}`,
+      message: `Vous avez chassé avec succès ! Vous avez obtenu ${foodAmount} vivres.`,
+      publicMessage: `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`,
       paConsumed: 2,
       loot: { Vivres: foodAmount },
       metadata: {

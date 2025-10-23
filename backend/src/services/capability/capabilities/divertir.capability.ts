@@ -57,14 +57,10 @@ export class DivertirCapability extends BaseCapability {
         pmChange: 1,
       }));
 
-      const message = instantSpectacle
-        ? "Votre spectacle remonte le moral de la ville ! ⭐ (Divert Extra - Déclenchement instantané)"
-        : "Votre spectacle remonte le moral de la ville !";
-
       return {
         success: true,
-        message,
-        publicMessage: `🎭 ${character.name} a donné un grand spectacle qui remonte le moral de la ville ! Tous les citoyens gagnent 1 PM.${instantSpectacle ? ' ⭐' : ''}`,
+        message: "Votre spectacle remonte le moral de la ville !",
+        publicMessage: `🎭 ${character.name} a donné un grand spectacle qui remonte le moral de la ville ! Tous les citoyens gagnent 1 PM.`,
         paConsumed: 1,
         effects: pmEffects,
         metadata: {

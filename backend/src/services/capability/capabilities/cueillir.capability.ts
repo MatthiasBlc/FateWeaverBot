@@ -37,14 +37,10 @@ export class CueillirCapability extends BaseCapability {
 
     const foodAmount = getGatherYield(isSummer, hasBonus);
 
-    const message = hasBonus
-      ? `Vous avez cueilli avec succès ! Vous avez obtenu ${foodAmount} vivres ⭐ (Lucky Roll).`
-      : `Vous avez cueilli avec succès ! Vous avez obtenu ${foodAmount} vivres.`;
-
     return {
       success: foodAmount > 0,
-      message,
-      publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres${hasBonus ? ' ⭐' : ' !'}`,
+      message: `Vous avez cueilli avec succès ! Vous avez obtenu ${foodAmount} vivres.`,
+      publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres !`,
       paConsumed: 2,
       loot: { Vivres: foodAmount },
       metadata: {

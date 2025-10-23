@@ -45,14 +45,10 @@ export class MinerCapability extends BaseCapability {
       oreAmount = Math.floor(Math.random() * 5) + 2; // 2-6
     }
 
-    const message = hasBonus
-      ? `Vous avez miné ${oreAmount} minerai ⭐ (Lucky Roll).`
-      : `Vous avez miné ${oreAmount} minerai.`;
-
     return {
       success: true,
-      message,
-      publicMessage: `⛏️ ${character.name} a miné ${oreAmount} minerai${hasBonus ? ' ⭐' : ' !'}`,
+      message: `Vous avez miné ${oreAmount} minerai.`,
+      publicMessage: `⛏️ ${character.name} a miné ${oreAmount} minerai !`,
       paConsumed: 2,
       loot: { Minerai: oreAmount },
       metadata: {

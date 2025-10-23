@@ -45,14 +45,10 @@ export class CouperDuBoisCapability extends BaseCapability {
       woodAmount = Math.floor(Math.random() * 2) + 2; // 2-3
     }
 
-    const message = hasBonus
-      ? `Vous avez coupé ${woodAmount} bois ⭐ (Lucky Roll).`
-      : `Vous avez coupé ${woodAmount} bois.`;
-
     return {
       success: true,
-      message,
-      publicMessage: `🪓 ${character.name} a coupé ${woodAmount} bois${hasBonus ? ' ⭐' : ' !'}`,
+      message: `Vous avez coupé ${woodAmount} bois.`,
+      publicMessage: `🪓 ${character.name} a coupé ${woodAmount} bois !`,
       paConsumed: 2,
       loot: { Bois: woodAmount },
       metadata: {

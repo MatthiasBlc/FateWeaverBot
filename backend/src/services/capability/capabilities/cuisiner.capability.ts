@@ -86,14 +86,10 @@ export class CuisinerCapability extends BaseCapability {
       repasCreated = Math.floor(Math.random() * (maxOutput + 1));
     }
 
-    const message = hasBonus
-      ? `Vous avez cuisiné avec succès ! Vous avez transformé ${actualVivresToConsume} vivres en ${repasCreated} repas ⭐ (Lucky Roll).`
-      : `Vous avez cuisiné avec succès ! Vous avez transformé ${actualVivresToConsume} vivres en ${repasCreated} repas.`;
-
     return {
       success: true,
-      message,
-      publicMessage: `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${actualVivresToConsume} vivres${hasBonus ? ' ⭐' : ''}`,
+      message: `Vous avez cuisiné avec succès ! Vous avez transformé ${actualVivresToConsume} vivres en ${repasCreated} repas.`,
+      publicMessage: `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${actualVivresToConsume} vivres.`,
       paConsumed: paToUse,
       loot: {
         Vivres: -actualVivresToConsume,

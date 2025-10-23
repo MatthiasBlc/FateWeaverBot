@@ -62,14 +62,10 @@ export class PecherCapability extends BaseCapability {
 
     // Cas spécial pour Coquillage (objet)
     if (lootEntry.resourceName === "Coquillage") {
-      const message = hasBonus
-        ? `${character.name} a trouvé un coquillage ! ⭐ (Lucky Roll)`
-        : `${character.name} a trouvé un coquillage !`;
-
       return {
         success: true,
-        message,
-        publicMessage: `🐚 ${character.name} a trouvé un coquillage${hasBonus ? ' ⭐' : ' !'}`,
+        message: `${character.name} a trouvé un coquillage !`,
+        publicMessage: `🐚 ${character.name} a trouvé un coquillage !`,
         paConsumed: paToUse,
         metadata: {
           bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],

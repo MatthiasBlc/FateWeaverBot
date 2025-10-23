@@ -84,14 +84,10 @@ export class SoignerCapability extends BaseCapability {
       const newHp = Math.min(5, target.hp + hpToAdd);
       const actualHpAdded = newHp - target.hp;
 
-      const message = bonusApplied
-        ? `Vous avez soigné ${target.name} (+${actualHpAdded} PV) ⭐ (Heal Extra)`
-        : `Vous avez soigné ${target.name} (+${actualHpAdded} PV)`;
-
       return {
         success: true,
-        message,
-        publicMessage: `💚 ${character.name} a soigné ${target.name} (+${actualHpAdded} PV)${bonusApplied ? ' ⭐' : ''}`,
+        message: `Vous avez soigné ${target.name} (+${actualHpAdded} PV)`,
+        publicMessage: `💚 ${character.name} a soigné ${target.name} (+${actualHpAdded} PV)`,
         paConsumed: 1,
         effects: [
           {
