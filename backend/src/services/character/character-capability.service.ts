@@ -376,6 +376,65 @@ export class CharacterCapabilityService {
         }
       }
 
+      // Traiter les autres ressources génériques (Cataplasme, Minerai, etc.)
+      if (result.loot) {
+        // Lister les clés déjà traitées spécifiquement
+        const handledKeys = ["foodSupplies", "food", "preparedFood", "wood"];
+
+        for (const [resourceName, quantity] of Object.entries(result.loot)) {
+          // Ignorer les ressources déjà traitées
+          if (handledKeys.includes(resourceName) || !quantity) continue;
+
+          // Ignorer les quantités nulles ou négatives (sauf si c'est une consommation)
+          if (typeof quantity !== "number") continue;
+
+          // Récupérer le type de ressource
+          const resourceType = await this.getResourceTypeByName(resourceName);
+
+          if (resourceType) {
+            if (quantity > 0) {
+              // Production de ressource
+              await tx.resourceStock.upsert({
+                where: {
+                  locationType_locationId_resourceTypeId: {
+                    locationType: "CITY",
+                    locationId: character.townId,
+                    resourceTypeId: resourceType.id,
+                  },
+                },
+                update: {
+                  quantity: { increment: quantity },
+                },
+                create: {
+                  locationType: "CITY",
+                  locationId: character.townId,
+                  resourceTypeId: resourceType.id,
+                  quantity: quantity,
+                },
+              });
+            } else {
+              // Consommation de ressource (valeur négative)
+              try {
+                await tx.resourceStock.update({
+                  where: {
+                    locationType_locationId_resourceTypeId: {
+                      locationType: "CITY",
+                      locationId: character.townId,
+                      resourceTypeId: resourceType.id,
+                    },
+                  },
+                  data: {
+                    quantity: { increment: quantity },
+                  },
+                });
+              } catch (error) {
+                // Ignorer si la ressource n'existe pas (peu importe si on consomme une ressource inexistante)
+              }
+            }
+          }
+        }
+      }
+
       // Traiter les effects (changements de HP, etc.)
       if (result.effects && result.effects.length > 0) {
         for (const effect of result.effects) {
