@@ -72,14 +72,29 @@ export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await container.capabilityService.executeCouperDuBois(characterId);
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
+      characterId,
+      "Couper du bois"
+    );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      woodGained: result.loot?.wood || 0,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+      luckyRollUsed: result.loot?.wood ? true : false, // Simplified - would need better tracking
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
@@ -98,14 +113,29 @@ export const executeMiner: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    const result = await container.capabilityService.executeMiner(characterId);
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
+      characterId,
+      "Miner"
+    );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      oreGained: result.loot?.ore || 0,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+      loot: result.loot,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
@@ -129,14 +159,30 @@ export const executeFish: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("paSpent doit être 1 ou 2");
     }
 
-    const result = await container.capabilityService.executeFish(characterId, paSpent);
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
+      characterId,
+      "Pêcher",
+      false, // isSummer
+      paSpent
+    );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+      loot: result.loot,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
@@ -276,18 +322,38 @@ export const executeResearch: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("subject requis");
     }
 
-    const result = await container.capabilityService.executeResearch(
+    // Déterminer le nom de la capacité
+    const capabilityMap: Record<string, string> = {
+      rechercher: "Rechercher",
+      cartographier: "Cartographier",
+      auspice: "Auspice",
+    };
+
+    const capabilityName = capabilityMap[researchType];
+
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
       characterId,
-      researchType,
+      capabilityName,
+      false, // isSummer
       paSpent
     );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
@@ -306,20 +372,29 @@ export const executeDivertir: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("characterId requis");
     }
 
-    // Récupérer la capacité Divertir
-    const capability = await container.capabilityService.getCapabilityByName("Divertir");
-    if (!capability) {
-      throw new NotFoundError("Capability", "Divertir");
-    }
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
+      characterId,
+      "Divertir"
+    );
 
-    const result = await container.capabilityService.executeDivertir(characterId, capability.id);
-
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+      divertCounter: result.divertCounter,
+      pmGained: result.pmGained,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
@@ -345,18 +420,29 @@ export const executeHarvest: RequestHandler = async (req, res, next) => {
 
     const isSummer = await container.seasonService.isSummer();
 
-    const result = await container.capabilityService.executeHarvestCapacity(
+    // Utiliser le nouveau système avec gestion des PA et effects
+    const characterCapabilityService = container.characterCapabilityService;
+    const result = await characterCapabilityService.useCharacterCapability(
       characterId,
       capabilityName,
       isSummer
     );
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+      publicMessage: result.publicMessage,
+      updatedCharacter: result.updatedCharacter,
+      loot: result.loot,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
-      } else if (error.message.includes("Pas assez")) {
+      } else if (
+        error.message.includes("Pas assez") ||
+        error.message.includes("Capacité non implémentée")
+      ) {
         next(new BadRequestError(error.message));
       } else {
         next(new Error(error.message));
