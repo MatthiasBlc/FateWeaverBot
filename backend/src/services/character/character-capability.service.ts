@@ -33,6 +33,12 @@ export interface CapabilityResult {
     foodSupplies?: number;
     [key: string]: number | undefined;
   };
+  effects?: Array<{
+    targetCharacterId: string;
+    hpChange?: number;
+    pmChange?: number;
+    statusChange?: string;
+  }>;
   updatedCharacter?: Character;
   divertCounter?: number;
   pmGained?: number;
@@ -232,6 +238,13 @@ export class CharacterCapabilityService {
         const minerResult = await this.capabilityService.executeMinerV2(characterId, capability.id);
         result = this.convertExecutionResultToCapabilityResult(minerResult);
         break;
+      case "soigner":
+        if (!this.capabilityService) {
+          throw new BadRequestError("Service de capacité non initialisé");
+        }
+        const soignerResult = await this.capabilityService.executeSoignerV2(characterId, capability.id, paToUse === 2 ? "craft" : "heal", inputQuantity as string | undefined);
+        result = this.convertExecutionResultToCapabilityResult(soignerResult);
+        break;
       default:
         throw new BadRequestError("Capacité non implémentée");
     }
@@ -363,6 +376,29 @@ export class CharacterCapabilityService {
         }
       }
 
+      // Traiter les effects (changements de HP, etc.)
+      if (result.effects && result.effects.length > 0) {
+        for (const effect of result.effects) {
+          if (effect.targetCharacterId && effect.hpChange !== undefined) {
+            // Récupérer le personnage cible
+            const targetCharacter = await tx.character.findUnique({
+              where: { id: effect.targetCharacterId },
+            });
+
+            if (targetCharacter) {
+              // Calculer les nouveaux HP (min 0, max 5)
+              const newHp = Math.max(0, Math.min(5, targetCharacter.hp + effect.hpChange));
+
+              // Mettre à jour le personnage cible
+              await tx.character.update({
+                where: { id: effect.targetCharacterId },
+                data: { hp: newHp },
+              });
+            }
+          }
+        }
+      }
+
       return tx.character.findUnique({
         where: { id: characterId },
         ...CharacterQueries.withCapabilities(),
@@ -426,6 +462,11 @@ export class CharacterCapabilityService {
     }
     if (execResult.metadata?.pmGained) {
       result.pmGained = execResult.metadata.pmGained;
+    }
+
+    // Copier les effects
+    if (execResult.effects) {
+      result.effects = execResult.effects;
     }
 
     return result;
