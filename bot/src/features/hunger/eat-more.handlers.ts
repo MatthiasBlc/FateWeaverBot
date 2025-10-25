@@ -386,14 +386,14 @@ async function handleEatResource(
 
     // Message ephemeral pour l'utilisateur
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji} ${resourceName}** et gagné **+${hungerGained} point(s) de faim**.`,
+      content: `${STATUS.SUCCESS} Vous avez mangé **${quantity}x ${emoji}** et gagné **+${hungerGained} point(s) de faim**.`,
     });
 
     // Message de log public
     await sendLogMessage(
       interaction.guildId!,
       interaction.client,
-      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji} ${resourceName}**, il reste **${remainingStock}** ${resourceName} dans ${locationName}`
+      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji}**, il reste **${remainingStock}** ${emoji} dans ${locationName}`
     );
   } catch (error: any) {
     logger.error("Erreur dans handleEatResource:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });

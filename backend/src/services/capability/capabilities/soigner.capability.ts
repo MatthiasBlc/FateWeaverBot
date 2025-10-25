@@ -126,21 +126,18 @@ export class SoignerCapability extends BaseCapability {
   }
 
   /**
-   * Récupère le nombre total de cataplasmes créés dans une ville
-   * Compte: stock en ville + stock en expédition + cataplasmes en inventaire des personnages
+   * Récupère le nombre total de cataplasmes dans une ville (city + expeditions)
    */
   private async getCataplasmeCount(townId: string): Promise<number> {
     const cataplasmeType = await ResourceUtils.getResourceTypeByName("Cataplasme");
 
-    // Count cataplasmes in city stock
     const cityStock = await ResourceUtils.getStock(
       "CITY",
       townId,
       cataplasmeType.id
     );
-    const cityCount = cityStock?.quantity || 0;
 
-    // Count cataplasmes in all town expeditions stock
+    // Count cataplasmes in all town expeditions
     const townExpeditions = await this.prisma.expedition.findMany({
       where: { townId: townId },
       select: { id: true },
@@ -156,34 +153,12 @@ export class SoignerCapability extends BaseCapability {
       },
     });
 
+    const cityCount = cityStock?.quantity || 0;
     const expeditionCount = expeditionStocks.reduce(
       (sum, stock) => sum + stock.quantity,
       0
     );
 
-    // Count cataplasmes in character inventories (in town)
-    const townCharacters = await this.prisma.character.findMany({
-      where: { townId: townId },
-      select: { id: true, inventory: { select: { id: true } } },
-    });
-
-    let inventoryCount = 0;
-    if (townCharacters.length > 0) {
-      const inventoryIds = townCharacters
-        .map((char) => char.inventory?.id)
-        .filter(Boolean) as string[];
-
-      if (inventoryIds.length > 0) {
-        const cataplasmeSlots = await this.prisma.characterInventorySlot.count({
-          where: {
-            inventory: { id: { in: inventoryIds } },
-            objectType: { name: "Cataplasme" },
-          },
-        });
-        inventoryCount = cataplasmeSlots;
-      }
-    }
-
-    return cityCount + expeditionCount + inventoryCount;
+    return cityCount + expeditionCount;
   }
 }

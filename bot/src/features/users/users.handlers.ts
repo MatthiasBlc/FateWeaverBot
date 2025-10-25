@@ -946,7 +946,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Gestion spéciale pour la capacité "Soigner"
       if (selectedCapability.name.toLowerCase() === "soigner") {
-        // Vérifier le nombre de cataplasmes créés (max 3 total par ville)
+        // Vérifier le stock de cataplasmes (max 3 total)
         let cataplasmeCount = 0;
         if (character.town?.id) {
           try {
@@ -959,24 +959,21 @@ export async function handleProfileButtonInteraction(interaction: any) {
           }
         }
 
-        // Si 3 cataplasmes ont déjà été créés, on ne peut pas en créer d'autres
         const canCraftCataplasme = character.paTotal >= 2 && cataplasmeCount < 3;
         logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
 
         // Créer des boutons pour choisir 1 PA (Soigner) ou 2 PA (Cataplasme)
-        const cataplasmeButton = new ButtonBuilder()
-          .setCustomId(`healing_pa:${characterId}:${userId}:2`)
-          .setLabel("Cataplasme (2 PA)")
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(!canCraftCataplasme);
-
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(`healing_pa:${characterId}:${userId}:1`)
             .setLabel("Soigner (1 PA)")
             .setStyle(ButtonStyle.Primary)
             .setDisabled(character.paTotal < 1),
-          cataplasmeButton
+          new ButtonBuilder()
+            .setCustomId(`healing_pa:${characterId}:${userId}:2`)
+            .setLabel("Cataplasme (2 PA)")
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(!canCraftCataplasme)
         );
 
         let content = `${CAPABILITIES.HEALING} **Soigner** - Choisissez une action :\n\nVous avez actuellement **${character.paTotal} PA**.`;
