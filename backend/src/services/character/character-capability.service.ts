@@ -151,11 +151,11 @@ export class CharacterCapabilityService {
     // Vérifier les PA nécessaires
     if (character.paTotal <= 0) {
       throw new BadRequestError(
-        `Tu n’as plus de PA=${CHARACTER.PA} disponibles. Tu pourras de nouveau utiliser tes capacités demain !`
+        `Tu n’as plus de PA${CHARACTER.PA} disponibles. Tu pourras de nouveau utiliser tes capacités demain !`
       );
     } else if (character.paTotal < paRequired) {
       throw new BadRequestError(
-        `PA insuffisants : tu as ${character.paTotal} PA=${CHARACTER.PA} mais cette action nécessite ${paRequired} PA=${CHARACTER.PA}.`
+        `PA insuffisants : tu as ${character.paTotal} PA${CHARACTER.PA} mais cette action nécessite ${paRequired} PA${CHARACTER.PA}.`
       );
     }
 

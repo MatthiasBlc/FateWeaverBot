@@ -222,6 +222,12 @@ export class ButtonHandler {
         );
 
         if (response.data.success) {
+          // Envoyer le message public au channel admin
+          if (response.data.publicMessage && interaction.guildId) {
+            const { sendLogMessage } = await import("../utils/channels");
+            await sendLogMessage(interaction.guildId, interaction.client, response.data.publicMessage);
+          }
+
           await interaction.editReply({
             content: response.data.message,
             embeds: [],

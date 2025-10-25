@@ -522,7 +522,8 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `${character.name} utilise 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
+      message: `Tu utilises 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
+      publicMessage: `${character.name} utilise 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
     });
   } catch (error) {
     next(error);
