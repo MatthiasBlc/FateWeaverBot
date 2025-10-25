@@ -101,6 +101,20 @@ export class PecherCapability extends BaseCapability {
       );
     }
 
+    // Vérifier si quelqu'un dans la ville a déjà trouvé un coquillage
+    const coquillageFound = await this.prisma.characterInventorySlot.findFirst({
+      where: {
+        inventory: {
+          character: {
+            townId: character.townId,
+          },
+        },
+        objectType: {
+          name: "Coquillage",
+        },
+      },
+    });
+
     // Tirer aléatoirement une entrée (ou deux si LUCKY_ROLL)
     let lootEntry;
     if (hasBonus) {
@@ -115,6 +129,24 @@ export class PecherCapability extends BaseCapability {
     } else {
       const randomIndex = Math.floor(Math.random() * lootEntries.length);
       lootEntry = lootEntries[randomIndex];
+    }
+
+    // Si on tire un coquillage mais qu'il a déjà été trouvé, le remplacer par 5 vivres + 5 bois + 5 minerais
+    if (lootEntry.resourceName === "Coquillage" && coquillageFound) {
+      return {
+        success: true,
+        message: `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 5 ${RESOURCES.FOOD}, 5 ${RESOURCES.WOOD} et 5 ${RESOURCES.MINERAL}`,
+        publicMessage: `${CAPABILITIES.FISH} ${character.name} revient de la pêche avec 5 ${RESOURCES.FOOD}, 5 ${RESOURCES.WOOD} et 5 ${RESOURCES.MINERAL}.`,
+        paConsumed: paToUse,
+        loot: {
+          Vivres: 5,
+          Bois: 5,
+          Minerai: 5,
+        },
+        metadata: {
+          bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+        },
+      };
     }
 
     // Cas spécial pour Coquillage (objet)
