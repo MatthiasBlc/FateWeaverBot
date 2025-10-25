@@ -7,6 +7,7 @@ import { CapabilityService } from "../capability.service";
 import { CharacterRepository } from "../../domain/repositories/character.repository";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { NotFoundError, BadRequestError } from '../../shared/errors';
+import { CHARACTER } from "@shared/index";
 
 const prisma = new PrismaClient();
 
@@ -150,11 +151,11 @@ export class CharacterCapabilityService {
     // Vérifier les PA nécessaires
     if (character.paTotal <= 0) {
       throw new BadRequestError(
-        `Vous n'avez plus de PA disponibles. Attendez la prochaine régénération quotidienne pour utiliser vos capacités.`
+        `Tu n’as plus de PA=${CHARACTER.PA} disponibles. Tu pourras de nouveau utiliser tes capacités demain !`
       );
     } else if (character.paTotal < paRequired) {
       throw new BadRequestError(
-        `PA insuffisants : vous avez ${character.paTotal} PA mais cette action nécessite ${paRequired} PA.`
+        `PA insuffisants : tu as ${character.paTotal} PA=${CHARACTER.PA} mais cette action nécessite ${paRequired} PA=${CHARACTER.PA}.`
       );
     }
 

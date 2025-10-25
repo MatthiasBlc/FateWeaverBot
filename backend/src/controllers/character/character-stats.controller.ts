@@ -7,6 +7,7 @@ import { notifyAgonyEntered } from "../../util/agony-notification";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { ResourceQueries } from "../../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../../shared/utils";
+import { CHARACTER, RESOURCES } from "@shared/index";
 
 export const eatFood: RequestHandler = async (req, res, next) => {
   try {
@@ -457,7 +458,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     // Vérifier si le personnage est en agonie affamé (hungerLevel=0 ET hp=1)
     if (character.hungerLevel === 0 && character.hp === 1) {
       throw new BadRequestError(
-        "Impossible d'utiliser un cataplasme sur un personnage en agonie affamé"
+        "Mieux vaudrait manger avant de gaspiller des soins."
       );
     }
 
@@ -521,7 +522,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `${character.name} utilise un cataplasme et retrouve des forces (+1 PV).`,
+      message: `${character.name} utilise 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
     });
   } catch (error) {
     next(error);

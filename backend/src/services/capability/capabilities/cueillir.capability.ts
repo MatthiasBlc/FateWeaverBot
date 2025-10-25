@@ -16,9 +16,9 @@ export class CueillirCapability extends BaseCapability {
 
   private getPrivateMessage(foodAmount: number, paToUse: number = 1): string {
     if (foodAmount === 0) {
-      return `L'hiver est rude, la terre gelée… Tu n'as rien trouvé. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+      return `L'hiver est rude, la terre gelée… Tu n'as rien trouvé. Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
     } else {
-      return `De retour de cueillette ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}`;
+      return `De retour de cueillette ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}`;
     }
   }
 

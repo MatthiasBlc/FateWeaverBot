@@ -3,6 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError, ValidationError } from "../../../shared/errors";
 import { hasHealExtraBonus } from "../../../util/character-validators";
 import { ResourceUtils } from "../../../shared/utils";
+import { CAPABILITIES, CHARACTER, RESOURCES } from "@shared/index";
 
 /**
  * Capacité Soigner
@@ -86,8 +87,8 @@ export class SoignerCapability extends BaseCapability {
 
       return {
         success: true,
-        message: `Vous avez soigné ${target.name} (+${actualHpAdded} PV)`,
-        publicMessage: `💚 ${character.name} a soigné ${target.name} (+${actualHpAdded} PV)`,
+        message: `Vous avez soigné ${target.name} (+${actualHpAdded} PV${CHARACTER.HP_FULL})`,
+        publicMessage: `${CAPABILITIES.HEALING} ${character.name} a soigné ${target.name} (+${actualHpAdded} PV${CHARACTER.HP_FULL})`,
         paConsumed: 1,
         effects: [
           {
@@ -113,8 +114,8 @@ export class SoignerCapability extends BaseCapability {
 
       return {
         success: true,
-        message: "Vous avez préparé un cataplasme",
-        publicMessage: `${character.name} a préparé un cataplasme.`,
+        message: `Tu as préparé 1 ${RESOURCES.CATAPLASM}, il sera surement utile plus tard !`,
+        publicMessage: `${CAPABILITIES.HEALING}${character.name} a préparé 1 ${RESOURCES.CATAPLASM}.`,
         paConsumed: 2,
         loot: { Cataplasme: 1 },
         metadata: {
