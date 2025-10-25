@@ -1,13 +1,9 @@
 import { createCustomEmbed, getStockColor } from "../../utils/embeds";
-import {
-  EmbedBuilder,
-  type GuildMember,
-} from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
-import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
-import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
+import { replyEphemeral } from "../../utils/interaction-helpers.js";
+import { validateCharacterAlive } from "../../utils/character-validation.js";
 import { LOCATION, RESOURCES, STATUS, HUNGER } from "../../constants/emojis";
 import { getResourceEmoji } from "../../services/emoji-cache";
 
@@ -27,9 +23,6 @@ interface ResourceStock {
 }
 
 export async function handleViewStockCommand(interaction: any) {
-  const member = interaction.member as GuildMember;
-  const user = interaction.user;
-
   try {
     // Récupérer le personnage actif de l'utilisateur
     let character;
@@ -81,7 +74,7 @@ export async function handleViewStockCommand(interaction: any) {
       },
       {
         name: 'Matériaux',
-        icon: RESOURCES.WOOD,
+        icon: RESOURCES.GENERIC,
         resources: ['Bois', 'Planches', 'Minerai', 'Métal', 'Tissu']
       },
       {
@@ -150,17 +143,9 @@ export async function handleViewStockCommand(interaction: any) {
     }
 
     if (resourceLines.length === 0) {
-      embed.addFields({
-        name: `${RESOURCES.GENERIC} Ressources`,
-        value: "Aucune ressource en stock",
-        inline: false,
-      });
+      embed.setDescription("Aucune ressource en stock");
     } else {
-      embed.addFields({
-        name: `${RESOURCES.GENERIC} Ressources`,
-        value: resourceLines.join('\n'),
-        inline: false,
-      });
+      embed.setDescription(resourceLines.join('\n'));
     }
 
     await interaction.reply({
