@@ -40,6 +40,7 @@ export class PecherCapability extends BaseCapability {
     return `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${resourceName}`;
   }
 
+
   private getPublicMessage(characterName: string, resourceName: string, quantity: number): string {
     if (resourceName === "Coquillage") {
       return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
@@ -66,6 +67,7 @@ export class PecherCapability extends BaseCapability {
     // Fallback
     return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec ${quantity} ${resourceName}.`;
   }
+
 
   async execute(
     characterId: string,
