@@ -2,6 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasDivertExtraBonus } from "../../../util/character-validators";
+import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
 
 /**
  * Capacité Divertir
@@ -11,6 +12,30 @@ import { hasDivertExtraBonus } from "../../../util/character-validators";
 export class DivertirCapability extends BaseCapability {
   readonly name = "Divertir";
   readonly category = "SPECIAL" as const;
+
+  private getPrivateMessageSpectacle(instantSpectacle: boolean): string {
+    if (instantSpectacle) {
+      return `Éclair d'inspiration soudaine ! Au diable les répétitions, que le spectacle commence !`;
+    } else {
+      return `C'est le grand jour ! Installez tréteaux et calicots, le spectacle commence !`;
+    }
+  }
+
+  private getPrivateMessagePrep(counter: number): string {
+    return `Charge la capacité divervir avec +1 ${CHARACTER.PA}\nUn moment de tranquillité à réviser tes gammes…`;
+  }
+
+  private getPublicMessageSpectacle(characterName: string, instantSpectacle: boolean): string {
+    if (instantSpectacle) {
+      return `${CAPABILITIES.ENTERTAIN} Dans une inspiration soudaine, ${characterName} a donné un grand spectacle pour vous remonter le moral. Tous les spectateurs gagnent 1 ${CHARACTER.MP_FULL} !`;
+    } else {
+      return `${CAPABILITIES.ENTERTAIN} ${characterName} a donné un grand spectacle qui met du baume au cœur. Tous les spectateurs gagnent 1 ${CHARACTER.MP_FULL} !`;
+    }
+  }
+
+  private getPublicMessagePrep(characterName: string): string {
+    return `${CAPABILITIES.ENTERTAIN} ${characterName} a joué du violon pendant des heures… avec quelques fausses notes !`;
+  }
 
   async execute(
     characterId: string,
@@ -59,8 +84,8 @@ export class DivertirCapability extends BaseCapability {
 
       return {
         success: true,
-        message: "Votre spectacle remonte le moral de la ville !",
-        publicMessage: `🎭 ${character.name} a donné un grand spectacle qui remonte le moral de la ville ! Tous les citoyens gagnent 1 PM.`,
+        message: this.getPrivateMessageSpectacle(instantSpectacle),
+        publicMessage: this.getPublicMessageSpectacle(character.name, instantSpectacle),
         paConsumed: 1,
         effects: pmEffects,
         metadata: {
@@ -73,8 +98,8 @@ export class DivertirCapability extends BaseCapability {
       // Préparation du spectacle
       return {
         success: true,
-        message: `Vous préparez un spectacle. Continuez à divertir pour déclencher le concert !`,
-        publicMessage: `🎵 ${character.name} prépare un spectacle`,
+        message: this.getPrivateMessagePrep(newCounter),
+        publicMessage: this.getPublicMessagePrep(character.name),
         paConsumed: 1,
         metadata: {
           divertCounter: newCounter,
