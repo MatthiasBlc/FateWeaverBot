@@ -131,17 +131,17 @@ export class PecherCapability extends BaseCapability {
       lootEntry = lootEntries[randomIndex];
     }
 
-    // Si on tire un coquillage mais qu'il a déjà été trouvé, le remplacer par 5 vivres + 5 bois + 5 minerais
+    // Si on tire un coquillage mais qu'il a déjà été trouvé, le remplacer par 8 vivres + 4 bois + 4 minerais
     if (lootEntry.resourceName === "Coquillage" && coquillageFound) {
       return {
         success: true,
-        message: `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 5 ${RESOURCES.FOOD}, 5 ${RESOURCES.WOOD} et 5 ${RESOURCES.MINERAL}`,
-        publicMessage: `${CAPABILITIES.FISH} ${character.name} revient de la pêche avec 5 ${RESOURCES.FOOD}, 5 ${RESOURCES.WOOD} et 5 ${RESOURCES.MINERAL}.`,
+        message: `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 8 ${RESOURCES.FOOD}, 4 ${RESOURCES.WOOD} et 4 ${RESOURCES.MINERAL}`,
+        publicMessage: `${CAPABILITIES.FISH} ${character.name} revient de la pêche avec 8 ${RESOURCES.FOOD}, 4 ${RESOURCES.WOOD} et 4 ${RESOURCES.MINERAL}.`,
         paConsumed: paToUse,
         loot: {
-          Vivres: 5,
-          Bois: 5,
-          Minerai: 5,
+          Vivres: 8,
+          Bois: 4,
+          Minerai: 4,
         },
         metadata: {
           bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
