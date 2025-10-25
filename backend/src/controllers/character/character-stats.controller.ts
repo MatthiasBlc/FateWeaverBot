@@ -7,7 +7,7 @@ import { notifyAgonyEntered } from "../../util/agony-notification";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { ResourceQueries } from "../../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../../shared/utils";
-import { CHARACTER, RESOURCES } from "@shared/index";
+import { CAPABILITIES, CHARACTER, RESOURCES } from "@shared/index";
 
 export const eatFood: RequestHandler = async (req, res, next) => {
   try {
@@ -523,7 +523,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
     res.json({
       success: true,
       message: `Tu utilises 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
-      publicMessage: `${character.name} utilise 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
+      publicMessage: `${CAPABILITIES.HEALING}${character.name} utilise 1 ${RESOURCES.CATAPLASM} et retrouve des forces (+1 PV ${CHARACTER.HP_FULL}).`,
     });
   } catch (error) {
     next(error);
