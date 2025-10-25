@@ -963,17 +963,19 @@ export async function handleProfileButtonInteraction(interaction: any) {
         logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
 
         // Créer des boutons pour choisir 1 PA (Soigner) ou 2 PA (Cataplasme)
+        const cataplasmeButton = new ButtonBuilder()
+          .setCustomId(`healing_pa:${characterId}:${userId}:2`)
+          .setLabel("Cataplasme (2 PA)")
+          .setStyle(canCraftCataplasme ? ButtonStyle.Success : ButtonStyle.Secondary)
+          .setDisabled(!canCraftCataplasme);
+
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(`healing_pa:${characterId}:${userId}:1`)
             .setLabel("Soigner (1 PA)")
             .setStyle(ButtonStyle.Primary)
             .setDisabled(character.paTotal < 1),
-          new ButtonBuilder()
-            .setCustomId(`healing_pa:${characterId}:${userId}:2`)
-            .setLabel("Cataplasme (2 PA)")
-            .setStyle(ButtonStyle.Success)
-            .setDisabled(!canCraftCataplasme)
+          cataplasmeButton
         );
 
         let content = `${CAPABILITIES.HEALING} **Soigner** - Choisissez une action :\n\nVous avez actuellement **${character.paTotal} PA**.`;
