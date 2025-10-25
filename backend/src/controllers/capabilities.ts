@@ -281,7 +281,8 @@ export const executeSoigner: RequestHandler = async (req, res, next) => {
       if (error.message.includes("non trouvé")) {
         next(new NotFoundError(error.message));
       } else if (
-        error.message.includes("Pas assez") ||
+        error.message.includes("PA insuffisants") ||
+        error.message.includes("Tu n'as plus de PA") ||
         error.message.includes("tous ses PV") ||
         error.message.includes("Limite de cataplasmes") ||
         error.message.includes("Capacité non implémentée")
