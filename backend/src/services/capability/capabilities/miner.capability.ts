@@ -2,6 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
+import { CAPABILITIES, RESOURCES } from "@shared/index";
 
 /**
  * Capacité Miner
@@ -47,8 +48,8 @@ export class MinerCapability extends BaseCapability {
 
     return {
       success: true,
-      message: `Vous avez miné ${oreAmount} minerai.`,
-      publicMessage: `⛏️ ${character.name} a miné ${oreAmount} minerai !`,
+      message: `De retour des montagnes. Tu as trouvé un nouveau filon et extrait ${oreAmount} ${RESOURCES.MINERAL}.`,
+      publicMessage: `${CAPABILITIES.MINING} ${character.name}  a trouvé un joli filon et revient avec ${oreAmount} ${RESOURCES.MINERAL} !`,
       paConsumed: 2,
       loot: { Minerai: oreAmount },
       metadata: {

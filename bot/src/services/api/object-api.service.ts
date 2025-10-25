@@ -18,7 +18,6 @@ export interface AddSkillBonusDto {
 
 export interface AddCapabilityBonusDto {
   capabilityId: string;
-  bonusValue: number;
 }
 
 export interface AddResourceConversionDto {

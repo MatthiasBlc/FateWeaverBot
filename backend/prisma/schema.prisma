@@ -134,7 +134,7 @@ enum SeasonType {
 }
 
 enum CapacityBonusType {
-  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+
+  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+, Couper du bois+
   HEAL_EXTRA // Soigner+
   ENTERTAIN_BURST // Divertir+
   ADMIN_INTERPRETED // Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+

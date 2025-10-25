@@ -479,21 +479,6 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de bonus de capacité sur objet
-    this.registerHandler("object_capability_bonus_modal:", async (interaction) => {
-      try {
-        const { handleObjectCapabilityBonusModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
-        );
-        await handleObjectCapabilityBonusModalSubmit(interaction);
-      } catch (error) {
-        logger.error("Error handling object capability bonus modal:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
-          flags: ["Ephemeral"],
-        });
-      }
-    });
-
     // Gestionnaire pour le modal de conversion en ressource sur objet
     this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
       try {
@@ -570,6 +555,38 @@ export class ModalHandler {
         logger.error("Error handling edit capability modal:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la modification de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification du nom d'objet
+    this.registerHandler("edit_object_name_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectNameModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectNameModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object name modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification du nom.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de la description d'objet
+    this.registerHandler("edit_object_description_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectDescriptionModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectDescriptionModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object description modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la description.",
           flags: ["Ephemeral"],
         });
       }

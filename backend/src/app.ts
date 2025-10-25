@@ -182,8 +182,29 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
 
+  // Check for Prisma errors first
+  if (error && typeof error === 'object' && 'code' in error) {
+    const prismaError = error as any;
+
+    // P2002: Unique constraint failed
+    if (prismaError.code === 'P2002') {
+      const field = prismaError.meta?.target?.[0] || 'field';
+      statusCode = 400;
+      errorMessage = `Un élément avec ce ${field === 'name' ? 'nom' : field} existe déjà.`;
+    }
+    // P2025: Record not found
+    else if (prismaError.code === 'P2025') {
+      statusCode = 404;
+      errorMessage = 'Élément non trouvé.';
+    }
+    // P2003: Foreign key constraint failed
+    else if (prismaError.code === 'P2003') {
+      statusCode = 400;
+      errorMessage = 'Référence invalide - assurez-vous que tous les IDs existent.';
+    }
+  }
   // Check for AppError (custom error classes)
-  if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
+  else if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
     statusCode = (error as any).statusCode;
     errorMessage = (error as any).message;
   } else if (isHttpError(error)) {

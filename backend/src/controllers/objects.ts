@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
+import { CapacityBonusType } from "@prisma/client";
 import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { objectService } from "../services/object.service";
 import { logger } from "../services/logger";
+import { prisma } from "../util/db";
 
 export const objectsController = {
   /**
@@ -231,6 +233,185 @@ export const objectsController = {
       res.json(object);
     } catch (error: any) {
       logger.error("Error in deleteObjectType:", error);
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/objects/:id/skill-bonus
+   * Ajoute une compétence à un objet
+   */
+  async addSkillBonus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const objectId = parseInt(req.params.id, 10);
+      const { skillId } = req.body;
+
+      if (isNaN(objectId)) {
+        return res.status(400).json({ error: "Invalid object ID" });
+      }
+
+      if (!skillId) {
+        return res.status(400).json({ error: "skillId is required" });
+      }
+
+      // Créer le bonus de compétence
+      const bonus = await prisma.objectSkillBonus.create({
+        data: {
+          objectTypeId: objectId,
+          skillId: skillId,
+        },
+        include: {
+          skill: true,
+        },
+      });
+
+      logger.info("Skill bonus added to object", {
+        objectId,
+        skillId,
+      });
+
+      res.status(201).json(bonus);
+    } catch (error: any) {
+      logger.error("Error in addSkillBonus:", error);
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/objects/:id/capability-bonus
+   * Ajoute une capacité à un objet
+   */
+  async addCapabilityBonus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const objectId = parseInt(req.params.id, 10);
+      const { capabilityId } = req.body;
+
+      if (isNaN(objectId)) {
+        return res.status(400).json({ error: "Invalid object ID" });
+      }
+
+      if (!capabilityId) {
+        return res.status(400).json({ error: "capabilityId is required" });
+      }
+
+      // Récupérer la capacité pour déterminer son type de bonus
+      const capability = await prisma.capability.findUnique({
+        where: { id: capabilityId },
+      });
+
+      if (!capability) {
+        return res.status(404).json({ error: "Capability not found" });
+      }
+
+      // Déterminer le type de bonus basé sur le nom de la capacité
+      // LUCKY_ROLL: Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+, Couper du bois+
+      // HEAL_EXTRA: Soigner+
+      // ENTERTAIN_BURST: Divertir+
+      // ADMIN_INTERPRETED: Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+
+      let bonusType: CapacityBonusType = CapacityBonusType.ADMIN_INTERPRETED; // défaut
+      const capName = capability.name.toLowerCase();
+
+      if (["chasser", "cueillir", "miner", "pêcher", "cuisiner", "couper"].some(name => capName.includes(name))) {
+        bonusType = CapacityBonusType.LUCKY_ROLL;
+      } else if (capName.includes("soigner")) {
+        bonusType = CapacityBonusType.HEAL_EXTRA;
+      } else if (capName.includes("divertir")) {
+        bonusType = CapacityBonusType.ENTERTAIN_BURST;
+      }
+
+      // Créer le bonus de capacité
+      const bonus = await prisma.objectCapacityBonus.create({
+        data: {
+          objectTypeId: objectId,
+          capabilityId: capabilityId,
+          bonusType: bonusType,
+        },
+        include: {
+          capability: true,
+        },
+      });
+
+      logger.info("Capability bonus added to object", {
+        objectId,
+        capabilityId,
+        bonusType,
+      });
+
+      res.status(201).json(bonus);
+    } catch (error: any) {
+      logger.error("Error in addCapabilityBonus:", error);
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/objects/:id/resource-conversion
+   * Ajoute une conversion en ressource à un objet
+   */
+  async addResourceConversion(req: Request, res: Response, next: NextFunction) {
+    try {
+      const objectId = parseInt(req.params.id, 10);
+      const { resourceTypeId, quantity } = req.body;
+
+      if (isNaN(objectId)) {
+        return res.status(400).json({ error: "Invalid object ID" });
+      }
+
+      if (!resourceTypeId) {
+        return res.status(400).json({ error: "resourceTypeId is required" });
+      }
+
+      // Convertir resourceTypeId en nombre
+      const parsedResourceTypeId = parseInt(resourceTypeId, 10);
+      if (isNaN(parsedResourceTypeId)) {
+        return res.status(400).json({ error: "Invalid resourceTypeId" });
+      }
+
+      // Convertir quantity en nombre
+      const parsedQuantity = parseInt(quantity, 10);
+      if (isNaN(parsedQuantity) || parsedQuantity < 1) {
+        return res.status(400).json({ error: "quantity must be a positive integer" });
+      }
+
+      // Vérifier que l'objet existe
+      const objectType = await prisma.objectType.findUnique({
+        where: { id: objectId },
+      });
+
+      if (!objectType) {
+        return res.status(404).json({ error: "Object type not found" });
+      }
+
+      // Vérifier que la ressource existe
+      const resourceType = await prisma.resourceType.findUnique({
+        where: { id: parsedResourceTypeId },
+      });
+
+      if (!resourceType) {
+        return res.status(404).json({ error: "Resource type not found" });
+      }
+
+      // Créer la conversion en ressource
+      const conversion = await prisma.objectResourceConversion.create({
+        data: {
+          objectTypeId: objectId,
+          resourceTypeId: parsedResourceTypeId,
+          quantity: parsedQuantity,
+        },
+        include: {
+          resourceType: true,
+        },
+      });
+
+      logger.info("Resource conversion added to object", {
+        objectId,
+        resourceTypeId: parsedResourceTypeId,
+        quantity: parsedQuantity,
+      });
+
+      res.status(201).json(conversion);
+    } catch (error: any) {
+      logger.error("Error in addResourceConversion:", error);
       next(error);
     }
   }

@@ -3,7 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
 import { ResourceUtils } from "../../../shared/utils";
-import { RESOURCES } from "@shared/index";
+import { CAPABILITIES, RESOURCES } from "@shared/index";
 
 /**
  * Capacité Cuisiner
@@ -18,7 +18,7 @@ export class CuisinerCapability extends BaseCapability {
     if (output >= input * 2) {
       return `Quel festin ! Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} délicieux ${RESOURCES.PREPARED_FOOD}`;
     } else if (output > input) {
-      return `Ça sent bon ! Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}`;
+      return `Ça sent bon ! Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD}`;
     } else if (output === input) {
       return `Une recette peu convaincante... Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}`;
     } else if (output > 0) {
@@ -30,15 +30,15 @@ export class CuisinerCapability extends BaseCapability {
 
   private getPublicMessage(characterName: string, output: number, input: number): string {
     if (output >= input * 2) {
-      return `Quel festin ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} délicieux ${RESOURCES.PREPARED_FOOD}. Bon appétit !`;
+      return `${CAPABILITIES.COOKING} Quel festin ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} délicieux ${RESOURCES.PREPARED_FOOD}. Bon appétit !`;
     } else if (output > input) {
-      return `Ça sent bon ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}.`;
+      return `${CAPABILITIES.COOKING} Ça sent bon ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD}.`;
     } else if (output === input) {
-      return `${characterName} a tenté une nouvelle recette et transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD}. Pas sûr que ce soit vraiment mieux.`;
+      return `${CAPABILITIES.COOKING} ${characterName} a tenté une nouvelle recette et transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD}. Pas sûr que ce soit vraiment mieux.`;
     } else if (output > 0) {
-      return `${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD}. Ce n'est pas très convaincant mais il a quand même réussi à sauver ${output} ${RESOURCES.PREPARED_FOOD}. Espérons que c'est comestible !`;
+      return `${CAPABILITIES.COOKING} ${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD}. Ce n'est pas très convaincant mais il a quand même réussi à sauver ${output} ${RESOURCES.PREPARED_FOOD}. Espérons que c'est comestible !`;
     } else {
-      return `${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD} mais sans succès. Une légère odeur de brûlé flotte aux alentours.`;
+      return `${CAPABILITIES.COOKING} ${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD} mais sans succès. Une légère odeur de brûlé flotte aux alentours.`;
     }
   }
 

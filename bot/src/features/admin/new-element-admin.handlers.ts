@@ -722,43 +722,228 @@ export async function handleObjectDoneButton(interaction: ButtonInteraction) {
 }
 
 /**
- * Gère le bouton "Ajouter bonus Compétence" pour un objet
+ * Catégorise les compétences selon leur thème
+ */
+function categorizeObjectSkills(skills: any[]) {
+  const movement: any[] = [];
+  const combat: any[] = [];
+  const nature: any[] = [];
+  const perception: any[] = [];
+
+  const movementNames = ['Déplacement rapide', 'Escalader', 'Plonger', 'Orientation', 'Balisage'];
+  const combatNames = ['Combat distance', 'Assommer', 'Pièges', 'Camouflage', 'Discrétion', 'Pistage'];
+  const natureNames = ['Cultiver', 'Herboristerie', 'Apprivoisement', 'Réparer', 'Noeuds', 'Porter'];
+  const perceptionNames = ['Vision nocturne', 'Vision lointaine', 'Communiquer'];
+
+  skills.forEach((skill: any) => {
+    if (movementNames.includes(skill.name)) {
+      movement.push(skill);
+    } else if (combatNames.includes(skill.name)) {
+      combat.push(skill);
+    } else if (natureNames.includes(skill.name)) {
+      nature.push(skill);
+    } else if (perceptionNames.includes(skill.name)) {
+      perception.push(skill);
+    } else {
+      nature.push(skill);
+    }
+  });
+
+  return { movement, combat, nature, perception };
+}
+
+/**
+ * Gère le bouton "Ajouter compétence" pour un objet
  */
 export async function handleObjectAddSkillBonusButton(interaction: ButtonInteraction) {
   try {
     const objectId = interaction.customId.split(':')[1];
 
-    // Créer le modal pour ajouter un bonus de compétence
-    const modal = new ModalBuilder()
-      .setCustomId(`object_skill_bonus_modal:${objectId}`)
-      .setTitle("Ajouter un bonus de compétence");
+    // Récupérer toutes les compétences disponibles
+    const skills = await apiService.skills.getAllSkills();
 
-    const skillIdInput = new TextInputBuilder()
-      .setCustomId("skill_id")
-      .setLabel("ID de la compétence")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("Collez l'ID de la compétence");
+    if (!skills || skills.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Aucune compétence disponible.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
-    const bonusValueInput = new TextInputBuilder()
-      .setCustomId("bonus_value")
-      .setLabel("Valeur du bonus (ex: 1, 2, 3...)")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("1");
+    // Catégoriser les compétences
+    const categories = categorizeObjectSkills(skills);
 
-    const rows = [
-      new ActionRowBuilder<TextInputBuilder>().addComponents(skillIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(bonusValueInput),
-    ];
+    // Créer les boutons de catégories
+    const categoryButtons = [];
 
-    modal.addComponents(...rows);
+    if (categories.movement.length > 0) {
+      categoryButtons.push({
+        customId: `object_skill_category:${objectId}:movement`,
+        label: `🏃 Déplacement (${categories.movement.length})`,
+        style: 2,
+      });
+    }
 
-    await interaction.showModal(modal);
+    if (categories.combat.length > 0) {
+      categoryButtons.push({
+        customId: `object_skill_category:${objectId}:combat`,
+        label: `⚔️ Combat & Survie (${categories.combat.length})`,
+        style: 2,
+      });
+    }
+
+    if (categories.nature.length > 0) {
+      categoryButtons.push({
+        customId: `object_skill_category:${objectId}:nature`,
+        label: `🌿 Nature & Artisanat (${categories.nature.length})`,
+        style: 2,
+      });
+    }
+
+    if (categories.perception.length > 0) {
+      categoryButtons.push({
+        customId: `object_skill_category:${objectId}:perception`,
+        label: `👁️ Perception & Social (${categories.perception.length})`,
+        style: 2,
+      });
+    }
+
+    const buttonRow = new (ActionRowBuilder as any)().addComponents(
+      categoryButtons.map((btn: any) => new ButtonBuilder()
+        .setCustomId(btn.customId)
+        .setLabel(btn.label)
+        .setStyle(btn.style))
+    );
+
+    await interaction.reply({
+      content: "**Ajouter une compétence à l'objet**\n\nChoisissez une catégorie :",
+      components: [buttonRow],
+      flags: ["Ephemeral"],
+    });
   } catch (error) {
     logger.error("Erreur dans handleObjectAddSkillBonusButton", {
       error: error instanceof Error ? error.message : error,
       userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gère le clic sur une catégorie de compétence pour un objet
+ */
+export async function handleObjectSkillCategoryButton(interaction: ButtonInteraction) {
+  try {
+    const parts = interaction.customId.split(':');
+    const objectId = parts[1];
+    const category = parts[2];
+
+    // Récupérer toutes les compétences disponibles
+    const skills = await apiService.skills.getAllSkills();
+
+    if (!skills || skills.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Aucune compétence disponible.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Catégoriser et filtrer
+    const categories = categorizeObjectSkills(skills);
+    const categorySkills = categories[category as keyof typeof categories] || [];
+
+    if (categorySkills.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Aucune compétence dans cette catégorie.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Créer la liste déroulante des compétences
+    const skillOptions = categorySkills.map((skill: any) => ({
+      label: skill.name,
+      value: skill.id,
+      description: skill.description ? skill.description.substring(0, 100) : undefined,
+    }));
+
+    const skillSelect = new (StringSelectMenuBuilder as any)()
+      .setCustomId(`object_skill_confirm:${objectId}`)
+      .setPlaceholder("Sélectionnez une compétence")
+      .addOptions(skillOptions);
+
+    const row = new (ActionRowBuilder as any)().addComponents(skillSelect);
+
+    await interaction.reply({
+      content: `**Sélectionnez une compétence à ajouter** (${category})`,
+      components: [row],
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur dans handleObjectSkillCategoryButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Gère la sélection finale d'une compétence pour l'ajouter directement à l'objet
+ */
+export async function handleObjectSkillSelect(
+  interaction: StringSelectMenuInteraction
+) {
+  try {
+    const objectId = interaction.customId.split(':')[1];
+    const skillId = interaction.values[0];
+
+    // Récupérer l'info de la compétence sélectionnée
+    const skills = await apiService.skills.getAllSkills();
+    const selectedSkill = skills.find((s: any) => s.id === skillId);
+
+    if (!selectedSkill) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Compétence non trouvée.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Ajouter directement la compétence (sans modal)
+    await apiService.objects.addSkillBonus(objectId, {
+      skillId,
+      bonusValue: 1, // Valeur par défaut (l'objet "donne" simplement la compétence)
+    });
+
+    logger.info("Compétence ajoutée à l'objet", {
+      objectId,
+      skillId,
+      userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.SUCCESS} Compétence **${selectedSkill.name}** ajoutée à l'objet !`,
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur dans handleObjectSkillSelect", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Erreur lors de l'ajout de la compétence.`,
+      flags: ["Ephemeral"],
     });
   }
 }
@@ -767,8 +952,10 @@ export async function handleObjectAddSkillBonusButton(interaction: ButtonInterac
  * Gère la soumission du modal de bonus de compétence pour un objet
  */
 export async function handleObjectSkillBonusModalSubmit(interaction: ModalSubmitInteraction) {
-  const objectId = interaction.customId.split(':')[1];
-  const skillId = interaction.fields.getTextInputValue("skill_id");
+  // Extraire objectId et skillId du customId (format: object_skill_bonus_modal:objectId:skillId)
+  const parts = interaction.customId.split(':');
+  const objectId = parts[1];
+  const skillId = parts[2];
   const bonusValueRaw = interaction.fields.getTextInputValue("bonus_value");
 
   try {
@@ -824,75 +1011,73 @@ export async function handleObjectAddCapabilityBonusButton(interaction: ButtonIn
   try {
     const objectId = interaction.customId.split(':')[1];
 
-    // Créer le modal pour ajouter un bonus de capacité
-    const modal = new ModalBuilder()
-      .setCustomId(`object_capability_bonus_modal:${objectId}`)
-      .setTitle("Ajouter un bonus de capacité");
+    // Récupérer toutes les capacités disponibles
+    const capabilities = await apiService.capabilities.getAllCapabilities();
 
-    const capabilityIdInput = new TextInputBuilder()
-      .setCustomId("capability_id")
-      .setLabel("ID de la capacité")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("Collez l'ID de la capacité");
+    if (!capabilities || capabilities.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Aucune capacité disponible.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
-    const bonusValueInput = new TextInputBuilder()
-      .setCustomId("bonus_value")
-      .setLabel("Valeur du bonus (ex: 1, 2, 3...)")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("1");
+    // Créer la liste déroulante des capacités
+    const capabilityOptions = capabilities.map((cap: any) => ({
+      label: cap.name,
+      value: String(cap.id),
+      description: cap.description ? cap.description.substring(0, 100) : undefined,
+    }));
 
-    const rows = [
-      new ActionRowBuilder<TextInputBuilder>().addComponents(capabilityIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(bonusValueInput),
-    ];
+    const capabilitySelect = new (StringSelectMenuBuilder as any)()
+      .setCustomId(`object_capability_bonus_select:${objectId}`)
+      .setPlaceholder("Sélectionnez une capacité")
+      .addOptions(capabilityOptions);
 
-    modal.addComponents(...rows);
+    const row = new (ActionRowBuilder as any)().addComponents(capabilitySelect);
 
-    await interaction.showModal(modal);
+    await interaction.reply({
+      content: "**Ajouter un bonus de capacité à l'objet**\n\nChoisissez une capacité :",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
   } catch (error) {
     logger.error("Erreur dans handleObjectAddCapabilityBonusButton", {
       error: error instanceof Error ? error.message : error,
       userId: interaction.user.id,
     });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Erreur lors du chargement des capacités.`,
+      flags: ["Ephemeral"],
+    });
   }
 }
 
 /**
- * Gère la soumission du modal de bonus de capacité pour un objet
+ * Gère la sélection d'une capacité pour ajouter un bonus à un objet
  */
-export async function handleObjectCapabilityBonusModalSubmit(interaction: ModalSubmitInteraction) {
+export async function handleObjectCapabilityBonusSelect(interaction: StringSelectMenuInteraction) {
   const objectId = interaction.customId.split(':')[1];
-  const capabilityId = interaction.fields.getTextInputValue("capability_id");
-  const bonusValueRaw = interaction.fields.getTextInputValue("bonus_value");
+  const capabilityId = interaction.values[0];
 
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
 
-    const bonusValue = parseInt(bonusValueRaw, 10);
-    if (isNaN(bonusValue)) {
-      await interaction.editReply({
-        content: `${STATUS.ERROR} Valeur du bonus invalide. Utilisez un nombre.`,
-      });
-      return;
-    }
-
     // Appeler l'API backend pour ajouter le bonus
+    // Note: le backend détermine automatiquement le type de bonus basé sur la capacité
     await apiService.objects.addCapabilityBonus(objectId, {
       capabilityId,
-      bonusValue,
     });
 
     logger.info("Bonus de capacité ajouté à l'objet", {
       objectId,
       capabilityId,
-      bonusValue,
       userId: interaction.user.id,
     });
 
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Bonus de capacité ajouté avec succès !`,
+      content: `${STATUS.SUCCESS} **Capacité ajoutée avec succès !**`,
     });
   } catch (error: any) {
     logger.error("Erreur lors de l'ajout du bonus de capacité", {
@@ -915,52 +1100,109 @@ export async function handleObjectCapabilityBonusModalSubmit(interaction: ModalS
 
 /**
  * Gère le bouton "Conversion en Ressource" pour un objet
+ * Affiche d'abord un menu de sélection des ressources disponibles
  */
 export async function handleObjectAddResourceConversionButton(interaction: ButtonInteraction) {
   try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
     const objectId = interaction.customId.split(':')[1];
 
-    // Créer le modal pour ajouter une conversion en ressource
-    const modal = new ModalBuilder()
-      .setCustomId(`object_resource_conversion_modal:${objectId}`)
-      .setTitle("Ajouter une conversion en ressource");
+    // Récupérer toutes les ressources disponibles
+    const resources = await apiService.resources.getAllResourceTypes();
 
-    const resourceTypeIdInput = new TextInputBuilder()
-      .setCustomId("resource_type_id")
-      .setLabel("ID du type de ressource")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("Collez l'ID du type de ressource");
+    if (!resources || resources.length === 0) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Aucun type de ressource disponible. Créez d'abord des ressources.`,
+      });
+      return;
+    }
+
+    // Créer la liste déroulante des ressources
+    const resourceOptions = resources.map((resource: any) => ({
+      label: `${resource.emoji} ${resource.name}`,
+      value: String(resource.id),
+      description: resource.category ? `Catégorie: ${resource.category}` : undefined,
+    }));
+
+    const resourceSelect = new StringSelectMenuBuilder()
+      .setCustomId(`object_resource_select:${objectId}`)
+      .setPlaceholder("Sélectionnez une ressource")
+      .addOptions(resourceOptions);
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(resourceSelect);
+
+    await interaction.editReply({
+      content: "**Conversion en ressource**\n\n**Étape 1:** Sélectionnez une ressource",
+      components: [row],
+    });
+  } catch (error) {
+    logger.error("Erreur dans handleObjectAddResourceConversionButton", {
+      error: error instanceof Error ? error.message : error,
+      userId: interaction.user.id,
+    });
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors du chargement des ressources.`,
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Erreur lors du chargement des ressources.`,
+      });
+    }
+  }
+}
+
+/**
+ * Gère la sélection d'une ressource pour la conversion
+ */
+export async function handleObjectResourceSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const parts = interaction.customId.split(':');
+    const objectId = parts[1];
+    const resourceTypeId = interaction.values[0];
+
+    // Créer le modal pour la quantité
+    const modal = new ModalBuilder()
+      .setCustomId(`object_resource_conversion_modal:${objectId}:${resourceTypeId}`)
+      .setTitle("Ajouter une conversion en ressource");
 
     const quantityInput = new TextInputBuilder()
       .setCustomId("quantity")
       .setLabel("Quantité de ressource produite")
       .setStyle(TextInputStyle.Short)
       .setRequired(true)
-      .setPlaceholder("1");
+      .setPlaceholder("1")
+      .setMinLength(1)
+      .setMaxLength(5);
 
-    const rows = [
-      new ActionRowBuilder<TextInputBuilder>().addComponents(resourceTypeIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput),
-    ];
-
-    modal.addComponents(...rows);
+    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput);
+    modal.addComponents(row);
 
     await interaction.showModal(modal);
   } catch (error) {
-    logger.error("Erreur dans handleObjectAddResourceConversionButton", {
+    logger.error("Erreur dans handleObjectResourceSelect", {
       error: error instanceof Error ? error.message : error,
       userId: interaction.user.id,
+    });
+
+    await interaction.reply({
+      content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
+      flags: ["Ephemeral"],
     });
   }
 }
 
 /**
  * Gère la soumission du modal de conversion en ressource pour un objet
+ * Format du customId : object_resource_conversion_modal:objectId:resourceTypeId
  */
 export async function handleObjectResourceConversionModalSubmit(interaction: ModalSubmitInteraction) {
-  const objectId = interaction.customId.split(':')[1];
-  const resourceTypeId = interaction.fields.getTextInputValue("resource_type_id");
+  const parts = interaction.customId.split(':');
+  const objectId = parts[1];
+  const resourceTypeId = parts[2];
   const quantityRaw = interaction.fields.getTextInputValue("quantity");
 
   try {
@@ -988,7 +1230,7 @@ export async function handleObjectResourceConversionModalSubmit(interaction: Mod
     });
 
     await interaction.editReply({
-      content: `${STATUS.SUCCESS} Conversion en ressource ajoutée avec succès !`,
+      content: `${STATUS.SUCCESS} **Conversion en ressource ajoutée avec succès !**\n\n**Ressource:** ID ${resourceTypeId}\n**Quantité:** ${quantity}`,
     });
   } catch (error: any) {
     logger.error("Erreur lors de l'ajout de la conversion en ressource", {

@@ -557,78 +557,50 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     }
   }
 
-  // Ajouter les boutons Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
+  // Créer une ligne pour les boutons d'actions secondaires (Manger, Cataplasme, Donner, Projets)
+  const actionButtons: ButtonBuilder[] = [];
+
+  // Ajouter le bouton Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
   if (data.character.hungerLevel < 4 && !data.character.isDead) {
-    // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
-    const buttons = [];
-
-    // // Bouton pour les vivres (toujours affiché si personnage peut manger)
-    // const vivresButton = new ButtonBuilder()
-    //   .setCustomId(`eat_food:${data.character.id}`)
-    //   .setLabel("Manger 🍞 (1)")
-    //   .setStyle(ButtonStyle.Primary);
-    // buttons.push(vivresButton);
-
-    // // Bouton pour la nourriture (toujours affiché si personnage peut manger)
-    // const nourritureButton = new ButtonBuilder()
-    //   .setCustomId(`eat_nourriture:${data.character.id}`)
-    //   .setLabel("Manger 🍽️ (1)")
-    //   .setStyle(ButtonStyle.Secondary);
-    // buttons.push(nourritureButton);
-
-    // Bouton "Manger +" pour accéder au menu avancé
     const eatMoreButton = new ButtonBuilder()
       .setCustomId(`eat_more:${data.character.id}`)
       .setLabel(`${RESOURCES_EXTENDED.FORK_KNIFE} Manger`)
       .setStyle(ButtonStyle.Success);
-    buttons.push(eatMoreButton);
-
-    // Ajouter les boutons à la ligne
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      ...buttons
-    );
-    components.push(buttonRow);
+    actionButtons.push(eatMoreButton);
   }
 
   // Ajouter le bouton Cataplasme si le personnage est blessé (HP < 5 et pas mort)
   if (data.character.hp < 5 && data.character.hp > 0) {
     const cataplasmeButton = new ButtonBuilder()
       .setCustomId(`use_cataplasme:${data.character.id}`)
-      .setLabel(`Utiliser Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
+      .setLabel(`Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
       .setStyle(ButtonStyle.Danger);
-
-    const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      cataplasmeButton
-    );
-    components.push(cataplasmeRow);
+    actionButtons.push(cataplasmeButton);
   }
 
-  // Bouton "Donner un objet" temporairement désactivé
-  /*
-  try {
-    const inventoryResponse = await httpClient.get(
-      `/api/characters/${data.character.id}/inventory`
-    );
-    const inventory = inventoryResponse.data;
-    if (inventory && inventory.slots && inventory.slots.length > 0) {
-      const giveObjectButton = new ButtonBuilder()
-        .setCustomId(`give_object:${data.character.id}`)
-        .setLabel(`🎁 Donner un objet`)
-        .setStyle(ButtonStyle.Secondary);
-
-      const giveObjectRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        giveObjectButton
+  // Bouton "Donner un objet"
+  if (!data.character.isDead) {
+    try {
+      const inventoryResponse = await httpClient.get(
+        `/api/characters/${data.character.id}/inventory`
       );
-      components.push(giveObjectRow);
+      const inventory = inventoryResponse.data;
+      // Vérifier si l'inventaire a des slots
+      if (inventory && inventory.slots && inventory.slots.length > 0) {
+        const giveObjectButton = new ButtonBuilder()
+          .setCustomId(`give_object:${data.character.id}:${data.user.discordId}`)
+          .setLabel(`🎁 Donner`)
+          .setStyle(ButtonStyle.Secondary);
+        actionButtons.push(giveObjectButton);
+      }
+    } catch (error) {
+      // Silencieusement ignorer les erreurs
+      logger.debug(
+        "Erreur lors de la vérification de l'inventaire pour le bouton donner:",
+        error
+      );
     }
-  } catch (error) {
-    // Silencieusement ignorer les erreurs
-    logger.debug(
-      "Erreur lors de la vérification de l'inventaire pour le bouton donner:",
-      error
-    );
   }
-  */
 
   // Ajouter le bouton "Projets" si le personnage a une capacité craft
   const craftCapabilities = data.character.capabilities?.filter((cap) =>
@@ -640,11 +612,15 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       .setCustomId(`view_projects:${data.character.id}:${data.user.discordId}`)
       .setLabel(`🛠️ Projets`)
       .setStyle(ButtonStyle.Primary);
+    actionButtons.push(projectsButton);
+  }
 
-    const projectsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      projectsButton
+  // Ajouter tous les boutons d'action sur une même ligne (si y'en a)
+  if (actionButtons.length > 0) {
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      ...actionButtons
     );
-    components.push(projectsRow);
+    components.push(actionRow);
   }
 
   return { embed, components };
@@ -760,6 +736,15 @@ export async function handleProfileButtonInteraction(interaction: any) {
   if (!interaction.isButton()) return;
 
   const customId = interaction.customId;
+
+  // Vérifier si c'est le bouton "Donner un objet"
+  if (customId.startsWith("give_object:")) {
+    const { handleGiveObjectButton } = await import(
+      "./give-object.handlers.js"
+    );
+    await handleGiveObjectButton(interaction);
+    return;
+  }
 
   // Vérifier si c'est un bouton de capacité
   if (customId.startsWith("use_capability:")) {
