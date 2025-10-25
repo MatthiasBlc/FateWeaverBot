@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Client, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StringSelectMenuBuilder, ActionRowBuilder } from "discord.js";
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";

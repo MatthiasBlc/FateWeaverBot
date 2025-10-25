@@ -4,6 +4,7 @@ import { prisma } from "../util/db";
 import { HUNGER } from "@shared/constants/emojis";
 import { ResourceUtils } from "../shared/utils";
 import { ResourceQueries } from "../infrastructure/database/query-builders";
+import { dailyMessageService } from "../services/daily-message.service";
 
 export const upsertTown: RequestHandler = async (req, res, next) => {
   try {
@@ -359,7 +360,6 @@ export const getTownWeather: RequestHandler = async (req, res, next) => {
 
 /**
  * Récupère le récapitulatif des activités de la veille pour une ville
- * TODO: Implémenter un système de logs d'activités
  */
 export const getTownActionsRecap: RequestHandler = async (req, res, next) => {
   try {
@@ -370,8 +370,7 @@ export const getTownActionsRecap: RequestHandler = async (req, res, next) => {
       throw new NotFoundError("Ville non trouvée");
     }
 
-    // TODO: Récupérer les actions des dernières 24h depuis une table de logs
-    const recap = "Aucune activité notable pour le moment.";
+    const recap = await dailyMessageService.getActionRecap(id);
 
     res.status(200).json({ recap });
   } catch (error) {
@@ -425,7 +424,7 @@ export const getTownStocksSummary: RequestHandler = async (req, res, next) => {
 };
 
 /**
- * Récupère un résumé des expéditions en cours pour une ville
+ * Récupère un résumé des expéditions (mouvements d'hier: départs, retours, retraits catastrophiques)
  */
 export const getTownExpeditionsSummary: RequestHandler = async (
   req,
@@ -440,41 +439,7 @@ export const getTownExpeditionsSummary: RequestHandler = async (
       throw new NotFoundError("Ville non trouvée");
     }
 
-    // Récupérer les expéditions en cours (non retournées)
-    const activeExpeditions = await prisma.expedition.findMany({
-      where: {
-        townId: id,
-        status: "DEPARTED", // Changed from "EN_COURS" to "DEPARTED" to match the enum
-      },
-      include: {
-        members: true,
-        _count: {
-          select: { members: true },
-        },
-      },
-    });
-
-    if (activeExpeditions.length === 0) {
-      res.status(200).json({ summary: "Aucune expédition en cours." });
-      return;
-    }
-
-    // Créer un résumé lisible des expéditions
-    const summary = activeExpeditions
-      .map((exp) => {
-        if (!exp.returnAt) {
-          return `🏕️ **${exp.name}** - ${
-            exp._count?.members || 0
-          } membre(s) - Date de retour inconnue`;
-        }
-        const daysRemaining = Math.ceil(
-          (exp.returnAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        );
-        return `🏕️ **${exp.name}** - ${
-          exp._count?.members || 0
-        } membre(s) - Retour dans ${daysRemaining} jour(s)`;
-      })
-      .join("\n");
+    const summary = await dailyMessageService.getExpeditionSummary(id);
 
     res.status(200).json({ summary });
   } catch (error) {

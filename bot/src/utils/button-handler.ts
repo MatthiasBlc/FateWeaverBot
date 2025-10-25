@@ -1,3 +1,4 @@
+import { ButtonInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 import { apiService } from "../services/api/index.js";
 import { httpClient } from "../services/httpClient.js";
@@ -7,7 +8,7 @@ import { httpClient } from "../services/httpClient.js";
  */
 export class ButtonHandler {
   private static instance: ButtonHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: ButtonInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -26,7 +27,7 @@ export class ButtonHandler {
    */
   public registerHandler(
     buttonId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ButtonInteraction) => Promise<void>
   ) {
     this.handlers.set(buttonId, handler);
     logger.info(`Registered button handler for: ${buttonId}`);
@@ -233,11 +234,11 @@ export class ButtonHandler {
             components: [],
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error("Error handling use cataplasme button:", { error });
 
-        const errorMessage = error.response?.data?.error ||
-                            error.response?.data?.message ||
+        const errorMessage = (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error ||
+                            (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.message ||
                             "Une erreur est survenue lors de l'utilisation du cataplasme.";
 
         await interaction.editReply({
@@ -485,15 +486,15 @@ export class ButtonHandler {
 
         // Le message de succès est déjà affiché dans l'embed de réponse
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error("❌ Erreur lors du changement de saison:", {
-          error: error.message,
-          stack: error.stack,
-          response: error.response?.data,
-          status: error.response?.status
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          response: (error as { response?: { data?: unknown } })?.response?.data,
+          status: (error as { response?: { status?: number } })?.response?.status
         });
         await interaction.editReply({
-          content: `❌ Erreur lors du changement de saison : ${error.message || 'Erreur inconnue'}`,
+          content: `❌ Erreur lors du changement de saison : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
           embeds: [],
           components: []
         });
@@ -1168,7 +1169,7 @@ export class ButtonHandler {
    */
   private registerHandlerByPrefix(
     prefix: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ButtonInteraction) => Promise<void>
   ) {
     this.handlers.set(`prefix:${prefix}`, handler);
   }
@@ -1176,7 +1177,7 @@ export class ButtonHandler {
   /**
    * Traite une interaction de bouton
    */
-  public async handleButton(interaction: any): Promise<boolean> {
+  public async handleButton(interaction: ButtonInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`🔍 Button interaction received: ${customId} from ${interaction.user.username}`);

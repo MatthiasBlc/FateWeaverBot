@@ -18,14 +18,62 @@ async function lockExpeditionsDue() {
         status: "PLANNING",
         createdAt: { lt: midnightToday }
       },
-      select: { id: true, name: true, initialDirection: true }
+      include: {
+        members: {
+          include: {
+            character: {
+              select: {
+                id: true,
+                name: true,
+                isDead: true,
+                hp: true,
+                hungerLevel: true,
+                pm: true
+              }
+            }
+          }
+        }
+      }
     });
 
     logger.info(`Found ${expeditionsToLock.length} expeditions to lock`);
 
     let lockedCount = 0;
+    let membersRemovedCount = 0;
+
     for (const expedition of expeditionsToLock) {
       try {
+        // STEP 1: Check member states and remove those who shouldn't continue
+        for (const member of expedition.members) {
+          const { character } = member;
+          const shouldRemove =
+            character.isDead ||            // Mort
+            character.hp <= 1 ||           // Agonie/Mort (HP)
+            character.hungerLevel <= 1 ||  // Affamé/Agonie (hunger)
+            character.pm <= 1;             // Dépression (PM=0) ou déprime (PM=1)
+
+          if (shouldRemove) {
+            // Determine reason
+            let reason = "";
+            if (character.isDead || character.hp <= 1) reason = "mort/agonie";
+            else if (character.hungerLevel <= 1) reason = "affamé/agonie";
+            else if (character.pm <= 1) reason = "dépression/déprime";
+
+            try {
+              await container.expeditionService.removeMemberCatastrophic(
+                expedition.id,
+                character.id,
+                reason
+              );
+              membersRemovedCount++;
+              logger.info(`Member ${character.name} removed from expedition ${expedition.name} during lock (${reason})`);
+            } catch (error) {
+              logger.error(`Failed to remove member ${character.id} from expedition ${expedition.id}:`, { error });
+            }
+          }
+        }
+
+        // STEP 2: Lock the expedition
         await container.expeditionService.lockExpedition(expedition.id);
 
         // Set UNKNOWN direction if not set
@@ -43,6 +91,7 @@ async function lockExpeditionsDue() {
     }
 
     logger.info(`Locked ${lockedCount} expeditions`);
+    logger.info(`Removed ${membersRemovedCount} members during locking`);
   } catch (error) {
     logger.error("Error in lockExpeditionsDue cron job:", { error });
   }

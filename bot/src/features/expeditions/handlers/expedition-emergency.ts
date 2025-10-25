@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { sendLogMessage } from "../../../utils/channels";

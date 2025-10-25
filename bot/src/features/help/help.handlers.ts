@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { logger } from "../../services/logger";
 import { createHelpEmbed, generateDynamicHelpSections } from "./help.utils";
 import { replyEphemeral } from "../../utils/interaction-helpers.js";

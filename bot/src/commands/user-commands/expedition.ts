@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../../types/command";
 import { withUser } from "../../core/middleware/ensureUserClean";

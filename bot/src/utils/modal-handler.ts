@@ -1,3 +1,4 @@
+import { ModalSubmitInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 
 /**
@@ -24,7 +25,7 @@ import { logger } from "../services/logger.js";
  */
 export class ModalHandler {
   private static instance: ModalHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: ModalSubmitInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -43,7 +44,7 @@ export class ModalHandler {
    */
   public registerHandler(
     modalId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ModalSubmitInteraction) => Promise<void>
   ) {
     this.handlers.set(modalId, handler);
     logger.info(`Registered modal handler for: ${modalId}`);
@@ -548,7 +549,7 @@ export class ModalHandler {
   /**
    * Traite une interaction de modal
    */
-  public async handleModal(interaction: any): Promise<boolean> {
+  public async handleModal(interaction: ModalSubmitInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`Modal interaction received: ${customId}`);

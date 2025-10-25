@@ -1,3 +1,4 @@
+import { StringSelectMenuInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 
 /**
@@ -22,7 +23,7 @@ import { logger } from "../services/logger.js";
  */
 export class SelectMenuHandler {
   private static instance: SelectMenuHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: StringSelectMenuInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -41,7 +42,7 @@ export class SelectMenuHandler {
    */
   public registerHandler(
     selectId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: StringSelectMenuInteraction) => Promise<void>
   ) {
     this.handlers.set(selectId, handler);
     logger.info(`Registered select menu handler for: ${selectId}`);
@@ -52,7 +53,7 @@ export class SelectMenuHandler {
    */
   public registerHandlerByPrefix(
     prefix: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: StringSelectMenuInteraction) => Promise<void>
   ) {
     this.handlers.set(`prefix:${prefix}`, handler);
     logger.info(`Registered select menu handler for prefix: ${prefix}`);
@@ -606,7 +607,7 @@ export class SelectMenuHandler {
   /**
    * Traite une interaction de sélection
    */
-  public async handleSelectMenu(interaction: any): Promise<boolean> {
+  public async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`Select menu interaction received: ${customId}`);

@@ -234,19 +234,19 @@ async function deductExpeditionPA() {
         deductedCount++;
         console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition)`);
       } else {
-        // Check catastrophic return conditions
+        // Check catastrophic return conditions (when character cannot afford 2 PA)
         const shouldCatastrophicReturn =
-          character.hungerLevel <= 1 || // Affamé/Agonie (hunger)
+          character.hungerLevel <= 1 || // Affamé/Agonie (hunger level 0-1)
           character.isDead || // Mort
-          character.hp <= 1 || // Agonie/Mort (HP)
-          character.pm <= 2; // Dépression/déprime
+          character.hp <= 1 || // Agonie/Mort (HP = 0-1)
+          character.pm <= 1; // Dépression (PM=0) ou déprime (PM=1)
 
         if (shouldCatastrophicReturn) {
           // Determine reason for catastrophic return
           let reason = "";
-          if (character.hungerLevel <= 1) reason = "agonie";
+          if (character.hungerLevel <= 1) reason = "affamé/agonie";
           else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
-          else if (character.pm <= 2) reason = "dépression";
+          else if (character.pm <= 1) reason = "dépression/déprime";
 
           await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id, reason);
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessage } from "../../utils/channels";

@@ -15,17 +15,6 @@ export const createExpedition = async (req: Request, res: Response, next: NextFu
       createdBy: requestCreatedBy,
     } = req.body;
 
-    console.log("DEBUG: Requête de création d'expédition reçue:", {
-      name,
-      initialResources,
-      duration,
-      townId,
-      discordGuildId,
-      requestCreatedBy,
-      body: JSON.stringify(req.body),
-      headers: req.headers['x-internal-request']
-    });
-
     const createdBy =
       req.get("x-internal-request") === "true"
         ? requestCreatedBy
@@ -53,16 +42,7 @@ export const createExpedition = async (req: Request, res: Response, next: NextFu
       return res.status(400).json({ error: "ID de ville manquant" });
     }
 
-    console.log("DEBUG: Paramètres après traitement:", {
-      name,
-      initialResources,
-      duration,
-      internalTownId,
-      createdBy
-    });
-
     if (!name || !initialResources || !duration) {
-      console.log("DEBUG: Paramètres manquants détectés");
       return res.status(400).json({ error: "Nom, ressources initiales et durée requis" });
     }
 
