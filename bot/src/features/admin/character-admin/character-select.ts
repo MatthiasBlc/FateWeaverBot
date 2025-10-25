@@ -16,6 +16,7 @@ import {
   createCharacterActionButtons,
   createAdminProfileEmbed,
 } from "../character-admin.components";
+import { getCharacterCapabilities } from "../../../services/capability.service";
 
 /**
  * Gère la sélection d'un personnage dans le menu déroulant.
@@ -46,10 +47,19 @@ export async function handleCharacterSelect(
       logger.debug("Erreur lors de la récupération des points d'action:", { error });
     }
 
+    // Récupérer les capacités du personnage
+    let capabilities = [];
+    try {
+      capabilities = await getCharacterCapabilities(character.id);
+    } catch (error) {
+      logger.debug("Erreur lors de la récupération des capacités:", { error });
+    }
+
     // Créer l'embed profil admin avec tous les détails
     const enrichedCharacter = {
       ...character,
       actionPoints,
+      capabilities,
     };
 
     const embed = await createAdminProfileEmbed(enrichedCharacter);
