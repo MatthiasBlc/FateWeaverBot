@@ -3,6 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
 import { getGatherYield } from "../../../util/capacityRandom";
+import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
 
 /**
  * Capacité Cueillir
@@ -12,6 +13,22 @@ import { getGatherYield } from "../../../util/capacityRandom";
 export class CueillirCapability extends BaseCapability {
   readonly name = "Cueillir";
   readonly category = "HARVEST" as const;
+
+  private getPrivateMessage(foodAmount: number, paToUse: number = 1): string {
+    if (foodAmount === 0) {
+      return `L'hiver est rude, la terre gelée… Tu n'as rien trouvé. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+    } else {
+      return `De retour de cueillette ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}`;
+    }
+  }
+
+  private getPublicMessage(characterName: string, foodAmount: number): string {
+    if (foodAmount === 0) {
+      return `${CAPABILITIES.GATHER} L'hiver est rude, la terre gelée… ${characterName} est rentré de cueillette les mains vides.`;
+    } else {
+      return `${CAPABILITIES.GATHER} ${characterName} rentre de cueillette avec ${foodAmount} ${RESOURCES.FOOD}.`;
+    }
+  }
 
   async execute(
     characterId: string,
@@ -36,12 +53,13 @@ export class CueillirCapability extends BaseCapability {
     );
 
     const foodAmount = getGatherYield(isSummer, hasBonus);
+    const paToUse = 1;
 
     return {
       success: foodAmount > 0,
-      message: `Vous avez cueilli avec succès ! Vous avez obtenu ${foodAmount} vivres.`,
-      publicMessage: `🌿 ${character.name} a cueilli ${foodAmount} vivres !`,
-      paConsumed: 2,
+      message: this.getPrivateMessage(foodAmount, paToUse),
+      publicMessage: this.getPublicMessage(character.name, foodAmount),
+      paConsumed: paToUse,
       loot: { Vivres: foodAmount },
       metadata: {
         bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
