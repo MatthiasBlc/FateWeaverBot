@@ -124,6 +124,7 @@ export class PecherCapability extends BaseCapability {
         message: this.getPrivateMessage("Coquillage", lootEntry.quantity, paToUse),
         publicMessage: this.getPublicMessage(character.name, "Coquillage", lootEntry.quantity),
         paConsumed: paToUse,
+        loot: { [lootEntry.resourceName]: lootEntry.quantity },
         metadata: {
           bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
           objectFound: 'Coquillage',
