@@ -376,10 +376,35 @@ export class CharacterCapabilityService {
         }
       }
 
+      // Traiter les objets spéciaux (Coquillage, etc.)
+      if (result.loot && result.loot["Coquillage"] && result.loot["Coquillage"] > 0) {
+        const objectType = await tx.objectType.findUnique({
+          where: { name: "Coquillage" },
+        });
+
+        if (objectType) {
+          // Ajouter l'objet à l'inventaire du personnage
+          const inventory = await tx.characterInventory.findUnique({
+            where: { characterId },
+          });
+
+          if (inventory) {
+            for (let i = 0; i < result.loot["Coquillage"]; i++) {
+              await tx.characterInventorySlot.create({
+                data: {
+                  inventoryId: inventory.id,
+                  objectTypeId: objectType.id,
+                },
+              });
+            }
+          }
+        }
+      }
+
       // Traiter les autres ressources génériques (Cataplasme, Minerai, etc.)
       if (result.loot) {
         // Lister les clés déjà traitées spécifiquement
-        const handledKeys = ["foodSupplies", "food", "preparedFood", "wood"];
+        const handledKeys = ["foodSupplies", "food", "preparedFood", "wood", "Coquillage"];
         // Mapping des noms anglais vers français pour les ressources converties
         const nameMapping: Record<string, string> = {
           ore: "Minerai",
