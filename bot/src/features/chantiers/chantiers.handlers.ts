@@ -11,6 +11,7 @@ import {
   type ModalSubmitInteraction,
   ModalActionRowComponentBuilder,
   type ChatInputCommandInteraction,
+  type ButtonInteraction,
   Client,
   ButtonBuilder,
   ButtonStyle,
@@ -556,6 +557,95 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
         flags: ["Ephemeral"],
       });
     }
+  }
+}
+
+/**
+ * Commande /chantiers-admin - Affiche liste des chantiers + boutons Ajouter/Supprimer
+ */
+export async function handleChantiersAdminCommand(interaction: CommandInteraction) {
+  try {
+    // Vérifier que l'utilisateur est admin
+    const isUserAdmin = await checkAdmin(interaction);
+    if (!isUserAdmin) {
+      return interaction.reply({
+        content: "Seuls les administrateurs peuvent accéder à cette commande.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
+      interaction.guildId!
+    );
+
+    const embed = createInfoEmbed(
+      `${CHANTIER.ICON} Gestion des chantiers`,
+      "Liste des chantiers et options d'administration :"
+    );
+
+    // Grouper les chantiers par statut
+    const chantiersParStatut = chantiers.reduce<Record<string, Chantier[]>>(
+      (acc, chantier) => {
+        if (!acc[chantier.status]) {
+          acc[chantier.status] = [];
+        }
+        acc[chantier.status].push(chantier);
+        return acc;
+      },
+      {}
+    );
+
+    // Ajouter une section pour chaque statut
+    for (const [statut, listeChantiers] of Object.entries(chantiersParStatut)) {
+      const chantiersText = listeChantiers
+        .map((chantier) => {
+          let text = `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`;
+
+          // Ajouter les ressources si présentes
+          if (chantier.resourceCosts && chantier.resourceCosts.length > 0) {
+            const resourcesText = chantier.resourceCosts
+              .map(
+                (rc) =>
+                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
+              )
+              .join(" ");
+            text += ` | ${resourcesText}`;
+          }
+
+          return text;
+        })
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
+        value: chantiersText || "Aucun chantier dans cette catégorie",
+        inline: false,
+      });
+    }
+
+    // Ajouter boutons Ajouter et Supprimer
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId("chantier_admin_add")
+        .setLabel("➕ Ajouter un chantier")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId("chantier_admin_delete")
+        .setLabel("➖ Supprimer un chantier")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [buttonRow],
+      flags: ["Ephemeral"]
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la récupération des chantiers admin :", { error });
+    await interaction.reply({
+      content: ERROR_MESSAGES.CHANTIER_FETCH_ERROR,
+      flags: ["Ephemeral"],
+    });
   }
 }
 
@@ -1112,4 +1202,22 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
       });
     }
   }
+}
+
+/**
+ * Handler wrapper pour le bouton admin "Ajouter un chantier"
+ * Convertit ButtonInteraction en ChatInputCommandInteraction pour handleAddChantierCommand
+ */
+export async function handleAdminAddButton(interaction: ButtonInteraction) {
+  // ButtonInteraction hérite les méthodes nécessaires, on peut le passer directement
+  await handleAddChantierCommand(interaction as any);
+}
+
+/**
+ * Handler wrapper pour le bouton admin "Supprimer un chantier"
+ * Convertit ButtonInteraction en CommandInteraction pour handleDeleteCommand
+ */
+export async function handleAdminDeleteButton(interaction: ButtonInteraction) {
+  // ButtonInteraction hérite les méthodes nécessaires, on peut le passer directement
+  await handleDeleteCommand(interaction as any);
 }

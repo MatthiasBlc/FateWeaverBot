@@ -432,6 +432,38 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton admin "Ajouter un chantier"
+    this.registerHandler("chantier_admin_add", async (interaction) => {
+      try {
+        const { handleAdminAddButton } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
+        await handleAdminAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier admin add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'accès au formulaire d'ajout.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton admin "Supprimer un chantier"
+    this.registerHandler("chantier_admin_delete", async (interaction) => {
+      try {
+        const { handleAdminDeleteButton } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
+        await handleAdminDeleteButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier admin delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'accès au formulaire de suppression.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     this.registerHandler("next_season", async (interaction) => {
       logger.info("🎯 Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
 
