@@ -29,6 +29,7 @@ import projectsRoutes from "./routes/projects";
 import resourcesRoutes from "./routes/resources";
 import skillsRoutes from "./routes/skills";
 import jobRoutes from "./routes/jobs";
+import adminRoutes from "./routes/admin";
 
 const app = express();
 
@@ -161,6 +162,7 @@ app.use("/api/jobs", requireAuthOrInternal, jobRoutes);
 
 // Routes admin (double protection)
 app.use("/api/admin/expeditions", requireAuth, expeditionAdminRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);

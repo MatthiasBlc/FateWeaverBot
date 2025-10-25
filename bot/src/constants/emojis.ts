@@ -20,5 +20,6 @@ export const {
   PROJECT,
   LOCATION,
   RESOURCES,
-  RESOURCES_EXTENDED
+  RESOURCES_EXTENDED,
+  getAvailableEmojiList
 } = emojis;

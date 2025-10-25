@@ -633,3 +633,15 @@ model FishingLootEntry {
   @@index([paTable, isActive])
   @@map("fishing_loot_entries")
 }
+
+model EmojiConfig {
+  id        Int      @id @default(autoincrement())
+  type      String // "resource", "capability", "action", "custom", etc.
+  key       String // "WOOD_OAK", "BOIS_CHENE", etc.
+  emoji     String // "🌲"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([type, key])
+  @@map("emoji_configs")
+}

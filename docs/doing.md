@@ -25,3 +25,6 @@ Boutons :
     - Doit avoir la même structure de sélection que pour ajouter une compétence avec character admin. Les catégories sont : collecter, artisanat, science
   - Supprimer
     - Doit avoir la même structure de sélection que pour retirer une compétence avec character admin
+
+
+

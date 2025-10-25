@@ -12,6 +12,7 @@ import {
 import type { Character } from "./character-admin.types";
 import { getHungerLevelText } from "../../utils/hunger";
 import { STATUS, HUNGER, CHARACTER, ACTIONS, CAPABILITIES } from "../../constants/emojis";
+import { emojiCache } from "../../services/emoji-cache";
 
 // --- Custom IDs --- //
 export const CHARACTER_ADMIN_CUSTOM_IDS = {
@@ -246,6 +247,7 @@ export interface Capability {
   name: string;
   description?: string;
   costPA: number;
+  emojiTag?: string;
 }
 
 /**
@@ -273,17 +275,25 @@ export function createCapabilitySelectMenu(
     .setMinValues(0)
     .setMaxValues(availableCapabilities.length)
     .addOptions(
-      availableCapabilities.map((capability) =>
-        new StringSelectMenuOptionBuilder()
-          .setLabel(`${capability.name} (${capability.costPA} PA)`)
+      availableCapabilities.map((capability) => {
+        // Get emoji from cache if emojiTag exists, otherwise use generic
+        const emoji = capability.emojiTag
+          ? emojiCache.getEmoji("capability", capability.emojiTag)
+          : CAPABILITIES.GENERIC;
+
+        // Only add emoji if not placeholder
+        const displayEmoji = emoji !== "📦" ? emoji : "";
+
+        return new StringSelectMenuOptionBuilder()
+          .setLabel(`${displayEmoji} ${capability.name} (${capability.costPA} PA)`.trim())
           .setDescription(
             capability.description
               ? capability.description.substring(0, 100)
               : "Aucune description"
           )
           .setValue(capability.id)
-          .setDefault(currentIds.has(capability.id))
-      )
+          .setDefault(currentIds.has(capability.id));
+      })
     );
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(

@@ -676,6 +676,70 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le menu des emojis
+    this.registerHandler("element_category_emoji", async (interaction) => {
+      try {
+        const { handleEmojiMenuButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiMenuButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji menu button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu des emojis.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour l'ajout d'emoji
+    this.registerHandler("emoji_add", async (interaction) => {
+      try {
+        const { handleEmojiAddButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la liste des emojis
+    this.registerHandler("emoji_list", async (interaction) => {
+      try {
+        const { handleEmojiListButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiListButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji list button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage de la liste.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la suppression d'emoji
+    this.registerHandler("emoji_remove", async (interaction) => {
+      try {
+        const { handleEmojiRemoveButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour le bouton "Nouvelle Capacité"
     this.registerHandler("new_element_capability", async (interaction) => {
       try {
@@ -941,6 +1005,39 @@ export class ButtonHandler {
         await handleCancelDeleteButton(interaction);
       } catch (error) {
         logger.error("Error handling cancel delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'annulation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== EMOJI ADMIN HANDLERS ===================
+    // Gestionnaire pour confirmer la suppression d'un emoji
+    this.registerHandlerByPrefix("confirm_delete_emoji_", async (interaction) => {
+      try {
+        const { handleEmojiDeleteConfirmation } = await import(
+          "../features/admin/emoji-admin.handlers.js"
+        );
+        await handleEmojiDeleteConfirmation(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete emoji button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour annuler la suppression d'un emoji
+    this.registerHandlerByPrefix("cancel_delete_emoji_", async (interaction) => {
+      try {
+        const { handleEmojiDeleteCancellation } = await import(
+          "../features/admin/emoji-admin.handlers.js"
+        );
+        await handleEmojiDeleteCancellation(interaction);
+      } catch (error) {
+        logger.error("Error handling cancel delete emoji button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de l'annulation.",
           flags: ["Ephemeral"],

@@ -191,6 +191,15 @@ client.once("clientReady", async () => {
     "✅ Bot prêt. Les commandes sont déployées via le script deploy-commands.ts"
   );
 
+  // Initialize emoji cache
+  try {
+    const { emojiCache } = await import("./services/emoji-cache.js");
+    await emojiCache.refresh();
+    logger.info("✅ Emoji cache loaded");
+  } catch (error) {
+    logger.error("❌ Failed to initialize emoji cache:", { error });
+  }
+
   // Initialize cron jobs
   try {
     const { setupDailyMessagesJob } = await import("./cron/daily-messages.cron.js");

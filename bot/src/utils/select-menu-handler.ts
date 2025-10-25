@@ -474,6 +474,87 @@ export class SelectMenuHandler {
       }
     });
 
+    // =================== EMOJI ADMIN HANDLERS ===================
+    // Gestionnaire pour la sélection du type d'emoji (ajout)
+    this.registerHandler("emoji_type_select", async (interaction) => {
+      try {
+        const { handleEmojiTypeSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection du type d'emoji (suppression)
+    this.registerHandler("emoji_remove_type_select", async (interaction) => {
+      try {
+        const { handleEmojiRemoveTypeSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un emoji spécifique pour suppression
+    this.registerHandlerByPrefix("emoji_remove_select:", async (interaction) => {
+      try {
+        const { handleEmojiRemoveSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de catégorie d'emoji pour une ressource
+    this.registerHandler("resource_emoji_type_select", async (interaction) => {
+      try {
+        const { handleResourceEmojiCategorySelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleResourceEmojiCategorySelect(interaction);
+      } catch (error) {
+        logger.error("Error handling resource emoji category select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des emojis.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un emoji spécifique pour une ressource
+    this.registerHandlerByPrefix("resource_emoji_select:", async (interaction) => {
+      try {
+        const { handleResourceEmojiSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleResourceEmojiSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling resource emoji select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== EDIT/DELETE SELECT MENUS ===================
     // Gestionnaire pour la sélection d'une ressource à modifier
     this.registerHandler("select_resource_to_edit", async (interaction) => {

@@ -384,7 +384,8 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de création de ressource
-    this.registerHandler("new_resource_modal", async (interaction) => {
+    // Gestionnaire pour le modal de création de ressource avec emojis sélectionnés
+    const handleNewResourceModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleResourceModalSubmit } = await import(
           "../features/admin/new-element-admin.handlers.js"
@@ -397,7 +398,9 @@ export class ModalHandler {
           flags: ["Ephemeral"],
         });
       }
-    });
+    };
+    // Enregistrer pour le format new_resource_modal:emoji
+    this.handlers.set("new_resource_modal", handleNewResourceModalAny);
 
     // Gestionnaire pour le modal de création d'objet
     this.registerHandler("new_object_modal", async (interaction) => {
@@ -430,6 +433,33 @@ export class ModalHandler {
         });
       }
     });
+
+    // =================== EMOJI MODALS HANDLERS ===================
+    // Gestionnaire pour le modal d'ajout d'emoji (format: emoji_add_modal:resource)
+    // Utilise un préfixe pour supporter tous les types (resource, capability, etc.)
+    const handleEmojiAddModalAny = async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleEmojiAddModal } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiAddModal(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji add modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    };
+
+    // Enregistrer pour tous les types
+    this.handlers.set("emoji_add_modal:resource", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:capability", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:object", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:skill", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:action", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:custom", handleEmojiAddModalAny);
+
 
     // =================== OBJECT BONUS MODALS HANDLERS ===================
     // Gestionnaire pour le modal de bonus de compétence sur objet

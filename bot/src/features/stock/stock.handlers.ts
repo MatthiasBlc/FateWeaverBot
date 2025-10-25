@@ -9,6 +9,7 @@ import { getActiveCharacterForUser } from "../../utils/character";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
 import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 import { LOCATION, RESOURCES, STATUS } from "../../constants/emojis";
+import { getResourceEmoji } from "../../services/emoji-cache";
 
 interface ResourceStock {
   id: number;
@@ -107,7 +108,8 @@ export async function handleViewStockCommand(interaction: any) {
 
       // Ajouter les ressources trouvées
       for (const resource of groupResources) {
-        resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+        const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
+        resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);
       }
 
       // Ajouter séparateur visuel entre groupes (sauf après le dernier)
@@ -127,7 +129,8 @@ export async function handleViewStockCommand(interaction: any) {
         resourceLines.push(''); // Séparateur avant non-catégorisées
       }
       for (const resource of uncategorized) {
-        resourceLines.push(`${resource.resourceType.emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+        const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
+        resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);
       }
     }
 
