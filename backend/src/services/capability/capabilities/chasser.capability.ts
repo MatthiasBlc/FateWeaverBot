@@ -28,9 +28,9 @@ export class ChasserCapability extends BaseCapability {
     if (foodAmount === 0) {
       return `${CAPABILITIES.HUNT} Malheureusement, ${characterName} est rentré de la chasse les mains vides…`;
     } else if (foodAmount <= 8) {
-      return `${CAPABILITIES.HUNT} Festin en perspective ! ${characterName} est rentré de la chasse avec ${foodAmount} ${RESOURCES.FOOD}.`;
-    } else {
       return `${CAPABILITIES.HUNT} ${characterName} est revenu de la chasse avec ${foodAmount} ${RESOURCES.FOOD} !`;
+    } else {
+      return `${CAPABILITIES.HUNT} Festin en perspective ! ${characterName} est rentré de la chasse avec ${foodAmount} ${RESOURCES.FOOD}.`;
     }
   }
 
