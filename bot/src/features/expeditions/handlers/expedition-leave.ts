@@ -98,7 +98,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     if (expeditionTerminated) {
       // Update the message to show expedition was terminated
       await interaction.update({
-        content: `✅ Vous avez quitté l'expédition avec succès!\n\n🏁 **L'expédition a été terminée automatiquement** car vous étiez le dernier membre. Toute la nourriture restante a été restituée à la ville.`,
+        content: `✅ Vous avez quitté l'expédition avec succès!\n\n🏁 **L'expédition a été terminée automatiquement** car vous étiez le dernier membre. Tous les repas restants ont été restitués à la ville.`,
         embeds: [],
         components: [],
       });

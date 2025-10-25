@@ -33,7 +33,7 @@ export function createExpeditionCreationModal() {
 
   const nourritureInput = new TextInputBuilder()
     .setCustomId("expedition_nourriture_input")
-    .setLabel("🍖 Nourriture à emporter")
+    .setLabel("🍖 Repas à emporter")
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("Quantité de nourriture (ex: 25)")
@@ -129,13 +129,13 @@ export function createExpeditionTransferModal(expeditionId: string, currentFoodS
 
 /**
  * Modal pour saisir le montant de ressources à transférer (direction déjà choisie)
- * Supporte Vivres ET Nourriture dans une seule opération
+ * Supporte Vivres ET Repas dans une seule opération
  */
 export function createExpeditionTransferAmountModal(
   expeditionId: string,
   direction: "to_town" | "from_town",
   maxVivres: number,
-  maxNourriture: number
+  maxRepas: number
 ) {
   const modal = new ModalBuilder()
     .setCustomId(`expedition_transfer_amount_modal_${expeditionId}_${direction}`)
@@ -152,10 +152,10 @@ export function createExpeditionTransferAmountModal(
 
   const nourritureInput = new TextInputBuilder()
     .setCustomId("transfer_nourriture_input")
-    .setLabel("🍖 Nourriture à transférer")
+    .setLabel("🍖 Repas à transférer")
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
-    .setPlaceholder(`Quantité (max: ${maxNourriture}, laissez vide si 0)`)
+    .setPlaceholder(`Quantité (max: ${maxRepas}, laissez vide si 0)`)
     .setMinLength(1)
     .setMaxLength(10);
 
@@ -163,6 +163,80 @@ export function createExpeditionTransferAmountModal(
   const nourritureRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nourritureInput);
 
   modal.addComponents([vivresRow, nourritureRow]);
+
+  return modal;
+}
+
+/**
+ * Modal pour modifier uniquement la durée d'une expédition (admin)
+ */
+export function createExpeditionDurationModal(expeditionId: string, currentDuration: number) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_duration_modal_${expeditionId}`)
+    .setTitle("Modifier la durée");
+
+  const durationInput = new TextInputBuilder()
+    .setCustomId("duration_input")
+    .setLabel("Durée (jours)")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setValue(currentDuration.toString())
+    .setPlaceholder(`Durée actuelle: ${currentDuration} jours`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
+
+  modal.addComponents([firstRow]);
+
+  return modal;
+}
+
+/**
+ * Modal pour ajouter une quantité de ressource à une expédition (admin)
+ */
+export function createExpeditionResourceAddModal(expeditionId: string, resourceTypeId: number, resourceName: string) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_resource_add_modal_${expeditionId}_${resourceTypeId}`)
+    .setTitle(`Ajouter ${resourceName}`);
+
+  const quantityInput = new TextInputBuilder()
+    .setCustomId("resource_quantity_input")
+    .setLabel("Quantité")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder("Quantité à ajouter (ex: 10)")
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput);
+
+  modal.addComponents([firstRow]);
+
+  return modal;
+}
+
+/**
+ * Modal pour modifier la quantité d'une ressource d'une expédition (admin)
+ */
+export function createExpeditionResourceModifyModal(expeditionId: string, resourceTypeId: number, resourceName: string, currentQuantity: number) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_resource_modify_modal_${expeditionId}_${resourceTypeId}`)
+    .setTitle(`Modifier ${resourceName}`);
+
+  const quantityInput = new TextInputBuilder()
+    .setCustomId("resource_quantity_input")
+    .setLabel("Nouvelle quantité")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setValue(currentQuantity.toString())
+    .setPlaceholder(`Quantité actuelle: ${currentQuantity}`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput);
+
+  modal.addComponents([firstRow]);
 
   return modal;
 }

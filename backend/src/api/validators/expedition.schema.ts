@@ -3,9 +3,16 @@ import { z } from "zod";
 // POST /expedition
 export const CreateExpeditionSchema = z.object({
   body: z.object({
-    townId: z.string().cuid(),
-    leaderId: z.string().cuid(),
-    direction: z.string().min(1).optional()
+    name: z.string().min(1),
+    townId: z.string().cuid().optional(),
+    discordGuildId: z.string().optional(),
+    initialResources: z.array(z.object({
+      resourceTypeName: z.string(),
+      quantity: z.number().int().positive()
+    })),
+    duration: z.union([z.number().int().positive(), z.string()]), // Accept both number and string
+    createdBy: z.string().optional(), // For internal requests
+    initialDirection: z.string().min(1).optional()
   })
 });
 

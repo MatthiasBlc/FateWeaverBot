@@ -27,7 +27,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
       ) {
         await interaction.reply({
           content:
-            "❌ Vous devez avoir un personnage actif pour transférer de la nourriture. Utilisez d'abord la commande `/start` pour créer un personnage.",
+            "❌ Vous devez avoir un personnage actif pour transférer de repas. Utilisez d'abord la commande `/start` pour créer un personnage.",
           flags: ["Ephemeral"],
         });
         return;
@@ -39,7 +39,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
     if (!character) {
       await interaction.reply({
         content:
-          "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+          "❌ Vous devez avoir un personnage actif pour transférer de repas.",
         flags: ["Ephemeral"],
       });
       return;
@@ -76,7 +76,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
     // Check if expedition is in PLANNING status (only time you can transfer)
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Vous ne pouvez pas transférer de nourriture dans une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]
+        content: `❌ Vous ne pouvez pas transférer de repas dans une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]
           }**.`,
         flags: ["Ephemeral"],
       });
@@ -102,13 +102,13 @@ export async function handleExpeditionTransferButton(interaction: any) {
       .addOptions([
         {
           label: "Vers la ville",
-          description: `Ajouter de la nourriture à la ville (stock actuel: ${townResponse.foodStock})`,
+          description: `Ajouter de repas à la ville (stock actuel: ${townResponse.foodStock})`,
           value: "to_town",
           emoji: "🏛️",
         },
         {
           label: "Vers l'expédition",
-          description: `Ajouter de la nourriture à l'expédition (stock actuel: ${currentExpedition.foodStock})`,
+          description: `Ajouter de repas à l'expédition (stock actuel: ${currentExpedition.foodStock})`,
           value: "from_town",
           emoji: "⛺",
         },
@@ -119,7 +119,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
     );
 
     await interaction.reply({
-      content: "Choisissez la direction du transfert de nourriture :",
+      content: "Choisissez la direction du transfert de repas :",
       components: [row],
       flags: ["Ephemeral"],
     });
@@ -134,7 +134,7 @@ export async function handleExpeditionTransferButton(interaction: any) {
   } catch (error) {
     logger.error("Error in expedition transfer button:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'ouverture du transfert de nourriture: ${error instanceof Error ? error.message : "Erreur inconnue"
+      content: `❌ Erreur lors de l'ouverture du transfert de repas: ${error instanceof Error ? error.message : "Erreur inconnue"
         }`,
       flags: ["Ephemeral"],
     });
@@ -165,7 +165,7 @@ export async function handleExpeditionTransferDirectionSelect(
       ) {
         await interaction.reply({
           content:
-            "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+            "❌ Vous devez avoir un personnage actif pour transférer de repas.",
           flags: ["Ephemeral"],
         });
         return;
@@ -177,7 +177,7 @@ export async function handleExpeditionTransferDirectionSelect(
     if (!character) {
       await interaction.reply({
         content:
-          "❌ Vous devez avoir un personnage actif pour transférer de la nourriture.",
+          "❌ Vous devez avoir un personnage actif pour transférer de repas.",
         flags: ["Ephemeral"],
       });
       return;
@@ -248,11 +248,11 @@ export async function handleExpeditionTransferDirectionSelect(
       return;
     }
 
-    // Récupérer les stocks de ressources (Vivres + Nourriture) pour l'expédition et la ville
+    // Récupérer les stocks de ressources (Vivres + Repas) pour l'expédition et la ville
     let expeditionVivresStock = 0;
-    let expeditionNourritureStock = 0;
+    let expeditionRepasStock = 0;
     let townVivresStock = 0;
-    let townNourritureStock = 0;
+    let townRepasStock = 0;
 
     try {
       // Stocks de l'expédition
@@ -263,9 +263,9 @@ export async function handleExpeditionTransferDirectionSelect(
       expeditionVivresStock =
         expeditionResources.find((r: any) => r.resourceType.name === "Vivres")
           ?.quantity || 0;
-      expeditionNourritureStock =
+      expeditionRepasStock =
         expeditionResources.find(
-          (r: any) => r.resourceType.name === "Nourriture"
+          (r: any) => r.resourceType.name === "Repas"
         )?.quantity || 0;
 
       // Stocks de la ville
@@ -276,8 +276,8 @@ export async function handleExpeditionTransferDirectionSelect(
       townVivresStock =
         townResources.find((r: any) => r.resourceType.name === "Vivres")
           ?.quantity || 0;
-      townNourritureStock =
-        townResources.find((r: any) => r.resourceType.name === "Nourriture")
+      townRepasStock =
+        townResources.find((r: any) => r.resourceType.name === "Repas")
           ?.quantity || 0;
     } catch (error) {
       logger.error("Error fetching resource stocks for transfer:", error);
@@ -292,27 +292,27 @@ export async function handleExpeditionTransferDirectionSelect(
     // Déterminer les maximums selon la direction
     const maxVivres =
       selectedDirection === "to_town" ? expeditionVivresStock : townVivresStock;
-    const maxNourriture =
+    const maxRepas =
       selectedDirection === "to_town"
-        ? expeditionNourritureStock
-        : townNourritureStock;
+        ? expeditionRepasStock
+        : townRepasStock;
 
     logger.info("Creating transfer modal with multi-resource support", {
       expeditionId: currentExpedition.id,
       selectedDirection,
       maxVivres,
-      maxNourriture,
+      maxRepas,
       expeditionVivresStock,
-      expeditionNourritureStock,
+      expeditionRepasStock,
       townVivresStock,
-      townNourritureStock,
+      townRepasStock,
     });
 
     const modal = createExpeditionTransferAmountModal(
       currentExpedition.id,
       selectedDirection,
       maxVivres,
-      maxNourriture
+      maxRepas
     );
 
     await interaction.showModal(modal);
@@ -323,7 +323,7 @@ export async function handleExpeditionTransferDirectionSelect(
       characterName: character.name,
       selectedDirection,
       maxVivres,
-      maxNourriture,
+      maxRepas,
     });
   } catch (error) {
     logger.error("Error in expedition transfer direction select:", { error });
@@ -336,7 +336,7 @@ export async function handleExpeditionTransferDirectionSelect(
 }
 
 /**
- * Gestionnaire pour le modal de transfert de nourriture
+ * Gestionnaire pour le modal de transfert de repas
  */
 export async function handleExpeditionTransferModal(
   interaction: ModalSubmitInteraction
@@ -354,7 +354,7 @@ export async function handleExpeditionTransferModal(
       ) {
         await interaction.reply({
           content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de nourriture.",
+            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de repas.",
           flags: ["Ephemeral"],
         });
         return;
@@ -374,7 +374,7 @@ export async function handleExpeditionTransferModal(
     // Get form inputs for both resources
     const vivresValue =
       interaction.fields.getTextInputValue("transfer_vivres_input") || "0";
-    const nourritureValue =
+    const repasValue =
       interaction.fields.getTextInputValue("transfer_nourriture_input") || "0";
 
     // Get direction from modal custom ID (format: expedition_transfer_amount_modal_{expeditionId}_{direction})
@@ -383,7 +383,7 @@ export async function handleExpeditionTransferModal(
     logger.info("Modal parsing debug", {
       modalCustomId,
       vivresValue,
-      nourritureValue,
+      repasValue,
     });
 
     // Extract direction from the end of the ID
@@ -412,9 +412,9 @@ export async function handleExpeditionTransferModal(
 
     // Parse and validate amounts
     const vivresAmount = parseInt(vivresValue, 10) || 0;
-    const nourritureAmount = parseInt(nourritureValue, 10) || 0;
+    const repasAmount = parseInt(repasValue, 10) || 0;
 
-    if (vivresAmount < 0 || nourritureAmount < 0) {
+    if (vivresAmount < 0 || repasAmount < 0) {
       await interaction.reply({
         content: "❌ Les quantités doivent être positives ou nulles.",
         flags: ["Ephemeral"],
@@ -422,10 +422,10 @@ export async function handleExpeditionTransferModal(
       return;
     }
 
-    if (vivresAmount === 0 && nourritureAmount === 0) {
+    if (vivresAmount === 0 && repasAmount === 0) {
       await interaction.reply({
         content:
-          "❌ Vous devez transférer au moins une ressource (Vivres ou Nourriture).",
+          "❌ Vous devez transférer au moins une ressource (Vivres ou Repas).",
         flags: ["Ephemeral"],
       });
       return;
@@ -513,15 +513,15 @@ export async function handleExpeditionTransferModal(
     const expeditionVivres =
       expeditionResources.find((r: any) => r.resourceType.name === "Vivres")
         ?.quantity || 0;
-    const expeditionNourriture =
+    const expeditionRepas =
       expeditionResources.find(
-        (r: any) => r.resourceType.name === "Nourriture"
+        (r: any) => r.resourceType.name === "Repas"
       )?.quantity || 0;
     const townVivres =
       townResources.find((r: any) => r.resourceType.name === "Vivres")
         ?.quantity || 0;
-    const townNourriture =
-      townResources.find((r: any) => r.resourceType.name === "Nourriture")
+    const townRepas =
+      townResources.find((r: any) => r.resourceType.name === "Repas")
         ?.quantity || 0;
 
     // Validate transfer based on direction
@@ -534,9 +534,9 @@ export async function handleExpeditionTransferModal(
         });
         return;
       }
-      if (nourritureAmount > expeditionNourriture) {
+      if (repasAmount > expeditionRepas) {
         await interaction.reply({
-          content: `❌ L'expédition n'a que ${expeditionNourriture} nourriture. Vous ne pouvez pas en retirer ${nourritureAmount}.`,
+          content: `❌ L'expédition n'a que ${expeditionRepas} repas. Vous ne pouvez pas en retirer ${repasAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -550,9 +550,9 @@ export async function handleExpeditionTransferModal(
         });
         return;
       }
-      if (nourritureAmount > townNourriture) {
+      if (repasAmount > townRepas) {
         await interaction.reply({
-          content: `❌ La ville n'a que ${townNourriture} nourriture. Vous ne pouvez pas en transférer ${nourritureAmount}.`,
+          content: `❌ La ville n'a que ${townRepas} repas. Vous ne pouvez pas en transférer ${repasAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -561,19 +561,19 @@ export async function handleExpeditionTransferModal(
 
     // Get resource type IDs
     let vivresTypeId: number | undefined;
-    let nourritureTypeId: number | undefined;
+    let repasTypeId: number | undefined;
 
     try {
       const resourceTypes = await apiService.getResourceTypes();
       vivresTypeId = resourceTypes.find(
         (rt: any) => rt.name === "Vivres"
       )?.id;
-      nourritureTypeId = resourceTypes.find(
-        (rt: any) => rt.name === "Nourriture"
+      repasTypeId = resourceTypes.find(
+        (rt: any) => rt.name === "Repas"
       )?.id;
 
-      if (!vivresTypeId || !nourritureTypeId) {
-        throw new Error("Types de ressources Vivres ou Nourriture introuvables");
+      if (!vivresTypeId || !repasTypeId) {
+        throw new Error("Types de ressources Vivres ou Repas introuvables");
       }
     } catch (error) {
       logger.error("Error fetching resource types:", error);
@@ -616,22 +616,22 @@ export async function handleExpeditionTransferModal(
         });
       }
 
-      // Transfer Nourriture if amount > 0
-      if (nourritureAmount > 0 && nourritureTypeId) {
+      // Transfer Repas if amount > 0
+      if (repasAmount > 0 && repasTypeId) {
         await apiService.transferResource(
           fromLocationType,
           fromLocationId,
           toLocationType,
           toLocationId,
-          nourritureTypeId,
-          nourritureAmount
+          repasTypeId,
+          repasAmount
         );
         transferredResources.push({
-          name: "Nourriture",
-          amount: nourritureAmount,
+          name: "Repas",
+          amount: repasAmount,
         });
-        logger.info("Nourriture transfer successful", {
-          amount: nourritureAmount,
+        logger.info("Repas transfer successful", {
+          amount: repasAmount,
           direction: directionValue,
         });
       }
@@ -643,7 +643,7 @@ export async function handleExpeditionTransferModal(
         expeditionId,
         characterId: character.id,
         vivresAmount,
-        nourritureAmount,
+        repasAmount,
         direction: directionValue,
       });
       await interaction.reply({
@@ -670,16 +670,16 @@ export async function handleExpeditionTransferModal(
         updatedExpeditionResources.find(
           (r: any) => r.resourceType.name === "Vivres"
         )?.quantity || 0;
-      const updatedExpeditionNourriture =
+      const updatedExpeditionRepas =
         updatedExpeditionResources.find(
-          (r: any) => r.resourceType.name === "Nourriture"
+          (r: any) => r.resourceType.name === "Repas"
         )?.quantity || 0;
       const updatedTownVivres =
         updatedTownResources.find((r: any) => r.resourceType.name === "Vivres")
           ?.quantity || 0;
-      const updatedTownNourriture =
+      const updatedTownRepas =
         updatedTownResources.find(
-          (r: any) => r.resourceType.name === "Nourriture"
+          (r: any) => r.resourceType.name === "Repas"
         )?.quantity || 0;
 
       // Create transfer summary
@@ -694,12 +694,12 @@ export async function handleExpeditionTransferModal(
       ).addFields(
         {
           name: "📦 Stock de l'expédition",
-          value: `🍞 Vivres: ${updatedExpeditionVivres}\n🍖 Nourriture: ${updatedExpeditionNourriture}`,
+          value: `🍞 Vivres: ${updatedExpeditionVivres}\n🍖 Repas: ${updatedExpeditionRepas}`,
           inline: true,
         },
         {
           name: "🏛️ Stock de la ville",
-          value: `🍞 Vivres: ${updatedTownVivres}\n🍖 Nourriture: ${updatedTownNourriture}`,
+          value: `🍞 Vivres: ${updatedTownVivres}\n🍖 Repas: ${updatedTownRepas}`,
           inline: true,
         },
         {
@@ -732,7 +732,7 @@ export async function handleExpeditionTransferModal(
         characterId: character.id,
         characterName: character.name,
         vivresAmount,
-        nourritureAmount,
+        repasAmount,
         direction: directionValue,
         transferredResources,
       });

@@ -68,7 +68,7 @@ export async function handleViewStockCommand(interaction: any) {
     // Définir l'ordre des catégories avec leurs ressources
     const categories = [
       {
-        name: 'Nourriture',
+        name: 'Repas',
         icon: HUNGER.ICON,
         resources: ['Vivres', 'Repas']
       },

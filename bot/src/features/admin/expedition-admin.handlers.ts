@@ -7,7 +7,12 @@ import {
   StringSelectMenuBuilder,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { createExpeditionModifyModal } from "../../modals/expedition-modals";
+import {
+  createExpeditionModifyModal,
+  createExpeditionDurationModal,
+  createExpeditionResourceAddModal,
+  createExpeditionResourceModifyModal
+} from "../../modals/expedition-modals";
 import { ExpeditionAPIService } from "../../services/api/expedition-api.service";
 import { Character, Expedition } from "../../types/entities";
 import { apiService } from "../../services/api";
@@ -15,6 +20,16 @@ import { apiService } from "../../services/api";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
 import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
 import { logger } from "../../services/logger";
+import {
+  handleExpeditionAdminResourceAddSelect,
+  handleExpeditionResourceAddModal,
+  handleExpeditionAdminResourceModifySelect,
+  handleExpeditionResourceModifyModal,
+  handleExpeditionAdminResourceDeleteSelect,
+  handleExpeditionAdminResourceDeleteConfirm,
+  handleExpeditionAdminResourceDeleteCancel,
+  handleExpeditionDurationModal
+} from "./expedition-admin-resource-handlers";
 
 export async function handleExpeditionAdminCommand(interaction: ChatInputCommandInteraction) {
   try {
@@ -79,16 +94,24 @@ export async function handleExpeditionAdminSelect(interaction: any) {
     }
 
     // Create admin buttons
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+    const buttonRow1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId(`expedition_admin_modify_${expeditionId}`)
-          .setLabel("Modifier durée/stock")
+          .setCustomId(`expedition_admin_modify_duration_${expeditionId}`)
+          .setLabel("Modifier durée")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`expedition_admin_resources_${expeditionId}`)
+          .setLabel("Gérer ressources")
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId(`expedition_admin_members_${expeditionId}`)
           .setLabel("Gérer membres")
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+    const buttonRow2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
         new ButtonBuilder()
           .setCustomId(`expedition_admin_return_${expeditionId}`)
           .setLabel("Retour forcé")
@@ -110,7 +133,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
 
     await interaction.update({
       embeds: [embed],
-      components: [buttonRow],
+      components: [buttonRow1, buttonRow2],
     });
 
   } catch (error) {
@@ -119,7 +142,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
   }
 }
 
-export async function handleExpeditionAdminModify(interaction: any, expeditionId: string) {
+export async function handleExpeditionAdminModifyDuration(interaction: any, expeditionId: string) {
   try {
     // Get expedition details
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
@@ -128,12 +151,12 @@ export async function handleExpeditionAdminModify(interaction: any, expeditionId
       return;
     }
 
-    // Show modification modal with current values
-    const modal = createExpeditionModifyModal(expeditionId, expedition.duration, expedition.foodStock ?? 0);
+    // Show duration modification modal
+    const modal = createExpeditionDurationModal(expeditionId, expedition.duration);
     await interaction.showModal(modal);
 
   } catch (error) {
-    logger.error("Error in expedition admin modify:", { error });
+    logger.error("Error in expedition admin modify duration:", { error });
       await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'ouverture du formulaire de modification.");
   }
 }
@@ -397,13 +420,199 @@ function getStatusEmoji(status: string): string {
   }
 }
 
+export async function handleExpeditionAdminResources(interaction: any, expeditionId: string) {
+  try {
+    // Get expedition details
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
+    if (!expedition) {
+      await replyEphemeral(interaction, "❌ Expédition non trouvée.");
+      return;
+    }
+
+    // Create resource management buttons
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`expedition_admin_resource_add_${expeditionId}`)
+          .setLabel("➕ Ajouter")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`expedition_admin_resource_modify_${expeditionId}`)
+          .setLabel("✏️ Modifier")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`expedition_admin_resource_delete_${expeditionId}`)
+          .setLabel("🗑️ Supprimer")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+    // Get expedition resources
+    const resources = await apiService.resources.getResourcesForLocation("EXPEDITION", expeditionId);
+    const resourceList = resources && resources.length > 0
+      ? resources.map((r: any) => `• ${r.resourceType?.name || 'Inconnu'}: ${r.quantity}`).join('\n')
+      : 'Aucune ressource';
+
+    const embed = createWarningEmbed(
+      `📦 Gestion des ressources - ${expedition.name}`,
+      `**Ressources actuelles:**\n${resourceList}`
+    );
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [buttonRow],
+      flags: ["Ephemeral"],
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition admin resources:", { error });
+    await replyEphemeral(interaction, "❌ Une erreur est survenue lors de l'affichage de la gestion des ressources.");
+  }
+}
+
+export async function handleExpeditionAdminResourceAdd(interaction: any, expeditionId: string) {
+  try {
+    // Get all resource types
+    const resourceTypes = await apiService.getResourceTypes();
+
+    if (!resourceTypes || resourceTypes.length === 0) {
+      await replyEphemeral(interaction, "❌ Aucun type de ressource trouvé.");
+      return;
+    }
+
+    // Create dropdown for resource selection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_admin_resource_add_select_${expeditionId}`)
+      .setPlaceholder("Choisissez une ressource à ajouter")
+      .addOptions(
+        resourceTypes.map((rt: any) => ({
+          label: rt.name,
+          description: rt.description || 'Aucune description',
+          value: rt.id.toString(),
+          emoji: rt.emoji || '📦',
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    const embed = createInfoEmbed(
+      "➕ Ajouter une ressource",
+      "Sélectionnez la ressource à ajouter à l'expédition"
+    );
+
+    await interaction.update({
+      embeds: [embed],
+      components: [row],
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition admin resource add:", { error });
+    await replyEphemeral(interaction, "❌ Erreur lors de l'ajout de ressource.");
+  }
+}
+
+export async function handleExpeditionAdminResourceModify(interaction: any, expeditionId: string) {
+  try {
+    // Get expedition resources
+    const resources = await apiService.resources.getResourcesForLocation("EXPEDITION", expeditionId);
+
+    if (!resources || resources.length === 0) {
+      await replyEphemeral(interaction, "❌ Aucune ressource trouvée pour cette expédition.");
+      return;
+    }
+
+    // Create dropdown for resource selection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_admin_resource_modify_select_${expeditionId}`)
+      .setPlaceholder("Choisissez une ressource à modifier")
+      .addOptions(
+        resources.map((r: any) => ({
+          label: `${r.resourceType?.name || 'Inconnu'} (${r.quantity})`,
+          description: `ID: ${r.resourceTypeId} - Stock actuel: ${r.quantity}`,
+          value: `${r.resourceTypeId}`,
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    const embed = createInfoEmbed(
+      "✏️ Modifier une ressource",
+      "Sélectionnez la ressource dont vous voulez modifier la quantité"
+    );
+
+    await interaction.update({
+      embeds: [embed],
+      components: [row],
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition admin resource modify:", { error });
+    await replyEphemeral(interaction, "❌ Erreur lors de la modification de ressource.");
+  }
+}
+
+export async function handleExpeditionAdminResourceDelete(interaction: any, expeditionId: string) {
+  try {
+    // Get expedition resources
+    const resources = await apiService.resources.getResourcesForLocation("EXPEDITION", expeditionId);
+
+    if (!resources || resources.length === 0) {
+      await replyEphemeral(interaction, "❌ Aucune ressource trouvée pour cette expédition.");
+      return;
+    }
+
+    // Create dropdown for resource selection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_admin_resource_delete_select_${expeditionId}`)
+      .setPlaceholder("Choisissez une ressource à supprimer")
+      .addOptions(
+        resources.map((r: any) => ({
+          label: `${r.resourceType?.name || 'Inconnu'} (${r.quantity})`,
+          description: `Stock: ${r.quantity} - Sera complètement supprimé`,
+          value: `${r.resourceTypeId}`,
+        }))
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    const embed = createErrorEmbed(
+      "🗑️ Supprimer une ressource",
+      "⚠️ La ressource et tout son stock seront supprimés de l'expédition"
+    );
+
+    await interaction.update({
+      embeds: [embed],
+      components: [row],
+    });
+
+  } catch (error) {
+    logger.error("Error in expedition admin resource delete:", { error });
+    await replyEphemeral(interaction, "❌ Erreur lors de la suppression de ressource.");
+  }
+}
+
 export async function handleExpeditionAdminButton(interaction: any) {
   try {
     const customId = interaction.customId;
 
-    if (customId.startsWith("expedition_admin_modify_")) {
-      const expeditionId = customId.replace("expedition_admin_modify_", "");
-      await handleExpeditionAdminModify(interaction, expeditionId);
+    if (customId.startsWith("expedition_admin_modify_duration_")) {
+      const expeditionId = customId.replace("expedition_admin_modify_duration_", "");
+      await handleExpeditionAdminModifyDuration(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_resources_")) {
+      const expeditionId = customId.replace("expedition_admin_resources_", "");
+      await handleExpeditionAdminResources(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_resource_add_")) {
+      const expeditionId = customId.replace("expedition_admin_resource_add_", "");
+      await handleExpeditionAdminResourceAdd(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_resource_modify_")) {
+      const expeditionId = customId.replace("expedition_admin_resource_modify_", "");
+      await handleExpeditionAdminResourceModify(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_resource_delete_confirm_")) {
+      await handleExpeditionAdminResourceDeleteConfirm(interaction);
+    } else if (customId.startsWith("expedition_admin_resource_delete_cancel_")) {
+      await handleExpeditionAdminResourceDeleteCancel(interaction);
+    } else if (customId.startsWith("expedition_admin_resource_delete_")) {
+      const expeditionId = customId.replace("expedition_admin_resource_delete_", "");
+      await handleExpeditionAdminResourceDelete(interaction, expeditionId);
     } else if (customId.startsWith("expedition_admin_members_")) {
       const expeditionId = customId.replace("expedition_admin_members_", "");
       await handleExpeditionAdminMembers(interaction, expeditionId);

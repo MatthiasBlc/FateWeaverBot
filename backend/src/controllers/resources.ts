@@ -234,8 +234,6 @@ export const transferResource: RequestHandler = async (req, res, next) => {
           locationId: toLocationId,
           resourceTypeId: parseInt(resourceTypeId),
           quantity: quantity,
-          ...(toLocationType === "CITY" ? { townId: toLocationId } : {}),
-          ...(toLocationType === "EXPEDITION" ? { expeditionId: toLocationId } : {}),
         },
       }),
     ]);

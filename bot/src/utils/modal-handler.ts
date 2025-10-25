@@ -171,6 +171,54 @@ export class ModalHandler {
       }
     );
 
+    // Gestionnaire pour le modal de modification de durée d'expédition
+    this.registerHandler("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionDurationModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionDurationModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition duration modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la durée.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal d'ajout de ressource à une expédition
+    this.registerHandler("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionResourceAddModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionResourceAddModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de ressource d'une expédition
+    this.registerHandler("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionResourceModifyModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionResourceModifyModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource modify modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les modals d'investissement dans les chantiers
     this.registerHandler("invest_modal", async (interaction) => {
       try {

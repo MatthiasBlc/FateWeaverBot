@@ -163,10 +163,10 @@ export class ButtonHandler {
     // Gestionnaire pour manger 1 nourriture
     this.registerHandlerByPrefix("eat_nourriture_1", async (interaction) => {
       try {
-        const { handleEatNourriture1Button } = await import(
+        const { handleEatRepas1Button } = await import(
           "../features/hunger/eat-more.handlers.js"
         );
-        await handleEatNourriture1Button(interaction);
+        await handleEatRepas1Button(interaction);
       } catch (error) {
         logger.error("Error handling eat nourriture 1 button:", { error });
         await interaction.reply({
@@ -195,10 +195,10 @@ export class ButtonHandler {
     // Gestionnaire pour manger nourriture à satiété
     this.registerHandlerByPrefix("eat_nourriture_full", async (interaction) => {
       try {
-        const { handleEatNourritureFull } = await import(
+        const { handleEatRepasFull } = await import(
           "../features/hunger/eat-more.handlers.js"
         );
-        await handleEatNourritureFull(interaction);
+        await handleEatRepasFull(interaction);
       } catch (error) {
         logger.error("Error handling eat nourriture full button:", { error });
         await interaction.reply({

@@ -223,7 +223,7 @@ export async function handleEatVivre1Button(interaction: ButtonInteraction) {
 /**
  * Handler pour manger 1 Repas
  */
-export async function handleEatNourriture1Button(
+export async function handleEatRepas1Button(
   interaction: ButtonInteraction
 ) {
   await handleEatResource(interaction, "Repas", 1);
@@ -259,7 +259,7 @@ export async function handleEatVivreFull(interaction: ButtonInteraction) {
 /**
  * Handler pour manger Repas à satiété
  */
-export async function handleEatNourritureFull(interaction: ButtonInteraction) {
+export async function handleEatRepasFull(interaction: ButtonInteraction) {
   try {
     const characterId = interaction.customId.split(":")[1];
     const character = await getActiveCharacterForUser(
@@ -279,7 +279,7 @@ export async function handleEatNourritureFull(interaction: ButtonInteraction) {
     const nourritureNeed = hungerNeed;
     await handleEatResource(interaction, "Repas", nourritureNeed);
   } catch (error: any) {
-    logger.error("Erreur dans handleEatNourritureFull:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
+    logger.error("Erreur dans handleEatRepasFull:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await replyError(interaction, "Erreur lors de la consommation.");
   }
 }

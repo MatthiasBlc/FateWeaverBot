@@ -153,7 +153,7 @@ export async function handleExpeditionMainCommand(
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId("expedition_transfer")
-            .setLabel("Transférer nourriture")
+            .setLabel("Transférer repas")
             .setStyle(ButtonStyle.Primary)
         );
         components.push(buttonRow);
@@ -334,7 +334,7 @@ export async function handleExpeditionInfoCommand(
     )
       .addFields(
         {
-          name: "📦 Stock de nourriture",
+          name: "📦 Stock de repas",
           value: `${currentExpedition.foodStock || 0}`,
           inline: true,
         },
@@ -431,7 +431,7 @@ export async function handleExpeditionInfoCommand(
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId("expedition_transfer")
-          .setLabel("Transférer nourriture")
+          .setLabel("Transférer repas")
           .setStyle(ButtonStyle.Primary)
       );
       components.push(buttonRow);

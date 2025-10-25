@@ -20,6 +20,7 @@ import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { DIRECTION } from "@shared/constants/emojis";
+import { expeditionCache } from "../../../services/expedition-cache";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -136,16 +137,16 @@ export async function handleExpeditionCreationModal(
   try {
     const name = interaction.fields.getTextInputValue("expedition_name_input");
 
-    // Récupérer les valeurs des champs séparés pour vivres et nourriture
+    // Récupérer les valeurs des champs séparés pour vivres et repas
     const vivresValue = interaction.fields.getTextInputValue("expedition_vivres_input") || "0";
-    const nourritureValue = interaction.fields.getTextInputValue("expedition_nourriture_input") || "0";
+    const repasValue = interaction.fields.getTextInputValue("expedition_nourriture_input") || "0";
 
     const duration = interaction.fields.getTextInputValue("expedition_duration_input");
 
     // Convertir en nombres et calculer le total
     const vivresAmount = parseInt(vivresValue, 10) || 0;
-    const nourritureAmount = parseInt(nourritureValue, 10) || 0;
-    const foodStock = vivresAmount + nourritureAmount;
+    const repasAmount = parseInt(repasValue, 10) || 0;
+    const foodStock = vivresAmount + repasAmount;
 
     // Validate inputs
     const durationDays = parseInt(duration, 10);
@@ -158,7 +159,7 @@ export async function handleExpeditionCreationModal(
     }
 
     if (isNaN(foodStock) || foodStock <= 0) {
-      await replyEphemeral(interaction, "❌ Le stock de nourriture total (vivres + nourriture) doit être un nombre positif.");
+      await replyEphemeral(interaction, "❌ Le stock de nourriture total (vivres + repas) doit être un nombre positif.");
       return;
     }
 
@@ -180,7 +181,7 @@ export async function handleExpeditionCreationModal(
     logger.debug("Creating expedition", {
       name,
       vivresAmount,
-      nourritureAmount,
+      repasAmount,
       totalFoodStock: foodStock,
       duration: durationDays,
       townId: townResponse.id,
@@ -195,18 +196,21 @@ export async function handleExpeditionCreationModal(
       initialResources.push({ resourceTypeName: "Vivres", quantity: vivresAmount });
     }
 
-    if (nourritureAmount > 0) {
-      initialResources.push({ resourceTypeName: "Nourriture", quantity: nourritureAmount });
+    if (repasAmount > 0) {
+      initialResources.push({ resourceTypeName: "Repas", quantity: repasAmount });
     }
 
-    // Show direction selection menu
+    // Store expedition data in cache and generate short ID
+    const expeditionId = expeditionCache.store(interaction.user.id, {
+      name,
+      townId: townResponse.id,
+      initialResources,
+      duration: durationDays,
+    });
+
+    // Show direction selection menu with short customId
     const directionMenu = new StringSelectMenuBuilder()
-      .setCustomId(`expedition_direction:${JSON.stringify({
-        name,
-        townId: townResponse.id,
-        initialResources,
-        duration: durationDays,
-      })}`)
+      .setCustomId(`expedition_direction:${expeditionId}`)
       .setPlaceholder("Choisissez la direction initiale...")
       .addOptions([
         {
@@ -271,7 +275,18 @@ export async function handleExpeditionDirectionSelect(
 ): Promise<void> {
   try {
     const direction = interaction.values[0];
-    const expeditionData = JSON.parse(interaction.customId.split(":")[1]);
+    const expeditionId = interaction.customId.split(":")[1];
+
+    // Retrieve expedition data from cache
+    const expeditionData = expeditionCache.retrieve(expeditionId, interaction.user.id);
+
+    if (!expeditionData) {
+      await interaction.reply({
+        content: "❌ Les données de l'expédition ont expiré ou sont invalides. Veuillez recréer l'expédition.",
+        ephemeral: true,
+      });
+      return;
+    }
 
     const character = await getActiveCharacterFromModal(interaction);
 
@@ -285,7 +300,10 @@ export async function handleExpeditionDirectionSelect(
 
     // Create expedition with direction
     const createData = {
-      ...expeditionData,
+      name: expeditionData.name,
+      townId: expeditionData.townId,
+      initialResources: expeditionData.initialResources,
+      duration: expeditionData.duration,
       initialDirection: direction,
       createdBy: interaction.user.id,
       characterId: character.id,
@@ -298,6 +316,9 @@ export async function handleExpeditionDirectionSelect(
       expedition.data.id,
       character.id
     );
+
+    // Remove from cache after successful creation
+    expeditionCache.remove(expeditionId);
 
     await interaction.update({
       content: `✅ Expédition **${expedition.data.name}** créée avec succès !\nDirection initiale : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
@@ -327,9 +348,16 @@ export async function handleExpeditionDirectionSelect(
       duration: expeditionData.duration,
     });
   } catch (error: any) {
-    console.error("Error in expedition direction select:", error);
+    logger.error("Error in expedition direction select:", {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data
+    });
+
+    const errorMessage = error?.response?.data?.error || error?.message || "Erreur inconnue";
     await interaction.reply({
-      content: `❌ Erreur lors de la création : ${error.message}`,
+      content: `❌ Erreur lors de la création : ${errorMessage}`,
       ephemeral: true,
     });
   }

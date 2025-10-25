@@ -187,6 +187,54 @@ export class SelectMenuHandler {
       }
     });
 
+    // Gestionnaire pour la sélection de ressource à ajouter (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_add_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceAddSelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à ajouter.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à modifier (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_modify_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceModifySelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceModifySelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource modify select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à modifier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à supprimer (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_delete_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceDeleteSelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceDeleteSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource delete select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à supprimer.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour les sélections d'ajout de stock admin
     this.registerHandler("stock_admin_add_select", async (interaction) => {
       try {
@@ -359,7 +407,7 @@ export class SelectMenuHandler {
 
     // =================== EXPEDITION DIRECTION HANDLERS ===================
     // Gestionnaire pour la sélection de direction lors de la création d'expédition
-    this.registerHandler("expedition_direction", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_direction:", async (interaction) => {
       try {
         const { handleExpeditionDirectionSelect } = await import(
           "../features/expeditions/expedition.command.js"

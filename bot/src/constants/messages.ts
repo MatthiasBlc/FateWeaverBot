@@ -45,7 +45,7 @@ export const ERROR_MESSAGES = {
   // Stock/Ressources
   INSUFFICIENT_PA: (current: number, required: number) => `❌ Vous n'avez pas assez de PA (${current}/${required} requis).`,
 
-  // Nourriture
+  // Repas
   EAT_ERROR: "❌ Une erreur est survenue lors de l'action de manger.",
   EAT_ADVANCED_MENU_ERROR: "❌ Erreur lors de l'affichage du menu avancé.",
   EAT_CONSUMPTION_ERROR: "❌ Erreur lors de la consommation.",
