@@ -93,22 +93,17 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
     // Créer l'embed informatif
     const embed = createCustomEmbed({
       color: getHungerColor(character.hungerLevel),
-      title: `${HUNGER.ICON} Menu de Gestion de la Faim`,
-      description: `**État actuel**: ${getHungerEmoji(character.hungerLevel)} ${character.hungerLevel}/4\n**Besoin**: ${hungerNeed} point(s) de faim`,
+      title: `${HUNGER.ICON} Manger`,
+      description: `**État actuel** : ${getHungerEmoji(character.hungerLevel)} ${character.hungerLevel}/4`,
       timestamp: true,
     });
 
     embed.addFields(
       {
-        name: `📦 Stocks disponibles (${locationType === "CITY" ? "Ville" : "Expédition"})`,
+        name: `Stocks disponibles (${locationType === "CITY" ? "Ville" : "Expédition"})`,
         value: `${RESOURCES.FOOD} Vivres : ${vivresStock}\n${RESOURCES.PREPARED_FOOD} Repas : ${nourritureStock}`,
         inline: false,
       },
-      {
-        name: `${STATUS.INFO} Rappel`,
-        value: `• ${RESOURCES.FOOD} Vivres : +1 faim\n• ${RESOURCES.PREPARED_FOOD} Repas : +1 faim`,
-        inline: false,
-      }
     );
 
     // Ajouter des alertes si stocks insuffisants
@@ -183,13 +178,30 @@ export async function handleEatMoreButton(interaction: ButtonInteraction) {
       return;
     }
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      ...buttons.slice(0, 5)
-    );
+    // Créer deux lignes: 2 boutons par ligne
+    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+    // Première ligne: boutons 0-1
+    if (buttons.length > 0) {
+      rows.push(
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          buttons.slice(0, 2)
+        )
+      );
+    }
+
+    // Deuxième ligne: boutons 2-3
+    if (buttons.length > 2) {
+      rows.push(
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          buttons.slice(2, 4)
+        )
+      );
+    }
 
     await interaction.reply({
       embeds: [embed],
-      components: [row],
+      components: rows,
       flags: ["Ephemeral"],
     });
   } catch (error: any) {
