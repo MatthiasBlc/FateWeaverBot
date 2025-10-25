@@ -966,17 +966,8 @@ export async function handleProfileButtonInteraction(interaction: any) {
         const cataplasmeButton = new ButtonBuilder()
           .setCustomId(`healing_pa:${characterId}:${userId}:2`)
           .setLabel("Cataplasme (2 PA)")
-          .setStyle(canCraftCataplasme ? ButtonStyle.Success : ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Success)
           .setDisabled(!canCraftCataplasme);
-
-        // Ajouter une raison au bouton désactivé
-        if (!canCraftCataplasme) {
-          if (cataplasmeCount >= 3) {
-            cataplasmeButton.setLabel("Cataplasme (2 PA) - Stock plein");
-          } else if (character.paTotal < 2) {
-            cataplasmeButton.setLabel("Cataplasme (2 PA) - Pas assez PA");
-          }
-        }
 
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
