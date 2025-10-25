@@ -3,6 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
 import { ResourceUtils } from "../../../shared/utils";
+import { RESOURCES } from "@shared/index";
 
 /**
  * Capacité Cuisiner
@@ -12,6 +13,34 @@ import { ResourceUtils } from "../../../shared/utils";
 export class CuisinerCapability extends BaseCapability {
   readonly name = "Cuisiner";
   readonly category = "CRAFT" as const;
+
+  private getPrivateMessage(output: number, input: number): string {
+    if (output >= input * 2) {
+      return `Quel festin ! Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} délicieux ${RESOURCES.PREPARED_FOOD}`;
+    } else if (output > input) {
+      return `Ça sent bon ! Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}`;
+    } else if (output === input) {
+      return `Une recette peu convaincante... Tu as transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}`;
+    } else if (output > 0) {
+      return `Oulalah, ça sent le brûlé ici ! Les ${input} ${RESOURCES.FOOD} utilisées sont perdues mais tu as réussi à sauver ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}`;
+    } else {
+      return `Oulalah, ça sent le brûlé ici ! Les ${input} ${RESOURCES.FOOD} utilisées sont perdues…`;
+    }
+  }
+
+  private getPublicMessage(characterName: string, output: number, input: number): string {
+    if (output >= input * 2) {
+      return `Quel festin ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} délicieux ${RESOURCES.PREPARED_FOOD}. Bon appétit !`;
+    } else if (output > input) {
+      return `Ça sent bon ! ${characterName} a transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD} ${RESOURCES.PREPARED_FOOD}.`;
+    } else if (output === input) {
+      return `${characterName} a tenté une nouvelle recette et transformé ${input} ${RESOURCES.FOOD} en ${output} ${RESOURCES.PREPARED_FOOD}. Pas sûr que ce soit vraiment mieux.`;
+    } else if (output > 0) {
+      return `${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD}. Ce n'est pas très convaincant mais il a quand même réussi à sauver ${output} ${RESOURCES.PREPARED_FOOD}. Espérons que c'est comestible !`;
+    } else {
+      return `${characterName} a tenté une nouvelle recette avec ${input} ${RESOURCES.FOOD} mais sans succès. Une légère odeur de brûlé flotte aux alentours.`;
+    }
+  }
 
   async execute(
     characterId: string,
@@ -88,8 +117,8 @@ export class CuisinerCapability extends BaseCapability {
 
     return {
       success: true,
-      message: `Vous avez cuisiné avec succès ! Vous avez transformé ${actualVivresToConsume} vivres en ${repasCreated} repas.`,
-      publicMessage: `🍳 ${character.name} a préparé ${repasCreated} repas à partir de ${actualVivresToConsume} vivres.`,
+      message: this.getPrivateMessage(repasCreated, actualVivresToConsume),
+      publicMessage: this.getPublicMessage(character.name, repasCreated, actualVivresToConsume),
       paConsumed: paToUse,
       loot: {
         Vivres: -actualVivresToConsume,
