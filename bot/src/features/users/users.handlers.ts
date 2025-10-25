@@ -946,7 +946,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Gestion spéciale pour la capacité "Soigner"
       if (selectedCapability.name.toLowerCase() === "soigner") {
-        // Vérifier le stock de cataplasmes (max 3 total)
+        // Vérifier le nombre de cataplasmes créés (max 3 total par ville)
         let cataplasmeCount = 0;
         if (character.town?.id) {
           try {
@@ -959,6 +959,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
           }
         }
 
+        // Si 3 cataplasmes ont déjà été créés, on ne peut pas en créer d'autres
         const canCraftCataplasme = character.paTotal >= 2 && cataplasmeCount < 3;
         logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
 
