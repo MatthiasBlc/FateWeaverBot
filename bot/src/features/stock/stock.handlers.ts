@@ -8,7 +8,7 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { replyEphemeral, replyError } from "../../utils/interaction-helpers.js";
 import { validateCharacterExists, validateCharacterAlive } from "../../utils/character-validation.js";
-import { LOCATION, RESOURCES, STATUS } from "../../constants/emojis";
+import { LOCATION, RESOURCES, STATUS, HUNGER } from "../../constants/emojis";
 import { getResourceEmoji } from "../../services/emoji-cache";
 
 interface ResourceStock {
@@ -72,66 +72,81 @@ export async function handleViewStockCommand(interaction: any) {
 
     const resources = resourcesResponse as ResourceStock[];
 
-    // Définir l'ordre des groupes de ressources (brut, transformation, science)
-    const resourceOrder = [
-      ['Vivres', 'Repas'],
-      ['Bois', 'Planches'],
-      ['Minerai', 'Métal'],
-      ['Tissu'],
-      ['Cataplasme'] // Science resources
+    // Définir l'ordre des catégories avec leurs ressources
+    const categories = [
+      {
+        name: 'Nourriture',
+        icon: HUNGER.ICON,
+        resources: ['Vivres', 'Repas']
+      },
+      {
+        name: 'Matériaux',
+        icon: RESOURCES.WOOD,
+        resources: ['Bois', 'Planches', 'Minerai', 'Métal', 'Tissu']
+      },
+      {
+        name: 'Soin',
+        icon: RESOURCES.CATAPLASM,
+        resources: ['Cataplasme']
+      }
     ];
 
     // Créer l'embed d'information
     const totalStock = resources.reduce((sum, resource) => sum + resource.quantity, 0);
     const embed = createCustomEmbed({
       color: getStockColor(totalStock),
-      title: `${LOCATION.TOWN} Stock du Village : ${townResponse.name}`,
+      title: `${LOCATION.TOWN} Stock du village`,
       timestamp: true,
     });
 
-    // Construire l'affichage avec groupes et séparateurs
+    // Construire l'affichage avec catégories dynamiques
     const resourceLines: string[] = [];
+    const categorizedNames = categories.flatMap(c => c.resources.map(r => r.toLowerCase()));
 
-    for (let i = 0; i < resourceOrder.length; i++) {
-      const group = resourceOrder[i];
-      const groupResources: ResourceStock[] = [];
+    // Traiter chaque catégorie
+    for (const category of categories) {
+      const categoryResources: ResourceStock[] = [];
 
-      // Trouver les ressources de ce groupe
-      for (const resourceName of group) {
+      // Trouver les ressources de cette catégorie
+      for (const resourceName of category.resources) {
         const found = resources.find(r =>
           r.resourceType.name.toLowerCase() === resourceName.toLowerCase()
         );
         if (found) {
-          groupResources.push(found);
+          categoryResources.push(found);
         }
       }
 
-      // Ajouter les ressources trouvées
-      for (const resource of groupResources) {
-        const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
-        resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);
-      }
+      // Ajouter la catégorie seulement si elle a des ressources
+      if (categoryResources.length > 0) {
+        resourceLines.push(`**${category.name} ${category.icon}**`);
 
-      // Ajouter séparateur visuel entre groupes (sauf après le dernier)
-      if (i < resourceOrder.length - 1 && groupResources.length > 0) {
-        resourceLines.push(''); // Ligne vide pour espacement
+        for (const resource of categoryResources) {
+          const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
+          resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);
+        }
+
+        resourceLines.push(''); // Espacement après chaque catégorie
       }
     }
 
-    // Ajouter les ressources non catégorisées (au cas où)
-    const categorizedNames = resourceOrder.flat().map(n => n.toLowerCase());
+    // Ajouter les ressources non catégorisées (dans "Autres")
     const uncategorized = resources.filter(r =>
       !categorizedNames.includes(r.resourceType.name.toLowerCase())
     );
 
     if (uncategorized.length > 0) {
-      if (resourceLines.length > 0) {
-        resourceLines.push(''); // Séparateur avant non-catégorisées
-      }
+      resourceLines.push(`**Autres ${RESOURCES.GENERIC}**`);
       for (const resource of uncategorized) {
         const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
         resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);
       }
+      resourceLines.push('');
+    }
+
+    // Nettoyer les lignes vides finales
+    while (resourceLines.length > 0 && resourceLines[resourceLines.length - 1] === '') {
+      resourceLines.pop();
     }
 
     if (resourceLines.length === 0) {
