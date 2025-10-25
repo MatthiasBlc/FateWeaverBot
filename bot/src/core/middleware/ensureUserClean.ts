@@ -14,7 +14,7 @@ export async function ensureUserExists(
     throw new Error("Cette commande ne peut être utilisée que dans une guilde");
   }
 
-  const member = interaction.member as any;
+  const member = interaction.member as { id: string; user: { username: string; discriminator: string; globalName: string | null; displayAvatarURL: (options: { extension: string; size: number }) => string } };
   const guildId = interaction.guildId;
   const userId = member.id;
   const username = member.user.username;
@@ -29,8 +29,8 @@ export async function ensureUserExists(
       });
 
   // Déclarer les variables en dehors du try-catch
-  let user: any = null;
-  let guild: any = null;
+  let user: unknown = null;
+  let guild: unknown = null;
 
   try {
     logger.info(
@@ -42,7 +42,7 @@ export async function ensureUserExists(
       user = await apiService.getOrCreateUser(userId, username, discriminator);
       logger.info(
         `[ensureUserExists] Utilisateur ${userId} vérifié: ${
-          user ? `ID: ${user.id}` : "non trouvé"
+          user && typeof user === "object" && "id" in user ? `ID: ${(user as { id: string }).id}` : "non trouvé"
         }`
       );
     } catch (error) {
@@ -87,7 +87,7 @@ export async function ensureUserExists(
       );
       logger.info(
         `[ensureUserExists] Guilde ${guildId} vérifiée: ${
-          guild ? `ID: ${guild.id}` : "non trouvée"
+          guild && typeof guild === "object" && "id" in guild ? `ID: ${(guild as { id: string }).id}` : "non trouvée"
         }`
       );
     } catch (error) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { REST, Routes } from "discord.js";
 import { readdir } from "fs/promises";
 import { resolve } from "path";

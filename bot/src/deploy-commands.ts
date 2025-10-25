@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { REST, Routes, ApplicationCommand } from "discord.js";
-import { readdir, stat } from "fs/promises";
-import { join, resolve } from "path";
+import { readdir } from "fs/promises";
+import { resolve } from "path";
 import { logger } from "./services/logger";
 import { config, validateConfig } from "./config/index";
 
@@ -295,7 +296,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
 
     // Vérifier les commandes locales
     for (const [name, localCmd] of localCommandsMap) {
-      const deployedCmd = deployedCommandsMap.get(name);
+      const deployedCmd = deployedCommandsMap.get(name as string);
 
       if (!deployedCmd) {
         // Nouvelle commande à créer
@@ -312,7 +313,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
 
     // Vérifier les commandes déployées qui n'existent plus localement
     for (const [name, deployedCmd] of deployedCommandsMap) {
-      if (!localCommandsMap.has(name)) {
+      if (!localCommandsMap.has(name as string)) {
         commandsToDelete.push(deployedCmd.id);
         logger.info(`   🗑️  Commande à supprimer: ${name}`);
       }
