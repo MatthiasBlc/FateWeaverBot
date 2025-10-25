@@ -38,17 +38,27 @@ export async function handleCharacterSelect(
   }
 
   try {
+    logger.info("Character data received:", {
+      hungerLevel: character.hungerLevel,
+      hungerState: (character as any).hungerState,
+      hunger: (character as any).hunger,
+      allKeys: Object.keys(character).filter(k => k.includes('hunger') || k.includes('Hunger')),
+    });
+
     // Récupérer les points d'action du personnage
     let actionPoints = 0;
     try {
       const apResponse = (await apiService.characters.getActionPoints(character.id)) as ActionPointsResponse;
-      actionPoints = apResponse?.data?.points || 0;
+      // Utiliser actionPointsData?.points en fallback sur character.paTotal comme dans /profil
+      actionPoints = apResponse?.data?.points || (character as any).paTotal || 0;
     } catch (error) {
-      logger.debug("Erreur lors de la récupération des points d'action:", { error });
+      // Fallback sur paTotal si l'API échoue
+      actionPoints = (character as any).paTotal || 0;
+      logger.debug("Erreur lors de la récupération des points d'action, utilisant paTotal:", { error });
     }
 
     // Récupérer les capacités du personnage
-    let capabilities = [];
+    let capabilities: any[] = [];
     try {
       capabilities = await getCharacterCapabilities(character.id);
     } catch (error) {

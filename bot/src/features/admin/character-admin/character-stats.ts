@@ -3,7 +3,6 @@ import {
   type GuildMember,
 } from "discord.js";
 import { logger } from "../../../services/logger";
-import { getHungerLevelText } from "../../../utils/hunger";
 import { apiService } from "../../../services/api";
 import { sendLogMessage } from "../../../utils/channels";
 import { getActiveCharacterFromModal } from "../../../utils/character";
@@ -12,6 +11,27 @@ import type { Character } from "../character-admin.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
 } from "../character-admin.components";
+
+/**
+ * Get hunger level text - MATCHES /profil implementation
+ * Uses same scale as /profil command for consistency
+ */
+function getHungerLevelText(level: number): string {
+  switch (level) {
+    case 0:
+      return "Meurt de faim";
+    case 1:
+      return "Affamé";
+    case 2:
+      return "Faim";
+    case 3:
+      return "Petit creux";
+    case 4:
+      return "Satiété";
+    default:
+      return "Inconnu";
+  }
+}
 
 /**
  * Gère les soumissions de modales pour les statistiques de base.
