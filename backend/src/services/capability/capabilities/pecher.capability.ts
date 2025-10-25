@@ -2,7 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
-import { RESOURCES, CHARACTER } from "@shared/index";
+import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
 
 /**
  * Capacité Pêcher
@@ -42,29 +42,29 @@ export class PecherCapability extends BaseCapability {
 
   private getPublicMessage(characterName: string, resourceName: string, quantity: number): string {
     if (resourceName === "Coquillage") {
-      return `${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
+      return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
     }
 
     if (resourceName === RESOURCES.FOOD) {
       if (quantity === 10) {
-        return `Une pêche miraculeuse ! ${characterName} a rapporté 10 ${RESOURCES.FOOD} !`;
+        return `${CAPABILITIES.FISH} Une pêche miraculeuse ! ${characterName} a rapporté 10 ${RESOURCES.FOOD} !`;
       } else if (quantity > 0) {
-        return `${characterName} revient de la pêche avec ${quantity} ${RESOURCES.FOOD}.`;
+        return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec ${quantity} ${RESOURCES.FOOD}.`;
       } else {
-        return `${characterName} revient de la pêche les mains vides !`;
+        return `${CAPABILITIES.FISH} ${characterName} revient de la pêche les mains vides !`;
       }
     }
 
     if (resourceName === RESOURCES.WOOD) {
-      return `Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.WOOD}.`;
+      return `${CAPABILITIES.FISH} Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.WOOD}.`;
     }
 
     if (resourceName === RESOURCES.MINERAL) {
-      return `Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.MINERAL}.`;
+      return `${CAPABILITIES.FISH} Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.MINERAL}.`;
     }
 
     // Fallback
-    return `${characterName} revient de la pêche avec ${quantity} ${resourceName}.`;
+    return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec ${quantity} ${resourceName}.`;
   }
 
   async execute(
