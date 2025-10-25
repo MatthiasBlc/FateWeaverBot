@@ -2,6 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
+import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
 
 /**
  * Capacité Couper du bois
@@ -47,9 +48,9 @@ export class CouperDuBoisCapability extends BaseCapability {
 
     return {
       success: true,
-      message: `Vous avez coupé ${woodAmount} bois.`,
-      publicMessage: `🪓 ${character.name} a coupé ${woodAmount} bois !`,
-      paConsumed: 2,
+      message: `Une bonne chose de faite ! Tu as dépensé 1 ${CHARACTER.PA} et obtenu ${woodAmount} ${RESOURCES.WOOD}.`,
+      publicMessage: `${CAPABILITIES.CHOPPING} ${character.name} a coupé du bois et revient avec ${woodAmount} ${RESOURCES.WOOD}.`,
+      paConsumed: 1,
       loot: { Bois: woodAmount },
       metadata: {
         bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
