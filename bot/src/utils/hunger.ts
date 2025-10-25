@@ -85,13 +85,13 @@ export function createHungerDisplay(level: number): {
   switch (level) {
     case 0:
       return {
-        text: `${emoji} **${text}** - Critiquement affamé`,
+        text: `${emoji} **${text}** - Incapable d'agir`,
         emoji,
         color
       };
     case 1:
       return {
-        text: `${emoji} **${text}** - Très affamé`,
+        text: `${emoji} **${text}** - Régénération PA réduite !`,
         emoji,
         color
       };
@@ -103,7 +103,7 @@ export function createHungerDisplay(level: number): {
       };
     case 3:
       return {
-        text: `${emoji} **${text}** - Légèrement rassasié`,
+        text: `${emoji} **${text}** - Commence à avoir faim`,
         emoji,
         color
       };
