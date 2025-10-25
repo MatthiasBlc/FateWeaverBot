@@ -2,6 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
+import { RESOURCES, CHARACTER } from "@shared/index";
 
 /**
  * Capacité Pêcher
@@ -11,6 +12,60 @@ import { hasLuckyRollBonus } from "../../../util/character-validators";
 export class PecherCapability extends BaseCapability {
   readonly name = "Pêcher";
   readonly category = "HARVEST" as const;
+
+  private getPrivateMessage(resourceName: string, quantity: number, paToUse: number): string {
+    if (resourceName === "Coquillage") {
+      return `De retour d'une pêche… inattendue ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et trouvé un énorme coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
+    }
+
+    if (resourceName === RESOURCES.FOOD) {
+      if (quantity === 10) {
+        return `Une pêche miraculeuse ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 10 ${RESOURCES.FOOD} !`;
+      } else if (quantity > 0) {
+        return `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.FOOD}`;
+      } else {
+        return `Ce n'est pas une pêche très fructueuse aujourd'hui… Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+      }
+    }
+
+    if (resourceName === RESOURCES.WOOD) {
+      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.WOOD}.`;
+    }
+
+    if (resourceName === RESOURCES.MINERAL) {
+      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.MINERAL}.`;
+    }
+
+    // Fallback
+    return `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${resourceName}`;
+  }
+
+  private getPublicMessage(characterName: string, resourceName: string, quantity: number): string {
+    if (resourceName === "Coquillage") {
+      return `${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
+    }
+
+    if (resourceName === RESOURCES.FOOD) {
+      if (quantity === 10) {
+        return `Une pêche miraculeuse ! ${characterName} a rapporté 10 ${RESOURCES.FOOD} !`;
+      } else if (quantity > 0) {
+        return `${characterName} revient de la pêche avec ${quantity} ${RESOURCES.FOOD}.`;
+      } else {
+        return `${characterName} revient de la pêche les mains vides !`;
+      }
+    }
+
+    if (resourceName === RESOURCES.WOOD) {
+      return `Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.WOOD}.`;
+    }
+
+    if (resourceName === RESOURCES.MINERAL) {
+      return `Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.MINERAL}.`;
+    }
+
+    // Fallback
+    return `${characterName} revient de la pêche avec ${quantity} ${resourceName}.`;
+  }
 
   async execute(
     characterId: string,
@@ -64,8 +119,8 @@ export class PecherCapability extends BaseCapability {
     if (lootEntry.resourceName === "Coquillage") {
       return {
         success: true,
-        message: `${character.name} a trouvé un coquillage !`,
-        publicMessage: `🐚 ${character.name} a trouvé un coquillage !`,
+        message: this.getPrivateMessage("Coquillage", lootEntry.quantity, paToUse),
+        publicMessage: this.getPublicMessage(character.name, "Coquillage", lootEntry.quantity),
         paConsumed: paToUse,
         metadata: {
           bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
@@ -75,13 +130,8 @@ export class PecherCapability extends BaseCapability {
     }
 
     // Cas normal : retourner la ressource dans le loot
-    const message = hasBonus
-      ? `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName} ⭐ (Lucky Roll)`
-      : `Vous avez pêché ${lootEntry.quantity} ${lootEntry.resourceName}`;
-
-    const publicMessage = hasBonus
-      ? `🎣 ${character.name} a pêché ${lootEntry.quantity} ${lootEntry.resourceName} ⭐`
-      : `🎣 ${character.name} a pêché ${lootEntry.quantity} ${lootEntry.resourceName}`;
+    const message = this.getPrivateMessage(lootEntry.resourceName, lootEntry.quantity, paToUse);
+    const publicMessage = this.getPublicMessage(character.name, lootEntry.resourceName, lootEntry.quantity);
 
     return {
       success: true,
