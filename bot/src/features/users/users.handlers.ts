@@ -1157,6 +1157,16 @@ function createCapabilityButtons(
     return null;
   }
 
+  // Capacités avec menu de choix de PA
+  const capabilitiesWithPAMenu = [
+    "Auspice",
+    "Cartographier",
+    "Cuisiner",
+    "Pêcher",
+    "Rechercher",
+    "Soigner"
+  ];
+
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
   const maxButtonsPerRow = 5; // Limite par ligne (Discord : 5 max)
   const maxRows = 4; // Limiter à 4 lignes pour laisser de la place pour d'autres boutons
@@ -1195,9 +1205,14 @@ function createCapabilityButtons(
         ? ButtonStyle.Primary
         : ButtonStyle.Secondary;
 
+      // Construire le label du bouton
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA}PA)` : "";
+      const label = `${cap.name}${paText}`;
+
       const button = new ButtonBuilder()
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
-        .setLabel(`${cap.name} (${cap.costPA}PA)`)
+        .setLabel(label)
         .setStyle(buttonStyle)
         .setEmoji(getEmojiForCapability(cap.emojiTag));
 
