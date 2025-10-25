@@ -64,6 +64,63 @@ export const getCataplasmeCount: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const getCataplasmeStock: RequestHandler = async (req, res, next) => {
+  try {
+    const { characterId } = req.params;
+
+    if (!characterId) {
+      throw new BadRequestError("characterId requis");
+    }
+
+    // Get character with town and expedition info
+    const character = await prisma.character.findUnique({
+      where: { id: characterId },
+      include: {
+        town: true,
+        expeditionMembers: {
+          include: { expedition: true },
+        },
+      },
+    });
+
+    if (!character) {
+      throw new NotFoundError("Character", characterId);
+    }
+
+    // Determine location (city or DEPARTED expedition)
+    const departedExpedition = character.expeditionMembers.find(
+      (em) => em.expedition.status === "DEPARTED"
+    );
+
+    const locationType = departedExpedition ? "EXPEDITION" : "CITY";
+    const locationId = departedExpedition
+      ? departedExpedition.expeditionId
+      : character.townId;
+
+    // Get cataplasme resource type
+    const { ResourceUtils } = await import("../shared/utils");
+    const cataplasmeType = await ResourceUtils.getResourceTypeByName(
+      "Cataplasme"
+    );
+
+    // Get cataplasme stock
+    const { ResourceQueries } = await import("../infrastructure/database/query-builders/resource.queries");
+    const stock = await prisma.resourceStock.findUnique({
+      where: ResourceQueries.stockWhere(
+        locationType,
+        locationId,
+        cataplasmeType.id
+      ),
+    });
+
+    const quantity = stock?.quantity || 0;
+
+    res.status(200).json({ quantity });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const executeCouperDuBois: RequestHandler = async (req, res, next) => {
   try {
     const { characterId } = req.params;

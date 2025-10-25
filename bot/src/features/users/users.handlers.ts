@@ -571,10 +571,21 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
   // Ajouter le bouton Cataplasme si le personnage est blessé (HP < 5 et pas mort)
   if (data.character.hp < 5 && data.character.hp > 0) {
+    let cataplasmeStock = 0;
+    try {
+      const cataplasmeResponse = await httpClient.get(
+        `/capabilities/cataplasme-stock/${data.character.id}`
+      );
+      cataplasmeStock = cataplasmeResponse.data.quantity || 0;
+    } catch (error) {
+      logger.debug("Erreur lors de la récupération du stock de cataplasmes:", { error });
+    }
+
     const cataplasmeButton = new ButtonBuilder()
       .setCustomId(`use_cataplasme:${data.character.id}`)
       .setLabel(`Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
-      .setStyle(ButtonStyle.Danger);
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(cataplasmeStock <= 0);
     actionButtons.push(cataplasmeButton);
   }
 

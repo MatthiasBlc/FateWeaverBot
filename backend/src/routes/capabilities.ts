@@ -13,6 +13,7 @@ import {
   executeDivertir,
   executeHarvest,
   getCataplasmeCount,
+  getCataplasmeStock,
 } from "../controllers/capabilities";
 import { requireAuthOrInternal } from "../middleware/auth";
 import { validate } from "../api/middleware/validation.middleware";
@@ -45,6 +46,9 @@ router.delete("/:id", requireAuthOrInternal, deleteCapability);
 
 // Récupère le nombre de cataplasmes pour une ville
 router.get("/cataplasme-count/:townId", requireAuthOrInternal, validate(GetCataplasmeCountSchema), getCataplasmeCount);
+
+// Récupère le stock de cataplasmes disponibles pour un personnage
+router.get("/cataplasme-stock/:characterId", requireAuthOrInternal, getCataplasmeStock);
 
 // Exécuter des capacités spécifiques
 router.post("/:characterId/couper-du-bois", requireAuthOrInternal, validate(ExecuteCouperDuBoisSchema), executeCouperDuBois);
