@@ -223,7 +223,7 @@ export class ButtonHandler {
 
         if (response.data.success) {
           await interaction.editReply({
-            content: `✅ ${response.data.message}`,
+            content: response.data.message,
             embeds: [],
             components: [],
           });
