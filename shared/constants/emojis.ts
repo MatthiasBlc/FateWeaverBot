@@ -43,10 +43,9 @@ export const ADMIN = {
 } as const;
 
 // Seasons
-// UNUSED - All SEASON constants are currently not being used in the codebase
 export const SEASON = {
-  // SUMMER: "☀️", // UNUSED
-  // WINTER: "❄️", // UNUSED
+  SUMMER: "☀️", // Used for summer season display
+  WINTER: "❄️", // Used for winter season display
   // WEATHER: "🌤️", // UNUSED
 } as const;
 
