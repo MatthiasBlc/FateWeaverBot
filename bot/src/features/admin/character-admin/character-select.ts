@@ -7,16 +7,19 @@ import { apiService } from "../../../services/api";
 import { logger } from "../../../services/logger";
 import { createSuccessEmbed, createErrorEmbed, createInfoEmbed } from "../../../utils/embeds";
 import type { Character } from "../character-admin.types";
+import type { ActionPointsResponse } from "../../users/users.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
   createStatsModal,
   createAdvancedStatsModal,
   createCharacterDetailsContent,
   createCharacterActionButtons,
+  createAdminProfileEmbed,
 } from "../character-admin.components";
 
 /**
  * Gère la sélection d'un personnage dans le menu déroulant.
+ * Affiche l'embed profil complet avec les boutons admin.
  */
 export async function handleCharacterSelect(
   interaction: StringSelectMenuInteraction
@@ -33,14 +36,37 @@ export async function handleCharacterSelect(
     return;
   }
 
-  const content = createCharacterDetailsContent(character);
-  const buttonRows = createCharacterActionButtons(character);
+  try {
+    // Récupérer les points d'action du personnage
+    let actionPoints = 0;
+    try {
+      const apResponse = (await apiService.characters.getActionPoints(character.id)) as ActionPointsResponse;
+      actionPoints = apResponse?.data?.points || 0;
+    } catch (error) {
+      logger.debug("Erreur lors de la récupération des points d'action:", { error });
+    }
 
-  await interaction.reply({
-    content,
-    components: buttonRows,
-    flags: ["Ephemeral"],
-  });
+    // Créer l'embed profil admin avec tous les détails
+    const enrichedCharacter = {
+      ...character,
+      actionPoints,
+    };
+
+    const embed = await createAdminProfileEmbed(enrichedCharacter);
+    const buttonRows = createCharacterActionButtons(character);
+
+    await interaction.reply({
+      embeds: [embed],
+      components: buttonRows,
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la création du profil admin:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de la création du profil admin.",
+      flags: ["Ephemeral"],
+    });
+  }
 }
 
 /**
