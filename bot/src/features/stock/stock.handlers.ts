@@ -79,7 +79,7 @@ export async function handleViewStockCommand(interaction: any) {
       },
       {
         name: 'Soin',
-        icon: RESOURCES.CATAPLASM,
+        icon: RESOURCES.HEAL,
         resources: ['Cataplasme']
       }
     ];
@@ -129,7 +129,7 @@ export async function handleViewStockCommand(interaction: any) {
     );
 
     if (uncategorized.length > 0) {
-      resourceLines.push(`**Autres ${RESOURCES.GENERIC}**`);
+      resourceLines.push(`**Autres ${RESOURCES.OTHER_RESOURCES}**`);
       for (const resource of uncategorized) {
         const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
         resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);

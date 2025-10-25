@@ -43,9 +43,10 @@ export const ADMIN = {
 } as const;
 
 // Seasons
+// UNUSED - All SEASON constants are currently not being used in the codebase
 export const SEASON = {
-  SUMMER: "☀️", // Used for summer season display
-  WINTER: "❄️", // Used for winter season display
+  SUMMER: "☀️", // UNUSED
+  WINTER: "❄️", // UNUSED
   // WEATHER: "🌤️", // UNUSED
 } as const;
 
@@ -160,6 +161,8 @@ export const RESOURCES = {
   // METAL: "⚙️", // UNUSED (duplicate of MINERAL)
   FABRIC: "🧵", // Used in seed data for "Tissu"
   // PLANKS: "🪵", // UNUSED (duplicate of WOOD)
+  HEAL: "🩸",
+  OTHER_RESOURCES: "🪜",
 } as const;
 
 // Extended Resources
