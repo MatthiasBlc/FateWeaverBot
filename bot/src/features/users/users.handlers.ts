@@ -1089,6 +1089,16 @@ function createCapabilitiesDisplay(
     return "Aucune capacité connue";
   }
 
+  // Capacités avec menu de choix de PA
+  const capabilitiesWithPAMenu = [
+    "Auspice",
+    "Cartographier",
+    "Cuisiner",
+    "Pêcher",
+    "Rechercher",
+    "Soigner"
+  ];
+
   // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
   const getEmojiForCapability = (emojiTag?: string): string => {
     console.log("getEmojiForCapability - emojiTag reçu:", emojiTag);
@@ -1120,9 +1130,11 @@ function createCapabilitiesDisplay(
 
   return capabilities
     .map(
-      (cap) =>
-        `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${cap.costPA
-        } PA)${cap.description ? ` • ${cap.description}` : ""}`
+      (cap) => {
+        const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+        const paText = showPA ? ` (${cap.costPA} PA)` : "";
+        return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${cap.description ? ` • ${cap.description}` : ""}`;
+      }
     )
     .join("\n");
 }
