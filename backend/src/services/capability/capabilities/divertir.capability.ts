@@ -22,7 +22,7 @@ export class DivertirCapability extends BaseCapability {
   }
 
   private getPrivateMessagePrep(counter: number): string {
-    return `Charge la capacité divervir avec +1 ${CHARACTER.PA}\nUn moment de tranquillité à réviser tes gammes…`;
+    return `Un moment de tranquillité à réviser tes gammes…`;
   }
 
   private getPublicMessageSpectacle(characterName: string, instantSpectacle: boolean): string {
