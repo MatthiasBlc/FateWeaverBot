@@ -10,8 +10,7 @@ import {
   TextInputStyle,
 } from "discord.js";
 import type { Character } from "./character-admin.types";
-// Note: We DON'T import from utils/hunger because /profil uses local functions with different scale
-// We'll define our own to match /profil's behavior
+import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
 import { STATUS, HUNGER, CHARACTER, ACTIONS, CAPABILITIES } from "../../constants/emojis";
 import { emojiCache } from "../../services/emoji-cache";
 
@@ -472,48 +471,6 @@ export function createSkillActionButtons(
 // --- Admin Profile Embed Functions --- //
 
 import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
-
-/**
- * Get hunger level text - MATCHES /profil implementation
- * Uses same scale as /profil command for consistency
- */
-function getHungerLevelText(level: number): string {
-  switch (level) {
-    case 0:
-      return "Meurt de faim";
-    case 1:
-      return "Affamé";
-    case 2:
-      return "Faim";
-    case 3:
-      return "Petit creux";
-    case 4:
-      return "Satiété";
-    default:
-      return "Inconnu";
-  }
-}
-
-/**
- * Get hunger emoji - MATCHES /profil implementation
- * Uses same scale as /profil command for consistency
- */
-function getHungerEmoji(level: number): string {
-  switch (level) {
-    case 0:
-      return HUNGER.STARVATION;
-    case 1:
-      return HUNGER.STARVING;
-    case 2:
-      return HUNGER.HUNGRY;
-    case 3:
-      return HUNGER.APPETITE;
-    case 4:
-      return HUNGER.FED;
-    default:
-      return HUNGER.UNKNOWN;
-  }
-}
 
 /**
  * Helper function to create heart display

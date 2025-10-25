@@ -1,37 +1,40 @@
 /**
  * Utilitaires pour la gestion de la faim des personnages
- * Logique alignée avec le backend : 0 = mort, 4 = en bonne santé
+ * Aligné avec l'implémentation de /profil pour cohérence
+ * 0 = Meurt de faim, 1 = Affamé, 2 = Faim, 3 = Petit creux, 4 = Satiété
  */
 
 import { HUNGER } from "@shared/constants/emojis";
 
 /**
- * Convertit un niveau de faim en texte descriptif (backend: 0 = mort, 4 = en bonne santé)
+ * Convertit un niveau de faim en texte descriptif
+ * Aligné avec /profil pour cohérence
  */
 export function getHungerLevelText(level: number): string {
   switch (level) {
     case 0:
-      return "Mort";
+      return "Meurt de faim";
     case 1:
-      return "Agonie";
-    case 2:
       return "Affamé";
-    case 3:
+    case 2:
       return "Faim";
+    case 3:
+      return "Petit creux";
     case 4:
-      return "En bonne santé";
+      return "Satiété";
     default:
       return "Inconnu";
   }
 }
 
 /**
- * Convertit un niveau de faim en emoji (backend: 0 = mort, 4 = en bonne santé)
+ * Convertit un niveau de faim en emoji
+ * Aligné avec /profil pour cohérence
  */
 export function getHungerEmoji(level: number): string {
   switch (level) {
     case 0:
-      return HUNGER.DEAD;
+      return HUNGER.STARVATION;
     case 1:
       return HUNGER.STARVING;
     case 2:
@@ -46,27 +49,29 @@ export function getHungerEmoji(level: number): string {
 }
 
 /**
- * Convertit un niveau de faim en couleur pour les embeds Discord (backend: 0 = mort, 4 = en bonne santé)
+ * Convertit un niveau de faim en couleur pour les embeds Discord
+ * Aligné avec /profil
  */
 export function getHungerColor(level: number): number {
   switch (level) {
     case 0:
-      return 0x000000; // Noir - Mort
+      return 0xff0000; // Rouge - Meurt de faim
     case 1:
-      return 0xff4500; // Rouge-orange - Agonie
+      return 0xff4500; // Rouge-orange - Affamé
     case 2:
-      return 0xffa500; // Orange - Affamé
+      return 0xffa500; // Orange - Faim
     case 3:
-      return 0xffff00; // Jaune - Faim
+      return 0xffff00; // Jaune - Petit creux
     case 4:
-      return 0x00ff00; // Vert - En bonne santé
+      return 0x00ff00; // Vert - Satiété
     default:
       return 0x808080; // Gris - Inconnu
   }
 }
 
 /**
- * Crée un affichage avancé du niveau de faim avec texte et emoji (backend: 0 = mort, 4 = en bonne santé)
+ * Crée un affichage avancé du niveau de faim avec texte et emoji
+ * Aligné avec /profil
  */
 export function createHungerDisplay(level: number): {
   text: string;
@@ -80,31 +85,31 @@ export function createHungerDisplay(level: number): {
   switch (level) {
     case 0:
       return {
-        text: `${emoji} **${text}** - Incapable d'agir`,
+        text: `${emoji} **${text}** - Critiquement affamé`,
         emoji,
         color
       };
     case 1:
       return {
-        text: `${emoji} **${text}** - Plus de régénération PA !`,
+        text: `${emoji} **${text}** - Très affamé`,
         emoji,
         color
       };
     case 2:
       return {
-        text: `${emoji} **${text}** - Régénération PA réduite`,
+        text: `${emoji} **${text}** - Faim normale`,
         emoji,
         color
       };
     case 3:
       return {
-        text: `${emoji} **${text}** - Commence à avoir faim`,
+        text: `${emoji} **${text}** - Légèrement rassasié`,
         emoji,
         color
       };
     case 4:
       return {
-        text: `${emoji} **${text}** - Parfait état !`,
+        text: `${emoji} **${text}** - Bien rassasié !`,
         emoji,
         color
       };
