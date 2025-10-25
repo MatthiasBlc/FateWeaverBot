@@ -18,7 +18,7 @@ export class PecherCapability extends BaseCapability {
       return `De retour d'une pêche… inattendue ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et trouvé un énorme coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
     }
 
-    if (resourceName === RESOURCES.FOOD) {
+    if (resourceName === "Vivres") {
       if (quantity === 10) {
         return `Une pêche miraculeuse ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 10 ${RESOURCES.FOOD} !`;
       } else if (quantity > 0) {
@@ -28,11 +28,11 @@ export class PecherCapability extends BaseCapability {
       }
     }
 
-    if (resourceName === RESOURCES.WOOD) {
+    if (resourceName === "Bois") {
       return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.WOOD}.`;
     }
 
-    if (resourceName === RESOURCES.MINERAL) {
+    if (resourceName === "Minerai") {
       return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.MINERAL}.`;
     }
 
@@ -46,7 +46,7 @@ export class PecherCapability extends BaseCapability {
       return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
     }
 
-    if (resourceName === RESOURCES.FOOD) {
+    if (resourceName === "Vivres") {
       if (quantity === 10) {
         return `${CAPABILITIES.FISH} Une pêche miraculeuse ! ${characterName} a rapporté 10 ${RESOURCES.FOOD} !`;
       } else if (quantity > 0) {
@@ -56,11 +56,11 @@ export class PecherCapability extends BaseCapability {
       }
     }
 
-    if (resourceName === RESOURCES.WOOD) {
+    if (resourceName === "Bois") {
       return `${CAPABILITIES.FISH} Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.WOOD}.`;
     }
 
-    if (resourceName === RESOURCES.MINERAL) {
+    if (resourceName === "Minerai") {
       return `${CAPABILITIES.FISH} Des débris se sont pris dans son filet de ${characterName} qui revient de la pêche sans poisson mais avec ${quantity} ${RESOURCES.MINERAL}.`;
     }
 
