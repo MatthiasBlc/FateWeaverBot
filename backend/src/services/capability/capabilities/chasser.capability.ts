@@ -3,6 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
 import { getHuntYield } from "../../../util/capacityRandom";
+import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
 
 /**
  * Capacité Chasser
@@ -12,6 +13,26 @@ import { getHuntYield } from "../../../util/capacityRandom";
 export class ChasserCapability extends BaseCapability {
   readonly name = "Chasser";
   readonly category = "HARVEST" as const;
+
+  private getPrivateMessage(foodAmount: number): string {
+    if (foodAmount === 0) {
+      return `Les proies étaient trop bien cachées aujourd'hui… Tu as dépensé 2 ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+    } else if (foodAmount <= 8) {
+      return `De retour de la chasse ! Tu as dépensé 2 ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}.`;
+    } else {
+      return `Quelle chasse incroyable ! Tu as dépensé 2 ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD} !`;
+    }
+  }
+
+  private getPublicMessage(characterName: string, foodAmount: number): string {
+    if (foodAmount === 0) {
+      return `${CAPABILITIES.HUNT} Malheureusement, ${characterName} est rentré de la chasse les mains vides…`;
+    } else if (foodAmount <= 8) {
+      return `${CAPABILITIES.HUNT} Festin en perspective ! ${characterName} est rentré de la chasse avec ${foodAmount} ${RESOURCES.FOOD}.`;
+    } else {
+      return `${CAPABILITIES.HUNT} ${characterName} est revenu de la chasse avec ${foodAmount} ${RESOURCES.FOOD} !`;
+    }
+  }
 
   async execute(
     characterId: string,
@@ -39,8 +60,8 @@ export class ChasserCapability extends BaseCapability {
 
     return {
       success: foodAmount > 0,
-      message: `Vous avez chassé avec succès ! Vous avez obtenu ${foodAmount} vivres.`,
-      publicMessage: `🦌 ${character.name} est revenu de la chasse avec ${foodAmount} vivres !`,
+      message: this.getPrivateMessage(foodAmount),
+      publicMessage: this.getPublicMessage(character.name, foodAmount),
       paConsumed: 2,
       loot: { Vivres: foodAmount },
       metadata: {
