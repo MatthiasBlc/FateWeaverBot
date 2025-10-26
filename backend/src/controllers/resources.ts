@@ -130,7 +130,7 @@ export const updateResource: RequestHandler = async (req, res, next) => {
 export const removeResource: RequestHandler = async (req, res, next) => {
   try {
     const { locationType, locationId, resourceTypeId } = req.params;
-    const { quantity } = req.body;
+    const { quantity } = req.body || {};
 
     if (!locationType || !locationId || !resourceTypeId) {
       throw new BadRequestError("Les paramètres locationType, locationId et resourceTypeId sont requis");
@@ -140,10 +140,6 @@ export const removeResource: RequestHandler = async (req, res, next) => {
       throw new BadRequestError("locationType doit être 'CITY' ou 'EXPEDITION'");
     }
 
-    if (!quantity || quantity <= 0) {
-      throw new BadRequestError("La quantité à retirer doit être un nombre positif");
-    }
-
     // Vérifier que le type de ressource existe
     const resourceType = await prisma.resourceType.findUnique({
       where: { id: parseInt(resourceTypeId) },
@@ -151,6 +147,25 @@ export const removeResource: RequestHandler = async (req, res, next) => {
 
     if (!resourceType) {
       throw new NotFoundError("Resource type", parseInt(resourceTypeId));
+    }
+
+    // Si quantity n'est pas fournie, supprimer complètement la ressource
+    if (!quantity) {
+      const deleted = await prisma.resourceStock.deleteMany({
+        where: {
+          locationType: locationType as "CITY" | "EXPEDITION",
+          locationId: locationId,
+          resourceTypeId: parseInt(resourceTypeId)
+        },
+      });
+
+      res.status(200).json({ message: "Ressource supprimée complètement", deleted });
+      return;
+    }
+
+    // Sinon, retirer une quantité partielle
+    if (quantity <= 0) {
+      throw new BadRequestError("La quantité à retirer doit être un nombre positif");
     }
 
     // Vérifier que le lieu a assez de ressources

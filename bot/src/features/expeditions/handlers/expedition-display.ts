@@ -80,7 +80,7 @@ export async function handleExpeditionMainCommand(
       // Build fields array
       const fields: any[] = [
         {
-          name: "⏱️ Durée",
+          name: `${EXPEDITION.DURATION} Durée`,
           value: `${expedition.duration} jours`,
           inline: true,
         },
@@ -112,6 +112,19 @@ export async function handleExpeditionMainCommand(
         }
       }
 
+      // Add emergency votes count if DEPARTED and at least 1 vote
+      if (expedition.status === "DEPARTED" && expedition.emergencyVotesCount && expedition.emergencyVotesCount > 0) {
+        const membersCount = expedition.members?.length || 0;
+        const threshold = Math.ceil(membersCount / 2);
+        const votesDisplay = `🚨 **${expedition.emergencyVotesCount}/${membersCount}** (Seuil: ${threshold})`;
+
+        fields.push({
+          name: "⚠️ Votes de retour d'urgence",
+          value: votesDisplay,
+          inline: false,
+        });
+      }
+
       // Add member list if there are members
       if (expedition.members && expedition.members.length > 0) {
         const memberList = expedition.members
@@ -133,8 +146,7 @@ export async function handleExpeditionMainCommand(
 
       // Create embed
       const embed = createInfoEmbed(
-        `🚀 ${expedition.name}`,
-        `Expédition en ${getStatusEmoji(expedition.status)}`
+        `${EXPEDITION.ICON} ${expedition.name}`
       ).addFields(fields);
 
       logger.info("Expedition embed created", {
@@ -164,6 +176,32 @@ export async function handleExpeditionMainCommand(
             .setLabel("🚨 Voter retour d'urgence")
             .setStyle(ButtonStyle.Secondary)
         );
+
+        // Check if it's the last day (day before return)
+        const isLastDay = (() => {
+          if (!expedition.returnAt) return false;
+
+          const now = new Date();
+          const returnDate = new Date(expedition.returnAt);
+
+          // Calculate hours until return
+          const hoursUntilReturn = (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+          // Last day = less than 24 hours until return
+          return hoursUntilReturn < 24;
+        })();
+
+        // Add direction button if DEPARTED, no direction set, and NOT last day
+        if (!expedition.currentDayDirection && !isLastDay) {
+          const directionButton = new ButtonBuilder()
+            .setCustomId(`expedition_choose_direction:${expedition.id}`)
+            .setLabel("Choisir Direction")
+            .setEmoji(EXPEDITION.ICON)
+            .setStyle(ButtonStyle.Primary);
+
+          buttonRow.addComponents(directionButton);
+        }
+
         components.push(buttonRow);
       }
 
@@ -211,7 +249,7 @@ export async function handleExpeditionMainCommand(
         );
 
         await interaction.reply({
-          content: "🏕️ **Aucune expédition dans cette ville.**\n\nVous pouvez créer une nouvelle expédition :",
+          content: `${EXPEDITION.ICON} **Aucune expédition prévue**\n\n`,
           components: [buttonRow],
           flags: ["Ephemeral"],
         });
@@ -262,7 +300,7 @@ export async function handleExpeditionMainCommand(
       const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
 
       await interaction.reply({
-        content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\nChoisissez une action :`,
+        content: `${EXPEDITION.ICON} **Expéditions existantes :**\n${expeditionList}\n\nChoisissez une action :`,
         components: [buttonRow],
         flags: ["Ephemeral"],
       });
@@ -329,8 +367,7 @@ export async function handleExpeditionInfoCommand(
 
     // Create embed
     const embed = createInfoEmbed(
-      `🚀 ${currentExpedition.name}`,
-      ""
+      `${EXPEDITION.ICON} ${currentExpedition.name}`,
     )
       .addFields(
         {
@@ -339,7 +376,7 @@ export async function handleExpeditionInfoCommand(
           inline: true,
         },
         {
-          name: "⏱️ Durée",
+          name: "${EXPEDITION.DURATION} Durée",
           value: `${currentExpedition.duration} jours`,
           inline: true,
         },
@@ -353,11 +390,6 @@ export async function handleExpeditionInfoCommand(
           value: currentExpedition.members?.length.toString() || "0",
           inline: true,
         },
-        {
-          name: "🏛️ Ville",
-          value: currentExpedition.town?.name || "Inconnue",
-          inline: true,
-        }
       );
 
     // Add detailed resources if available
@@ -443,8 +475,22 @@ export async function handleExpeditionInfoCommand(
           .setStyle(ButtonStyle.Secondary)
       );
 
-      // Add direction button if DEPARTED and no direction set
-      if (!currentExpedition.currentDayDirection) {
+      // Check if it's the last day (day before return)
+      const isLastDay = (() => {
+        if (!currentExpedition.returnAt) return false;
+
+        const now = new Date();
+        const returnDate = new Date(currentExpedition.returnAt);
+
+        // Calculate hours until return
+        const hoursUntilReturn = (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        // Last day = less than 24 hours until return
+        return hoursUntilReturn < 24;
+      })();
+
+      // Add direction button if DEPARTED, no direction set, and NOT last day
+      if (!currentExpedition.currentDayDirection && !isLastDay) {
         const directionButton = new ButtonBuilder()
           .setCustomId(`expedition_choose_direction:${currentExpedition.id}`)
           .setLabel("Choisir Direction")

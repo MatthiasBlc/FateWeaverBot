@@ -6,7 +6,7 @@ import { CharacterQueries } from "../infrastructure/database/query-builders";
 
 const prisma = new PrismaClient();
 
-async function increaseAllCharactersHunger() {
+export async function increaseAllCharactersHunger() {
   try {
     console.log("Début de l'augmentation automatique de la faim...");
 
@@ -104,7 +104,7 @@ async function increaseAllCharactersHunger() {
 }
 
 export function setupHungerIncreaseJob() {
-  // Décrément quotidien à minuit (comme les PA)
+  // Décrément quotidien à minuit (00:00:00 - FIRST)
   const job = new CronJob(
     "0 0 0 * * *",
     increaseAllCharactersHunger,
@@ -113,7 +113,7 @@ export function setupHungerIncreaseJob() {
     "Europe/Paris"
   );
   console.log(
-    "Job CRON pour l'augmentation de la faim configuré (quotidien à minuit)"
+    "Job CRON pour l'augmentation de la faim configuré (quotidien à 00:00:00)"
   );
   return job;
 }

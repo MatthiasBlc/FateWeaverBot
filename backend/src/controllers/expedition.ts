@@ -13,6 +13,7 @@ export const createExpedition = async (req: Request, res: Response, next: NextFu
       townId,
       discordGuildId,
       createdBy: requestCreatedBy,
+      initialDirection,  // ✅ Ajouter initialDirection
     } = req.body;
 
     const createdBy =
@@ -52,6 +53,7 @@ export const createExpedition = async (req: Request, res: Response, next: NextFu
       initialResources: initialResources,  // ✅ Utiliser directement initialResources
       duration: parseInt(duration, 10),
       createdBy,
+      initialDirection,  // ✅ Passer initialDirection au service
     });
 
     // Nettoyer l'objet expedition pour éviter les références circulaires
@@ -243,7 +245,13 @@ export const getActiveExpeditionsForCharacter = async (req: Request, res: Respon
       characterId
     );
 
-    res.json(expeditions);
+    // Map _count.emergencyVotes to emergencyVotesCount for easier access on frontend
+    const mappedExpeditions = expeditions.map((exp: any) => ({
+      ...exp,
+      emergencyVotesCount: exp._count?.emergencyVotes || 0,
+    }));
+
+    res.json(mappedExpeditions);
   } catch (error) {
     next(error);
   }

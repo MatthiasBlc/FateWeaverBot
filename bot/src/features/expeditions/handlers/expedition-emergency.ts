@@ -93,21 +93,32 @@ export async function handleEmergencyReturnButton(interaction: any) {
         thresholdReached,
       });
     } catch (error: any) {
-      // Handle specific API errors
+      // Extract error message safely to avoid circular structure
+      let errorMessage = "Erreur inconnue";
+
       if (error?.response?.data?.error) {
-        await replyEphemeral(interaction, `❌ ${error.response.data.error}`);
-      } else {
-        await replyEphemeral(interaction, `❌ Erreur lors du vote: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+        errorMessage = error.response.data.error;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
 
+      await replyEphemeral(interaction, `❌ Erreur lors du vote: ${errorMessage}`);
+
+      // Log error safely without circular references
       logger.error("Error toggling emergency vote:", {
-        error,
+        message: errorMessage,
+        statusCode: error?.response?.status,
         expeditionId,
         userId: interaction.user.id,
       });
     }
   } catch (error) {
-    logger.error("Error in emergency return button handler:", { error });
+    logger.error("Error in emergency return button handler:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     await replyEphemeral(interaction, `❌ Erreur lors du traitement de votre vote: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }

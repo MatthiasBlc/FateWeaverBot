@@ -126,9 +126,9 @@ export const modifyExpedition = async (req: Request, res: Response, next: NextFu
 };
 
 export const forceReturnExpedition = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
+  const { id } = req.params;
 
+  try {
     if (!id) {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
@@ -138,6 +138,7 @@ export const forceReturnExpedition = async (req: Request, res: Response, next: N
     res.json(expedition);
   } catch (error) {
     if (error instanceof Error) {
+      console.error(`[forceReturnExpedition] Error for expedition ${id}:`, error.message);
       res.status(400).json({ error: error.message });
     } else {
       next(error);

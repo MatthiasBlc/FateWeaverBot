@@ -75,7 +75,7 @@ export const ToggleEmergencyVoteSchema = z.object({
     id: z.string().cuid()
   }),
   body: z.object({
-    characterId: z.string().cuid()
+    userId: z.string()
   })
 });
 

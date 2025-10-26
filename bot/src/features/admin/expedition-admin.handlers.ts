@@ -41,13 +41,16 @@ export async function handleExpeditionAdminCommand(interaction: ChatInputCommand
       return;
     }
 
-    // Filter expeditions that have at least one member
+    // Filter: at least one member AND not RETURNED
     const expeditionsWithMembers = expeditions.filter(
-      (exp: Expedition) => exp.members && exp.members.length > 0
+      (exp: Expedition) =>
+        exp.members &&
+        exp.members.length > 0 &&
+        exp.status !== "RETURNED"
     );
 
     if (expeditionsWithMembers.length === 0) {
-      await replyEphemeral(interaction, "❌ Aucune expédition avec membres trouvée.");
+      await replyEphemeral(interaction, "❌ Aucune expédition active avec membres trouvée.");
       return;
     }
 
@@ -110,13 +113,18 @@ export async function handleExpeditionAdminSelect(interaction: any) {
           .setStyle(ButtonStyle.Secondary)
       );
 
-    const buttonRow2 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`expedition_admin_return_${expeditionId}`)
-          .setLabel("Retour forcé")
-          .setStyle(ButtonStyle.Danger)
-      );
+    // Only show force return button for LOCKED or DEPARTED expeditions
+    const components = [buttonRow1];
+    if (expedition.status === "LOCKED" || expedition.status === "DEPARTED") {
+      const buttonRow2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`expedition_admin_return_${expeditionId}`)
+            .setLabel("Retour forcé")
+            .setStyle(ButtonStyle.Danger)
+        );
+      components.push(buttonRow2);
+    }
 
     // Create embed with expedition details
     const embed = createWarningEmbed(
@@ -133,7 +141,7 @@ export async function handleExpeditionAdminSelect(interaction: any) {
 
     await interaction.update({
       embeds: [embed],
-      components: [buttonRow1, buttonRow2],
+      components: components,
     });
 
   } catch (error) {
@@ -233,20 +241,24 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
       return;
     }
 
-    // Filter characters not already in expedition
+    // Filter characters: not already in expedition, alive, and active
     const availableCharacters = characters.filter(char =>
-      !expedition.members?.some((member: { character: { id: string } }) => member.character.id === char.id)
+      !expedition.members?.some((member: { character: { id: string } }) => member.character.id === char.id) &&
+      !char.isDead &&
+      char.isActive
     );
 
     if (availableCharacters.length === 0) {
-      await replyEphemeral(interaction, "❌ Tous les personnages de cette ville sont déjà dans l'expédition.");
+      await replyEphemeral(interaction, "❌ Aucun personnage disponible (vivant et actif) dans cette ville.");
       return;
     }
 
-    // Create dropdown for adding members
+    // Create dropdown for adding members (multi-select enabled)
     const addSelectMenu = new StringSelectMenuBuilder()
       .setCustomId(`expedition_admin_add_member_${expeditionId}`)
-      .setPlaceholder("Sélectionnez un personnage à ajouter")
+      .setPlaceholder("Sélectionnez un ou plusieurs personnages à ajouter")
+      .setMinValues(1)
+      .setMaxValues(Math.min(availableCharacters.length, 25)) // Discord max 25
       .addOptions(
         availableCharacters.map(char => ({
           label: char.name,
@@ -304,18 +316,30 @@ export async function handleExpeditionAdminMembers(interaction: any, expeditionI
 
 export async function handleExpeditionAdminAddMember(interaction: any) {
   try {
-    const [action, expeditionId] = interaction.customId.split('_').slice(2); // expedition_admin_add_member_${expeditionId}
-    const characterId = interaction.values[0];
+    const parts = interaction.customId.split('_'); // expedition_admin_add_member_${expeditionId}
+    const expeditionId = parts[parts.length - 1]; // Get last part (expedition ID)
+    const characterIds = interaction.values; // Array of character IDs
 
-    // Get character details to check status
-    const character = await apiService.characters.getCharacterById(characterId);
-    
-    // Validate character exists and is alive
-    validateCharacterExists(character);
-    validateCharacterAlive(character);
+    // Add all selected members to expedition
+    const results = [];
+    for (const characterId of characterIds) {
+      try {
+        // Get character details to check status
+        const character = await apiService.characters.getCharacterById(characterId);
 
-    // Add member to expedition
-    await apiService.addMemberToExpedition(expeditionId, characterId);
+        // Validate character exists and is alive
+        validateCharacterExists(character);
+        validateCharacterAlive(character);
+
+        // Add member to expedition
+        await apiService.addMemberToExpedition(expeditionId, characterId);
+        results.push({ success: true, name: character.name, characterId });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error("Error adding single member to expedition:", { characterId, error: errorMessage });
+        results.push({ success: false, name: characterId, characterId, error: errorMessage });
+      }
+    }
 
     // Get updated expedition info
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
@@ -325,9 +349,12 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
       `• ${member.character.name} (${member.character.user?.username || 'Inconnu'})`
     ).join('\n') || 'Aucun membre';
 
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+
     const embed = createSuccessEmbed(
-      `✅ Membre ajouté - ${expedition?.name}`,
-      `**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`
+      `✅ Membres ajoutés - ${expedition?.name}`,
+      `**Résultat:** ${successCount} ajouté(s), ${failCount} échoué(s)\n\n**Membres actuels (${expedition?.members?.length || 0}):**\n${memberList}`
     );
 
     await interaction.update({
@@ -335,22 +362,26 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
       components: [],
     });
 
-    logger.info("Member added to expedition via admin", {
+    logger.info("Members added to expedition via admin", {
       expeditionId,
       expeditionName: expedition?.name,
-      characterId,
+      characterIds,
+      successCount,
+      failCount,
       adminUserId: interaction.user.id,
     });
 
   } catch (error) {
-    logger.error("Error adding member to expedition:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de l'ajout du membre: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Error adding members to expedition:", { error: errorMessage });
+    await replyEphemeral(interaction, `❌ Erreur lors de l'ajout des membres: ${errorMessage}`);
   }
 }
 
 export async function handleExpeditionAdminRemoveMember(interaction: any) {
   try {
-    const [action, expeditionId] = interaction.customId.split('_').slice(2); // expedition_admin_remove_member_${expeditionId}
+    const parts = interaction.customId.split('_'); // expedition_admin_remove_member_${expeditionId}
+    const expeditionId = parts[parts.length - 1]; // Get last part (expedition ID)
     const characterId = interaction.values[0];
 
     // Remove member from expedition

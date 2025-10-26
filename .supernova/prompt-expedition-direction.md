@@ -448,7 +448,7 @@ Remplacer la section où on crée l'expédition (lignes ~200-324 environ) par :
         initialResources,
         duration: durationInDays,
       })}`)
-      .setPlaceholder("Choisissez la direction initiale...")
+      .setPlaceholder("Direction initiale...")
       .addOptions([
         {
           label: "Nord",
@@ -497,7 +497,7 @@ Remplacer la section où on crée l'expédition (lignes ~200-324 environ) par :
     );
 
     await interaction.reply({
-      content: `📍 Choisissez la direction initiale de l'expédition **${name}** :`,
+      content: `${EXPEDITION.ICON} Dans quelle direction part l'expédition **${name}** :`,
       components: [row],
       ephemeral: true,
     });

@@ -13,11 +13,13 @@ export interface Expedition {
   foodStock?: number; // Optional field for compatibility
   startedAt?: string | null;
   endsAt?: string | null;
+  returnAt?: string | null;  // Date de retour calculée à partir du départ
   initialDirection?: string;
   path?: string[];
   currentDayDirection?: string | null;
   directionSetBy?: string | null;
   directionSetAt?: string | null;
+  emergencyVotesCount?: number; // Number of emergency return votes
   town?: {
     id: string;
     name: string;

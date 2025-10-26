@@ -68,7 +68,7 @@ export async function handleViewStockCommand(interaction: any) {
     // Définir l'ordre des catégories avec leurs ressources
     const categories = [
       {
-        name: 'Repas',
+        name: 'Nourriture',
         icon: HUNGER.ICON,
         resources: ['Vivres', 'Repas']
       },
@@ -129,7 +129,7 @@ export async function handleViewStockCommand(interaction: any) {
     );
 
     if (uncategorized.length > 0) {
-      resourceLines.push(`**Autres ${RESOURCES.OTHER_RESOURCES}**`);
+      resourceLines.push(`**Artisanat ${RESOURCES.OTHER_RESOURCES}**`);
       for (const resource of uncategorized) {
         const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
         resourceLines.push(`${emoji} ${resource.resourceType.name} : ${resource.quantity}`);

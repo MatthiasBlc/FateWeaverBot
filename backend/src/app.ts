@@ -13,10 +13,8 @@ import env from "./util/validateEnv";
 import { requireAuth, requireAuthOrInternal } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
-import { setupDailyPaJob } from "./cron/daily-pa.cron";
-import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
-import { setupDailyPmJob } from "./cron/daily-pm.cron";
-import { setupExpeditionJobs } from "./cron/expedition.cron";
+import { setupMidnightTasksJob } from "./cron/midnight-tasks.cron";
+import { setupMorningExpeditionJob } from "./cron/expedition.cron";
 import { setupSeasonChangeJob } from "./cron/season-change.cron";
 import { setupDailyMessageJob } from "./cron/daily-message.cron";
 import chantierRoutes from "./routes/chantier";
@@ -41,31 +39,17 @@ if (process.env.NODE_ENV !== "test") {
   console.log("✅ Starting CRON jobs (not in test mode)");
 
   try {
-    setupDailyPaJob();
-    console.log("✅ Daily PA job started");
+    setupMidnightTasksJob();
+    console.log("✅ Midnight unified job started (Hunger → PM → Expedition Lock → PA Update)");
   } catch (error) {
-    console.error("❌ Failed to start Daily PA job:", error);
+    console.error("❌ Failed to start Midnight unified job:", error);
   }
 
   try {
-    setupHungerIncreaseJob();
-    console.log("✅ Hunger increase job started");
+    setupMorningExpeditionJob();
+    console.log("✅ Morning expedition job started (08:00 - Return → Depart)");
   } catch (error) {
-    console.error("❌ Failed to start Hunger increase job:", error);
-  }
-
-  try {
-    setupDailyPmJob();
-    console.log("✅ Daily PM job started");
-  } catch (error) {
-    console.error("❌ Failed to start Daily PM job:", error);
-  }
-
-  try {
-    setupExpeditionJobs();
-    console.log("✅ Expedition jobs started");
-  } catch (error) {
-    console.error("❌ Failed to start Expedition jobs:", error);
+    console.error("❌ Failed to start Morning expedition job:", error);
   }
 
   try {
@@ -160,8 +144,8 @@ app.use("/api/projects", requireAuthOrInternal, projectsRoutes);
 app.use("/api/seasons", requireAuthOrInternal, seasonsRoutes);
 app.use("/api/jobs", requireAuthOrInternal, jobRoutes);
 
-// Routes admin (double protection)
-app.use("/api/admin/expeditions", requireAuth, expeditionAdminRoutes);
+// Routes admin
+app.use("/api/admin/expeditions", requireAuthOrInternal, expeditionAdminRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Routes protégées

@@ -101,13 +101,11 @@ export function createErrorEmbed(
  */
 export function createInfoEmbed(
   title: string,
-  description: string,
   fields?: EmbedField[]
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.INFO)
     .setTitle(title)
-    .setDescription(description)
     .setTimestamp();
 
   if (fields && fields.length > 0) {

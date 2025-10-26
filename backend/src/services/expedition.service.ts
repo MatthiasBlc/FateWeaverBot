@@ -556,8 +556,9 @@ export class ExpeditionService {
         throw new BadRequestError("Can only depart expeditions in LOCKED status");
       }
 
+      // Calculate returnAt normalized to 08:00:00 (no minutes/seconds/ms)
       const returnAt = new Date();
-      returnAt.setHours(returnAt.getHours() + expedition.duration * 24); // Convert days to hours
+      returnAt.setHours(returnAt.getHours() + expedition.duration * 24, 0, 0, 0); // Convert days to hours, reset min/sec/ms
 
       const updatedExpedition = await tx.expedition.update({
         where: { id: expeditionId },
@@ -608,33 +609,14 @@ export class ExpeditionService {
         throw new NotFoundError('Expedition', expeditionId);
       }
 
-      if (expedition.status !== ExpeditionStatus.DEPARTED) {
-        throw new BadRequestError("Can only return expeditions in DEPARTED status");
+      // Allow return for LOCKED (before departure) and DEPARTED (during expedition)
+      // LOCKED return = cancellation before departure (admin emergency)
+      // DEPARTED return = normal return or emergency return
+      if (expedition.status !== ExpeditionStatus.DEPARTED && expedition.status !== ExpeditionStatus.LOCKED) {
+        throw new BadRequestError("Can only return expeditions in LOCKED or DEPARTED status");
       }
 
-      // Return food to town and clear expedition food stock
-      const town = await tx.town.findUnique({
-        where: { id: expedition.townId },
-        select: { id: true },
-      });
-
-      if (!town) {
-        throw new NotFoundError('Town', expedition.townId);
-      }
-
-      const [, updatedExpedition] = await Promise.all([
-        // Town food stock is now handled via ResourceStock, so no update needed here
-        Promise.resolve(),
-        tx.expedition.update({
-          where: { id: expeditionId },
-          data: {
-            status: ExpeditionStatus.RETURNED,
-            returnAt: new Date(),
-          },
-        }),
-      ]);
-
-      // Get expedition resources for logging
+      // Get expedition resources BEFORE transferring
       const expeditionResources = await tx.resourceStock.findMany({
         where: {
           locationType: "EXPEDITION",
@@ -643,12 +625,67 @@ export class ExpeditionService {
         ...ResourceQueries.withResourceType(),
       });
 
+      // Transfer all expedition resources back to town
+      for (const resource of expeditionResources) {
+        // Add to town stock (or create if doesn't exist)
+        await tx.resourceStock.upsert({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "CITY",
+              locationId: expedition.townId,
+              resourceTypeId: resource.resourceTypeId,
+            },
+          },
+          update: {
+            quantity: { increment: resource.quantity },
+          },
+          create: {
+            locationType: "CITY",
+            locationId: expedition.townId,
+            resourceTypeId: resource.resourceTypeId,
+            quantity: resource.quantity,
+          },
+        });
+
+        // Delete from expedition
+        await tx.resourceStock.delete({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "EXPEDITION",
+              locationId: expeditionId,
+              resourceTypeId: resource.resourceTypeId,
+            },
+          },
+        });
+      }
+
+      // Get expedition members to remove them
+      const expeditionMembers = await tx.expeditionMember.findMany({
+        where: { expeditionId },
+        select: { characterId: true },
+      });
+
+      // Remove all members from expedition
+      await tx.expeditionMember.deleteMany({
+        where: { expeditionId },
+      });
+
+      // Update expedition status
+      const updatedExpedition = await tx.expedition.update({
+        where: { id: expeditionId },
+        data: {
+          status: ExpeditionStatus.RETURNED,
+          returnAt: new Date(),
+        },
+      });
+
       const resourcesSummary = expeditionResources.map(r => ({
         resourceName: r.resourceType.name,
         quantity: r.quantity,
       }));
 
-      // Log expedition return
+      // Log expedition return (or cancellation if LOCKED)
+      const eventType = expedition.status === ExpeditionStatus.LOCKED ? "cancelled" : "returned";
       await dailyEventLogService.logExpeditionReturned(
         expeditionId,
         expedition.name,
@@ -657,9 +694,10 @@ export class ExpeditionService {
       );
 
       logger.info("expedition_event", {
-        event: "returned",
+        event: eventType,
         expeditionId,
         expeditionName: expedition.name,
+        originalStatus: expedition.status,
         foodReturned: 0,
         townFoodStock: 0,
       });
@@ -695,10 +733,13 @@ export class ExpeditionService {
       }
 
       // Check userId properly via character relation
+      // userId is the Discord ID, need to check via user.discordId
       const memberCharacters = await tx.character.findMany({
         where: {
           id: { in: expedition.members.map((m) => m.characterId) },
-          userId,
+          user: {
+            discordId: userId,
+          },
         },
       });
 
@@ -862,7 +903,10 @@ export class ExpeditionService {
           orderBy: { joinedAt: "asc" },
         },
         _count: {
-          select: { members: true },
+          select: {
+            members: true,
+            emergencyVotes: true,
+          },
         },
       },
     });

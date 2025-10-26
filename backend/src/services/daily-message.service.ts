@@ -65,6 +65,11 @@ export class DailyMessageService {
       availableMessages.push(...allMessages);
     }
 
+    // Check if we have messages available
+    if (availableMessages.length === 0) {
+      return `Aucun message météo disponible pour ${messageType}.`;
+    }
+
     const selectedMessage = availableMessages[Math.floor(Math.random() * availableMessages.length)];
 
     // 6. Mark as used

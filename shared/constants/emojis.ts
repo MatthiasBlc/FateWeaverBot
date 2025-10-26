@@ -115,12 +115,13 @@ export const CAPABILITIES = {
 // NOTE: Expedition emojis are currently hardcoded in expedition files
 // These constants should be used once hardcoded emojis are refactored
 export const EXPEDITION = {
-  // PLANNING: "📝", // UNUSED (hardcoded in expedition-create.ts)
-  // LOCKED: "🔒", // UNUSED
-  // DEPARTED: "🚶‍♀️‍➡️", // UNUSED
-  // RETURNED: "🏘️", // UNUSED
+  PLANNING: "📝", // UNUSED (hardcoded in expedition-create.ts)
+  LOCKED: "🔒", // UNUSED
+  DEPARTED: "🚶‍♀️‍➡️", // UNUSED
+  RETURNED: "🏘️", // UNUSED
   ICON: "🧭", // TODO: Should be used (currently hardcoded in expedition-display.ts:450)
   // CAMP: "🏕️", // UNUSED
+  DURATION: "⌛", // 
 } as const;
 
 // Chantiers

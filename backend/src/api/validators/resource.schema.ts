@@ -40,8 +40,8 @@ export const RemoveResourceSchema = z.object({
     resourceTypeId: z.string().regex(/^\d+$/).transform(Number)
   }),
   body: z.object({
-    quantity: z.number().int().positive()
-  })
+    quantity: z.number().int().positive().optional()
+  }).optional()
 });
 
 // POST /resources/:fromLocationType/:fromLocationId/:toLocationType/:toLocationId/:resourceTypeId/transfer

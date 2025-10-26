@@ -1,3 +1,4 @@
+import { RESOURCES } from "@shared/constants/emojis";
 import {
   ModalBuilder,
   TextInputBuilder,
@@ -18,13 +19,13 @@ export function createExpeditionCreationModal() {
     .setLabel("Nom de l'expédition")
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
-    .setPlaceholder("Entrez le nom de votre expédition")
+    .setPlaceholder("Nom de l'expédition")
     .setMinLength(1)
     .setMaxLength(100);
 
   const vivresInput = new TextInputBuilder()
     .setCustomId("expedition_vivres_input")
-    .setLabel("🍞 Vivres à emporter")
+    .setLabel(`${RESOURCES.FOOD} Vivres à emporter`)
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("Quantité de vivres (ex: 50)")
@@ -33,7 +34,7 @@ export function createExpeditionCreationModal() {
 
   const nourritureInput = new TextInputBuilder()
     .setCustomId("expedition_nourriture_input")
-    .setLabel("🍖 Repas à emporter")
+    .setLabel(`${RESOURCES.PREPARED_FOOD} Repas à emporter`)
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setPlaceholder("Quantité de nourriture (ex: 25)")

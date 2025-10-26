@@ -78,6 +78,34 @@ import { ERROR_MESSAGES } from "../../constants/messages.js";
  */
 export async function handleChantiersCommand(interaction: CommandInteraction) {
   try {
+    // Récupérer le personnage actif pour vérifier s'il est en expédition
+    const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
+
+    if (!town) {
+      return interaction.reply({
+        content: "Impossible de trouver la ville associée à ce serveur.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const character = await apiService.characters.getActiveCharacter(
+      interaction.user.id,
+      town.id
+    );
+
+    if (character) {
+      // Vérifier si le personnage est en expédition DEPARTED
+      const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+      const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
+
+      if (inDepartedExpedition) {
+        return interaction.reply({
+          content: "❌ Vous êtes en expédition et ne pouvez pas voir les chantiers de la ville. Attendez votre retour !",
+          flags: ["Ephemeral"],
+        });
+      }
+    }
+
     const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
@@ -242,6 +270,17 @@ export async function handleParticipateButton(interaction: any) {
     if (!character) {
       return interaction.reply({
         content: "Vous devez d'abord créer un personnage.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Vérifier si le personnage est en expédition DEPARTED
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+    const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
+
+    if (inDepartedExpedition) {
+      return interaction.reply({
+        content: "❌ Vous êtes en expédition et ne pouvez pas participer aux chantiers de la ville. Attendez votre retour !",
         flags: ["Ephemeral"],
       });
     }

@@ -5,7 +5,7 @@ import { logger } from "../services/logger";
 
 const prisma = new PrismaClient();
 
-async function lockExpeditionsDue() {
+export async function lockExpeditionsDue() {
   try {
     logger.debug("Starting scheduled expedition lock check");
 
@@ -200,17 +200,22 @@ async function morningExpeditionUpdate() {
   }
 }
 
-export function setupExpeditionJobs() {
-  // Lock expeditions at midnight (00:00)
-  const lockJob = new CronJob("0 0 * * *", lockExpeditionsDue, null, true, "Europe/Paris");
-  logger.info("Expedition lock job scheduled for midnight daily");
-
+/**
+ * Setup morning expedition job (08:00)
+ * This job is still separate from midnight tasks as it runs at a different time
+ */
+export function setupMorningExpeditionJob() {
   // Morning update at 08:00: Returns → Departs
   const morningJob = new CronJob("0 8 * * *", morningExpeditionUpdate, null, true, "Europe/Paris");
   logger.info("Morning expedition update job scheduled for 08:00 daily (returns then departs)");
 
-  return {
-    lockJob,
-    morningJob
-  };
+  return morningJob;
+}
+
+/**
+ * @deprecated Use setupMorningExpeditionJob instead. Lock is now part of midnight unified job.
+ */
+export function setupExpeditionJobs() {
+  logger.warn("setupExpeditionJobs is deprecated. Use setupMorningExpeditionJob instead.");
+  return setupMorningExpeditionJob();
 }

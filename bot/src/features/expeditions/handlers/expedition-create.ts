@@ -19,8 +19,9 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
-import { DIRECTION } from "@shared/constants/emojis";
+import { DIRECTION, EXPEDITION, RESOURCES } from "@shared/constants/emojis";
 import { expeditionCache } from "../../../services/expedition-cache";
+import { emojiCache } from "../../../services/emoji-cache";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -321,13 +322,13 @@ export async function handleExpeditionDirectionSelect(
     expeditionCache.remove(expeditionId);
 
     await interaction.update({
-      content: `✅ Expédition **${expedition.data.name}** créée avec succès !\nDirection initiale : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
+      content: `${EXPEDITION.ICON} L'expédition **${expedition.data.name}** se prépare à partir !\nElle prendra la direction : ${getDirectionText(direction)} ${getDirectionEmoji(direction)}`,
       components: [],
     });
 
     // Send public log message
     try {
-      const logMessage = `🏕️ **Nouvelle expédition créée**\n**${expedition.data.name}** créée par **${character.name}**\n📦 Ressources : ${expeditionData.initialResources.map((r: any) => `${r.quantity} ${r.resourceTypeName}`).join(", ")}\n⏱️ Durée : ${expeditionData.duration} jours\n🧭 Direction : ${getDirectionText(direction)}\n🏛️ Ville : ${character.town?.name || "Inconnue"}`;
+      const logMessage = `${EXPEDITION.ICON} **Nouvelle expédition créée**\n**${character.name}** prépare une expédition **${expedition.data.name}**\n\n${RESOURCES.GENERIC} **Ressources** : ${expeditionData.initialResources.map((r: any) => `${emojiCache.getEmoji("resource", r.resourceTypeName)} ${r.quantity}`).join(", ")}\n${EXPEDITION.DURATION} Durée : ${expeditionData.duration} jours\n${EXPEDITION.ICON} Direction : ${getDirectionText(direction)}`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,

@@ -117,8 +117,14 @@ export class ExpeditionAPIService {
         { userId }
       );
       return response.data.data;
-    } catch (error) {
-      logger.error('Error toggling emergency vote:', error);
+    } catch (error: any) {
+      // Log safely without circular references
+      logger.error('Error toggling emergency vote:', {
+        message: error?.response?.data?.error || error?.message || 'Unknown error',
+        status: error?.response?.status,
+        expeditionId,
+        userId,
+      });
       throw error;
     }
   }

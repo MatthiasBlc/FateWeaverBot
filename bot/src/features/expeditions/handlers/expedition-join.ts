@@ -10,7 +10,7 @@ import { sendLogMessage } from "../../../utils/channels";
 import { getActiveCharacterFromCommand } from "../../../utils/character";
 import { getTownByGuildId } from "../../../services/towns.service";
 import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
-import { getStatusEmoji, canJoinExpedition } from "../expedition-utils";
+import { getStatusEmoji, getStatusEmojiOnly, canJoinExpedition, getDirectionEmoji, getDirectionText } from "../expedition-utils";
 import { Expedition } from "../../../types/entities";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
@@ -115,15 +115,15 @@ export async function handleExpeditionJoinCommand(
       return;
     }
 
-    // Get available expeditions (PLANNING status)
+    // Get available expeditions (PLANNING or DEPARTED status)
     const expeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
 
     const availableExpeditions = expeditions.filter(
-      (exp: Expedition) => exp.status === "PLANNING"
+      (exp: Expedition) => exp.status === "PLANNING" || exp.status === "DEPARTED"
     );
 
     if (availableExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Aucune expédition en cours de planification disponible.");
+      await replyEphemeral(interaction, "❌ Aucune expédition disponible (en planification ou en cours).");
       return;
     }
 
@@ -132,18 +132,27 @@ export async function handleExpeditionJoinCommand(
       .setCustomId("expedition_join_select")
       .setPlaceholder("Sélectionnez une expédition à rejoindre")
       .addOptions(
-        availableExpeditions.map((exp: Expedition) => ({
-          label: exp.name,
-          description: `Durée: ${exp.duration}j, Membres: 0`, // Plus d'accès à foodStock et members
-          value: exp.id,
-        }))
+        availableExpeditions.map((exp: Expedition) => {
+          const statusEmoji = getStatusEmojiOnly(exp.status);
+          const directionEmoji = getDirectionEmoji(exp.initialDirection);
+          const directionText = getDirectionText(exp.initialDirection);
+          return {
+            label: exp.name,
+            description: `${statusEmoji} - ${directionEmoji} ${directionText} - Durée: ${exp.duration}j`,
+            value: exp.id,
+          };
+        })
       );
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       selectMenu
     );
 
-    await replyEphemeral(interaction, "Choisissez une expédition à rejoindre:");
+    await interaction.reply({
+      content: "Choisissez une expédition à rejoindre:",
+      components: [row],
+      flags: ["Ephemeral"],
+    });
   } catch (error) {
     logger.error("Error in expedition join command:", { error });
     await replyEphemeral(interaction, ERROR_MESSAGES.EXPEDITION_FETCH_ERROR);
@@ -188,14 +197,22 @@ export async function handleExpeditionJoinSelect(interaction: any) {
       throw error;
     }
 
+    // Join the expedition
+    await apiService.expeditions.joinExpedition(expeditionId, character.id);
+
+    // Get expedition details
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
+
     await interaction.update({
-      content: `✅ Vous avez rejoint l'expédition avec succès!`,
+      content: `✅ Vous avez rejoint l'expédition **${expedition?.name || 'inconnue'}** avec succès!`,
       components: [],
     });
 
     logger.info("Character joined expedition via Discord", {
       expeditionId,
+      expeditionName: expedition?.name,
       characterId: character.id,
+      characterName: character.name,
       joinedBy: user.id,
     });
   } catch (error) {

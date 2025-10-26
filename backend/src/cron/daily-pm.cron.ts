@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
  *
  * Each depressed character affects ONE random character in their location per day.
  */
-async function updateMentalHealthContagion() {
+export async function updateMentalHealthContagion() {
   try {
     console.log("Début de la contagion de dépression...");
 
@@ -157,16 +157,16 @@ async function updateMentalHealthContagion() {
 }
 
 export function setupDailyPmJob() {
-  // Run daily at midnight (after hunger decrease and before PA update)
+  // Run daily at 00:00:05 (after hunger decrease, before expedition lock)
   const job = new CronJob(
-    "0 0 * * *",
+    "5 0 0 * * *",
     updateMentalHealthContagion,
     null,
     true,
     "Europe/Paris"
   );
   console.log(
-    "Job CRON pour la contagion de dépression configuré (quotidien à minuit)"
+    "Job CRON pour la contagion de dépression configuré (quotidien à 00:00:05)"
   );
   return job;
 }

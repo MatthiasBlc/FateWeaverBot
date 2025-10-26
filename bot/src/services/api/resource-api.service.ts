@@ -72,8 +72,7 @@ export class ResourceAPIService extends BaseAPIService {
    * Ajoute ou met à jour une ressource
    */
   async addOrUpdateResource(locationType: "CITY" | "EXPEDITION", locationId: string, resourceTypeId: number, quantity: number) {
-    const response = await this.api.post(`/resources/${locationType}/${locationId}`, {
-      resourceTypeId,
+    const response = await this.api.post(`/resources/${locationType}/${locationId}/${resourceTypeId}`, {
       quantity
     });
     return response.data;
