@@ -16,11 +16,11 @@ export class ChasserCapability extends BaseCapability {
 
   private getPrivateMessage(foodAmount: number): string {
     if (foodAmount === 0) {
-      return `Les proies étaient trop bien cachées aujourd'hui… Tu as dépensé 2 ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+      return `Les proies étaient trop bien cachées aujourd'hui… Tu as dépensé 2 PA${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
     } else if (foodAmount <= 8) {
-      return `De retour de la chasse ! Tu as dépensé 2 ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}.`;
+      return `De retour de la chasse ! Tu as dépensé 2 PA${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD}.`;
     } else {
-      return `Quelle chasse incroyable ! Tu as dépensé 2 ${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD} !`;
+      return `Quelle chasse incroyable ! Tu as dépensé 2 PA${CHARACTER.PA} et rapporté ${foodAmount} ${RESOURCES.FOOD} !`;
     }
   }
 
@@ -65,7 +65,7 @@ export class ChasserCapability extends BaseCapability {
       paConsumed: 2,
       loot: { Vivres: foodAmount },
       metadata: {
-        bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+        bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
       },
     };
   }

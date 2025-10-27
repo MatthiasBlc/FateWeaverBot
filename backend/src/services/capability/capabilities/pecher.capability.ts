@@ -13,35 +13,42 @@ export class PecherCapability extends BaseCapability {
   readonly name = "Pêcher";
   readonly category = "HARVEST" as const;
 
-  private getPrivateMessage(resourceName: string, quantity: number, paToUse: number): string {
+  private getPrivateMessage(
+    resourceName: string,
+    quantity: number,
+    paToUse: number
+  ): string {
     if (resourceName === "Coquillage") {
-      return `De retour d'une pêche… inattendue ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et trouvé un énorme coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
+      return `De retour d'une pêche… inattendue ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et trouvé un énorme coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
     }
 
     if (resourceName === "Vivres") {
       if (quantity === 10) {
-        return `Une pêche miraculeuse ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 10 ${RESOURCES.FOOD} !`;
+        return `Une pêche miraculeuse ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté 10 ${RESOURCES.FOOD} !`;
       } else if (quantity > 0) {
-        return `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.FOOD}`;
+        return `De retour de la pêche ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.FOOD}`;
       } else {
-        return `Ce n'est pas une pêche très fructueuse aujourd'hui… Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
+        return `Ce n'est pas une pêche très fructueuse aujourd'hui… Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté 0 ${RESOURCES.FOOD}.`;
       }
     }
 
     if (resourceName === "Bois") {
-      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.WOOD}.`;
+      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.WOOD}.`;
     }
 
     if (resourceName === "Minerai") {
-      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.MINERAL}.`;
+      return `Pas de poisson aujourd'hui, mais des débris se sont pris dans ton filet. Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté ${quantity} ${RESOURCES.MINERAL}.`;
     }
 
     // Fallback
-    return `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté ${quantity} ${resourceName}`;
+    return `De retour de la pêche ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté ${quantity} ${resourceName}`;
   }
 
-
-  private getPublicMessage(characterName: string, resourceName: string, quantity: number): string {
+  private getPublicMessage(
+    characterName: string,
+    resourceName: string,
+    quantity: number
+  ): string {
     if (resourceName === "Coquillage") {
       return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec un superbe coquillage aux reflets nacrés. Il chante la mer, ses vagues et ses colères… `;
     }
@@ -68,7 +75,6 @@ export class PecherCapability extends BaseCapability {
     return `${CAPABILITIES.FISH} ${characterName} revient de la pêche avec ${quantity} ${resourceName}.`;
   }
 
-
   async execute(
     characterId: string,
     capabilityId: string,
@@ -93,7 +99,9 @@ export class PecherCapability extends BaseCapability {
     );
 
     // Récupérer les entrées de loot depuis la DB
-    const lootEntries = await this.capabilityRepo.getFishingLootEntries(paToUse);
+    const lootEntries = await this.capabilityRepo.getFishingLootEntries(
+      paToUse
+    );
 
     if (lootEntries.length === 0) {
       throw new BadRequestError(
@@ -135,7 +143,7 @@ export class PecherCapability extends BaseCapability {
     if (lootEntry.resourceName === "Coquillage" && coquillageFound) {
       return {
         success: true,
-        message: `De retour de la pêche ! Tu as dépensé ${paToUse} ${CHARACTER.PA} et rapporté 8 ${RESOURCES.FOOD}, 4 ${RESOURCES.WOOD} et 4 ${RESOURCES.MINERAL}`,
+        message: `De retour de la pêche ! Tu as dépensé ${paToUse} PA${CHARACTER.PA} et rapporté 8 ${RESOURCES.FOOD}, 4 ${RESOURCES.WOOD} et 4 ${RESOURCES.MINERAL}`,
         publicMessage: `${CAPABILITIES.FISH} ${character.name} revient de la pêche avec 8 ${RESOURCES.FOOD}, 4 ${RESOURCES.WOOD} et 4 ${RESOURCES.MINERAL}.`,
         paConsumed: paToUse,
         loot: {
@@ -144,7 +152,7 @@ export class PecherCapability extends BaseCapability {
           Minerai: 4,
         },
         metadata: {
-          bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+          bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
         },
       };
     }
@@ -153,20 +161,36 @@ export class PecherCapability extends BaseCapability {
     if (lootEntry.resourceName === "Coquillage") {
       return {
         success: true,
-        message: this.getPrivateMessage("Coquillage", lootEntry.quantity, paToUse),
-        publicMessage: this.getPublicMessage(character.name, "Coquillage", lootEntry.quantity),
+        message: this.getPrivateMessage(
+          "Coquillage",
+          lootEntry.quantity,
+          paToUse
+        ),
+        publicMessage: this.getPublicMessage(
+          character.name,
+          "Coquillage",
+          lootEntry.quantity
+        ),
         paConsumed: paToUse,
         loot: { [lootEntry.resourceName]: lootEntry.quantity },
         metadata: {
-          bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
-          objectFound: 'Coquillage',
+          bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
+          objectFound: "Coquillage",
         },
       };
     }
 
     // Cas normal : retourner la ressource dans le loot
-    const message = this.getPrivateMessage(lootEntry.resourceName, lootEntry.quantity, paToUse);
-    const publicMessage = this.getPublicMessage(character.name, lootEntry.resourceName, lootEntry.quantity);
+    const message = this.getPrivateMessage(
+      lootEntry.resourceName,
+      lootEntry.quantity,
+      paToUse
+    );
+    const publicMessage = this.getPublicMessage(
+      character.name,
+      lootEntry.resourceName,
+      lootEntry.quantity
+    );
 
     return {
       success: true,
@@ -175,7 +199,7 @@ export class PecherCapability extends BaseCapability {
       paConsumed: paToUse,
       loot: { [lootEntry.resourceName]: lootEntry.quantity },
       metadata: {
-        bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+        bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
       },
     };
   }

@@ -1,4 +1,7 @@
-import { createActionButtons, createConfirmationButtons } from "../../utils/discord-components";
+import {
+  createActionButtons,
+  createConfirmationButtons,
+} from "../../utils/discord-components";
 import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -11,7 +14,13 @@ import {
 } from "discord.js";
 import type { Character } from "./character-admin.types";
 import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
-import { STATUS, HUNGER, CHARACTER, ACTIONS, CAPABILITIES } from "../../constants/emojis";
+import {
+  STATUS,
+  HUNGER,
+  CHARACTER,
+  ACTIONS,
+  CAPABILITIES,
+} from "../../constants/emojis";
 import { emojiCache } from "../../services/emoji-cache";
 
 // --- Custom IDs --- //
@@ -43,15 +52,17 @@ export function createCharacterSelectMenu(characters: Character[]) {
       characters.map((char) =>
         new StringSelectMenuOptionBuilder()
           .setLabel(
-            `${char.name}${char.user?.globalName
-              ? ` - ${char.user.globalName}`
-              : char.user?.username
+            `${char.name}${
+              char.user?.globalName
+                ? ` - ${char.user.globalName}`
+                : char.user?.username
                 ? ` - ${char.user.username}`
                 : ""
             }`
           )
           .setDescription(
-            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
+            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${
+              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
             } | Reroll: ${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR}`
           )
           .setValue(char.id)
@@ -67,7 +78,9 @@ export function createCharacterSelectMenu(characters: Character[]) {
  * Crée les boutons d'action pour un personnage sélectionné.
  * Retourne un tableau de 2 ActionRows (Discord limite à 5 boutons par row).
  */
-export function createCharacterActionButtons(character: Character): ActionRowBuilder<ButtonBuilder>[] {
+export function createCharacterActionButtons(
+  character: Character
+): ActionRowBuilder<ButtonBuilder>[] {
   // Première rangée : Actions principales (max 5 boutons)
   const firstRowButtons = [];
 
@@ -231,7 +244,9 @@ export function createCharacterDetailsContent(character: Character): string {
     `**${character.name}**\n` +
     `Actif: ${character.isActive ? STATUS.SUCCESS : STATUS.ERROR}\n` +
     `Mort: ${character.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL}\n` +
-    `Reroll autorisé: ${character.canReroll ? STATUS.SUCCESS : STATUS.ERROR}\n` +
+    `Reroll autorisé: ${
+      character.canReroll ? STATUS.SUCCESS : STATUS.ERROR
+    }\n` +
     `PA: ${character.paTotal} | Faim: ${getHungerLevelText(
       character.hungerLevel
     )} | PV: ${character.hp} | PM: ${character.pm}\n\n` +
@@ -285,7 +300,9 @@ export function createCapabilitySelectMenu(
         const displayEmoji = emoji !== "📦" ? emoji : "";
 
         return new StringSelectMenuOptionBuilder()
-          .setLabel(`${displayEmoji} ${capability.name} (${capability.costPA} PA)`.trim())
+          .setLabel(
+            `${displayEmoji} ${capability.name} (${capability.costPA} PA)`.trim()
+          )
           .setDescription(
             capability.description
               ? capability.description.substring(0, 100)
@@ -526,11 +543,15 @@ function createPMDisplay(current: number, max: number): string {
   }
 
   if (current === 0) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSION}**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSION
+    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
   }
 
   if (current === 1) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSED}**Déprime** (Ne peut pas utiliser de PA)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSED
+    }**Déprime** (Ne peut pas utiliser de PA)`;
   }
 
   return hearts.join(" ");
@@ -585,11 +606,11 @@ function createStatusDisplay(character: any): string | null {
 function createCapabilitiesDisplay(
   capabilities:
     | Array<{
-      name: string;
-      description?: string;
-      costPA: number;
-      emojiTag?: string;
-    }>
+        name: string;
+        description?: string;
+        costPA: number;
+        emojiTag?: string;
+      }>
     | undefined
 ): string {
   if (!capabilities || capabilities.length === 0) {
@@ -602,7 +623,7 @@ function createCapabilitiesDisplay(
     "Cuisiner",
     "Pêcher",
     "Rechercher",
-    "Soigner"
+    "Soigner",
   ];
 
   const getEmojiForCapability = (emojiTag?: string): string => {
@@ -620,13 +641,13 @@ function createCapabilitiesDisplay(
   };
 
   return capabilities
-    .map(
-      (cap) => {
-        const showPA = !capabilitiesWithPAMenu.includes(cap.name);
-        const paText = showPA ? ` (${cap.costPA} PA)` : "";
-        return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${cap.description ? ` • ${cap.description}` : ""}`;
-      }
-    )
+    .map((cap) => {
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA} PA)` : "";
+      return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${
+        cap.description ? ` • ${cap.description}` : ""
+      }`;
+    })
     .join("\n");
 }
 
@@ -661,8 +682,9 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${character.actionPoints || 0}/4 ${CHARACTER.PA}** ${(character.actionPoints || 0) >= 3 ? STATUS.WARNING : " "
-        }`.trim(),
+      value: `**${character.actionPoints || 0}/4 PA${CHARACTER.PA}** ${
+        (character.actionPoints || 0) >= 3 ? STATUS.WARNING : " "
+      }`.trim(),
       inline: true,
     },
     {
@@ -677,7 +699,9 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
     },
     {
       name: `Faim`,
-      value: `${getHungerEmoji(character.hungerLevel)} **${getHungerLevelText(character.hungerLevel)}**`,
+      value: `${getHungerEmoji(character.hungerLevel)} **${getHungerLevelText(
+        character.hungerLevel
+      )}**`,
       inline: true,
     },
   ];
@@ -685,7 +709,9 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
   // Utiliser directement hungerLevel pour l'affichage des statuts (pas de transformation)
   const statusDisplay = createStatusDisplay(character);
   if (statusDisplay) {
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -702,7 +728,9 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
   }
 
   if (character.capabilities && character.capabilities.length > 0) {
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -740,12 +768,15 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
       objects.forEach((obj: any) => {
         if (obj.skillBonuses && obj.skillBonuses.length > 0) {
           obj.skillBonuses.forEach((skillBonus: any) => {
-            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
+            if (
+              skillBonus.skill &&
+              !objectSkills.find((s) => s.id === skillBonus.skill.id)
+            ) {
               objectSkills.push({
                 id: skillBonus.skill.id,
                 name: skillBonus.skill.name,
                 description: skillBonus.skill.description,
-                sourceObject: obj.name
+                sourceObject: obj.name,
               });
             }
           });
@@ -754,12 +785,14 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
     }
 
     const allSkills = [
-      ...skills.map((skill: any) => ({ ...skill, type: 'classic' })),
-      ...objectSkills.map((skill: any) => ({ ...skill, type: 'object' }))
+      ...skills.map((skill: any) => ({ ...skill, type: "classic" })),
+      ...objectSkills.map((skill: any) => ({ ...skill, type: "object" })),
     ];
 
     if (allSkills.length > 0) {
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -770,13 +803,17 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
 
       const skillsText = allSkills
         .map((skill: any) => {
-          if (skill.type === 'object') {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
+          if (skill.type === "object") {
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            } *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
           } else {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`;
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            }`;
           }
         })
-        .join('\n');
+        .join("\n");
 
       fields.push({
         name: `📚 **COMPÉTENCES**`,
@@ -795,7 +832,9 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
     const objects = objectsResponse.data;
 
     if (objects && objects.length > 0) {
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -805,8 +844,11 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
       }
 
       const objectsText = objects
-        .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
-        .join('\n');
+        .map(
+          (obj: any) =>
+            `**${obj.name}**${obj.description ? ` • ${obj.description}` : ""}`
+        )
+        .join("\n");
 
       fields.push({
         name: `🎒 **OBJETS**`,

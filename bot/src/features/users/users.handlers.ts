@@ -332,11 +332,11 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   const rolesText =
     data.character.roles && data.character.roles.length > 0
       ? data.character.roles
-        .map(
-          (role: { discordId: string; name: string }) =>
-            `<@&${role.discordId}>`
-        )
-        .join(", ")
+          .map(
+            (role: { discordId: string; name: string }) =>
+              `<@&${role.discordId}>`
+          )
+          .join(", ")
       : "Aucun rôle";
 
   // Formatage des rôles Discord de l'utilisateur
@@ -368,8 +368,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${data.actionPoints.points >= 3 ? STATUS.WARNING : " "
-        }`.trim(),
+      value: `**${data.actionPoints.points || 0}/4 PA${CHARACTER.PA}** ${
+        data.actionPoints.points >= 3 ? STATUS.WARNING : " "
+      }`.trim(),
       inline: true,
     },
     {
@@ -393,7 +394,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   const statusDisplay = createStatusDisplay(data.character);
   if (statusDisplay) {
     // Ajouter un espacement avant STATUTS si ce n'est pas la première section
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -411,7 +414,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
   if (data.character.capabilities && data.character.capabilities.length > 0) {
     // Ajouter un espacement avant CAPACITÉS si ce n'est pas la première section
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -453,12 +458,15 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       objects.forEach((obj: any) => {
         if (obj.skillBonuses && obj.skillBonuses.length > 0) {
           obj.skillBonuses.forEach((skillBonus: any) => {
-            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
+            if (
+              skillBonus.skill &&
+              !objectSkills.find((s) => s.id === skillBonus.skill.id)
+            ) {
               objectSkills.push({
                 id: skillBonus.skill.id,
                 name: skillBonus.skill.name,
                 description: skillBonus.skill.description,
-                sourceObject: obj.name
+                sourceObject: obj.name,
               });
             }
           });
@@ -468,13 +476,15 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
     // Combiner les compétences classiques et celles des objets
     const allSkills = [
-      ...skills.map((skill: any) => ({ ...skill, type: 'classic' })),
-      ...objectSkills.map((skill: any) => ({ ...skill, type: 'object' }))
+      ...skills.map((skill: any) => ({ ...skill, type: "classic" })),
+      ...objectSkills.map((skill: any) => ({ ...skill, type: "object" })),
     ];
 
     if (allSkills.length > 0) {
       // Ajouter un espacement avant COMPÉTENCES si ce n'est pas la première section
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -485,13 +495,17 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
       const skillsText = allSkills
         .map((skill: any) => {
-          if (skill.type === 'object') {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
+          if (skill.type === "object") {
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            } *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
           } else {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`;
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            }`;
           }
         })
-        .join('\n');
+        .join("\n");
 
       fields.push({
         name: `📚 **COMPÉTENCES**`,
@@ -513,7 +527,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
     if (objects && objects.length > 0) {
       // Ajouter un espacement avant OBJETS si ce n'est pas la première section
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -523,8 +539,11 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       }
 
       const objectsText = objects
-        .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
-        .join('\n');
+        .map(
+          (obj: any) =>
+            `**${obj.name}**${obj.description ? ` • ${obj.description}` : ""}`
+        )
+        .join("\n");
 
       fields.push({
         name: `🎒 **OBJETS**`,
@@ -578,7 +597,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       );
       cataplasmeStock = cataplasmeResponse.data.quantity || 0;
     } catch (error) {
-      logger.debug("Erreur lors de la récupération du stock de cataplasmes:", { error });
+      logger.debug("Erreur lors de la récupération du stock de cataplasmes:", {
+        error,
+      });
     }
 
     const cataplasmeButton = new ButtonBuilder()
@@ -599,7 +620,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       // Vérifier si l'inventaire a des slots
       if (inventory && inventory.slots && inventory.slots.length > 0) {
         const giveObjectButton = new ButtonBuilder()
-          .setCustomId(`give_object:${data.character.id}:${data.user.discordId}`)
+          .setCustomId(
+            `give_object:${data.character.id}:${data.user.discordId}`
+          )
           .setLabel(`🎁 Donner`)
           .setStyle(ButtonStyle.Secondary);
         actionButtons.push(giveObjectButton);
@@ -729,14 +752,16 @@ function createPMDisplay(current: number, max: number): string {
 
   // Special case: PM=0 (Dépression)
   if (current === 0) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSION
-      }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSION
+    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
   }
 
   // Special case: PM=1 (Déprime)
   if (current === 1) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSED
-      }**Déprime** (Ne peut pas utiliser de PA)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSED
+    }**Déprime** (Ne peut pas utiliser de PA)`;
   }
 
   // Normal case: PM=2-5
@@ -950,17 +975,29 @@ export async function handleProfileButtonInteraction(interaction: any) {
         let cataplasmeCount = 0;
         if (character.town?.id) {
           try {
-            logger.info("Fetching cataplasme count for townId:", { townId: character.town.id });
-            const cataplasmeResponse = await httpClient.get(`/capabilities/cataplasme-count/${character.town.id}`);
+            logger.info("Fetching cataplasme count for townId:", {
+              townId: character.town.id,
+            });
+            const cataplasmeResponse = await httpClient.get(
+              `/capabilities/cataplasme-count/${character.town.id}`
+            );
             cataplasmeCount = cataplasmeResponse.data.count || 0;
-            logger.info("Cataplasme count received:", { count: cataplasmeCount, paTotal: character.paTotal });
+            logger.info("Cataplasme count received:", {
+              count: cataplasmeCount,
+              paTotal: character.paTotal,
+            });
           } catch (error) {
             logger.error("Error fetching cataplasme count:", { error });
           }
         }
 
-        const canCraftCataplasme = character.paTotal >= 2 && cataplasmeCount < 3;
-        logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
+        const canCraftCataplasme =
+          character.paTotal >= 2 && cataplasmeCount < 3;
+        logger.info("Can craft cataplasme:", {
+          canCraftCataplasme,
+          paTotal: character.paTotal,
+          cataplasmeCount,
+        });
 
         // Créer des boutons pour choisir 1 PA (Soigner) ou 2 PA (Cataplasme)
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -1019,19 +1056,22 @@ export async function handleProfileButtonInteraction(interaction: any) {
         let finalMessage = result.publicMessage;
 
         // Remplacer {ADMIN_TAG} par les tags des admins si présent
-        if (finalMessage.includes('{ADMIN_TAG}')) {
+        if (finalMessage.includes("{ADMIN_TAG}")) {
           const guild = interaction.guild;
           if (guild) {
             // Récupérer tous les membres avec permission Administrator
             const members = await guild.members.fetch();
             const adminIds = members
-              .filter((member: any) => member.permissions.has('Administrator'))
+              .filter((member: any) => member.permissions.has("Administrator"))
               .map((member: any) => `<@${member.id}>`)
-              .join(' ');
+              .join(" ");
 
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', adminIds || '@Admins');
+            finalMessage = finalMessage.replace(
+              "{ADMIN_TAG}",
+              adminIds || "@Admins"
+            );
           } else {
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', '@Admins');
+            finalMessage = finalMessage.replace("{ADMIN_TAG}", "@Admins");
           }
         }
 
@@ -1044,24 +1084,26 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Fonction utilitaire pour obtenir l'emoji d'une capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
-        if (!emojiTag) return '';
+        if (!emojiTag) return "";
 
         // Vérifier si l'emojiTag est une clé valide dans CAPABILITIES
         if (emojiTag in CAPABILITIES) {
-          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + ' ';
+          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + " ";
         }
 
         // Si l'emojiTag n'est pas trouvé, essayer avec la version en majuscules
         const upperEmojiTag = emojiTag.toUpperCase();
         if (upperEmojiTag in CAPABILITIES) {
-          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + ' ';
+          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + " ";
         }
 
-        return '';
+        return "";
       };
 
       await interaction.editReply({
-        content: `${getEmojiForCapability(selectedCapability.emojiTag)}**${selectedCapability.name}**\n${result.message || ""}`,
+        content: `${getEmojiForCapability(selectedCapability.emojiTag)}**${
+          selectedCapability.name
+        }**\n${result.message || ""}`,
       });
     } catch (error: any) {
       logger.error("Error using capability via button:", {
@@ -1089,11 +1131,11 @@ export async function handleProfileButtonInteraction(interaction: any) {
 function createCapabilitiesDisplay(
   capabilities:
     | Array<{
-      name: string;
-      description?: string;
-      costPA: number;
-      emojiTag?: string;
-    }>
+        name: string;
+        description?: string;
+        costPA: number;
+        emojiTag?: string;
+      }>
     | undefined
 ): string {
   if (!capabilities || capabilities.length === 0) {
@@ -1107,7 +1149,7 @@ function createCapabilitiesDisplay(
     "Cuisiner",
     "Pêcher",
     "Rechercher",
-    "Soigner"
+    "Soigner",
   ];
 
   // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
@@ -1140,13 +1182,13 @@ function createCapabilitiesDisplay(
   };
 
   return capabilities
-    .map(
-      (cap) => {
-        const showPA = !capabilitiesWithPAMenu.includes(cap.name);
-        const paText = showPA ? ` (${cap.costPA} PA)` : "";
-        return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${cap.description ? ` • ${cap.description}` : ""}`;
-      }
-    )
+    .map((cap) => {
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA} PA)` : "";
+      return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${
+        cap.description ? ` • ${cap.description}` : ""
+      }`;
+    })
     .join("\n");
 }
 
@@ -1175,7 +1217,7 @@ function createCapabilityButtons(
     "Cuisiner",
     "Pêcher",
     "Rechercher",
-    "Soigner"
+    "Soigner",
   ];
 
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
@@ -1211,10 +1253,10 @@ function createCapabilityButtons(
 
       // Vérifier si le personnage a assez de PA pour cette capacité ou s'il est en agonie
       const hasEnoughPA = currentPA >= cap.costPA;
-      const isInAgony = (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
-      const buttonStyle = hasEnoughPA && !isInAgony
-        ? ButtonStyle.Primary
-        : ButtonStyle.Secondary;
+      const isInAgony =
+        (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
+      const buttonStyle =
+        hasEnoughPA && !isInAgony ? ButtonStyle.Primary : ButtonStyle.Secondary;
 
       // Construire le label du bouton
       const showPA = !capabilitiesWithPAMenu.includes(cap.name);

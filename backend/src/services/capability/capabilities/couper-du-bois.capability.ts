@@ -48,12 +48,12 @@ export class CouperDuBoisCapability extends BaseCapability {
 
     return {
       success: true,
-      message: `Une bonne chose de faite ! Tu as dépensé 1 ${CHARACTER.PA} et obtenu ${woodAmount} ${RESOURCES.WOOD}.`,
+      message: `Une bonne chose de faite ! Tu as dépensé 1 PA${CHARACTER.PA} et obtenu ${woodAmount} ${RESOURCES.WOOD}.`,
       publicMessage: `${CAPABILITIES.CHOPPING} ${character.name} a coupé du bois et revient avec ${woodAmount} ${RESOURCES.WOOD}.`,
       paConsumed: 1,
       loot: { Bois: woodAmount },
       metadata: {
-        bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+        bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
       },
     };
   }
