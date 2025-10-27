@@ -410,13 +410,61 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("expedition_direction:", async (interaction) => {
       try {
         const { handleExpeditionDirectionSelect } = await import(
-          "../features/expeditions/expedition.command.js"
+          "../features/expeditions/handlers/expedition-create.js"
         );
         await handleExpeditionDirectionSelect(interaction);
       } catch (error) {
         logger.error("Error handling expedition direction select:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la sélection de direction d'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource lors de la création d'expédition
+    this.registerHandlerByPrefix("expedition_create_select_resource:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceSelected } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionResourceSelected(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition create resource select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à ajouter (gestion ressources)
+    this.registerHandlerByPrefix("expedition_resource_add_select:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceAddSelect } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à retirer (gestion ressources)
+    this.registerHandlerByPrefix("expedition_resource_remove_select:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceRemoveSelect } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
           flags: ["Ephemeral"],
         });
       }

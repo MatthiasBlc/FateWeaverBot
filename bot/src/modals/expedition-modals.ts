@@ -7,7 +7,8 @@ import {
 } from "discord.js";
 
 /**
- * Modal pour créer une nouvelle expédition avec sélection de vivres et nourriture uniquement
+ * Modal pour créer une nouvelle expédition (nom et durée seulement)
+ * Les ressources seront ajoutées après via une interface dédiée
  */
 export function createExpeditionCreationModal() {
   const modal = new ModalBuilder()
@@ -23,24 +24,6 @@ export function createExpeditionCreationModal() {
     .setMinLength(1)
     .setMaxLength(100);
 
-  const vivresInput = new TextInputBuilder()
-    .setCustomId("expedition_vivres_input")
-    .setLabel(`${RESOURCES.FOOD} Vivres à emporter`)
-    .setStyle(TextInputStyle.Short)
-    .setRequired(false)
-    .setPlaceholder("Quantité de vivres (ex: 50)")
-    .setMinLength(1)
-    .setMaxLength(10);
-
-  const nourritureInput = new TextInputBuilder()
-    .setCustomId("expedition_nourriture_input")
-    .setLabel(`${RESOURCES.PREPARED_FOOD} Repas à emporter`)
-    .setStyle(TextInputStyle.Short)
-    .setRequired(false)
-    .setPlaceholder("Quantité de nourriture (ex: 25)")
-    .setMinLength(1)
-    .setMaxLength(10);
-
   const durationInput = new TextInputBuilder()
     .setCustomId("expedition_duration_input")
     .setLabel("Durée de l'expédition (jours)")
@@ -51,11 +34,39 @@ export function createExpeditionCreationModal() {
     .setMaxLength(10);
 
   const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
-  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(vivresInput);
-  const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nourritureInput);
-  const fourthRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
+  const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput);
 
-  modal.addComponents([firstRow, secondRow, thirdRow, fourthRow]);
+  modal.addComponents([firstRow, secondRow]);
+
+  return modal;
+}
+
+/**
+ * Modal pour ajouter une quantité de ressource lors de la création d'expédition
+ */
+export function createExpeditionResourceQuantityModal(
+  cacheId: string,
+  resourceTypeId: number,
+  resourceName: string,
+  resourceEmoji: string,
+  maxAvailable: number
+) {
+  const modal = new ModalBuilder()
+    .setCustomId(`expedition_create_resource_quantity:${cacheId}:${resourceTypeId}`)
+    .setTitle(`Ajouter ${resourceName}`);
+
+  const quantityInput = new TextInputBuilder()
+    .setCustomId("resource_quantity_input")
+    .setLabel(`${resourceEmoji} Quantité de ${resourceName}`)
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder(`Max disponible: ${maxAvailable}`)
+    .setMinLength(1)
+    .setMaxLength(10);
+
+  const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput);
+
+  modal.addComponents([firstRow]);
 
   return modal;
 }

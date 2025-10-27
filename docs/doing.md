@@ -2,32 +2,29 @@ docker compose exec -T backenddev npx ts-node /app/src/scripts/simulate-midnight
 
 docker compose exec -T backenddev npx ts-node /app/src/scripts/debug-pa-regen.ts
 
-
-
-
---------------------
-
-
-
-
-DEPARTED -> que peuvent faire les admins ? 
+---
 
 DEPARTED -> retour en catastrophe
-  - agonie
-  - déprime
-  - affamé
-  - dépression
-  - mort ?
 
+- agonie ✅ (/meurt de faim)
+- déprime
+- affamé X
+- dépression
+- mort ?
 
+-> changement de règle ?
 
 logs en expédition sauf première phase, doit toujours être caché sauf si un channel discord a été attributé à l'expédition. Les admin attribuent les channels dans /expedition-admin.
 
 (idée retour d'urgence = perdre les ressources ?)
 
+Pouvoir choisir de prendre d'autres ressources (autre que nourriture)
+
+Avatar user ? (dans la db ?)
+
+---
 
 Date de RETURNED at devrait être minuit tout le temps du jour calculé d'arrivé.
-------------------
 
 RETURNED -> est-ce que les ressources vont bien dans le stock
 
@@ -41,3 +38,5 @@ tout comme Une expédition créer le 25 à 05h00 d'une durée de 2 jours doit ar
 PLANNING, destination non enregistée en base
 
 DEPARTED n'a pas de bouton pour donner la direction
+
+Quel est le comportement d'une expédition DEPARTED sans membres ? ne revient jamais ?

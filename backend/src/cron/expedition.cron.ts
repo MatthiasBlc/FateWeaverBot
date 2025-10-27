@@ -148,14 +148,41 @@ async function returnExpeditionsDue() {
         status: "DEPARTED",
         returnAt: { lte: now }
       },
-      select: { id: true, name: true, returnAt: true }
+      include: {
+        members: {
+          include: {
+            character: {
+              select: {
+                isDead: true
+              }
+            }
+          }
+        }
+      }
     });
 
-    logger.info(`Found ${expeditionsToReturn.length} expeditions to return`);
+    logger.info(`Found ${expeditionsToReturn.length} expeditions to check for return`);
 
     let returnedCount = 0;
+    let blockedCount = 0;
+
     for (const expedition of expeditionsToReturn) {
       try {
+        // Skip expeditions with no members - they are abandoned and cannot return
+        if (!expedition.members || expedition.members.length === 0) {
+          logger.warn(`Expedition ${expedition.id} (${expedition.name}) has no members - blocked from returning`);
+          blockedCount++;
+          continue;
+        }
+
+        // Skip expeditions where ALL members are dead
+        const allMembersDead = expedition.members.every(member => member.character?.isDead === true);
+        if (allMembersDead) {
+          logger.warn(`Expedition ${expedition.id} (${expedition.name}) has only dead members - blocked from returning`);
+          blockedCount++;
+          continue;
+        }
+
         await container.expeditionService.returnExpedition(expedition.id);
         returnedCount++;
       } catch (error) {
@@ -163,7 +190,7 @@ async function returnExpeditionsDue() {
       }
     }
 
-    logger.info(`Returned ${returnedCount} expeditions`);
+    logger.info(`Returned ${returnedCount} expeditions, ${blockedCount} expeditions blocked (no members)`);
   } catch (error) {
     logger.error("Error in returnExpeditionsDue cron job:", { error });
   }

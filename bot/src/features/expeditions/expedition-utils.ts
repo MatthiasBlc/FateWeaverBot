@@ -10,13 +10,13 @@ import { EXPEDITION, DIRECTION } from "@shared/constants/emojis";
 export function getStatusEmoji(status: string): string {
   switch (status) {
     case "PLANNING":
-      return `${EXPEDITION.PLANNING} PLANIFICATION`;
+      return `${EXPEDITION.PLANNING} Planification`;
     case "LOCKED":
-      return `${EXPEDITION.LOCKED} VERROUILLÉE`;
+      return `${EXPEDITION.LOCKED} Verrouillée`;
     case "DEPARTED":
-      return `${EXPEDITION.DEPARTED} PARTIE`;
+      return `${EXPEDITION.DEPARTED} En route`;
     case "RETURNED":
-      return `${EXPEDITION.RETURNED} REVENUE`;
+      return `${EXPEDITION.RETURNED} De retour`;
     default:
       return status;
   }
@@ -71,9 +71,14 @@ export function canLeaveExpedition(status: string): boolean {
 /**
  * Calcule le temps restant avant le retour d'une expédition
  */
-export function calculateRemainingTime(departedAt: Date, duration: number): number {
+export function calculateRemainingTime(
+  departedAt: Date,
+  duration: number
+): number {
   const now = new Date();
-  const returnDate = new Date(departedAt.getTime() + duration * 24 * 60 * 60 * 1000);
+  const returnDate = new Date(
+    departedAt.getTime() + duration * 24 * 60 * 60 * 1000
+  );
   return Math.max(0, returnDate.getTime() - now.getTime());
 }
 
@@ -82,7 +87,9 @@ export function calculateRemainingTime(departedAt: Date, duration: number): numb
  */
 export function formatRemainingTime(milliseconds: number): string {
   const days = Math.floor(milliseconds / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((milliseconds % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const hours = Math.floor(
+    (milliseconds % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+  );
   const minutes = Math.floor((milliseconds % (60 * 60 * 1000)) / (60 * 1000));
 
   if (days > 0) {
@@ -97,7 +104,9 @@ export function formatRemainingTime(milliseconds: number): string {
 /**
  * Retourne l'emoji correspondant à une direction
  */
-export function getDirectionEmoji(direction: string | null | undefined): string {
+export function getDirectionEmoji(
+  direction: string | null | undefined
+): string {
   if (!direction) return DIRECTION.UNKNOWN;
 
   const emojis: Record<string, string> = {

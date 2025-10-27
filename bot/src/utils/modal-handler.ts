@@ -122,13 +122,61 @@ export class ModalHandler {
     this.registerHandler("expedition_creation_modal", async (interaction) => {
       try {
         const { handleExpeditionCreationModal } = await import(
-          "../features/expeditions/expedition.command.js"
+          "../features/expeditions/handlers/expedition-create.js"
         );
         await handleExpeditionCreationModal(interaction);
       } catch (error) {
         logger.error("Error handling expedition creation modal:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la création de l'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de quantité de ressource lors de création d'expédition
+    this.registerHandler("expedition_create_resource_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceQuantityModal } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionResourceQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition create resource quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal d'ajout de ressource (gestion ressources)
+    this.registerHandler("expedition_resource_add_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceAddQuantity } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAddQuantity(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de retrait de ressource (gestion ressources)
+    this.registerHandler("expedition_resource_remove_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceRemoveQuantity } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemoveQuantity(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource remove quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du retrait de la ressource.",
           flags: ["Ephemeral"],
         });
       }

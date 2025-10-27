@@ -198,26 +198,19 @@ export class ExpeditionService {
         throw new ValidationError("Expedition duration must be at least 1 day");
       }
 
-      // Validate initial resources and check if town has enough
+      // Track resource adjustments
+      const adjustments: Array<{
+        name: string;
+        requested: number;
+        actual: number;
+        reason: string;
+      }> = [];
+
+      // Validate initial resources (positive quantities only)
       for (const resource of data.initialResources) {
         if (resource.quantity <= 0) {
           throw new ValidationError(
             `Resource quantity must be positive for ${resource.resourceTypeName}`
-          );
-        }
-
-        const resourceType = await ResourceUtils.getResourceTypeByName(resource.resourceTypeName);
-
-        // Check if town has enough of this resource
-        const townStock = await tx.resourceStock.findUnique({
-          where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
-        });
-
-        const availableQuantity = townStock?.quantity || 0;
-
-        if (!townStock || availableQuantity < resource.quantity) {
-          throw new BadRequestError(
-            `Ressources insuffisantes : ${resource.resourceTypeName} (demandé: ${resource.quantity}, disponible: ${availableQuantity})`
           );
         }
       }
@@ -235,35 +228,78 @@ export class ExpeditionService {
         },
       });
 
-      // Transfer resources from town to expedition
+      // Transfer resources from town to expedition (with automatic adjustment)
       for (const resource of data.initialResources) {
         const resourceType = await tx.resourceType.findFirst({
           where: { name: resource.resourceTypeName },
         });
 
-        if (resourceType) {
-          // Remove from town
-          await tx.resourceStock.update({
-            where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
-            data: {
-              quantity: { decrement: resource.quantity },
-            },
-          });
+        if (!resourceType) {
+          logger.warn(`Resource type not found: ${resource.resourceTypeName}`);
+          continue;
+        }
 
-          // Add to expedition
-          await tx.resourceStock.upsert({
-            where: ResourceQueries.stockWhere("EXPEDITION", expedition.id, resourceType.id),
-            update: {
-              quantity: { increment: resource.quantity },
-            },
-            create: {
-              locationType: "EXPEDITION",
-              locationId: expedition.id,
-              resourceTypeId: resourceType.id,
-              quantity: resource.quantity,
-            },
+        // Check available stock in town
+        const townStock = await tx.resourceStock.findUnique({
+          where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
+        });
+
+        const availableQuantity = townStock?.quantity || 0;
+        const requestedQuantity = resource.quantity;
+
+        // Calculate actual quantity to transfer (min of requested and available)
+        const actualQuantity = Math.min(requestedQuantity, availableQuantity);
+
+        if (actualQuantity === 0) {
+          // No resource available, skip
+          adjustments.push({
+            name: resource.resourceTypeName,
+            requested: requestedQuantity,
+            actual: 0,
+            reason: "stock épuisé",
+          });
+          continue;
+        }
+
+        if (actualQuantity < requestedQuantity) {
+          // Partial transfer
+          adjustments.push({
+            name: resource.resourceTypeName,
+            requested: requestedQuantity,
+            actual: actualQuantity,
+            reason: "stock insuffisant",
           });
         }
+
+        // Remove from town
+        await tx.resourceStock.update({
+          where: ResourceQueries.stockWhere("CITY", data.townId, resourceType.id),
+          data: {
+            quantity: { decrement: actualQuantity },
+          },
+        });
+
+        // Add to expedition
+        await tx.resourceStock.upsert({
+          where: ResourceQueries.stockWhere("EXPEDITION", expedition.id, resourceType.id),
+          update: {
+            quantity: { increment: actualQuantity },
+          },
+          create: {
+            locationType: "EXPEDITION",
+            locationId: expedition.id,
+            resourceTypeId: resourceType.id,
+            quantity: actualQuantity,
+          },
+        });
+      }
+
+      // Log adjustments if any
+      if (adjustments.length > 0) {
+        logger.warn("expedition_resource_adjustments", {
+          expeditionId: expedition.id,
+          adjustments,
+        });
       }
 
       logger.info("expedition_event", {
@@ -275,7 +311,7 @@ export class ExpeditionService {
         createdBy: data.createdBy,
       });
 
-      // Return a clean expedition object without circular references
+      // Return a clean expedition object without circular references + adjustments
       return {
         id: expedition.id,
         name: expedition.name,
@@ -292,7 +328,8 @@ export class ExpeditionService {
         currentDayDirection: expedition.currentDayDirection,
         directionSetBy: expedition.directionSetBy,
         directionSetAt: expedition.directionSetAt,
-      };
+        resourceAdjustments: adjustments, // Include adjustments for client notification
+      } as any;
     });
   }
 
@@ -825,13 +862,39 @@ export class ExpeditionService {
         status: ExpeditionStatus.DEPARTED,
         pendingEmergencyReturn: true,
       },
-      select: { id: true, name: true },
+      include: {
+        members: {
+          include: {
+            character: {
+              select: {
+                isDead: true
+              }
+            }
+          }
+        }
+      }
     });
 
     let returnedCount = 0;
+    let blockedCount = 0;
 
     for (const expedition of expeditions) {
       try {
+        // Skip expeditions with no members - they are abandoned and cannot return
+        if (!expedition.members || expedition.members.length === 0) {
+          logger.warn(`Emergency return blocked for expedition ${expedition.id} (${expedition.name}) - no members`);
+          blockedCount++;
+          continue;
+        }
+
+        // Skip expeditions where ALL members are dead
+        const allMembersDead = expedition.members.every(member => member.character?.isDead === true);
+        if (allMembersDead) {
+          logger.warn(`Emergency return blocked for expedition ${expedition.id} (${expedition.name}) - all members dead`);
+          blockedCount++;
+          continue;
+        }
+
         await this.returnExpedition(expedition.id);
 
         // Clear votes after return
@@ -865,6 +928,10 @@ export class ExpeditionService {
           error,
         });
       }
+    }
+
+    if (blockedCount > 0) {
+      logger.warn(`Blocked ${blockedCount} expeditions from emergency return (no members)`);
     }
 
     return returnedCount;

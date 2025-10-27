@@ -36,9 +36,13 @@ export async function handleExpeditionMainCommand(
     try {
       character = await getActiveCharacterFromCommand(interaction);
     } catch (error: any) {
-      if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
+      if (
+        error?.status === 404 ||
+        error?.message?.includes("Request failed with status code 404")
+      ) {
         await interaction.reply({
-          content: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/profil` pour créer un personnage.",
+          content:
+            "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/profil` pour créer un personnage.",
           flags: ["Ephemeral"],
         });
         return;
@@ -62,7 +66,10 @@ export async function handleExpeditionMainCommand(
     }
 
     // Check if character is already on an active expedition
-    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+    const activeExpeditions =
+      await apiService.expeditions.getActiveExpeditionsForCharacter(
+        character.id
+      );
 
     if (activeExpeditions && activeExpeditions.length > 0) {
       // Character is a member - show expedition info
@@ -71,7 +78,10 @@ export async function handleExpeditionMainCommand(
       // Récupérer les ressources détaillées de l'expédition
       let expeditionResources: any[] = [];
       try {
-        expeditionResources = await apiService.getResources("EXPEDITION", expedition.id);
+        expeditionResources = await apiService.getResources(
+          "EXPEDITION",
+          expedition.id
+        );
       } catch (error) {
         logger.warn("Could not fetch expedition resources:", error);
         // Continue without detailed resources if API call fails
@@ -93,27 +103,18 @@ export async function handleExpeditionMainCommand(
           name: "👥 Membres",
           value: expedition.members?.length.toString() || "0",
           inline: true,
-        }
+        },
       ];
 
-      // Add detailed resources if available
-      if (expeditionResources && expeditionResources.length > 0) {
-        const resourceDetails = expeditionResources
-          .filter(resource => resource.quantity > 0)
-          .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
-          .join("\n");
+      // Add emergency votes count if DEPARTED and at least 1 vote (after first block)
+      if (
+        expedition.status === "DEPARTED" &&
+        expedition.emergencyVotesCount &&
+        expedition.emergencyVotesCount > 0
+      ) {
+        // Add spacer before votes
+        fields.push({ name: "\n", value: "\n", inline: false });
 
-        if (resourceDetails) {
-          fields.push({
-            name: "📦 Ressources détaillées",
-            value: resourceDetails,
-            inline: false,
-          });
-        }
-      }
-
-      // Add emergency votes count if DEPARTED and at least 1 vote
-      if (expedition.status === "DEPARTED" && expedition.emergencyVotesCount && expedition.emergencyVotesCount > 0) {
         const membersCount = expedition.members?.length || 0;
         const threshold = Math.ceil(membersCount / 2);
         const votesDisplay = `🚨 **${expedition.emergencyVotesCount}/${membersCount}** (Seuil: ${threshold})`;
@@ -125,17 +126,115 @@ export async function handleExpeditionMainCommand(
         });
       }
 
+      // Add initial direction if PLANNING or LOCKED and direction is set
+      if (
+        (expedition.status === "PLANNING" || expedition.status === "LOCKED") &&
+        expedition.initialDirection
+      ) {
+        fields.push({
+          name: `${EXPEDITION.ICON} Direction initiale`,
+          value: `${getDirectionEmoji(
+            expedition.initialDirection
+          )} ${getDirectionText(expedition.initialDirection)}`,
+          inline: true,
+        });
+      }
+
+      // Add countdown to departure for LOCKED expeditions
+      if (expedition.status === "LOCKED") {
+        const now = new Date();
+        const tomorrow8am = new Date(now);
+        tomorrow8am.setDate(tomorrow8am.getDate() + 1);
+        tomorrow8am.setHours(8, 0, 0, 0);
+
+        // If it's already past 8am today, departure is tomorrow at 8am
+        // If it's before 8am today, departure is today at 8am
+        const today8am = new Date(now);
+        today8am.setHours(8, 0, 0, 0);
+
+        const departureTime = now < today8am ? today8am : tomorrow8am;
+        const hoursUntilDeparture = Math.floor(
+          (departureTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+        );
+        const minutesUntilDeparture = Math.floor(
+          ((departureTime.getTime() - now.getTime()) % (1000 * 60 * 60)) /
+            (1000 * 60)
+        );
+
+        fields.push({
+          name: `${EXPEDITION.DURATION} Départ de l'expédition dans`,
+          value: `${hoursUntilDeparture}h ${minutesUntilDeparture}min`,
+          inline: true,
+        });
+      }
+
+      // Add detailed resources if available
+      if (expeditionResources && expeditionResources.length > 0) {
+        const resourceDetails = expeditionResources
+          .filter((resource) => resource.quantity > 0)
+          .map(
+            (resource) =>
+              `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`
+          )
+          .join("\n");
+
+        if (resourceDetails) {
+          // Add spacer before resources
+          fields.push({ name: "\n", value: "\n", inline: false });
+
+          fields.push({
+            name: "📦 Ressources détaillées",
+            value: resourceDetails,
+            inline: false,
+          });
+        }
+      }
+
+      // Add path and direction info for DEPARTED expeditions
+      if (expedition.status === "DEPARTED") {
+        // Add spacer before direction/path block
+        if (expedition.currentDayDirection || (expedition.path && expedition.path.length > 0)) {
+          fields.push({ name: "\n", value: "\n", inline: false });
+        }
+
+        // Add next direction if set (show before path)
+        if (expedition.currentDayDirection) {
+          fields.push({
+            name: `${EXPEDITION.ICON} Direction`,
+            value: `${getDirectionEmoji(
+              expedition.currentDayDirection
+            )} ${getDirectionText(expedition.currentDayDirection)}`,
+            inline: true,
+          });
+        }
+        // Add path traveled
+        if (expedition.path && expedition.path.length > 0) {
+          const pathString = expedition.path
+            .map((d) => getDirectionEmoji(d))
+            .join(" → ");
+          fields.push({
+            name: "🗺️ Chemin parcouru",
+            value: pathString,
+            inline: false,
+          });
+        }
+      }
+
       // Add member list if there are members
       if (expedition.members && expedition.members.length > 0) {
         const memberList = expedition.members
           .map((member) => {
             const characterName = member.character?.name || "Inconnu";
-            const discordUsername = member.character?.user?.username || "Inconnu";
+            const discordUsername =
+              member.character?.user?.username || "Inconnu";
             return `• **${characterName}** - ${discordUsername}`;
           })
           .join("\n");
 
         if (memberList) {
+          // Add spacer before member list
+          fields.push({ name: "\n", value: "\n", inline: false });
+
           fields.push({
             name: "📋 Membres inscrits",
             value: memberList,
@@ -152,7 +251,8 @@ export async function handleExpeditionMainCommand(
       logger.info("Expedition embed created", {
         expeditionId: expedition.id,
         fieldsCount: fields.length,
-        hasComponents: expedition.status === "PLANNING" || expedition.status === "DEPARTED"
+        hasComponents:
+          expedition.status === "PLANNING" || expedition.status === "DEPARTED",
       });
 
       // Add buttons based on expedition status
@@ -165,7 +265,7 @@ export async function handleExpeditionMainCommand(
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId("expedition_transfer")
-            .setLabel("Transférer repas")
+            .setLabel("Transférer ressources")
             .setStyle(ButtonStyle.Primary)
         );
         components.push(buttonRow);
@@ -185,7 +285,8 @@ export async function handleExpeditionMainCommand(
           const returnDate = new Date(expedition.returnAt);
 
           // Calculate hours until return
-          const hoursUntilReturn = (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+          const hoursUntilReturn =
+            (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
           // Last day = less than 24 hours until return
           return hoursUntilReturn < 24;
@@ -211,24 +312,33 @@ export async function handleExpeditionMainCommand(
           components,
           flags: ["Ephemeral"],
         });
-        logger.info("Expedition embed sent successfully", { expeditionId: expedition.id });
+        logger.info("Expedition embed sent successfully", {
+          expeditionId: expedition.id,
+        });
       } catch (replyError) {
         logger.error("Failed to send expedition embed", {
           error: replyError,
           embedData: JSON.stringify(embed.toJSON()),
-          componentsCount: components.length
+          componentsCount: components.length,
         });
         throw replyError;
       }
     } else {
       // Character is not a member - show available expeditions
-      const townResponse = await apiService.guilds.getTownByGuildId(interaction.guildId!);
+      const townResponse = await apiService.guilds.getTownByGuildId(
+        interaction.guildId!
+      );
       if (!townResponse) {
-        await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
+        await replyEphemeral(
+          interaction,
+          "❌ Aucune ville trouvée pour ce serveur."
+        );
         return;
       }
 
-      const allExpeditions = await apiService.expeditions.getExpeditionsByTown(townResponse.id);
+      const allExpeditions = await apiService.expeditions.getExpeditionsByTown(
+        townResponse.id
+      );
 
       // Filtrer les expéditions terminées (RETURNED)
       const expeditions = allExpeditions.filter(
@@ -259,8 +369,11 @@ export async function handleExpeditionMainCommand(
       if (planningExpeditions.length === 0) {
         // No planning expeditions but other expeditions exist - show all with create button
         const expeditionList = expeditions
-          .map((exp: Expedition, index: number) =>
-            `**${index + 1}.** ${exp.name} (${exp.duration}j) - ${getStatusEmoji(exp.status)}`
+          .map(
+            (exp: Expedition, index: number) =>
+              `**${index + 1}.** ${exp.name} (${
+                exp.duration
+              }j) - ${getStatusEmoji(exp.status)}`
           )
           .join("\n");
 
@@ -281,8 +394,11 @@ export async function handleExpeditionMainCommand(
 
       // Planning expeditions available - show all expeditions with both buttons
       const expeditionList = expeditions
-        .map((exp: Expedition, index: number) =>
-          `**${index + 1}.** ${exp.name} (${exp.duration}j) - ${getStatusEmoji(exp.status)}`
+        .map(
+          (exp: Expedition, index: number) =>
+            `**${index + 1}.** ${exp.name} (${
+              exp.duration
+            }j) - ${getStatusEmoji(exp.status)}`
         )
         .join("\n");
 
@@ -294,10 +410,12 @@ export async function handleExpeditionMainCommand(
         new ButtonBuilder()
           .setCustomId("expedition_join_existing")
           .setLabel("Rejoindre une expédition")
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Secondary),
       ];
 
-      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
+      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        ...buttons
+      );
 
       await interaction.reply({
         content: `${EXPEDITION.ICON} **Expéditions existantes :**\n${expeditionList}\n\nChoisissez une action :`,
@@ -308,8 +426,9 @@ export async function handleExpeditionMainCommand(
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
-        }`,
+      content: `❌ Erreur lors de l'accès aux expéditions: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`,
       flags: ["Ephemeral"],
     });
   }
@@ -332,7 +451,10 @@ export async function handleExpeditionInfoCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.");
+        await replyEphemeral(
+          interaction,
+          "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition."
+        );
         return;
       }
       // Re-throw other errors
@@ -345,12 +467,16 @@ export async function handleExpeditionInfoCommand(
     }
 
     // Get character's active expeditions
-    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(
-      character.id
-    );
+    const activeExpeditions =
+      await apiService.expeditions.getActiveExpeditionsForCharacter(
+        character.id
+      );
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Votre personnage ne participe à aucune expédition active.");
+      await replyEphemeral(
+        interaction,
+        "❌ Votre personnage ne participe à aucune expédition active."
+      );
       return;
     }
 
@@ -359,7 +485,10 @@ export async function handleExpeditionInfoCommand(
     // Récupérer les ressources détaillées de l'expédition
     let expeditionResources: any[] = [];
     try {
-      expeditionResources = await apiService.getResources("EXPEDITION", currentExpedition.id);
+      expeditionResources = await apiService.getResources(
+        "EXPEDITION",
+        currentExpedition.id
+      );
     } catch (error) {
       logger.warn("Could not fetch expedition resources:", error);
       // Continue without detailed resources if API call fails
@@ -367,36 +496,38 @@ export async function handleExpeditionInfoCommand(
 
     // Create embed
     const embed = createInfoEmbed(
-      `${EXPEDITION.ICON} ${currentExpedition.name}`,
-    )
-      .addFields(
-        {
-          name: "📦 Stock de repas",
-          value: `${currentExpedition.foodStock || 0}`,
-          inline: true,
-        },
-        {
-          name: "${EXPEDITION.DURATION} Durée",
-          value: `${currentExpedition.duration} jours`,
-          inline: true,
-        },
-        {
-          name: "📍 Statut",
-          value: getStatusEmoji(currentExpedition.status),
-          inline: true,
-        },
-        {
-          name: "👥 Membres",
-          value: currentExpedition.members?.length.toString() || "0",
-          inline: true,
-        },
-      );
+      `${EXPEDITION.ICON} ${currentExpedition.name}`
+    ).addFields(
+      {
+        name: "📦 Stock de repas",
+        value: `${currentExpedition.foodStock || 0}`,
+        inline: true,
+      },
+      {
+        name: "${EXPEDITION.DURATION} Durée",
+        value: `${currentExpedition.duration} jours`,
+        inline: true,
+      },
+      {
+        name: "📍 Statut",
+        value: getStatusEmoji(currentExpedition.status),
+        inline: true,
+      },
+      {
+        name: "👥 Membres",
+        value: currentExpedition.members?.length.toString() || "0",
+        inline: true,
+      }
+    );
 
     // Add detailed resources if available
     if (expeditionResources && expeditionResources.length > 0) {
       const resourceDetails = expeditionResources
-        .filter(resource => resource.quantity > 0)
-        .map(resource => `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`)
+        .filter((resource) => resource.quantity > 0)
+        .map(
+          (resource) =>
+            `${resource.resourceType.emoji} ${resource.resourceType.name}: ${resource.quantity}`
+        )
         .join("\n");
 
       if (resourceDetails) {
@@ -412,7 +543,9 @@ export async function handleExpeditionInfoCommand(
     if (currentExpedition.initialDirection) {
       embed.addFields({
         name: "📍 Direction initiale",
-        value: `${getDirectionEmoji(currentExpedition.initialDirection)} ${getDirectionText(currentExpedition.initialDirection)}`,
+        value: `${getDirectionEmoji(
+          currentExpedition.initialDirection
+        )} ${getDirectionText(currentExpedition.initialDirection)}`,
         inline: true,
       });
     }
@@ -428,10 +561,15 @@ export async function handleExpeditionInfoCommand(
       });
     }
 
-    if (currentExpedition.status === "DEPARTED" && currentExpedition.currentDayDirection) {
+    if (
+      currentExpedition.status === "DEPARTED" &&
+      currentExpedition.currentDayDirection
+    ) {
       embed.addFields({
         name: "🧭 Direction choisie pour demain",
-        value: `${getDirectionEmoji(currentExpedition.currentDayDirection)} ${getDirectionText(currentExpedition.currentDayDirection)}`,
+        value: `${getDirectionEmoji(
+          currentExpedition.currentDayDirection
+        )} ${getDirectionText(currentExpedition.currentDayDirection)}`,
         inline: true,
       });
     }
@@ -483,7 +621,8 @@ export async function handleExpeditionInfoCommand(
         const returnDate = new Date(currentExpedition.returnAt);
 
         // Calculate hours until return
-        const hoursUntilReturn = (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+        const hoursUntilReturn =
+          (returnDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
         // Last day = less than 24 hours until return
         return hoursUntilReturn < 24;
@@ -510,7 +649,10 @@ export async function handleExpeditionInfoCommand(
     });
   } catch (error) {
     logger.error("Error in expedition info command:", { error });
-    await replyEphemeral(interaction, "❌ Une erreur est survenue lors de la récupération des informations d'expédition.");
+    await replyEphemeral(
+      interaction,
+      "❌ Une erreur est survenue lors de la récupération des informations d'expédition."
+    );
   }
 }
 
@@ -607,7 +749,9 @@ export async function handleExpeditionSetDirection(
     );
 
     await interaction.update({
-      content: `✅ Direction définie : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
+      content: `✅ Direction définie : ${getDirectionEmoji(
+        direction
+      )} ${getDirectionText(direction)}`,
       components: [],
     });
   } catch (error: any) {

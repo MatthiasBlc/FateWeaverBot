@@ -6,7 +6,14 @@ import { logger } from "./logger";
 export interface TempExpeditionData {
   name: string;
   townId: string;
-  initialResources: Array<{ resourceTypeName: string; quantity: number }>;
+  characterId: string;
+  createdBy: string;
+  resources: Array<{
+    resourceTypeId: number;
+    resourceTypeName: string;
+    emoji: string;
+    quantity: number;
+  }>;
   duration: number;
   userId: string;
   timestamp: number;
@@ -31,10 +38,11 @@ class ExpeditionCache {
    * Stocke temporairement les données d'une expédition
    * @param userId ID de l'utilisateur Discord
    * @param data Données de l'expédition
-   * @returns L'identifiant généré
+   * @param existingId ID existant à mettre à jour (optionnel)
+   * @returns L'identifiant (généré ou existant)
    */
-  store(userId: string, data: Omit<TempExpeditionData, 'userId' | 'timestamp'>): string {
-    const id = this.generateId(userId);
+  store(userId: string, data: Omit<TempExpeditionData, 'userId' | 'timestamp'>, existingId?: string): string {
+    const id = existingId || this.generateId(userId);
 
     this.cache.set(id, {
       ...data,
@@ -42,7 +50,7 @@ class ExpeditionCache {
       timestamp: Date.now(),
     });
 
-    logger.debug("Stored expedition data in cache", { id, userId });
+    logger.debug("Stored expedition data in cache", { id, userId, isUpdate: !!existingId });
 
     // Nettoyer les anciennes entrées
     this.cleanup();

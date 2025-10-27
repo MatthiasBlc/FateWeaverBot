@@ -86,6 +86,26 @@ export class ButtonHandler {
           "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionChooseDirection(interaction);
+      } else if (customId.startsWith("expedition_create_add_resources:")) {
+        const { handleExpeditionAddResources } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionAddResources(interaction);
+      } else if (customId.startsWith("expedition_create_validate:")) {
+        const { handleExpeditionValidateResources } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionValidateResources(interaction);
+      } else if (customId.startsWith("expedition_resource_add:")) {
+        const { handleExpeditionResourceAdd } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAdd(interaction);
+      } else if (customId.startsWith("expedition_resource_remove:")) {
+        const { handleExpeditionResourceRemove } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemove(interaction);
       }
     });
 
