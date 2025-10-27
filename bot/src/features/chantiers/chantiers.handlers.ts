@@ -100,7 +100,7 @@ export async function handleChantiersCommand(interaction: CommandInteraction) {
 
       if (inDepartedExpedition) {
         return interaction.reply({
-          content: "❌ Vous êtes en expédition et ne pouvez pas voir les chantiers de la ville. Attendez votre retour !",
+          content: "❌ Tu es en expédition et ne peux pas voir les chantiers de la ville. Ça aura peut être avancé d'ici ton retour !",
           flags: ["Ephemeral"],
         });
       }
@@ -280,7 +280,7 @@ export async function handleParticipateButton(interaction: any) {
 
     if (inDepartedExpedition) {
       return interaction.reply({
-        content: "❌ Vous êtes en expédition et ne pouvez pas participer aux chantiers de la ville. Attendez votre retour !",
+        content: "❌ pouvez pas participer aux chantiers de la ville. Attendez votre retour !",
         flags: ["Ephemeral"],
       });
     }

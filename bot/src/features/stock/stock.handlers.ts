@@ -35,7 +35,7 @@ export async function handleViewStockCommand(interaction: any) {
       const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
 
       if (inDepartedExpedition) {
-        await replyEphemeral(interaction, "❌ Vous êtes en expédition et ne pouvez pas voir les stocks de la ville. Utilisez `/expedition` pour voir vos ressources d'expédition.");
+        await replyEphemeral(interaction, "❌ Tu es en expédition et ne peux pas voir les stocks de la ville.\n\n Utilise `/expedition` pour voir les ressources de l'expédition.");
         return;
       }
     } catch (error: any) {

@@ -17,8 +17,8 @@ export const ERROR_MESSAGES = {
 
   // Expéditions
   EXPEDITION_FETCH_ERROR: "❌ Une erreur est survenue lors de la récupération des informations d'expédition.",
-  EXPEDITION_DEPARTED_NO_CITY_STOCK: "❌ Vous êtes en expédition et ne pouvez pas voir les stocks de la ville. Utilisez `/expedition` pour voir vos ressources d'expédition.",
-  EXPEDITION_DEPARTED_NO_CITY_CHANTIER: "❌ Vous êtes en expédition et ne pouvez pas accéder aux chantiers de la ville.",
+  EXPEDITION_DEPARTED_NO_CITY_STOCK: "❌ Tu es en expédition et ne peux pas voir les stocks de la ville.\n\n Utilise `/expedition` pour voir les ressources de l'expédition.",
+  EXPEDITION_DEPARTED_NO_CITY_CHANTIER: "❌ Tu es en expédition et ne peux pas voir les chantiers de la ville. Ça aura peut être avancé d'ici ton retour !",
   EXPEDITION_DEPARTED_NO_CRAFT: "Impossible de crafter en expédition DEPARTED",
   EXPEDITION_DEPARTED_NO_HARVEST: (action: string) => `Impossible de ${action} en expédition DEPARTED`,
 

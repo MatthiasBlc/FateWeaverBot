@@ -64,7 +64,7 @@ export const CHARACTER = {
   PROFILE: "📋", // Used for profile header
   STATUS: "❗", // Used for status section
   // PERSON: "👤", // UNUSED
-  // GROUP: "👥", // UNUSED
+  GROUP: "👥", // UNUSED
   LINK: "🔗", // Used for linked skills display
 } as const;
 
@@ -122,6 +122,7 @@ export const EXPEDITION = {
   ICON: "🧭", // TODO: Should be used (currently hardcoded in expedition-display.ts:450)
   // CAMP: "🏕️", // UNUSED
   DURATION: "⌛", // 
+  LOCATION: "📍", // 
 } as const;
 
 // Chantiers

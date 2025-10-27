@@ -17,7 +17,7 @@ import { getStatusEmoji } from "../expedition-utils";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
-import { EXPEDITION, DIRECTION } from "@shared/constants/emojis";
+import { EXPEDITION, DIRECTION, CONFIG, RESOURCES, CHARACTER } from "@shared/constants/emojis";
 
 /**
  * Nouvelle commande principale pour gérer les expéditions
@@ -95,13 +95,8 @@ export async function handleExpeditionMainCommand(
           inline: true,
         },
         {
-          name: "📍 Statut",
+          name: `${CONFIG.LIST} Statut`,
           value: getStatusEmoji(expedition.status),
-          inline: true,
-        },
-        {
-          name: "👥 Membres",
-          value: expedition.members?.length.toString() || "0",
           inline: true,
         },
       ];
@@ -132,7 +127,7 @@ export async function handleExpeditionMainCommand(
         expedition.initialDirection
       ) {
         fields.push({
-          name: `${EXPEDITION.ICON} Direction initiale`,
+          name: `${EXPEDITION.LOCATION} Direction`,
           value: `${getDirectionEmoji(
             expedition.initialDirection
           )} ${getDirectionText(expedition.initialDirection)}`,
@@ -158,7 +153,7 @@ export async function handleExpeditionMainCommand(
         );
         const minutesUntilDeparture = Math.floor(
           ((departureTime.getTime() - now.getTime()) % (1000 * 60 * 60)) /
-            (1000 * 60)
+          (1000 * 60)
         );
 
         fields.push({
@@ -183,7 +178,7 @@ export async function handleExpeditionMainCommand(
           fields.push({ name: "\n", value: "\n", inline: false });
 
           fields.push({
-            name: "📦 Ressources détaillées",
+            name: `${RESOURCES.GENERIC} Ressources`,
             value: resourceDetails,
             inline: false,
           });
@@ -200,10 +195,10 @@ export async function handleExpeditionMainCommand(
         // Add next direction if set (show before path)
         if (expedition.currentDayDirection) {
           fields.push({
-            name: `${EXPEDITION.ICON} Direction`,
+            name: `${EXPEDITION.ICON} Prochaine direction`,
             value: `${getDirectionEmoji(
               expedition.currentDayDirection
-            )} ${getDirectionText(expedition.currentDayDirection)}`,
+            )} ${getDirectionText(expedition.currentDayDirection)}\n\n`,
             inline: true,
           });
         }
@@ -225,9 +220,7 @@ export async function handleExpeditionMainCommand(
         const memberList = expedition.members
           .map((member) => {
             const characterName = member.character?.name || "Inconnu";
-            const discordUsername =
-              member.character?.user?.username || "Inconnu";
-            return `• **${characterName}** - ${discordUsername}`;
+            return `• ${characterName}`;
           })
           .join("\n");
 
@@ -236,7 +229,7 @@ export async function handleExpeditionMainCommand(
           fields.push({ name: "\n", value: "\n", inline: false });
 
           fields.push({
-            name: "📋 Membres inscrits",
+            name: `${CHARACTER.GROUP} Membres`,
             value: memberList,
             inline: false,
           });
@@ -371,8 +364,7 @@ export async function handleExpeditionMainCommand(
         const expeditionList = expeditions
           .map(
             (exp: Expedition, index: number) =>
-              `**${index + 1}.** ${exp.name} (${
-                exp.duration
+              `**${index + 1}.** ${exp.name} (${exp.duration
               }j) - ${getStatusEmoji(exp.status)}`
           )
           .join("\n");
@@ -396,8 +388,7 @@ export async function handleExpeditionMainCommand(
       const expeditionList = expeditions
         .map(
           (exp: Expedition, index: number) =>
-            `**${index + 1}.** ${exp.name} (${
-              exp.duration
+            `**${index + 1}.** ${exp.name} (${exp.duration
             }j) - ${getStatusEmoji(exp.status)}`
         )
         .join("\n");
@@ -426,9 +417,8 @@ export async function handleExpeditionMainCommand(
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'accès aux expéditions: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
-      }`,
+      content: `❌ Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
+        }`,
       flags: ["Ephemeral"],
     });
   }
@@ -705,15 +695,15 @@ export async function handleExpeditionChooseDirection(
     // Show direction menu
     const directionMenu = new StringSelectMenuBuilder()
       .setCustomId(`expedition_set_direction:${expeditionId}:${character.id}`)
-      .setPlaceholder("Choisissez la prochaine direction...")
+      .setPlaceholder("Prochaine direction...")
       .addOptions([
         { label: "Nord", value: "NORD", emoji: "⬆️" },
         { label: "Nord-Est", value: "NORD_EST", emoji: "↗️" },
-        { label: "Est", value: "EST", emoji: "➡️" },
+        // { label: "Est", value: "EST", emoji: "➡️" },
         { label: "Sud-Est", value: "SUD_EST", emoji: "↘️" },
         { label: "Sud", value: "SUD", emoji: "⬇️" },
         { label: "Sud-Ouest", value: "SUD_OUEST", emoji: "↙️" },
-        { label: "Ouest", value: "OUEST", emoji: "⬅️" },
+        // { label: "Ouest", value: "OUEST", emoji: "⬅️" },
         { label: "Nord-Ouest", value: "NORD_OUEST", emoji: "↖️" },
       ]);
 
@@ -722,7 +712,7 @@ export async function handleExpeditionChooseDirection(
     );
 
     await interaction.reply({
-      content: "🧭 Choisissez la prochaine direction de l'expédition :",
+      content: `${EXPEDITION.LOCATION} Où se dirige l'expédition, maintenant ?`,
       components: [row],
       ephemeral: true,
     });

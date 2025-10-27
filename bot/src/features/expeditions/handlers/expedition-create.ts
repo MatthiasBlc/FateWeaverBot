@@ -26,7 +26,7 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
-import { DIRECTION, EXPEDITION, RESOURCES } from "@shared/constants/emojis";
+import { DIRECTION, EXPEDITION, RESOURCES, STATUS } from "@shared/constants/emojis";
 import { expeditionCache } from "../../../services/expedition-cache";
 import { emojiCache } from "../../../services/emoji-cache";
 
@@ -146,8 +146,7 @@ export async function handleExpeditionStartCommand(
     logger.error("Error in expedition start command:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de la création de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
+      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
   }
@@ -211,11 +210,10 @@ export async function handleExpeditionCreationModal(
     // Show resource management interface
     const embed = createInfoEmbed(`${EXPEDITION.ICON} ${name}`)
       .setDescription(
-        `**Durée:** ${durationDays} jour${durationDays > 1 ? 's' : ''}\n\n` +
-        `Ajoutez des ressources depuis le stock de la ville pour l'expédition.`
+        `**Durée :** ${durationDays} jour${durationDays > 1 ? 's' : ''}\n\n`
       )
       .addFields({
-        name: "📦 Ressources embarquées",
+        name: `${RESOURCES.GENERIC} Ressources préparées`,
         value: "_Aucune ressource pour le moment_",
         inline: false,
       });
@@ -246,8 +244,7 @@ export async function handleExpeditionCreationModal(
     logger.error("Error in expedition creation modal:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de la création de l'expédition: ${
-        error instanceof Error ? error.message : "Erreur inconnue"
+      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
   }
@@ -269,7 +266,7 @@ export async function handleExpeditionDirectionSelect(
     if (!expeditionData) {
       await interaction.reply({
         content:
-          "❌ Les données de l'expédition ont expiré ou sont invalides. Veuillez recréer l'expédition.",
+          `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`,
         ephemeral: true,
       });
       return;
@@ -320,7 +317,7 @@ export async function handleExpeditionDirectionSelect(
     expeditionCache.remove(expeditionId);
 
     // Build success message with adjustments if any
-    let successMessage = `${EXPEDITION.ICON} L'expédition **${expedition.data.name}** se prépare à partir !\nElle prendra la direction : ${getDirectionText(direction)} ${getDirectionEmoji(direction)}`;
+    let successMessage = `${EXPEDITION.ICON} L'expédition **${expedition.data.name}** se prépare à partir !\nElle prendra la direction ${getDirectionText(direction)} ${getDirectionEmoji(direction)}`;
 
     const expeditionWithAdjustments = expedition.data as any;
     if (expeditionWithAdjustments.resourceAdjustments && expeditionWithAdjustments.resourceAdjustments.length > 0) {
@@ -337,18 +334,15 @@ export async function handleExpeditionDirectionSelect(
 
     // Send public log message
     try {
-      const logMessage = `${EXPEDITION.ICON} **Nouvelle expédition créée**\n**${
-        character.name
-      }** prépare une expédition **${expedition.data.name}**\n\n${
-        RESOURCES.GENERIC
-      } **Ressources** : ${expeditionResources
-        .map(
-          (r: any) =>
-            `${r.resourceType.emoji} ${r.quantity}`
-        )
-        .join(", ")}\n${EXPEDITION.DURATION} Durée : ${
-        expeditionData.duration
-      } jours\n${EXPEDITION.ICON} Direction : ${getDirectionText(direction)}`;
+      const logMessage = `${EXPEDITION.ICON} **Nouvelle expédition créée**\n**${character.name
+        }** prépare l'expédition **${expedition.data.name}**.\n\n${RESOURCES.GENERIC
+        } **Ressources** : ${expeditionResources
+          .map(
+            (r: any) =>
+              `${r.quantity} ${r.resourceType.emoji}`
+          )
+          .join("| ")}\n${EXPEDITION.DURATION} **Durée** : ${expeditionData.duration
+        } jours\n${EXPEDITION.LOCATION} **Direction** : ${getDirectionText(direction)}`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,

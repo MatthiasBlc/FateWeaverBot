@@ -177,7 +177,7 @@ export const investInChantier = async (req: Request, res: Response, next: NextFu
 
     if (inDepartedExpedition) {
       return res.status(400).json({
-        error: "Vous êtes en expédition et ne pouvez pas accéder aux chantiers de la ville",
+        error: "Tu es en expédition et ne peux pas accéder aux chantiers de la ville",
       });
     }
 

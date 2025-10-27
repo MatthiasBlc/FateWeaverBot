@@ -11,7 +11,7 @@ import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { createInfoEmbed } from "../../../utils/embeds";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
-import { EXPEDITION } from "@shared/constants/emojis";
+import { EXPEDITION, RESOURCES, STATUS } from "@shared/constants/emojis";
 import { expeditionCache } from "../../../services/expedition-cache";
 import { createExpeditionResourceQuantityModal } from "../../../modals/expedition-modals";
 
@@ -30,7 +30,7 @@ export async function handleExpeditionAddResources(
     if (!expeditionData) {
       await replyEphemeral(
         interaction,
-        "❌ Les données de l'expédition ont expiré. Veuillez recréer l'expédition."
+        `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`
       );
       return;
     }
@@ -47,7 +47,7 @@ export async function handleExpeditionAddResources(
     if (availableResources.length === 0) {
       await replyEphemeral(
         interaction,
-        "❌ Aucune ressource disponible dans le stock de la ville."
+        `${STATUS.ERROR} Aucune ressource disponible dans le stock de la ville.`
       );
       return;
     }
@@ -55,7 +55,7 @@ export async function handleExpeditionAddResources(
     // Create select menu
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId(`expedition_create_select_resource:${cacheId}`)
-      .setPlaceholder("Choisissez une ressource à ajouter...")
+      .setPlaceholder("Ajout d'une ressource...")
       .addOptions(
         availableResources.map((r: any) => ({
           label: r.resourceType.name,
@@ -70,7 +70,7 @@ export async function handleExpeditionAddResources(
     );
 
     await interaction.update({
-      content: "📦 Sélectionnez une ressource à embarquer :",
+      content: `${RESOURCES.GENERIC} Préparation des ressources :`,
       components: [row],
     });
   } catch (error) {
@@ -99,7 +99,7 @@ export async function handleExpeditionResourceSelected(
     if (!expeditionData) {
       await replyEphemeral(
         interaction,
-        "❌ Les données de l'expédition ont expiré. Veuillez recréer l'expédition."
+        `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`
       );
       return;
     }
@@ -166,7 +166,7 @@ export async function handleExpeditionResourceQuantityModal(
     if (!expeditionData) {
       await replyEphemeral(
         interaction,
-        "❌ Les données de l'expédition ont expiré. Veuillez recréer l'expédition."
+        `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`
       );
       return;
     }
@@ -246,7 +246,7 @@ export async function handleExpeditionValidateResources(
     if (!expeditionData) {
       await replyEphemeral(
         interaction,
-        "❌ Les données de l'expédition ont expiré. Veuillez recréer l'expédition."
+        `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`
       );
       return;
     }
@@ -254,15 +254,15 @@ export async function handleExpeditionValidateResources(
     // Show direction selection menu
     const directionMenu = new StringSelectMenuBuilder()
       .setCustomId(`expedition_direction:${cacheId}`)
-      .setPlaceholder("Choisissez la direction initiale...")
+      .setPlaceholder("Direction initiale...")
       .addOptions([
         { label: "Nord", value: "NORD", emoji: "⬆️" },
         { label: "Nord-Est", value: "NORD_EST", emoji: "↗️" },
-        { label: "Est", value: "EST", emoji: "➡️" },
+        // { label: "Est", value: "EST", emoji: "➡️" },
         { label: "Sud-Est", value: "SUD_EST", emoji: "↘️" },
         { label: "Sud", value: "SUD", emoji: "⬇️" },
         { label: "Sud-Ouest", value: "SUD_OUEST", emoji: "↙️" },
-        { label: "Ouest", value: "OUEST", emoji: "⬅️" },
+        // { label: "Ouest", value: "OUEST", emoji: "⬅️" },
         { label: "Nord-Ouest", value: "NORD_OUEST", emoji: "↖️" },
       ]);
 
@@ -271,7 +271,7 @@ export async function handleExpeditionValidateResources(
     );
 
     await interaction.update({
-      content: `📍 Choisissez la direction initiale de l'expédition **${expeditionData.name}** :`,
+      content: `${EXPEDITION.LOCATION} Choix de la direction initiale :`,
       components: [row],
     });
   } catch (error) {
@@ -294,17 +294,16 @@ async function showResourceManagementInterface(
   const resourcesList =
     expeditionData.resources.length > 0
       ? expeditionData.resources
-          .map((r: any) => `${r.emoji} **${r.resourceTypeName}:** ${r.quantity}`)
-          .join("\n")
+        .map((r: any) => `${r.emoji} **${r.resourceTypeName}:** ${r.quantity}`)
+        .join("\n")
       : "_Aucune ressource pour le moment_";
 
   const embed = createInfoEmbed(`${EXPEDITION.ICON} ${expeditionData.name}`)
     .setDescription(
-      `**Durée:** ${expeditionData.duration} jour${expeditionData.duration > 1 ? "s" : ""}\n\n` +
-        `Ajoutez des ressources depuis le stock de la ville pour l'expédition.`
+      `**Durée :** ${expeditionData.duration} jour${expeditionData.duration > 1 ? "s" : ""}\n\n`
     )
     .addFields({
-      name: "📦 Ressources embarquées",
+      name: `${RESOURCES.GENERIC} Ressources embarquées`,
       value: resourcesList,
       inline: false,
     });
