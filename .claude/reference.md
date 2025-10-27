@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## 📋 Table of Contents
+
+**Quick Navigation - Jump to the section you need:**
+
+1. [Project Overview](#project-overview) - Architecture 3-tier, notes importantes
+2. [Common Commands](#common-commands) - Docker, npm, Prisma
+3. [Architecture](#architecture) - Structure directories, concepts clés, schema DB
+4. [Development Workflow](#development-workflow) - Ajouter commandes, features, endpoints
+5. [Testing & Deployment](#testing--deployment) - Tests locaux, déploiement production
+
+**Tip:** Utilisez Ctrl+F pour chercher une section spécifique.
+
+---
+
 ## Project Overview
 
 FateWeaver is a Discord role-playing game bot with a backend API. It manages characters, community projects (chantiers), expeditions, resources, and survival mechanics like hunger across Discord servers. The system uses a 3-tier architecture: Discord Bot (TypeScript) ↔ Backend API (Express/TypeScript) ↔ PostgreSQL (via Prisma ORM).

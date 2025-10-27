@@ -1,5 +1,10 @@
 # 🤝 Protocole de Collaboration - Claude Code & Supernova
 
+**📚 DÉTAILS COMPLETS - Lire si `.claude/supernova-quick-ref.md` ne suffit pas**
+Pour 90% des cas → Utiliser le quick-ref seulement
+
+---
+
 ## 📋 Vue d'ensemble
 
 Ce document définit le protocole de collaboration entre **Claude Code** et **Code Supernova** pour optimiser l'utilisation des crédits et maximiser l'efficacité du développement.

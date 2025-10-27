@@ -1,5 +1,10 @@
 # 🚀 Supernova - Référence Rapide pour Claude
 
+**⚡ LIRE CE FICHIER EN PREMIER (90% des cas)**
+Si bloqué ou besoin de détails → `.claude/collaboration.md`
+
+---
+
 ## ⚡ CHECKLIST AUTOMATIQUE
 
 ### 🎯 Quand proposer Supernova ?
