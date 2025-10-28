@@ -23,6 +23,19 @@ import type {
   ContributionResult,
   ProjectReward,
 } from "./projects.types";
+import { sendLogMessage } from "../../utils/channels.js";
+import { apiService } from "../../services/api/index.js";
+import { logger } from "../../services/logger.js";
+import {
+  getStatusText,
+  getStatusEmoji,
+  getCraftTypeEmoji,
+  getCraftDisplayName,
+  toCraftEnum,
+} from "./projects.utils.js";
+import type { CraftEnum } from "./projects.utils.js";
+import { createInfoEmbed } from "../../utils/embeds.js";
+import { PROJECT, STATUS } from "../../constants/emojis";
 
 interface Town {
   id: string;
@@ -46,19 +59,24 @@ interface Capability {
   description: string;
 }
 
-import { sendLogMessage } from "../../utils/channels.js";
-import { apiService } from "../../services/api/index.js";
-import { logger } from "../../services/logger.js";
-import {
-  getStatusText,
-  getStatusEmoji,
-  getCraftTypeEmoji,
-  getCraftDisplayName,
-  toCraftEnum,
-} from "./projects.utils.js";
-import type { CraftEnum } from "./projects.utils.js";
-import { createInfoEmbed } from "../../utils/embeds.js";
-import { PROJECT, STATUS } from "../../constants/emojis";
+function normalizeCapabilities(rawCapabilities: any[]): Capability[] {
+  if (!rawCapabilities || rawCapabilities.length === 0) {
+    return [];
+  }
+
+  return rawCapabilities.map((item) => {
+    const capability = item?.capability ?? item ?? {};
+
+    return {
+      id: capability.id ?? item?.capabilityId ?? "",
+      name: capability.name ?? "",
+      emojiTag: capability.emojiTag ?? "",
+      category: capability.category ?? "",
+      costPA: capability.costPA ?? 0,
+      description: capability.description ?? "",
+    } as Capability;
+  });
+}
 
 function getProjectOutputText(project: Project): string {
   if (project.outputResourceType && project.outputResourceTypeId !== null) {
@@ -152,7 +170,8 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     }
 
     // Récupérer les capacités du personnage
-    const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
+    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const capabilities = normalizeCapabilities(rawCapabilities);
 
     // Identifier les capacités craft (tolère les alias/nouveaux noms)
     const craftsFromCapabilities = capabilities

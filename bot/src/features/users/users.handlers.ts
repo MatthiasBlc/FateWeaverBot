@@ -658,11 +658,20 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     Boolean(toCraftEnum(cap.name))
   );
 
+  const isInAgony =
+    (data.character.hp === 1 || data.character.hungerLevel === 0) &&
+    !data.character.isDead;
+
+  const isInExpedition =
+    data.character.expeditionStatus === "LOCKED" ||
+    data.character.expeditionStatus === "DEPARTED";
+
   if (craftCapabilities && craftCapabilities.length > 0) {
     const projectsButton = new ButtonBuilder()
       .setCustomId(`view_projects:${data.character.id}:${data.user.discordId}`)
       .setLabel(`🛠️ Projets`)
-      .setStyle(ButtonStyle.Primary);
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(isInAgony || isInExpedition);
     actionButtons.push(projectsButton);
   }
 

@@ -9,9 +9,7 @@ A l'image du message de log public pour @manger, il faut faire la même chose po
 (exemple messages de retour d'urgence)
 
 WTF ?
-🚨 Seuil atteint! L'expédition sera de retour dans les 10 prochaines minutes.
-
-- ou est passé mon timer avant le retour d'urgence ,
+Lorsque le retour d'urgence a son seuil atteint, remet en place le timer avant le retour qui était en place dans des commits précédents (calcul du timer avant le retour soir 8h00 le lendemain matin)
 
 ---
 
@@ -49,15 +47,3 @@ Exemples :
 <!-- logs en expédition sauf première phase, doit toujours être caché sauf si un channel discord a été attributé à l'expédition. Les admin attribuent les channels dans /expedition-admin. -->
 
 Avatar user ? (dans la db ?)
-
----
-
-Serait-il possible d'automatiquement créer un channel dédié à l'expédition quand elle passe en Created ?
-Faire en sorte que seuls les membre de l'expédition puissent voir le channel.
-lorque l'expédition passe en DEPARTED, les membres de l'expédition ne devrait plus avoir accés à certains autres channels du discord (que l'on va appeller les channels de la ville). Les personnes hors de l'expédition (hors admin) ne devrait plus pouvoir voir ce channel en question.
-Le but est de simuler une isolation entre les channels roleplay de la ville et les channels roleplay des expéditions.
-Lorsque l'expédition est RETURNED, les membres de l'expédition récupèrent à nouveau l'accès aux channels de la ville.
-
-Est-ce possible ? ou pas exactement comme ça ?
-
----
