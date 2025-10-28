@@ -1415,8 +1415,7 @@ export class ExpeditionService {
 
   async removeMemberCatastrophic(
     expeditionId: string,
-    characterId: string,
-    reason: string
+    characterId: string
   ): Promise<{ characterName: string; townId: string }> {
     return await prisma.$transaction(async (tx) => {
       // Check if expedition exists and is DEPARTED
@@ -1450,12 +1449,6 @@ export class ExpeditionService {
         throw new BadRequestError("Character is not a member of this expedition");
       }
 
-      // Set character PA to 0
-      await tx.character.update({
-        where: { id: characterId },
-        data: { paTotal: 0 },
-      });
-
       // Remove member from expedition
       await tx.expeditionMember.delete({
         where: { id: member.id },
@@ -1465,8 +1458,7 @@ export class ExpeditionService {
       await dailyEventLogService.logCharacterCatastrophicReturn(
         characterId,
         member.character.name,
-        expedition.townId,
-        reason
+        expedition.townId
       );
 
       logger.info("expedition_catastrophic_return", {
@@ -1474,7 +1466,6 @@ export class ExpeditionService {
         expeditionName: expedition.name,
         characterId,
         characterName: member.character.name,
-        reason,
       });
 
       return {
