@@ -2,6 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteract
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import { httpClient } from "../../services/httpClient";
+import { SEASON } from "../../constants/emojis";
 
 const seasonAdminCommand: Command = {
   data: new SlashCommandBuilder()
@@ -37,7 +38,7 @@ const seasonAdminCommand: Command = {
 
       const embed = {
         color: getSeasonColor(currentSeason.name),
-        title: `🌤️ Saison Actuelle : ${formatSeasonName(currentSeason.name)}`,
+        title: `${getSeasonEmoji(currentSeason.name)} Saison Actuelle : ${formatSeasonName(currentSeason.name)}`,
         fields: [
           {
             name: "📅 Informations",
@@ -75,6 +76,14 @@ function getSeasonColor(seasonName: string): number {
     case 'summer': return 0xffa500; // Orange été
     case 'winter': return 0x87ceeb; // Bleu hiver
     default: return 0x808080; // Gris par défaut
+  }
+}
+
+function getSeasonEmoji(seasonName: string): string {
+  switch (seasonName?.toLowerCase()) {
+    case 'summer': return SEASON.SUMMER; // ☀️
+    case 'winter': return SEASON.WINTER; // ❄️
+    default: return '🌤️'; // Par défaut
   }
 }
 

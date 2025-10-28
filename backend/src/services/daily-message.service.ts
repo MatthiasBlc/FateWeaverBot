@@ -1,5 +1,6 @@
 import { PrismaClient, WeatherMessageType, SeasonType } from "@prisma/client";
 import { dailyEventLogService } from "./daily-event-log.service";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,7 @@ export class DailyMessageService {
 
     // 2. Get current season
     const season = await prisma.season.findUnique({ where: { id: 1 } });
-    if (!season) throw new Error("Season not found");
+    if (!season) throw new NotFoundError("Season", 1);
 
     // 3. Determine message type
     const messageType = await this.determineWeatherMessageType(season.name, today);
@@ -62,6 +63,11 @@ export class DailyMessageService {
       });
 
       availableMessages.push(...allMessages);
+    }
+
+    // Check if we have messages available
+    if (availableMessages.length === 0) {
+      return `Aucun message météo disponible pour ${messageType}.`;
     }
 
     const selectedMessage = availableMessages[Math.floor(Math.random() * availableMessages.length)];
@@ -103,7 +109,7 @@ export class DailyMessageService {
     // For now, assume seasons last 30 days and alternate
     // TODO: Implement proper season tracking
     const seasonRecord = await prisma.season.findUnique({ where: { id: 1 } });
-    if (!seasonRecord) throw new Error("Season not found");
+    if (!seasonRecord) throw new NotFoundError('Season', 1);
 
     return seasonRecord.updatedAt; // Simplified - use last season change date
   }

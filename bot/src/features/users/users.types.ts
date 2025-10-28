@@ -26,6 +26,7 @@ export interface ProfileData {
       costPA: number;
       emojiTag?: string;
     }>;
+    expeditionStatus?: 'LOCKED' | 'DEPARTED' | null; // Statut de l'expédition
   };
   actionPoints: {
     points: number;

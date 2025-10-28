@@ -17,6 +17,26 @@ import {
   ButtonInteraction,
 } from "discord.js";
 
+import type {
+  Project,
+  ResourceCost,
+  ContributionResult,
+  ProjectReward,
+} from "./projects.types";
+import { sendLogMessage } from "../../utils/channels.js";
+import { apiService } from "../../services/api/index.js";
+import { logger } from "../../services/logger.js";
+import {
+  getStatusText,
+  getStatusEmoji,
+  getCraftTypeEmoji,
+  getCraftDisplayName,
+  toCraftEnum,
+} from "./projects.utils.js";
+import type { CraftEnum } from "./projects.utils.js";
+import { createInfoEmbed } from "../../utils/embeds.js";
+import { PROJECT, STATUS } from "../../constants/emojis";
+
 interface Town {
   id: string;
   name: string;
@@ -30,39 +50,6 @@ interface ActiveCharacter {
   isDead?: boolean;
 }
 
-interface ResourceCost {
-  id: string;
-  resourceTypeId: number;
-  quantityRequired: number;
-  quantityContributed: number;
-  resourceType: {
-    id: number;
-    name: string;
-    emoji: string;
-  };
-}
-
-interface Project {
-  id: string;
-  name: string;
-  paRequired: number;
-  paContributed: number;
-  status: "ACTIVE" | "COMPLETED";
-  townId: string;
-  createdBy: string;
-  craftTypes: string[];
-  outputResourceTypeId: number;
-  outputQuantity: number;
-  createdAt: Date;
-  updatedAt: Date;
-  resourceCosts?: ResourceCost[];
-  outputResourceType?: {
-    id: number;
-    name: string;
-    emoji: string;
-  };
-}
-
 interface Capability {
   id: string;
   name: string;
@@ -72,12 +59,73 @@ interface Capability {
   description: string;
 }
 
-import { sendLogMessage } from "../../utils/channels.js";
-import { apiService } from "../../services/api/index.js";
-import { logger } from "../../services/logger.js";
-import { getStatusText, getStatusEmoji, getCraftTypeEmoji } from "./projects.utils.js";
-import { createInfoEmbed } from "../../utils/embeds.js";
-import { PROJECT, STATUS } from "../../constants/emojis";
+function normalizeCapabilities(rawCapabilities: any[]): Capability[] {
+  if (!rawCapabilities || rawCapabilities.length === 0) {
+    return [];
+  }
+
+  return rawCapabilities.map((item) => {
+    const capability = item?.capability ?? item ?? {};
+
+    return {
+      id: capability.id ?? item?.capabilityId ?? "",
+      name: capability.name ?? "",
+      emojiTag: capability.emojiTag ?? "",
+      category: capability.category ?? "",
+      costPA: capability.costPA ?? 0,
+      description: capability.description ?? "",
+    } as Capability;
+  });
+}
+
+function getProjectOutputText(project: Project): string {
+  if (project.outputResourceType && project.outputResourceTypeId !== null) {
+    return `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`;
+  }
+
+  if (project.outputObjectType && project.outputObjectTypeId !== null) {
+    return `${PROJECT.ICON} ${project.outputQuantity}x ${project.outputObjectType.name}`;
+  }
+
+  if (project.outputResourceTypeId !== null) {
+    return `${PROJECT.ICON} ${project.outputQuantity}x ressources`;
+  }
+
+  if (project.outputObjectTypeId !== null) {
+    return `${PROJECT.ICON} ${project.outputQuantity}x objet`;
+  }
+
+  return "";
+}
+
+function formatRewardMessage(project: Project, reward: ProjectReward | undefined, finisherName?: string): string {
+  if (!reward) {
+    const defaultOutput = getProjectOutputText(project);
+    return defaultOutput
+      ? `✅ ${defaultOutput} ajouté au stock de la ville !`
+      : "✅ Récompense enregistrée !";
+  }
+
+  switch (reward.type) {
+    case "RESOURCE": {
+      const emoji = project.outputResourceType?.emoji ?? PROJECT.ICON;
+      const name = project.outputResourceType?.name ?? "ressource";
+      return `✅ ${emoji} ${reward.quantity}x ${name} ajouté au stock de la ville !`;
+    }
+    case "RESOURCE_CONVERSION": {
+      const lines = reward.resources
+        .map((res) => `• ${res.quantity}x ${res.resourceName}`)
+        .join("\n");
+      return `📦 L'objet a été converti en ressources pour la ville :\n${lines}`;
+    }
+    case "OBJECT": {
+      const owner = finisherName ? `à **${finisherName}**` : "à l'artisan";
+      return `🎁 ${reward.objectType.name} remis ${owner} !`;
+    }
+    default:
+      return "✅ Récompense enregistrée !";
+  }
+}
 
 /**
  * Commande /projets - Affiche projets filtrés par craft capability + bouton Participer
@@ -122,35 +170,30 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     }
 
     // Récupérer les capacités du personnage
-    const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
+    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const capabilities = normalizeCapabilities(rawCapabilities);
 
-    // Filtrer les capacités craft
-    const craftCapabilities = capabilities.filter((cap: Capability) =>
-      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
-    );
+    // Identifier les capacités craft (tolère les alias/nouveaux noms)
+    const craftsFromCapabilities = capabilities
+      .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
+      .filter((entry) => entry.craft !== undefined);
 
-    if (craftCapabilities.length === 0) {
+    if (craftsFromCapabilities.length === 0) {
       return interaction.reply({
         content: "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
         flags: ["Ephemeral"],
       });
     }
 
-    // Mapper les capacités aux CraftTypes
-    const craftTypeMap: Record<string, string> = {
-      "Tisser": "TISSER",
-      "Forger": "FORGER",
-      "Menuiser": "MENUISER"
-    };
+    const uniqueCraftEnums = Array.from(
+      new Set(craftsFromCapabilities.map((entry) => entry.craft!))
+    );
 
     // Récupérer tous les projets pour chaque craft type
     let allProjects: Project[] = [];
-    for (const cap of craftCapabilities) {
-      const craftType = craftTypeMap[cap.name];
-      if (craftType) {
-        const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
-        allProjects = allProjects.concat(projects);
-      }
+    for (const craftType of uniqueCraftEnums) {
+      const projects = (await apiService.projects.getProjectsByCraftType(town.id, craftType)) as Project[];
+      allProjects = allProjects.concat(projects);
     }
 
     // Dédupliquer (un projet peut avoir plusieurs craft types)
@@ -165,10 +208,7 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
       });
     }
 
-    const embed = createInfoEmbed(
-      `🛠️ Projets artisanaux`,
-      "Voici les projets disponibles pour vos capacités :"
-    );
+    const embed = createInfoEmbed(`🛠️ Projets artisanaux`, "Voici les projets disponibles pour vos capacités :");
 
     // Grouper par statut
     const projectsParStatut = uniqueProjects.reduce<Record<string, Project[]>>(
@@ -186,13 +226,15 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     for (const [statut, listeProjects] of Object.entries(projectsParStatut)) {
       const projectsText = listeProjects
         .map((project) => {
-          // Craft types emojis
+          // Craft types emojis + libellés
           const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
+          const craftNames = project.craftTypes
+            .map((craftType) => getCraftDisplayName(craftType))
+            .filter(Boolean)
+            .join(", ");
 
           // Output resource
-          const outputText = project.outputResourceType
-            ? `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`
-            : "";
+          const outputText = getProjectOutputText(project);
 
           let text = `${craftEmojis} **${project.name}** - ${project.paContributed}/${project.paRequired} PA`;
 
@@ -209,6 +251,10 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
               )
               .join(" ");
             text += ` | ${resourcesText}`;
+          }
+
+          if (craftNames) {
+            text += `\n🛠️ ${craftNames}`;
           }
 
           // Show blueprint info if applicable
@@ -327,32 +373,26 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
 
     // Récupérer les capacités craft du personnage
     const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
-    const craftCapabilities = capabilities.filter((cap: Capability) =>
-      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
-    );
+    const craftsFromCapabilities = capabilities
+      .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
+      .filter((entry) => entry.craft !== undefined);
 
-    if (craftCapabilities.length === 0) {
+    if (craftsFromCapabilities.length === 0) {
       return interaction.reply({
         content: "🛠️ Vous n'avez aucune capacité artisanale.",
         flags: ["Ephemeral"],
       });
     }
 
-    // Mapper craft types
-    const craftTypeMap: Record<string, string> = {
-      "Tisser": "TISSER",
-      "Forger": "FORGER",
-      "Menuiser": "MENUISER"
-    };
+    const uniqueCraftEnums = Array.from(
+      new Set(craftsFromCapabilities.map((entry) => entry.craft as CraftEnum))
+    );
 
     // Récupérer tous les projets ACTIVE
     let allProjects: Project[] = [];
-    for (const cap of craftCapabilities) {
-      const craftType = craftTypeMap[cap.name];
-      if (craftType) {
-        const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
-        allProjects = allProjects.concat(projects.filter((p: Project) => p.status === "ACTIVE"));
-      }
+    for (const craftType of uniqueCraftEnums) {
+      const projects = (await apiService.projects.getProjectsByCraftType(town.id, craftType)) as Project[];
+      allProjects = allProjects.concat(projects.filter((p) => p.status === "ACTIVE"));
     }
 
     // Dédupliquer
@@ -381,7 +421,9 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       .addOptions(
         sortedProjects.map((project) => ({
           label: project.name,
-          description: `${project.paContributed}/${project.paRequired} PA - ${project.craftTypes.join(", ")}`,
+          description: `${project.paContributed}/${project.paRequired} PA - ${project.craftTypes
+            .map((craftType) => getCraftDisplayName(craftType))
+            .join(", ")}`,
           value: project.id,
         }))
       );
@@ -641,12 +683,12 @@ export async function handleInvestModalSubmit(
     }
 
     // Appeler l'API backend unifiée
-    const result = await apiService.projects.contributeToProject(
+    const result = (await apiService.projects.contributeToProject(
       activeCharacter.id,
       projectId,
       points,
       resourceContributions
-    );
+    )) as ContributionResult;
 
     // Message de réponse
     let responseMessage = `${STATUS.SUCCESS} Contribution enregistrée au projet "${project.name}" !\n`;
@@ -683,13 +725,11 @@ export async function handleInvestModalSubmit(
 
     // Vérifier complétion
     if (result.project && result.project.status === "COMPLETED") {
-      const outputText = project.outputResourceType
-        ? `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`
-        : "ressources";
+      const rewardText = formatRewardMessage(result.project, result.reward, activeCharacter.name);
 
-      responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le projet est terminé !\n✅ ${outputText} ajouté au stock de la ville !`;
+      responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le projet est terminé !\n${rewardText}`;
 
-      const completionLogMessage = `${PROJECT.CELEBRATION} Le projet "**${project.name}**" est terminé ! ${outputText} a été ajouté au stock.`;
+      const completionLogMessage = `${PROJECT.CELEBRATION} Le projet "**${result.project.name}**" est terminé ! ${rewardText}`;
       await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
     }
 
@@ -813,32 +853,26 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
 
     // Filtrer les capacités craft
-    const craftCapabilities = capabilities.filter((cap: Capability) =>
-      ["Tisser", "Forger", "Menuiser"].includes(cap.name)
-    );
+    const craftsFromCapabilities = capabilities
+      .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
+      .filter((entry) => entry.craft !== undefined);
 
-    if (craftCapabilities.length === 0) {
+    if (craftsFromCapabilities.length === 0) {
       return interaction.reply({
         content: "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
         flags: ["Ephemeral"],
       });
     }
 
-    // Mapper les capacités aux CraftTypes
-    const craftTypeMap: Record<string, string> = {
-      "Tisser": "TISSER",
-      "Forger": "FORGER",
-      "Menuiser": "MENUISER"
-    };
+    const uniqueCraftEnums = Array.from(
+      new Set(craftsFromCapabilities.map((entry) => entry.craft as CraftEnum))
+    );
 
     // Récupérer tous les projets pour chaque craft type
     let allProjects: Project[] = [];
-    for (const cap of craftCapabilities) {
-      const craftType = craftTypeMap[cap.name];
-      if (craftType) {
-        const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
-        allProjects = allProjects.concat(projects);
-      }
+    for (const craftType of uniqueCraftEnums) {
+      const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
+      allProjects = allProjects.concat(projects);
     }
 
     // Dédupliquer (un projet peut avoir plusieurs craft types)
@@ -874,13 +908,15 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     for (const [statut, listeProjects] of Object.entries(projectsParStatut)) {
       const projectsText = listeProjects
         .map((project) => {
-          // Craft types emojis
+          // Craft types emojis + libellés
           const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
+          const craftNames = project.craftTypes
+            .map((craftType) => getCraftDisplayName(craftType))
+            .filter(Boolean)
+            .join(", ");
 
           // Output resource
-          const outputText = project.outputResourceType
-            ? `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`
-            : "";
+          const outputText = getProjectOutputText(project);
 
           let text = `${craftEmojis} **${project.name}** - ${project.paContributed}/${project.paRequired} PA`;
 
@@ -897,6 +933,10 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
               )
               .join(" ");
             text += ` | ${resourcesText}`;
+          }
+
+          if (craftNames) {
+            text += `\n🛠️ ${craftNames}`;
           }
 
           // Show blueprint info if applicable

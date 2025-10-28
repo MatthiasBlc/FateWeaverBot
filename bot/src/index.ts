@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Client, GatewayIntentBits } from "discord.js";
 import { Command } from "./types/command.js";
 import { promises as fs } from "fs";
@@ -189,6 +190,15 @@ client.once("clientReady", async () => {
   logger.info(
     "✅ Bot prêt. Les commandes sont déployées via le script deploy-commands.ts"
   );
+
+  // Initialize emoji cache
+  try {
+    const { emojiCache } = await import("./services/emoji-cache.js");
+    await emojiCache.refresh();
+    logger.info("✅ Emoji cache loaded");
+  } catch (error) {
+    logger.error("❌ Failed to initialize emoji cache:", { error });
+  }
 
   // Initialize cron jobs
   try {

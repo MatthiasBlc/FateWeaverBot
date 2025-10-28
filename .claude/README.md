@@ -1,107 +1,45 @@
 # 📁 .claude/ - Claude Code Context Directory
 
-This directory contains all context files and documentation specifically for Claude Code AI sessions.
+Fichiers de contexte et protocoles pour sessions Claude Code.
 
 ---
 
-## 📋 Files in this Directory
+## 📋 Index des Fichiers
 
-### 🎯 reference.md (214 lines)
-**Full project architecture and detailed workflows**
-- Complete directory structure
-- Database schema details
-- Discord bot architecture
-- Development workflows (commands, features, endpoints)
-- Testing & deployment procedures
+### 🎯 **reference.md** (214 lignes)
+Architecture complète du projet, modèles DB, workflows.
+**Lire quand:** Ajouter features, modifier architecture, comprendre data models.
 
-**When to read:** Adding features, modifying architecture, understanding data models
+### 🤝 **collaboration.md** (416 lignes)
+Protocole détaillé Claude ↔ Supernova (cas complexes).
+**Lire quand:** Projet multi-étapes, besoin détails protocole.
 
----
+### ⚡ **supernova-quick-ref.md** (68 lignes)
+**Référence rapide Supernova** - Checklist, mini-prompt format.
+**Lire quand:** Avant CHAQUE délégation à Supernova (>3 fichiers ou >100 lignes).
 
-### 🤝 collaboration.md (416 lines)
-**Collaboration protocol between Claude Code and Code Supernova**
-- When to use Supernova vs Claude
-- 6-step protocol for delegation (AUTOMATIQUE)
-- Token optimization strategies
-- Prompt templates (mini-prompt ≤50 tokens & detailed)
-- Checklist automatique pour Claude
-- Real examples with token savings
+### 🧠 **context-guide.md** (120 lignes)
+Guide "quand lire quel fichier" + règles par type de tâche.
+**Lire quand:** Doute sur contexte nécessaire, optimiser tokens.
 
-**When to read:** Starting multi-step projects, repetitive tasks, token optimization needed
+### 📚 **lessons-learned.md** (210 lignes)
+Quand NE PAS utiliser Supernova, erreurs passées.
+**Lire quand:** Hésitation sur délégation, échec précédent.
 
----
-
-### 🚀 supernova-quick-ref.md (59 lines)
-**Quick reference for Supernova protocol**
-- Checklist pour savoir quand proposer Supernova
-- Protocole en 3 phases automatiques
-- Liste des JAMAIS / TOUJOURS
-- Format exact du mini-prompt
-
-**When to read:** EVERY TIME before delegating to Supernova
+### 🚀 **commands/epct.md** (236 lignes)
+Workflow Explore-Plan-Code-Test structuré.
+**Lire quand:** Slash command `/epct` utilisée.
 
 ---
 
-### 📊 context-optimization.md (146 lines)
-**Explanation of the 3-tier context system**
-- Why CLAUDE.md is only 52 lines
-- When to read detailed docs
-- Token savings calculations
-- Maintenance rules
+## 🎯 Hiérarchie Supernova
 
-**When to read:** Understanding how this system works, maintaining context files
-
----
-
-### 📁 commands/ subdirectory
-**Slash command definitions for Claude Code**
-- `epct.md` - Explore-Plan-Code-Test workflow definition
-
-**Note:** These are Claude Code slash commands, not Discord bot commands.
+```
+⚡ supernova-quick-ref.md → LIRE EN PREMIER (90% des cas)
+          ↓ (si bloqué)
+📚 collaboration.md → DÉTAILS COMPLETS
+```
 
 ---
 
-## 🔄 Relationship with Other Docs
-
-**Claude-specific (this directory):**
-- `.claude/reference.md` - Architecture & workflows
-- `.claude/collaboration.md` - Supernova protocol complet
-- `.claude/supernova-quick-ref.md` - Référence rapide Supernova (⚡ À lire AVANT chaque délégation)
-- `.claude/context-optimization.md` - Context system
-
-**Project-specific (docs/):**
-- `docs/refactoring-progress.md` - Refactoring status
-- `docs/refactoring-roadmap.md` - Refactoring plan
-
-**Supernova workspace (.supernova/):**
-- `.supernova/prompt-*.md` - Instructions détaillées pour Supernova
-- `.supernova/report-*.md` - Rapports d'exécution de Supernova
-
-**Entry point (root):**
-- `CLAUDE.md` - Minimal context (auto-read every session)
-
----
-
-## 🎯 Principle
-
-**Keep root minimal, detailed docs on-demand**
-- `CLAUDE.md` at root: ~52 lines, ~350 tokens
-- This directory: Read only when task requires it
-- Token savings: ~75% per session vs old monolithic CLAUDE.md
-
----
-
-## 🎯 Pour Claude : Protocole Supernova Automatique
-
-**RAPPEL CRITIQUE** : Quand une tâche nécessite >3 fichiers OU >100 lignes :
-
-1. ⚡ Consulter `.claude/supernova-quick-ref.md`
-2. ✅ Créer AUTOMATIQUEMENT `.supernova/prompt-[nom].md`
-3. ✅ Fournir mini-prompt ≤50 tokens
-4. ✅ Attendre "Terminé" → Lire résumé uniquement
-
-**Ne jamais oublier** : Le but est d'économiser les crédits en déléguant à Supernova toutes les tâches répétitives/volumineuses.
-
----
-
-**Last updated:** 2025-10-16
+**Principe:** Keep root minimal (CLAUDE.md), detailed docs on-demand (.claude/)

@@ -134,7 +134,7 @@ enum SeasonType {
 }
 
 enum CapacityBonusType {
-  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+
+  LUCKY_ROLL // Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+, Couper du bois+
   HEAL_EXTRA // Soigner+
   ENTERTAIN_BURST // Divertir+
   ADMIN_INTERPRETED // Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+
@@ -168,7 +168,7 @@ model Project {
   paContributed          Int                            @default(0) @map("pa_contributed") // PA déjà investis
   outputResourceTypeId   Int?                           @map("output_resource_type_id") // Ressource produite
   outputQuantity         Int                            @map("output_quantity") // Quantité produite
-  outputObjectTypeId     Int?                           @map("output_object_type_id") // NOUVEAU
+  outputObjectTypeId     Int?                           @map("output_object_type_id") // Objet produit (optionnel)
   status                 ProjectStatus                  @default(ACTIVE)
   town                   Town                           @relation(fields: [townId], references: [id], onDelete: Cascade)
   townId                 String                         @map("town_id")
@@ -357,6 +357,10 @@ model Expedition {
   currentDayDirection    Direction?                @map("current_day_direction") // Direction du jour en cours
   directionSetBy         String?                   @map("direction_set_by") // User ID qui a défini la direction
   directionSetAt         DateTime?                 @map("direction_set_at") // Quand la direction a été définie
+  // Dedicated channel fields
+  expeditionChannelId    String?                   @map("expedition_channel_id") // Discord Channel ID pour les logs de cette expédition
+  channelConfiguredAt    DateTime?                 @map("channel_configured_at") // Quand le channel a été configuré
+  channelConfiguredBy    String?                   @map("channel_configured_by") // User ID qui a configuré le channel
   members                ExpeditionMember[]
   emergencyVotes         ExpeditionEmergencyVote[] // Votes pour retour d'urgence
   createdAt              DateTime                  @default(now()) @map("created_at")
@@ -632,4 +636,16 @@ model FishingLootEntry {
 
   @@index([paTable, isActive])
   @@map("fishing_loot_entries")
+}
+
+model EmojiConfig {
+  id        Int      @id @default(autoincrement())
+  type      String // "resource", "capability", "action", "custom", etc.
+  key       String // "WOOD_OAK", "BOIS_CHENE", etc.
+  emoji     String // "🌲"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([type, key])
+  @@map("emoji_configs")
 }

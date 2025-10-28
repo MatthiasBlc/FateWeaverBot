@@ -1,17 +1,21 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
 
 export const getResources: RequestHandler = async (req, res, next) => {
   try {
     const { locationType, locationId } = req.params;
 
     if (!locationType || !locationId) {
-      throw createHttpError(400, "Les paramètres locationType et locationId sont requis");
+      throw new BadRequestError(
+        "Les paramètres locationType et locationId sont requis"
+      );
     }
 
     if (!["CITY", "EXPEDITION"].includes(locationType)) {
-      throw createHttpError(400, "locationType doit être 'CITY' ou 'EXPEDITION'");
+      throw new BadRequestError("locationType doit être 'CITY' ou 'EXPEDITION'");
     }
 
     const resources = await prisma.resourceStock.findMany({
@@ -19,9 +23,7 @@ export const getResources: RequestHandler = async (req, res, next) => {
         locationType: locationType as "CITY" | "EXPEDITION",
         locationId: locationId,
       },
-      include: {
-        resourceType: true,
-      },
+      ...ResourceQueries.withResourceType(),
       orderBy: {
         resourceType: {
           name: "asc",
@@ -41,15 +43,15 @@ export const addResource: RequestHandler = async (req, res, next) => {
     const { quantity } = req.body;
 
     if (!locationType || !locationId || !resourceTypeId) {
-      throw createHttpError(400, "Les paramètres locationType, locationId et resourceTypeId sont requis");
+      throw new BadRequestError("Les paramètres locationType, locationId et resourceTypeId sont requis");
     }
 
     if (!["CITY", "EXPEDITION"].includes(locationType)) {
-      throw createHttpError(400, "locationType doit être 'CITY' ou 'EXPEDITION'");
+      throw new BadRequestError("locationType doit être 'CITY' ou 'EXPEDITION'");
     }
 
     if (!quantity || quantity <= 0) {
-      throw createHttpError(400, "La quantité doit être un nombre positif");
+      throw new BadRequestError("La quantité doit être un nombre positif");
     }
 
     // Vérifier que le type de ressource existe
@@ -58,17 +60,11 @@ export const addResource: RequestHandler = async (req, res, next) => {
     });
 
     if (!resourceType) {
-      throw createHttpError(404, "Type de ressource non trouvé");
+      throw new NotFoundError("Resource type", parseInt(resourceTypeId));
     }
 
     const resource = await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       update: {
         quantity: { increment: quantity },
       },
@@ -92,15 +88,15 @@ export const updateResource: RequestHandler = async (req, res, next) => {
     const { quantity } = req.body;
 
     if (!locationType || !locationId || !resourceTypeId) {
-      throw createHttpError(400, "Les paramètres locationType, locationId et resourceTypeId sont requis");
+      throw new BadRequestError("Les paramètres locationType, locationId et resourceTypeId sont requis");
     }
 
     if (!["CITY", "EXPEDITION"].includes(locationType)) {
-      throw createHttpError(400, "locationType doit être 'CITY' ou 'EXPEDITION'");
+      throw new BadRequestError("locationType doit être 'CITY' ou 'EXPEDITION'");
     }
 
     if (quantity === undefined || quantity < 0) {
-      throw createHttpError(400, "La quantité doit être un nombre positif ou zéro");
+      throw new BadRequestError("La quantité doit être un nombre positif ou zéro");
     }
 
     // Vérifier que le type de ressource existe
@@ -109,17 +105,11 @@ export const updateResource: RequestHandler = async (req, res, next) => {
     });
 
     if (!resourceType) {
-      throw createHttpError(404, "Type de ressource non trouvé");
+      throw new NotFoundError("Resource type", parseInt(resourceTypeId));
     }
 
     const resource = await prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       update: {
         quantity: quantity,
       },
@@ -140,18 +130,14 @@ export const updateResource: RequestHandler = async (req, res, next) => {
 export const removeResource: RequestHandler = async (req, res, next) => {
   try {
     const { locationType, locationId, resourceTypeId } = req.params;
-    const { quantity } = req.body;
+    const { quantity } = req.body || {};
 
     if (!locationType || !locationId || !resourceTypeId) {
-      throw createHttpError(400, "Les paramètres locationType, locationId et resourceTypeId sont requis");
+      throw new BadRequestError("Les paramètres locationType, locationId et resourceTypeId sont requis");
     }
 
     if (!["CITY", "EXPEDITION"].includes(locationType)) {
-      throw createHttpError(400, "locationType doit être 'CITY' ou 'EXPEDITION'");
-    }
-
-    if (!quantity || quantity <= 0) {
-      throw createHttpError(400, "La quantité à retirer doit être un nombre positif");
+      throw new BadRequestError("locationType doit être 'CITY' ou 'EXPEDITION'");
     }
 
     // Vérifier que le type de ressource existe
@@ -160,32 +146,39 @@ export const removeResource: RequestHandler = async (req, res, next) => {
     });
 
     if (!resourceType) {
-      throw createHttpError(404, "Type de ressource non trouvé");
+      throw new NotFoundError("Resource type", parseInt(resourceTypeId));
+    }
+
+    // Si quantity n'est pas fournie, supprimer complètement la ressource
+    if (!quantity) {
+      const deleted = await prisma.resourceStock.deleteMany({
+        where: {
+          locationType: locationType as "CITY" | "EXPEDITION",
+          locationId: locationId,
+          resourceTypeId: parseInt(resourceTypeId)
+        },
+      });
+
+      res.status(200).json({ message: "Ressource supprimée complètement", deleted });
+      return;
+    }
+
+    // Sinon, retirer une quantité partielle
+    if (quantity <= 0) {
+      throw new BadRequestError("La quantité à retirer doit être un nombre positif");
     }
 
     // Vérifier que le lieu a assez de ressources
     const currentStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
     });
 
     if (!currentStock || currentStock.quantity < quantity) {
-      throw createHttpError(400, "Pas assez de ressources disponibles");
+      throw new BadRequestError("Pas assez de ressources disponibles");
     }
 
     const updatedResource = await prisma.resourceStock.update({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: locationType as "CITY" | "EXPEDITION",
-          locationId: locationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(locationType as "CITY" | "EXPEDITION", locationId, parseInt(resourceTypeId)),
       data: {
         quantity: { decrement: quantity },
       },
@@ -203,19 +196,19 @@ export const transferResource: RequestHandler = async (req, res, next) => {
     const { quantity } = req.body;
 
     if (!fromLocationType || !fromLocationId || !toLocationType || !toLocationId || !resourceTypeId) {
-      throw createHttpError(400, "Tous les paramètres de localisation et resourceTypeId sont requis");
+      throw new BadRequestError("Tous les paramètres de localisation et resourceTypeId sont requis");
     }
 
     if (!["CITY", "EXPEDITION"].includes(fromLocationType) || !["CITY", "EXPEDITION"].includes(toLocationType)) {
-      throw createHttpError(400, "Les locationTypes doivent être 'CITY' ou 'EXPEDITION'");
+      throw new BadRequestError("Les locationTypes doivent être 'CITY' ou 'EXPEDITION'");
     }
 
     if (fromLocationType === toLocationType && fromLocationId === toLocationId) {
-      throw createHttpError(400, "Impossible de transférer vers la même localisation");
+      throw new BadRequestError("Impossible de transférer vers la même localisation");
     }
 
     if (!quantity || quantity <= 0) {
-      throw createHttpError(400, "La quantité doit être un nombre positif");
+      throw new BadRequestError("La quantité doit être un nombre positif");
     }
 
     // Vérifier que le type de ressource existe
@@ -224,48 +217,30 @@ export const transferResource: RequestHandler = async (req, res, next) => {
     });
 
     if (!resourceType) {
-      throw createHttpError(404, "Type de ressource non trouvé");
+      throw new NotFoundError("Resource type", parseInt(resourceTypeId));
     }
 
     // Vérifier que la localisation source a assez de ressources
     const sourceStock = await prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType: fromLocationType as "CITY" | "EXPEDITION",
-          locationId: fromLocationId,
-          resourceTypeId: parseInt(resourceTypeId),
-        },
-      },
+      where: ResourceQueries.stockWhere(fromLocationType as "CITY" | "EXPEDITION", fromLocationId, parseInt(resourceTypeId)),
     });
 
     if (!sourceStock || sourceStock.quantity < quantity) {
-      throw createHttpError(400, "Pas assez de ressources dans la localisation source");
+      throw new BadRequestError("Pas assez de ressources dans la localisation source");
     }
 
     // Effectuer le transfert
     await prisma.$transaction([
       // Retirer de la source
       prisma.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: fromLocationType as "CITY" | "EXPEDITION",
-            locationId: fromLocationId,
-            resourceTypeId: parseInt(resourceTypeId),
-          },
-        },
+        where: ResourceQueries.stockWhere(fromLocationType as "CITY" | "EXPEDITION", fromLocationId, parseInt(resourceTypeId)),
         data: {
           quantity: { decrement: quantity },
         },
       }),
       // Ajouter à la destination
       prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: toLocationType as "CITY" | "EXPEDITION",
-            locationId: toLocationId,
-            resourceTypeId: parseInt(resourceTypeId),
-          },
-        },
+        where: ResourceQueries.stockWhere(toLocationType as "CITY" | "EXPEDITION", toLocationId, parseInt(resourceTypeId)),
         update: {
           quantity: { increment: quantity },
         },
@@ -274,8 +249,6 @@ export const transferResource: RequestHandler = async (req, res, next) => {
           locationId: toLocationId,
           resourceTypeId: parseInt(resourceTypeId),
           quantity: quantity,
-          ...(toLocationType === "CITY" ? { townId: toLocationId } : {}),
-          ...(toLocationType === "EXPEDITION" ? { expeditionId: toLocationId } : {}),
         },
       }),
     ]);
@@ -305,7 +278,7 @@ export const createResourceType: RequestHandler = async (req, res, next) => {
     const { name, emoji, category, description } = req.body;
 
     if (!name || !emoji || !category) {
-      throw createHttpError(400, "name, emoji et category sont requis");
+      throw new BadRequestError("name, emoji et category sont requis");
     }
 
     const resourceType = await prisma.resourceType.create({
@@ -318,6 +291,77 @@ export const createResourceType: RequestHandler = async (req, res, next) => {
     });
 
     res.status(201).json(resourceType);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateResourceType: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, emoji, category, description } = req.body;
+
+    if (!id) {
+      throw new BadRequestError("L'ID du type de ressource est requis");
+    }
+
+    const resourceTypeId = parseInt(id);
+    if (isNaN(resourceTypeId)) {
+      throw new BadRequestError("L'ID du type de ressource doit être un nombre");
+    }
+
+    // Vérifier que le type de ressource existe
+    const existingResourceType = await prisma.resourceType.findUnique({
+      where: { id: resourceTypeId },
+    });
+
+    if (!existingResourceType) {
+      throw new NotFoundError("Resource type", resourceTypeId);
+    }
+
+    const resourceType = await prisma.resourceType.update({
+      where: { id: resourceTypeId },
+      data: {
+        ...(name && { name }),
+        ...(emoji && { emoji }),
+        ...(category && { category }),
+        ...(description !== undefined && { description: description || null }),
+      },
+    });
+
+    res.status(200).json(resourceType);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteResourceType: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new BadRequestError("L'ID du type de ressource est requis");
+    }
+
+    const resourceTypeId = parseInt(id);
+    if (isNaN(resourceTypeId)) {
+      throw new BadRequestError("L'ID du type de ressource doit être un nombre");
+    }
+
+    // Vérifier que le type de ressource existe
+    const existingResourceType = await prisma.resourceType.findUnique({
+      where: { id: resourceTypeId },
+    });
+
+    if (!existingResourceType) {
+      throw new NotFoundError("Resource type", resourceTypeId);
+    }
+
+    const resourceType = await prisma.resourceType.delete({
+      where: { id: resourceTypeId },
+    });
+
+    res.status(200).json(resourceType);
   } catch (error) {
     next(error);
   }

@@ -8,7 +8,7 @@ import { logger } from "../../services/logger";
  * @returns Un handler qui récupère automatiquement le personnage actif
  */
 export function withActiveCharacter(
-  handler: (interaction: ChatInputCommandInteraction, character: any) => Promise<void>
+  handler: (interaction: ChatInputCommandInteraction, character: unknown) => Promise<void>
 ) {
   return async (interaction: ChatInputCommandInteraction) => {
     try {
@@ -16,7 +16,7 @@ export function withActiveCharacter(
       const character = await getActiveCharacterFromCommand(interaction);
 
       // Ajouter le personnage à l'interaction pour qu'il soit accessible dans le handler
-      (interaction as any).activeCharacter = character;
+      (interaction as { activeCharacter?: unknown }).activeCharacter = character;
 
       // Appeler le handler avec le personnage actif
       return await handler(interaction, character);

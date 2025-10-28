@@ -104,6 +104,61 @@ class DiscordNotificationService {
       return false;
     }
   }
+
+  /**
+   * Send notification to expedition's dedicated channel (if configured and DEPARTED)
+   * Falls back to guild's log channel if no dedicated channel
+   */
+  async sendExpeditionNotification(
+    expeditionId: string,
+    guildId: string,
+    message: string
+  ): Promise<boolean> {
+    try {
+      // Import container here to avoid circular dependency
+      const { container } = await import('../infrastructure/container');
+
+      // Check if expedition has a dedicated channel
+      const expeditionChannelId = await container.expeditionService.getExpeditionChannelId(expeditionId);
+
+      if (expeditionChannelId) {
+        // Send to expedition's dedicated channel
+        return await this.sendNotificationToChannel(expeditionChannelId, message);
+      } else {
+        // Fallback to guild's log channel
+        return await this.sendNotification(guildId, message);
+      }
+    } catch (error) {
+      logger.error("Error sending expedition notification:", {
+        expeditionId,
+        guildId,
+        error,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Send message to a specific channel ID
+   */
+  private async sendNotificationToChannel(
+    channelId: string,
+    message: string
+  ): Promise<boolean> {
+    try {
+      const channel = await this.client.channels.fetch(channelId);
+      if (!channel || !channel.isTextBased()) {
+        logger.warn(`Channel ${channelId} not found or not text-based`);
+        return false;
+      }
+
+      await (channel as TextChannel).send(message);
+      return true;
+    } catch (error) {
+      logger.error(`Error sending message to channel ${channelId}:`, error);
+      return false;
+    }
+  }
 }
 
 // Export a singleton instance with necessary intents

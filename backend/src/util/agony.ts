@@ -14,6 +14,7 @@ export interface AgonyUpdateData {
   hp?: number;
   hungerLevel?: number;
   agonySince?: Date | null;
+  enteredAgony?: boolean; // New flag to detect agony entrance
 }
 
 /**
@@ -53,6 +54,7 @@ export function applyAgonyRules(
     // Only set agonySince if not already in agony
     if (currentHp !== 1 || !currentAgonySince) {
       updateData.agonySince = new Date();
+      updateData.enteredAgony = true; // Flag for notification
     }
   }
   // RULE 1: If HP becomes 1 (and not from hunger=0) → Set agony
@@ -60,6 +62,7 @@ export function applyAgonyRules(
     // Only set agonySince if not already in agony
     if (currentHp !== 1 || !currentAgonySince) {
       updateData.agonySince = new Date();
+      updateData.enteredAgony = true; // Flag for notification
     }
   }
   // RULE 3: If HP recovers (hp > 1) → Clear agony

@@ -14,6 +14,7 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
+import { getResourceEmoji } from "../../../services/emoji-cache";
 
 /**
  * Handler principal pour la commande /stock-admin unifiée
@@ -57,7 +58,7 @@ export async function handleStockAdminCommand(
 
     // Ajouter chaque ressource avec son stock
     if (resources && resources.length > 0) {
-      resources.forEach((resource: any) => {
+      for (const resource of resources) {
         const resourceType = resource.resourceType;
         const quantity = resource.quantity;
 
@@ -67,12 +68,14 @@ export async function handleStockAdminCommand(
         else if (quantity < 50) color = 0xffa500; // Orange si faible
         else if (quantity < 100) color = 0xffff00; // Jaune si moyen
 
+        const emoji = await getResourceEmoji(resourceType.name, resourceType.emoji);
+
         embed.addFields({
-          name: `${resourceType.emoji} ${resourceType.name}`,
+          name: `${emoji} ${resourceType.name}`,
           value: `**${quantity}** unités`,
           inline: true,
         });
-      });
+      }
     } else {
       embed.addFields({
         name: "📦 Ressources",

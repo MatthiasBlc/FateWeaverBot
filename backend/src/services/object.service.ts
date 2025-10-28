@@ -1,73 +1,39 @@
 import { PrismaClient } from "@prisma/client";
+import { ObjectRepository } from "../domain/repositories/object.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
-export const objectService = {
+class ObjectServiceClass {
+  private objectRepo: ObjectRepository;
+
+  constructor(objectRepo?: ObjectRepository) {
+    this.objectRepo = objectRepo || new ObjectRepository(prisma);
+  }
+
   /**
    * Récupère tous les types d'objets
    */
   async getAllObjectTypes() {
-    return await prisma.objectType.findMany({
-      include: {
-        skillBonuses: {
-          include: {
-            skill: true
-          }
-        },
-        capacityBonuses: {
-          include: {
-            capability: true
-          }
-        },
-        resourceConversions: {
-          include: {
-            resourceType: true
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
-  },
+    return this.objectRepo.findAll();
+  }
 
   /**
    * Récupère un type d'objet par ID
    */
   async getObjectTypeById(id: number) {
-    return await prisma.objectType.findUnique({
-      where: { id },
-      include: {
-        skillBonuses: {
-          include: {
-            skill: true
-          }
-        },
-        capacityBonuses: {
-          include: {
-            capability: true
-          }
-        },
-        resourceConversions: {
-          include: {
-            resourceType: true
-          }
-        }
-      }
-    });
-  },
+    return this.objectRepo.findById(id);
+  }
 
   /**
    * Crée un nouveau type d'objet (admin)
    */
   async createObjectType(data: { name: string; description?: string }) {
-    return await prisma.objectType.create({
-      data: {
-        name: data.name,
-        description: data.description
-      }
+    return this.objectRepo.create({
+      name: data.name,
+      description: data.description
     });
-  },
+  }
 
   /**
    * Récupère l'inventaire d'un personnage
@@ -98,7 +64,7 @@ export const objectService = {
     });
 
     return inventory;
-  },
+  }
 
   /**
    * Ajoute un objet à l'inventaire d'un personnage
@@ -116,7 +82,7 @@ export const objectService = {
       });
 
       if (!objectType) {
-        throw new Error(`ObjectType ${objectTypeId} not found`);
+        throw new NotFoundError("ObjectType", objectTypeId);
       }
 
       // 2. Si l'objet a des conversions de ressources (sac de ressources)
@@ -133,7 +99,7 @@ export const objectService = {
         });
 
         if (!character) {
-          throw new Error(`Character ${characterId} not found`);
+          throw new NotFoundError("Character", characterId);
         }
 
         // Déterminer la destination des ressources
@@ -193,7 +159,7 @@ export const objectService = {
 
       return { success: true, converted: false, slot };
     });
-  },
+  }
 
   /**
    * Retire un objet de l'inventaire
@@ -202,7 +168,7 @@ export const objectService = {
     return await prisma.characterInventorySlot.delete({
       where: { id: slotId }
     });
-  },
+  }
 
   /**
    * Récupère les types d'objets d'un personnage (pour l'admin)
@@ -268,7 +234,7 @@ export const objectService = {
     });
 
     return Array.from(objectTypesMap.values());
-  },
+  }
 
   /**
    * Supprime un objet d'un personnage par objectTypeId
@@ -287,20 +253,20 @@ export const objectService = {
     });
 
     if (!inventory) {
-      throw new Error('Character has no inventory');
+      throw new NotFoundError('Character inventory', characterId);
     }
 
     // Trouver le premier slot avec ce type d'objet
     const slot = inventory.slots.find(s => s.objectType.id === objectTypeId);
 
     if (!slot) {
-      throw new Error('Object not found in character inventory');
+      throw new NotFoundError('Object in character inventory', objectTypeId);
     }
 
     return await prisma.characterInventorySlot.delete({
       where: { id: slot.id }
     });
-  },
+  }
 
   /**
    * Transfère un objet entre personnages
@@ -328,7 +294,7 @@ export const objectService = {
       });
 
       if (!sourceSlot) {
-        throw new Error('Slot source not found');
+        throw new NotFoundError('Inventory slot', slotId);
       }
 
       // 2. Récupérer le personnage cible
@@ -343,7 +309,7 @@ export const objectService = {
       });
 
       if (!targetCharacter) {
-        throw new Error('Target character not found');
+        throw new NotFoundError('Target character', targetCharacterId);
       }
 
       const sourceChar = sourceSlot.inventory.character;
@@ -356,7 +322,7 @@ export const objectService = {
                               sourceExpedition.id === targetExpedition.id;
 
       if (!sameCity && !sameExpedition) {
-        throw new Error('Characters must be in same city or same DEPARTED expedition');
+        throw new BadRequestError('Characters must be in same city or same DEPARTED expedition');
       }
 
       // 4. Créer l'inventaire cible si nécessaire
@@ -382,4 +348,23 @@ export const objectService = {
       return { success: true, newSlot };
     });
   }
-};
+
+  /**
+   * Met à jour un type d'objet (admin)
+   */
+  async updateObjectType(id: number, data: { name?: string; description?: string }) {
+    return this.objectRepo.update(id, {
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description || null })
+    });
+  }
+
+  /**
+   * Supprime un type d'objet (admin)
+   */
+  async deleteObjectType(id: number) {
+    return this.objectRepo.delete(id);
+  }
+}
+
+export const objectService = new ObjectServiceClass();

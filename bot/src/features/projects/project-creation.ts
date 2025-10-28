@@ -16,7 +16,7 @@ import {
 import { logger } from "../../services/logger";
 import { apiService } from "../../services/api";
 import { STATUS, PROJECT, CAPABILITIES, RESOURCES } from "../../constants/emojis";
-import { getStatusText, getCraftTypeEmoji } from "./projects.utils";
+import { getStatusText, getCraftTypeEmoji, getCraftDisplayName, toCraftEnum, type CraftEnum } from "./projects.utils";
 import { checkAdmin } from "../../utils/roles";
 
 interface ProjectDraft {
@@ -24,7 +24,7 @@ interface ProjectDraft {
   paRequired: number;
   guildId: string;
   userId: string;
-  craftTypes: string[];
+  craftTypes: CraftEnum[];
   outputResourceTypeId: number | null;
   outputObjectTypeId: number | null; // NOUVEAU: Support pour objets en sortie
   outputQuantity: number;
@@ -179,7 +179,7 @@ export async function handleSelectCraftTypesButton(interaction: ButtonInteractio
       .addOptions([
         { label: "Tisser", value: "TISSER", emoji: CAPABILITIES.WEAVING },
         { label: "Forger", value: "FORGER", emoji: CAPABILITIES.FORGING },
-        { label: "Menuiser", value: "MENUISER", emoji: CAPABILITIES.WOODWORKING },
+        { label: "Travailler le bois", value: "MENUISER", emoji: CAPABILITIES.WOODWORKING },
       ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
@@ -199,7 +199,11 @@ export async function handleCraftTypeSelect(interaction: StringSelectMenuInterac
     const draft = projectDrafts.get(interaction.user.id);
     if (!draft) return;
 
-    draft.craftTypes = interaction.values;
+    const craftEnums = interaction.values
+      .map((value) => toCraftEnum(value))
+      .filter((value): value is CraftEnum => value !== undefined);
+
+    draft.craftTypes = craftEnums;
     projectDrafts.set(interaction.user.id, draft);
 
     const buttons = createProjectButtons(draft);
@@ -675,7 +679,9 @@ function formatProjectDraft(draft: ProjectDraft): string {
   }
 
   if (draft.craftTypes.length > 0) {
-    message += `\n🛠️ **Types:** ${draft.craftTypes.map(getCraftTypeEmoji).join(" ")}\n`;
+    message += `🛠️ **Types:** ${draft.craftTypes
+      .map((craftType) => `${getCraftTypeEmoji(craftType)} ${getCraftDisplayName(craftType)}`)
+      .join(" | ")}`;
   } else {
     message += `\n⚠️ *Aucun type sélectionné*\n`;
   }

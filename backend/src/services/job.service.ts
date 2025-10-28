@@ -1,4 +1,6 @@
 import { PrismaClient, Job } from "@prisma/client";
+import { JobRepository } from "../domain/repositories/job.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -16,69 +18,48 @@ export interface UpdateJobDto {
   optionalAbilityId?: string | null;
 }
 
-export const JobService = {
+class JobServiceClass {
+  private jobRepo: JobRepository;
+
+  constructor(jobRepo?: JobRepository) {
+    this.jobRepo = jobRepo || new JobRepository(prisma);
+  }
+
   /**
    * Récupérer tous les métiers
    */
   async getAllJobs(): Promise<Job[]> {
-    return await prisma.job.findMany({
-      include: {
-        startingAbility: true,
-        optionalAbility: true,
-      },
-      orderBy: { name: "asc" },
-    });
-  },
+    return await this.jobRepo.findAll();
+  }
 
   /**
    * Récupérer un métier par ID
    */
   async getJobById(jobId: number): Promise<Job | null> {
-    return await prisma.job.findUnique({
-      where: { id: jobId },
-      include: {
-        startingAbility: true,
-        optionalAbility: true,
-      },
-    });
-  },
+    return await this.jobRepo.findById(jobId);
+  }
 
   /**
    * Créer un nouveau métier
    */
   async createJob(data: CreateJobDto): Promise<Job> {
     // Vérifier que les capacités existent
-    const startingAbility = await prisma.capability.findUnique({
-      where: { id: data.startingAbilityId },
-    });
+    const startingAbility = await this.jobRepo.findCapability(data.startingAbilityId);
 
     if (!startingAbility) {
-      throw new Error("Starting ability not found");
+      throw new NotFoundError("Starting ability", data.startingAbilityId);
     }
 
     if (data.optionalAbilityId) {
-      const optionalAbility = await prisma.capability.findUnique({
-        where: { id: data.optionalAbilityId },
-      });
+      const optionalAbility = await this.jobRepo.findCapability(data.optionalAbilityId);
 
       if (!optionalAbility) {
-        throw new Error("Optional ability not found");
+        throw new NotFoundError("Optional ability", data.optionalAbilityId);
       }
     }
 
-    return await prisma.job.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        startingAbilityId: data.startingAbilityId,
-        optionalAbilityId: data.optionalAbilityId,
-      },
-      include: {
-        startingAbility: true,
-        optionalAbility: true,
-      },
-    });
-  },
+    return await this.jobRepo.create(data);
+  }
 
   /**
    * Mettre à jour un métier
@@ -86,32 +67,24 @@ export const JobService = {
   async updateJob(jobId: number, data: UpdateJobDto): Promise<Job> {
     // Vérifier que les capacités existent si fournies
     if (data.startingAbilityId) {
-      const startingAbility = await prisma.capability.findUnique({
-        where: { id: data.startingAbilityId },
-      });
+      const startingAbility = await this.jobRepo.findCapability(data.startingAbilityId);
 
       if (!startingAbility) {
-        throw new Error("Starting ability not found");
+        throw new NotFoundError("Starting ability", data.startingAbilityId);
       }
     }
 
     if (data.optionalAbilityId) {
-      const optionalAbility = await prisma.capability.findUnique({
-        where: { id: data.optionalAbilityId },
-      });
+      const optionalAbility = await this.jobRepo.findCapability(data.optionalAbilityId);
 
       if (!optionalAbility) {
-        throw new Error("Optional ability not found");
+        throw new NotFoundError("Optional ability", data.optionalAbilityId);
       }
     }
 
-    return await prisma.job.update({
-      where: { id: jobId },
-      data,
-      include: {
-        startingAbility: true,
-        optionalAbility: true,
-      },
-    });
-  },
-};
+    return await this.jobRepo.update(jobId, data);
+  }
+}
+
+// Export singleton instance for backward compatibility
+export const JobService = new JobServiceClass();

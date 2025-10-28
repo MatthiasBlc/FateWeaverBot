@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosInstance } from 'axios';
 import { logger } from '../logger';
 import { Expedition } from '../../types/entities';
@@ -28,9 +29,12 @@ export class ExpeditionAPIService {
     };
   }
 
-  async getActiveExpeditionsForCharacter(characterId: string): Promise<Expedition[]> {
+  async getActiveExpeditionsForCharacter(characterId: string, userId?: string): Promise<Expedition[]> {
     try {
-      const response = await this.api.get<Expedition[]>(`${this.basePath}/character/${characterId}/active`);
+      const url = userId
+        ? `${this.basePath}/character/${characterId}/active?userId=${userId}`
+        : `${this.basePath}/character/${characterId}/active`;
+      const response = await this.api.get<Expedition[]>(url);
       return response.data;
     } catch (error) {
       logger.error('Error fetching active expeditions for character:', error);
@@ -116,8 +120,14 @@ export class ExpeditionAPIService {
         { userId }
       );
       return response.data.data;
-    } catch (error) {
-      logger.error('Error toggling emergency vote:', error);
+    } catch (error: any) {
+      // Log safely without circular references
+      logger.error('Error toggling emergency vote:', {
+        message: error?.response?.data?.error || error?.message || 'Unknown error',
+        status: error?.response?.status,
+        expeditionId,
+        userId,
+      });
       throw error;
     }
   }
@@ -131,5 +141,51 @@ export class ExpeditionAPIService {
       direction,
       characterId,
     });
+  }
+
+  /**
+   * Set expedition dedicated channel
+   */
+  async setExpeditionChannel(
+    expeditionId: string,
+    channelId: string | null,
+    configuredBy: string
+  ): Promise<Expedition> {
+    try {
+      const response = await this.api.post<Expedition>(
+        `${this.basePath}/${expeditionId}/channel`,
+        {
+          channelId,
+          configuredBy,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      logger.error("Error setting expedition channel:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send a log message for an expedition
+   */
+  async sendExpeditionLog(
+    expeditionId: string,
+    guildId: string,
+    message: string
+  ): Promise<boolean> {
+    try {
+      const response = await this.api.post<{ success: boolean }>(
+        `${this.basePath}/${expeditionId}/log`,
+        {
+          guildId,
+          message,
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      logger.error("Error sending expedition log:", error);
+      return false;
+    }
   }
 }

@@ -6,6 +6,7 @@ import {
   RESOURCES,
   RESOURCES_EXTENDED,
 } from "../../constants/emojis";
+import { toCraftEnum } from "../projects/projects.utils";
 import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
@@ -170,6 +171,20 @@ export async function handleProfileCommand(interaction: any) {
           )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
 
+        // Vérifier si le personnage est en expédition LOCKED ou DEPARTED
+        let expeditionStatus: 'LOCKED' | 'DEPARTED' | null = null;
+        try {
+          const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+          if (activeExpeditions && activeExpeditions.length > 0) {
+            const expedition = activeExpeditions[0];
+            if (expedition.status === 'LOCKED' || expedition.status === 'DEPARTED') {
+              expeditionStatus = expedition.status as 'LOCKED' | 'DEPARTED';
+            }
+          }
+        } catch (error) {
+          logger.debug("Could not fetch expedition status for character", { characterId: character.id, error });
+        }
+
         // Préparer les données pour l'affichage avec les rôles récupérés du personnage
         const profileData: ProfileData = {
           character: {
@@ -188,6 +203,7 @@ export async function handleProfileCommand(interaction: any) {
               costPA: cap.costPA,
               emojiTag: cap.emojiTag,
             })),
+            expeditionStatus, // Ajouter le statut d'expédition
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -332,11 +348,11 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   const rolesText =
     data.character.roles && data.character.roles.length > 0
       ? data.character.roles
-        .map(
-          (role: { discordId: string; name: string }) =>
-            `<@&${role.discordId}>`
-        )
-        .join(", ")
+          .map(
+            (role: { discordId: string; name: string }) =>
+              `<@&${role.discordId}>`
+          )
+          .join(", ")
       : "Aucun rôle";
 
   // Formatage des rôles Discord de l'utilisateur
@@ -368,8 +384,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
     },
     {
       name: "Points d'Action (PA)",
-      value: `**${data.actionPoints.points || 0}/4 ${CHARACTER.PA}** ${data.actionPoints.points >= 3 ? STATUS.WARNING : " "
-        }`.trim(),
+      value: `**${data.actionPoints.points || 0}/4 PA${CHARACTER.PA}** ${
+        data.actionPoints.points >= 3 ? STATUS.WARNING : " "
+      }`.trim(),
       inline: true,
     },
     {
@@ -393,7 +410,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
   const statusDisplay = createStatusDisplay(data.character);
   if (statusDisplay) {
     // Ajouter un espacement avant STATUTS si ce n'est pas la première section
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -411,7 +430,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
   if (data.character.capabilities && data.character.capabilities.length > 0) {
     // Ajouter un espacement avant CAPACITÉS si ce n'est pas la première section
-    const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
     if (currentSectionsCount > 0) {
       fields.push({
         name: " ",
@@ -453,12 +474,15 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       objects.forEach((obj: any) => {
         if (obj.skillBonuses && obj.skillBonuses.length > 0) {
           obj.skillBonuses.forEach((skillBonus: any) => {
-            if (skillBonus.skill && !objectSkills.find((s) => s.id === skillBonus.skill.id)) {
+            if (
+              skillBonus.skill &&
+              !objectSkills.find((s) => s.id === skillBonus.skill.id)
+            ) {
               objectSkills.push({
                 id: skillBonus.skill.id,
                 name: skillBonus.skill.name,
                 description: skillBonus.skill.description,
-                sourceObject: obj.name
+                sourceObject: obj.name,
               });
             }
           });
@@ -468,13 +492,15 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
     // Combiner les compétences classiques et celles des objets
     const allSkills = [
-      ...skills.map((skill: any) => ({ ...skill, type: 'classic' })),
-      ...objectSkills.map((skill: any) => ({ ...skill, type: 'object' }))
+      ...skills.map((skill: any) => ({ ...skill, type: "classic" })),
+      ...objectSkills.map((skill: any) => ({ ...skill, type: "object" })),
     ];
 
     if (allSkills.length > 0) {
       // Ajouter un espacement avant COMPÉTENCES si ce n'est pas la première section
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -485,13 +511,17 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
       const skillsText = allSkills
         .map((skill: any) => {
-          if (skill.type === 'object') {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''} *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
+          if (skill.type === "object") {
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            } *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
           } else {
-            return `**${skill.name}**${skill.description ? ` • ${skill.description}` : ''}`;
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            }`;
           }
         })
-        .join('\n');
+        .join("\n");
 
       fields.push({
         name: `📚 **COMPÉTENCES**`,
@@ -513,7 +543,9 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
     if (objects && objects.length > 0) {
       // Ajouter un espacement avant OBJETS si ce n'est pas la première section
-      const currentSectionsCount = fields.filter(f => f.name !== " " && f.value !== " ").length;
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
       if (currentSectionsCount > 0) {
         fields.push({
           name: " ",
@@ -523,8 +555,11 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       }
 
       const objectsText = objects
-        .map((obj: any) => `**${obj.name}**${obj.description ? ` • ${obj.description}` : ''}`)
-        .join('\n');
+        .map(
+          (obj: any) =>
+            `**${obj.name}**${obj.description ? ` • ${obj.description}` : ""}`
+        )
+        .join("\n");
 
       fields.push({
         name: `🎒 **OBJETS**`,
@@ -550,101 +585,102 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       data.actionPoints.points || 0, // Ajouter les PA actuels du personnage
       data.character.hp, // Ajouter les points de vie actuels du personnage
       data.character.hungerLevel, // Ajouter le niveau de faim actuel du personnage
-      data.character.isDead // Ajouter l'état mort du personnage
+      data.character.isDead, // Ajouter l'état mort du personnage
+      data.character.expeditionStatus // Ajouter le statut d'expédition
     );
     if (capabilityButtons) {
       components.push(...capabilityButtons); // Étendre le tableau
     }
   }
 
-  // Ajouter les boutons Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
+  // Créer une ligne pour les boutons d'actions secondaires (Manger, Cataplasme, Donner, Projets)
+  const actionButtons: ButtonBuilder[] = [];
+
+  // Ajouter le bouton Manger si le personnage peut manger (niveau de faim < 4 et pas mort)
   if (data.character.hungerLevel < 4 && !data.character.isDead) {
-    // Créer les boutons disponibles selon le stock (vérification côté serveur lors du clic)
-    const buttons = [];
-
-    // // Bouton pour les vivres (toujours affiché si personnage peut manger)
-    // const vivresButton = new ButtonBuilder()
-    //   .setCustomId(`eat_food:${data.character.id}`)
-    //   .setLabel("Manger 🍞 (1)")
-    //   .setStyle(ButtonStyle.Primary);
-    // buttons.push(vivresButton);
-
-    // // Bouton pour la nourriture (toujours affiché si personnage peut manger)
-    // const nourritureButton = new ButtonBuilder()
-    //   .setCustomId(`eat_nourriture:${data.character.id}`)
-    //   .setLabel("Manger 🍽️ (1)")
-    //   .setStyle(ButtonStyle.Secondary);
-    // buttons.push(nourritureButton);
-
-    // Bouton "Manger +" pour accéder au menu avancé
     const eatMoreButton = new ButtonBuilder()
       .setCustomId(`eat_more:${data.character.id}`)
       .setLabel(`${RESOURCES_EXTENDED.FORK_KNIFE} Manger`)
       .setStyle(ButtonStyle.Success);
-    buttons.push(eatMoreButton);
-
-    // Ajouter les boutons à la ligne
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      ...buttons
-    );
-    components.push(buttonRow);
+    actionButtons.push(eatMoreButton);
   }
 
   // Ajouter le bouton Cataplasme si le personnage est blessé (HP < 5 et pas mort)
   if (data.character.hp < 5 && data.character.hp > 0) {
+    let cataplasmeStock = 0;
+    try {
+      const cataplasmeResponse = await httpClient.get(
+        `/capabilities/cataplasme-stock/${data.character.id}`
+      );
+      cataplasmeStock = cataplasmeResponse.data.quantity || 0;
+    } catch (error) {
+      logger.debug("Erreur lors de la récupération du stock de cataplasmes:", {
+        error,
+      });
+    }
+
     const cataplasmeButton = new ButtonBuilder()
       .setCustomId(`use_cataplasme:${data.character.id}`)
-      .setLabel(`Utiliser Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
-      .setStyle(ButtonStyle.Danger);
-
-    const cataplasmeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      cataplasmeButton
-    );
-    components.push(cataplasmeRow);
+      .setLabel(`Cataplasme ${RESOURCES_EXTENDED.BANDAGE}`)
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(cataplasmeStock <= 0);
+    actionButtons.push(cataplasmeButton);
   }
 
-  // Bouton "Donner un objet" temporairement désactivé
-  /*
-  try {
-    const inventoryResponse = await httpClient.get(
-      `/api/characters/${data.character.id}/inventory`
-    );
-    const inventory = inventoryResponse.data;
-    if (inventory && inventory.slots && inventory.slots.length > 0) {
-      const giveObjectButton = new ButtonBuilder()
-        .setCustomId(`give_object:${data.character.id}`)
-        .setLabel(`🎁 Donner un objet`)
-        .setStyle(ButtonStyle.Secondary);
-
-      const giveObjectRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        giveObjectButton
+  // Bouton "Donner un objet"
+  if (!data.character.isDead) {
+    try {
+      const inventoryResponse = await httpClient.get(
+        `/api/characters/${data.character.id}/inventory`
       );
-      components.push(giveObjectRow);
+      const inventory = inventoryResponse.data;
+      // Vérifier si l'inventaire a des slots
+      if (inventory && inventory.slots && inventory.slots.length > 0) {
+        const giveObjectButton = new ButtonBuilder()
+          .setCustomId(
+            `give_object:${data.character.id}:${data.user.discordId}`
+          )
+          .setLabel(`🎁 Donner`)
+          .setStyle(ButtonStyle.Secondary);
+        actionButtons.push(giveObjectButton);
+      }
+    } catch (error) {
+      // Silencieusement ignorer les erreurs
+      logger.debug(
+        "Erreur lors de la vérification de l'inventaire pour le bouton donner:",
+        error
+      );
     }
-  } catch (error) {
-    // Silencieusement ignorer les erreurs
-    logger.debug(
-      "Erreur lors de la vérification de l'inventaire pour le bouton donner:",
-      error
-    );
   }
-  */
 
   // Ajouter le bouton "Projets" si le personnage a une capacité craft
   const craftCapabilities = data.character.capabilities?.filter((cap) =>
-    ["Tisser", "Forger", "Menuiser"].includes(cap.name)
+    Boolean(toCraftEnum(cap.name))
   );
+
+  const isInAgony =
+    (data.character.hp === 1 || data.character.hungerLevel === 0) &&
+    !data.character.isDead;
+
+  const isInExpedition =
+    data.character.expeditionStatus === "LOCKED" ||
+    data.character.expeditionStatus === "DEPARTED";
 
   if (craftCapabilities && craftCapabilities.length > 0) {
     const projectsButton = new ButtonBuilder()
       .setCustomId(`view_projects:${data.character.id}:${data.user.discordId}`)
       .setLabel(`🛠️ Projets`)
-      .setStyle(ButtonStyle.Primary);
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(isInAgony || isInExpedition);
+    actionButtons.push(projectsButton);
+  }
 
-    const projectsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      projectsButton
+  // Ajouter tous les boutons d'action sur une même ligne (si y'en a)
+  if (actionButtons.length > 0) {
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      ...actionButtons
     );
-    components.push(projectsRow);
+    components.push(actionRow);
   }
 
   return { embed, components };
@@ -742,14 +778,16 @@ function createPMDisplay(current: number, max: number): string {
 
   // Special case: PM=0 (Dépression)
   if (current === 0) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSION
-      }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSION
+    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
   }
 
   // Special case: PM=1 (Déprime)
   if (current === 1) {
-    return `${hearts.join(" ")} - ${CHARACTER.MP_DEPRESSED
-      }**Déprime** (Ne peut pas utiliser de PA)`;
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSED
+    }**Déprime** (Ne peut pas utiliser de PA)`;
   }
 
   // Normal case: PM=2-5
@@ -760,6 +798,15 @@ export async function handleProfileButtonInteraction(interaction: any) {
   if (!interaction.isButton()) return;
 
   const customId = interaction.customId;
+
+  // Vérifier si c'est le bouton "Donner un objet"
+  if (customId.startsWith("give_object:")) {
+    const { handleGiveObjectButton } = await import(
+      "./give-object.handlers.js"
+    );
+    await handleGiveObjectButton(interaction);
+    return;
+  }
 
   // Vérifier si c'est un bouton de capacité
   if (customId.startsWith("use_capability:")) {
@@ -954,17 +1001,29 @@ export async function handleProfileButtonInteraction(interaction: any) {
         let cataplasmeCount = 0;
         if (character.town?.id) {
           try {
-            logger.info("Fetching cataplasme count for townId:", { townId: character.town.id });
-            const cataplasmeResponse = await httpClient.get(`/capabilities/cataplasme-count/${character.town.id}`);
+            logger.info("Fetching cataplasme count for townId:", {
+              townId: character.town.id,
+            });
+            const cataplasmeResponse = await httpClient.get(
+              `/capabilities/cataplasme-count/${character.town.id}`
+            );
             cataplasmeCount = cataplasmeResponse.data.count || 0;
-            logger.info("Cataplasme count received:", { count: cataplasmeCount, paTotal: character.paTotal });
+            logger.info("Cataplasme count received:", {
+              count: cataplasmeCount,
+              paTotal: character.paTotal,
+            });
           } catch (error) {
             logger.error("Error fetching cataplasme count:", { error });
           }
         }
 
-        const canCraftCataplasme = character.paTotal >= 2 && cataplasmeCount < 3;
-        logger.info("Can craft cataplasme:", { canCraftCataplasme, paTotal: character.paTotal, cataplasmeCount });
+        const canCraftCataplasme =
+          character.paTotal >= 2 && cataplasmeCount < 3;
+        logger.info("Can craft cataplasme:", {
+          canCraftCataplasme,
+          paTotal: character.paTotal,
+          cataplasmeCount,
+        });
 
         // Créer des boutons pour choisir 1 PA (Soigner) ou 2 PA (Cataplasme)
         const paChoiceRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -1023,19 +1082,22 @@ export async function handleProfileButtonInteraction(interaction: any) {
         let finalMessage = result.publicMessage;
 
         // Remplacer {ADMIN_TAG} par les tags des admins si présent
-        if (finalMessage.includes('{ADMIN_TAG}')) {
+        if (finalMessage.includes("{ADMIN_TAG}")) {
           const guild = interaction.guild;
           if (guild) {
             // Récupérer tous les membres avec permission Administrator
             const members = await guild.members.fetch();
             const adminIds = members
-              .filter((member: any) => member.permissions.has('Administrator'))
+              .filter((member: any) => member.permissions.has("Administrator"))
               .map((member: any) => `<@${member.id}>`)
-              .join(' ');
+              .join(" ");
 
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', adminIds || '@Admins');
+            finalMessage = finalMessage.replace(
+              "{ADMIN_TAG}",
+              adminIds || "@Admins"
+            );
           } else {
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', '@Admins');
+            finalMessage = finalMessage.replace("{ADMIN_TAG}", "@Admins");
           }
         }
 
@@ -1048,24 +1110,26 @@ export async function handleProfileButtonInteraction(interaction: any) {
 
       // Fonction utilitaire pour obtenir l'emoji d'une capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
-        if (!emojiTag) return '';
+        if (!emojiTag) return "";
 
         // Vérifier si l'emojiTag est une clé valide dans CAPABILITIES
         if (emojiTag in CAPABILITIES) {
-          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + ' ';
+          return CAPABILITIES[emojiTag as keyof typeof CAPABILITIES] + " ";
         }
 
         // Si l'emojiTag n'est pas trouvé, essayer avec la version en majuscules
         const upperEmojiTag = emojiTag.toUpperCase();
         if (upperEmojiTag in CAPABILITIES) {
-          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + ' ';
+          return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES] + " ";
         }
 
-        return '';
+        return "";
       };
 
       await interaction.editReply({
-        content: `${getEmojiForCapability(selectedCapability.emojiTag)}**${selectedCapability.name}**\n${result.message || ""}`,
+        content: `${getEmojiForCapability(selectedCapability.emojiTag)}**${
+          selectedCapability.name
+        }**\n${result.message || ""}`,
       });
     } catch (error: any) {
       logger.error("Error using capability via button:", {
@@ -1093,16 +1157,26 @@ export async function handleProfileButtonInteraction(interaction: any) {
 function createCapabilitiesDisplay(
   capabilities:
     | Array<{
-      name: string;
-      description?: string;
-      costPA: number;
-      emojiTag?: string;
-    }>
+        name: string;
+        description?: string;
+        costPA: number;
+        emojiTag?: string;
+      }>
     | undefined
 ): string {
   if (!capabilities || capabilities.length === 0) {
     return "Aucune capacité connue";
   }
+
+  // Capacités avec menu de choix de PA
+  const capabilitiesWithPAMenu = [
+    "Auspice",
+    "Cartographier",
+    "Cuisiner",
+    "Pêcher",
+    "Rechercher",
+    "Soigner",
+  ];
 
   // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
   const getEmojiForCapability = (emojiTag?: string): string => {
@@ -1134,11 +1208,13 @@ function createCapabilitiesDisplay(
   };
 
   return capabilities
-    .map(
-      (cap) =>
-        `${getEmojiForCapability(cap.emojiTag)} **${cap.name}** (${cap.costPA
-        } PA)${cap.description ? ` • ${cap.description}` : ""}`
-    )
+    .map((cap) => {
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA} PA)` : "";
+      return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${
+        cap.description ? ` • ${cap.description}` : ""
+      }`;
+    })
     .join("\n");
 }
 
@@ -1154,11 +1230,30 @@ function createCapabilityButtons(
   currentPA: number,
   characterHp?: number,
   characterHungerLevel?: number,
-  characterIsDead?: boolean
+  characterIsDead?: boolean,
+  expeditionStatus?: 'LOCKED' | 'DEPARTED' | null
 ): ActionRowBuilder<ButtonBuilder>[] | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
   }
+
+  const actionableCapabilities = capabilities.filter(
+    (cap) => !toCraftEnum(cap.name)
+  );
+
+  if (actionableCapabilities.length === 0) {
+    return null;
+  }
+
+  // Capacités avec menu de choix de PA
+  const capabilitiesWithPAMenu = [
+    "Auspice",
+    "Cartographier",
+    "Cuisiner",
+    "Pêcher",
+    "Rechercher",
+    "Soigner",
+  ];
 
   const rows: ActionRowBuilder<ButtonBuilder>[] = [];
   const maxButtonsPerRow = 5; // Limite par ligne (Discord : 5 max)
@@ -1167,10 +1262,10 @@ function createCapabilityButtons(
   // Diviser les capacités en groupes de 5
   for (
     let i = 0;
-    i < capabilities.length && rows.length < maxRows;
+    i < actionableCapabilities.length && rows.length < maxRows;
     i += maxButtonsPerRow
   ) {
-    const group = capabilities.slice(i, i + maxButtonsPerRow);
+    const group = actionableCapabilities.slice(i, i + maxButtonsPerRow);
     const buttons = group.map((cap) => {
       // Déterminer l'emoji selon l'emojiTag de la capacité
       const getEmojiForCapability = (emojiTag?: string): string => {
@@ -1193,19 +1288,28 @@ function createCapabilityButtons(
 
       // Vérifier si le personnage a assez de PA pour cette capacité ou s'il est en agonie
       const hasEnoughPA = currentPA >= cap.costPA;
-      const isInAgony = (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
-      const buttonStyle = hasEnoughPA && !isInAgony
-        ? ButtonStyle.Primary
-        : ButtonStyle.Secondary;
+      const isInAgony =
+        (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
+
+      // Vérifier si le personnage est en expédition LOCKED ou DEPARTED
+      const isInExpedition = expeditionStatus === 'LOCKED' || expeditionStatus === 'DEPARTED';
+
+      const buttonStyle =
+        hasEnoughPA && !isInAgony && !isInExpedition ? ButtonStyle.Primary : ButtonStyle.Secondary;
+
+      // Construire le label du bouton
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA}PA)` : "";
+      const label = `${cap.name}${paText}`;
 
       const button = new ButtonBuilder()
         .setCustomId(`use_capability:${cap.id}:${characterId}:${userId}`)
-        .setLabel(`${cap.name} (${cap.costPA}PA)`)
+        .setLabel(label)
         .setStyle(buttonStyle)
         .setEmoji(getEmojiForCapability(cap.emojiTag));
 
-      // Désactiver le bouton si pas assez de PA ou si en agonie
-      if (!hasEnoughPA || isInAgony) {
+      // Désactiver le bouton si pas assez de PA, si en agonie, ou si en expédition
+      if (!hasEnoughPA || isInAgony || isInExpedition) {
         button.setDisabled(true);
       }
 

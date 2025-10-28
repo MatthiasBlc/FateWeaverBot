@@ -1,4 +1,7 @@
-import { createActionButtons, createConfirmationButtons } from "../../utils/discord-components";
+import {
+  createActionButtons,
+  createConfirmationButtons,
+} from "../../utils/discord-components";
 import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -10,8 +13,15 @@ import {
   TextInputStyle,
 } from "discord.js";
 import type { Character } from "./character-admin.types";
-import { getHungerLevelText } from "../../utils/hunger";
-import { STATUS, HUNGER, CHARACTER, ACTIONS, CAPABILITIES } from "../../constants/emojis";
+import { getHungerLevelText, getHungerEmoji } from "../../utils/hunger";
+import {
+  STATUS,
+  HUNGER,
+  CHARACTER,
+  ACTIONS,
+  CAPABILITIES,
+} from "../../constants/emojis";
+import { emojiCache } from "../../services/emoji-cache";
 
 // --- Custom IDs --- //
 export const CHARACTER_ADMIN_CUSTOM_IDS = {
@@ -42,15 +52,17 @@ export function createCharacterSelectMenu(characters: Character[]) {
       characters.map((char) =>
         new StringSelectMenuOptionBuilder()
           .setLabel(
-            `${char.name}${char.user?.globalName
-              ? ` - ${char.user.globalName}`
-              : char.user?.username
+            `${char.name}${
+              char.user?.globalName
+                ? ` - ${char.user.globalName}`
+                : char.user?.username
                 ? ` - ${char.user.username}`
                 : ""
             }`
           )
           .setDescription(
-            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
+            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${
+              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
             } | Reroll: ${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR}`
           )
           .setValue(char.id)
@@ -66,7 +78,9 @@ export function createCharacterSelectMenu(characters: Character[]) {
  * Crée les boutons d'action pour un personnage sélectionné.
  * Retourne un tableau de 2 ActionRows (Discord limite à 5 boutons par row).
  */
-export function createCharacterActionButtons(character: Character): ActionRowBuilder<ButtonBuilder>[] {
+export function createCharacterActionButtons(
+  character: Character
+): ActionRowBuilder<ButtonBuilder>[] {
   // Première rangée : Actions principales (max 5 boutons)
   const firstRowButtons = [];
 
@@ -230,7 +244,9 @@ export function createCharacterDetailsContent(character: Character): string {
     `**${character.name}**\n` +
     `Actif: ${character.isActive ? STATUS.SUCCESS : STATUS.ERROR}\n` +
     `Mort: ${character.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL}\n` +
-    `Reroll autorisé: ${character.canReroll ? STATUS.SUCCESS : STATUS.ERROR}\n` +
+    `Reroll autorisé: ${
+      character.canReroll ? STATUS.SUCCESS : STATUS.ERROR
+    }\n` +
     `PA: ${character.paTotal} | Faim: ${getHungerLevelText(
       character.hungerLevel
     )} | PV: ${character.hp} | PM: ${character.pm}\n\n` +
@@ -246,6 +262,7 @@ export interface Capability {
   name: string;
   description?: string;
   costPA: number;
+  emojiTag?: string;
 }
 
 /**
@@ -273,17 +290,27 @@ export function createCapabilitySelectMenu(
     .setMinValues(0)
     .setMaxValues(availableCapabilities.length)
     .addOptions(
-      availableCapabilities.map((capability) =>
-        new StringSelectMenuOptionBuilder()
-          .setLabel(`${capability.name} (${capability.costPA} PA)`)
+      availableCapabilities.map((capability) => {
+        // Get emoji from cache if emojiTag exists, otherwise use generic
+        const emoji = capability.emojiTag
+          ? emojiCache.getEmoji("capability", capability.emojiTag)
+          : CAPABILITIES.GENERIC;
+
+        // Only add emoji if not placeholder
+        const displayEmoji = emoji !== "📦" ? emoji : "";
+
+        return new StringSelectMenuOptionBuilder()
+          .setLabel(
+            `${displayEmoji} ${capability.name} (${capability.costPA} PA)`.trim()
+          )
           .setDescription(
             capability.description
               ? capability.description.substring(0, 100)
               : "Aucune description"
           )
           .setValue(capability.id)
-          .setDefault(currentIds.has(capability.id))
-      )
+          .setDefault(currentIds.has(capability.id));
+      })
     );
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
@@ -456,4 +483,384 @@ export function createSkillActionButtons(
       style: ButtonStyle.Danger,
     },
   ]);
+}
+
+// --- Admin Profile Embed Functions --- //
+
+import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
+
+/**
+ * Helper function to create heart display
+ */
+function createHeartDisplay(
+  current: number,
+  max: number,
+  filledEmoji = CHARACTER.HP_FULL,
+  emptyEmoji = CHARACTER.HP_EMPTY
+): string {
+  const hearts = [];
+
+  for (let i = 0; i < max; i++) {
+    if (i < current) {
+      hearts.push(filledEmoji);
+    } else {
+      hearts.push(emptyEmoji);
+    }
+  }
+
+  return hearts.join(" ");
+}
+
+/**
+ * Helper function to create PV (health points) display
+ */
+function createPVDisplay(current: number, max: number): string {
+  if (current === 1) {
+    const hearts: string[] = [CHARACTER.HP_BANDAGED];
+    for (let i = 1; i < max; i++) {
+      hearts.push(CHARACTER.HP_EMPTY);
+    }
+    return hearts.join(" ");
+  }
+
+  return createHeartDisplay(current, max);
+}
+
+/**
+ * Helper function to create PM (mental points) display
+ */
+function createPMDisplay(current: number, max: number): string {
+  const hearts = [];
+
+  for (let i = 0; i < max; i++) {
+    if (current === 0) {
+      hearts.push(CHARACTER.MP_EMPTY);
+    } else if (i < current) {
+      hearts.push(CHARACTER.MP_FULL);
+    } else {
+      hearts.push(CHARACTER.MP_EMPTY);
+    }
+  }
+
+  if (current === 0) {
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSION
+    }**Dépression** (Ne peut pas utiliser de PA, contagieux)`;
+  }
+
+  if (current === 1) {
+    return `${hearts.join(" ")} - ${
+      CHARACTER.MP_DEPRESSED
+    }**Déprime** (Ne peut pas utiliser de PA)`;
+  }
+
+  return hearts.join(" ");
+}
+
+/**
+ * Helper function to create status display
+ */
+function createStatusDisplay(character: any): string | null {
+  const statuses: string[] = [];
+
+  if (character.hp <= 0 && character.isDead) {
+    return `${HUNGER.DEAD} **Mort**`;
+  }
+
+  if (character.hungerLevel === 4) {
+    statuses.push(`${HUNGER.FED} **Satiété** : +1 ${CHARACTER.HP_FULL} / jour`);
+  }
+
+  if (character.hungerLevel === 0) {
+    statuses.push(`${CHARACTER.HP_BANDAGED} **Agonie** : 0 PA utilisables`);
+  }
+
+  if (character.pm === 1) {
+    statuses.push(
+      `${CHARACTER.MP_DEPRESSED} **Déprime** : 1 seul PA utilisable / jour`
+    );
+  }
+
+  if (character.pm === 0) {
+    statuses.push(
+      `${CHARACTER.MP_DEPRESSION} **Dépression** : 1 seul PA utilisable / jour + contamination`
+    );
+  }
+
+  if (character.hungerLevel === 1) {
+    statuses.push(`${HUNGER.STARVING} **Affamé** : -1 PA / jour`);
+  }
+
+  if (character.hungerLevel === 0 && !character.isDead) {
+    statuses.push(
+      `${HUNGER.AGONY} **Meurt de faim** : Agonie ${CHARACTER.HP_BANDAGED}`
+    );
+  }
+
+  return statuses.length > 0 ? statuses.join("\n") : null;
+}
+
+/**
+ * Helper function to display capabilities
+ */
+function createCapabilitiesDisplay(
+  capabilities:
+    | Array<{
+        name: string;
+        description?: string;
+        costPA: number;
+        emojiTag?: string;
+      }>
+    | undefined
+): string {
+  if (!capabilities || capabilities.length === 0) {
+    return "Aucune capacité connue";
+  }
+
+  const capabilitiesWithPAMenu = [
+    "Auspice",
+    "Cartographier",
+    "Cuisiner",
+    "Pêcher",
+    "Rechercher",
+    "Soigner",
+  ];
+
+  const getEmojiForCapability = (emojiTag?: string): string => {
+    if (!emojiTag) {
+      return CAPABILITIES.GENERIC;
+    }
+
+    const upperEmojiTag = emojiTag.toUpperCase();
+
+    if (upperEmojiTag in CAPABILITIES) {
+      return CAPABILITIES[upperEmojiTag as keyof typeof CAPABILITIES];
+    }
+
+    return CAPABILITIES.GENERIC;
+  };
+
+  return capabilities
+    .map((cap) => {
+      const showPA = !capabilitiesWithPAMenu.includes(cap.name);
+      const paText = showPA ? ` (${cap.costPA} PA)` : "";
+      return `${getEmojiForCapability(cap.emojiTag)} **${cap.name}**${paText}${
+        cap.description ? ` • ${cap.description}` : ""
+      }`;
+    })
+    .join("\n");
+}
+
+/**
+ * Creates an admin profile embed view (same as /profil but for admin purposes)
+ * Displays full character information without interactive capability buttons
+ */
+export async function createAdminProfileEmbed(character: any): Promise<any> {
+  const { httpClient } = await import("../../services/httpClient");
+
+  const embed = createCustomEmbed({
+    color: getHungerColor(character.hungerLevel),
+    title: `${CHARACTER.PROFILE} ${character.name || "Sans nom"} (Admin View)`,
+    footer: {
+      text: `Profil admin de : ${character.name}`,
+    },
+    timestamp: true,
+  });
+
+  const jobText = character.job?.name || "Aucun métier";
+
+  const fields = [
+    {
+      name: "Métier",
+      value: jobText,
+      inline: true,
+    },
+    {
+      name: " ",
+      value: " ",
+      inline: true,
+    },
+    {
+      name: "Points d'Action (PA)",
+      value: `**${character.actionPoints || 0}/4 PA${CHARACTER.PA}** ${
+        (character.actionPoints || 0) >= 3 ? STATUS.WARNING : " "
+      }`.trim(),
+      inline: true,
+    },
+    {
+      name: "Vie (PV)",
+      value: `${createPVDisplay(character.hp, 5)}`,
+      inline: true,
+    },
+    {
+      name: "Mental (PM)",
+      value: `${createPMDisplay(character.pm, 5)}`,
+      inline: true,
+    },
+    {
+      name: `Faim`,
+      value: `${getHungerEmoji(character.hungerLevel)} **${getHungerLevelText(
+        character.hungerLevel
+      )}**`,
+      inline: true,
+    },
+  ];
+
+  // Utiliser directement hungerLevel pour l'affichage des statuts (pas de transformation)
+  const statusDisplay = createStatusDisplay(character);
+  if (statusDisplay) {
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
+    if (currentSectionsCount > 0) {
+      fields.push({
+        name: " ",
+        value: " ",
+        inline: false,
+      });
+    }
+
+    fields.push({
+      name: `${CHARACTER.STATUS} **STATUTS**`,
+      value: statusDisplay,
+      inline: false,
+    });
+  }
+
+  if (character.capabilities && character.capabilities.length > 0) {
+    const currentSectionsCount = fields.filter(
+      (f) => f.name !== " " && f.value !== " "
+    ).length;
+    if (currentSectionsCount > 0) {
+      fields.push({
+        name: " ",
+        value: " ",
+        inline: false,
+      });
+    }
+
+    fields.push({
+      name: `**CAPACITÉS**`,
+      value: createCapabilitiesDisplay(character.capabilities),
+      inline: false,
+    });
+  }
+
+  try {
+    const skillsResponse = await httpClient.get(
+      `/api/characters/${character.id}/skills`
+    );
+    const skills = skillsResponse.data || [];
+
+    const objectsResponse = await httpClient.get(
+      `/api/characters/${character.id}/objects`
+    );
+    const objects = objectsResponse.data || [];
+
+    const objectSkills: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      sourceObject: string;
+    }> = [];
+
+    if (objects && objects.length > 0) {
+      objects.forEach((obj: any) => {
+        if (obj.skillBonuses && obj.skillBonuses.length > 0) {
+          obj.skillBonuses.forEach((skillBonus: any) => {
+            if (
+              skillBonus.skill &&
+              !objectSkills.find((s) => s.id === skillBonus.skill.id)
+            ) {
+              objectSkills.push({
+                id: skillBonus.skill.id,
+                name: skillBonus.skill.name,
+                description: skillBonus.skill.description,
+                sourceObject: obj.name,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    const allSkills = [
+      ...skills.map((skill: any) => ({ ...skill, type: "classic" })),
+      ...objectSkills.map((skill: any) => ({ ...skill, type: "object" })),
+    ];
+
+    if (allSkills.length > 0) {
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
+      if (currentSectionsCount > 0) {
+        fields.push({
+          name: " ",
+          value: " ",
+          inline: false,
+        });
+      }
+
+      const skillsText = allSkills
+        .map((skill: any) => {
+          if (skill.type === "object") {
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            } *(via ${skill.sourceObject})* ${CHARACTER.LINK}`;
+          } else {
+            return `**${skill.name}**${
+              skill.description ? ` • ${skill.description}` : ""
+            }`;
+          }
+        })
+        .join("\n");
+
+      fields.push({
+        name: `📚 **COMPÉTENCES**`,
+        value: skillsText,
+        inline: false,
+      });
+    }
+  } catch (error) {
+    // Silently ignore skills errors
+  }
+
+  try {
+    const objectsResponse = await httpClient.get(
+      `/api/characters/${character.id}/objects`
+    );
+    const objects = objectsResponse.data;
+
+    if (objects && objects.length > 0) {
+      const currentSectionsCount = fields.filter(
+        (f) => f.name !== " " && f.value !== " "
+      ).length;
+      if (currentSectionsCount > 0) {
+        fields.push({
+          name: " ",
+          value: " ",
+          inline: false,
+        });
+      }
+
+      const objectsText = objects
+        .map(
+          (obj: any) =>
+            `**${obj.name}**${obj.description ? ` • ${obj.description}` : ""}`
+        )
+        .join("\n");
+
+      fields.push({
+        name: `🎒 **OBJETS**`,
+        value: objectsText,
+        inline: false,
+      });
+    }
+  } catch (error) {
+    // Silently ignore objects errors
+  }
+
+  embed.addFields(fields);
+
+  return embed;
 }

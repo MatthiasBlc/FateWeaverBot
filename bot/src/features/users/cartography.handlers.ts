@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -44,8 +45,17 @@ async function executeCartography(
   try {
     logger.info("Executing cartography with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Cartographier pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const cartographyCapability = capabilities.find((cap: any) => cap.capability.name === "Cartographier");
+
+    if (!cartographyCapability) {
+      throw new Error("Capacité Cartographier non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Cartographier",
+      capabilityId: cartographyCapability.capability.id,
       paToUse,
     });
 
@@ -80,7 +90,7 @@ async function executeCartography(
       }
 
       logger.info("Sending log message for cartography");
-      await sendLogMessage(interaction.guildId, interaction.client, finalMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, finalMessage, characterId);
       logger.info("Log message sent successfully");
     }
 

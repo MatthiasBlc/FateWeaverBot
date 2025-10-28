@@ -1,12 +1,17 @@
 import { PrismaClient, Season as PrismaSeason, SeasonType } from '@prisma/client';
 import { logger } from './logger';
+import { SeasonRepository } from '../domain/repositories/season.repository';
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 export class SeasonService {
   private currentSeason: PrismaSeason | null = null;
   private lastUpdate: Date | null = null;
   private readonly SEASON_DURATION = 7 * 24 * 60 * 60 * 1000; // 1 semaine en millisecondes
+  private seasonRepo: SeasonRepository;
 
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient, seasonRepo?: SeasonRepository) {
+    this.seasonRepo = seasonRepo || new SeasonRepository(prisma);
+  }
 
   /**
    * Initialise le service des saisons
@@ -14,17 +19,13 @@ export class SeasonService {
   async initialize(): Promise<void> {
     try {
       // Vérifier s'il existe déjà une saison
-      let season = await this.prisma.season.findUnique({
-        where: { id: 1 }
-      });
+      let season = await this.seasonRepo.findById(1);
 
       // Si aucune saison n'existe, en créer une par défaut (Été)
       if (!season) {
-        season = await this.prisma.season.create({
-          data: {
-            id: 1,
-            name: SeasonType.SUMMER
-          }
+        season = await this.seasonRepo.create({
+          id: 1,
+          name: SeasonType.SUMMER
         });
         logger.info('Saison par défaut créée :', season.name);
       }
@@ -68,16 +69,13 @@ export class SeasonService {
   async toggleSeason(): Promise<{ changed: boolean; newSeason: PrismaSeason }> {
     try {
       const currentSeason = await this.getCurrentSeason();
-      const newSeasonType = currentSeason.name === SeasonType.SUMMER 
-        ? SeasonType.WINTER 
+      const newSeasonType = currentSeason.name === SeasonType.SUMMER
+        ? SeasonType.WINTER
         : SeasonType.SUMMER;
 
-      const updatedSeason = await this.prisma.season.update({
-        where: { id: 1 },
-        data: {
-          name: newSeasonType,
-          updatedAt: new Date()
-        }
+      const updatedSeason = await this.seasonRepo.update(1, {
+        name: newSeasonType,
+        updatedAt: new Date()
       });
 
       this.currentSeason = updatedSeason;
@@ -96,12 +94,9 @@ export class SeasonService {
    */
   async forceSeasonChange(seasonType: SeasonType): Promise<PrismaSeason> {
     try {
-      const updatedSeason = await this.prisma.season.update({
-        where: { id: 1 },
-        data: {
-          name: seasonType,
-          updatedAt: new Date()
-        }
+      const updatedSeason = await this.seasonRepo.update(1, {
+        name: seasonType,
+        updatedAt: new Date()
       });
 
       this.currentSeason = updatedSeason;
@@ -135,7 +130,7 @@ export class SeasonService {
    */
   getNextSeasonChangeDate(): Date {
     if (!this.lastUpdate) {
-      throw new Error('Service des saisons non initialisé');
+      throw new BadRequestError('Service des saisons non initialisé');
     }
 
     const nextChange = new Date(this.lastUpdate);

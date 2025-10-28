@@ -11,15 +11,24 @@ import {
 import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { sendLogMessage } from "../../../utils/channels";
-import { getActiveCharacterFromCommand, getActiveCharacterFromModal } from "../../../utils/character";
+import {
+  getActiveCharacterFromCommand,
+  getActiveCharacterFromModal,
+} from "../../../utils/character";
 import { createExpeditionCreationModal } from "../../../modals/expedition-modals";
 import { getTownByGuildId } from "../../../services/towns.service";
-import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
+import {
+  createInfoEmbed,
+  createSuccessEmbed,
+  createErrorEmbed,
+} from "../../../utils/embeds";
 import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
-import { DIRECTION } from "@shared/constants/emojis";
+import { DIRECTION, EXPEDITION, RESOURCES, STATUS } from "@shared/constants/emojis";
+import { expeditionCache } from "../../../services/expedition-cache";
+import { emojiCache } from "../../../services/emoji-cache";
 
 /**
  * Gestionnaire pour le bouton "Créer une nouvelle expédition"
@@ -32,11 +41,11 @@ export async function handleExpeditionCreateNewButton(interaction: any) {
       ...interaction,
       isChatInputCommand: () => true,
       options: {
-        getSubcommand: () => 'start',
+        getSubcommand: () => "start",
         getString: (name: string) => {
           // Pour les boutons, pas de paramètres à récupérer
           return null;
-        }
+        },
       },
       guildId: interaction.guildId,
       guild: interaction.guild,
@@ -52,13 +61,16 @@ export async function handleExpeditionCreateNewButton(interaction: any) {
       followUp: interaction.followUp?.bind(interaction),
       deferUpdate: interaction.deferUpdate?.bind(interaction),
       update: interaction.update?.bind(interaction),
-      showModal: interaction.showModal?.bind(interaction)
+      showModal: interaction.showModal?.bind(interaction),
     } as ChatInputCommandInteraction;
 
     await handleExpeditionStartCommand(commandInteraction);
   } catch (error) {
     logger.error("Error in expedition create new button:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'ouverture du formulaire de création d'expédition.");
+    await replyEphemeral(
+      interaction,
+      "❌ Erreur lors de l'ouverture du formulaire de création d'expédition."
+    );
   }
 }
 
@@ -72,7 +84,10 @@ export async function handleExpeditionStartCommand(
     // Get town info
     const town = await getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
+      await replyEphemeral(
+        interaction,
+        "❌ Aucune ville trouvée pour ce serveur."
+      );
       return;
     }
 
@@ -86,7 +101,10 @@ export async function handleExpeditionStartCommand(
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
+        await replyEphemeral(
+          interaction,
+          ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION
+        );
         return;
       }
       // Re-throw other errors
@@ -114,7 +132,10 @@ export async function handleExpeditionStartCommand(
         character.id
       );
     if (activeExpeditions && activeExpeditions.length > 0) {
-      await replyEphemeral(interaction, `❌ Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`);
+      await replyEphemeral(
+        interaction,
+        `❌ Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`
+      );
       return;
     }
 
@@ -123,32 +144,31 @@ export async function handleExpeditionStartCommand(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in expedition start command:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    await replyEphemeral(
+      interaction,
+      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+      }`
+    );
   }
 }
 
 export async function handleExpeditionCreationModal(
   interaction: ModalSubmitInteraction
 ) {
-  const member = interaction.member as GuildMember;
-  const user = interaction.user;
-
   try {
     const name = interaction.fields.getTextInputValue("expedition_name_input");
-
-    // Récupérer les valeurs des champs séparés pour vivres et nourriture
-    const vivresValue = interaction.fields.getTextInputValue("expedition_vivres_input") || "0";
-    const nourritureValue = interaction.fields.getTextInputValue("expedition_nourriture_input") || "0";
-
     const duration = interaction.fields.getTextInputValue("expedition_duration_input");
-
-    // Convertir en nombres et calculer le total
-    const vivresAmount = parseInt(vivresValue, 10) || 0;
-    const nourritureAmount = parseInt(nourritureValue, 10) || 0;
-    const foodStock = vivresAmount + nourritureAmount;
 
     // Validate inputs
     const durationDays = parseInt(duration, 10);
+
+    if (isNaN(durationDays) || durationDays < 1) {
+      await replyEphemeral(
+        interaction,
+        "❌ La durée doit être d'au moins 1 jour."
+      );
+      return;
+    }
 
     // Get character ID from modal interaction
     const character = await getActiveCharacterFromModal(interaction);
@@ -157,112 +177,76 @@ export async function handleExpeditionCreationModal(
       return;
     }
 
-    if (isNaN(foodStock) || foodStock <= 0) {
-      await replyEphemeral(interaction, "❌ Le stock de nourriture total (vivres + nourriture) doit être un nombre positif.");
-      return;
-    }
-
-    if (isNaN(durationDays) || durationDays < 1) {
-      await replyEphemeral(interaction, "❌ La durée doit être d'au moins 1 jour.");
-      return;
-    }
-
     // Get town info
     const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
+      await replyEphemeral(
+        interaction,
+        "❌ Aucune ville trouvée pour ce serveur."
+      );
       return;
     }
 
-    // Create expedition
-    logger.debug("Creating expedition", {
+    // Store expedition data in cache (without resources yet)
+    const cacheId = expeditionCache.store(interaction.user.id, {
       name,
-      vivresAmount,
-      nourritureAmount,
-      totalFoodStock: foodStock,
-      duration: durationDays,
       townId: townResponse.id,
       characterId: character.id,
       createdBy: interaction.user.id,
+      duration: durationDays,
+      resources: [], // Will be added later
     });
 
-    // Construire le tableau des ressources initiales
-    const initialResources = [];
+    logger.debug("Expedition draft created in cache", {
+      cacheId,
+      name,
+      duration: durationDays,
+      townId: townResponse.id,
+      characterId: character.id,
+    });
 
-    if (vivresAmount > 0) {
-      initialResources.push({ resourceTypeName: "Vivres", quantity: vivresAmount });
-    }
+    // Show resource management interface
+    const embed = createInfoEmbed(`${EXPEDITION.ICON} ${name}`)
+      .setDescription(
+        `**Durée :** ${durationDays} jour${durationDays > 1 ? 's' : ''}\n\n`
+      )
+      .addFields({
+        name: `${RESOURCES.GENERIC} Ressources préparées`,
+        value: "_Aucune ressource pour le moment_",
+        inline: false,
+      });
 
-    if (nourritureAmount > 0) {
-      initialResources.push({ resourceTypeName: "Nourriture", quantity: nourritureAmount });
-    }
+    const addButton = new ButtonBuilder()
+      .setCustomId(`expedition_create_add_resources:${cacheId}`)
+      .setLabel("Ajouter des ressources")
+      .setEmoji("➕")
+      .setStyle(ButtonStyle.Primary);
 
-    // Show direction selection menu
-    const directionMenu = new StringSelectMenuBuilder()
-      .setCustomId(`expedition_direction:${JSON.stringify({
-        name,
-        townId: townResponse.id,
-        initialResources,
-        duration: durationDays,
-      })}`)
-      .setPlaceholder("Choisissez la direction initiale...")
-      .addOptions([
-        {
-          label: "Nord",
-          value: "NORD",
-          emoji: "⬆️",
-        },
-        {
-          label: "Nord-Est",
-          value: "NORD_EST",
-          emoji: "↗️",
-        },
-        {
-          label: "Est",
-          value: "EST",
-          emoji: "➡️",
-        },
-        {
-          label: "Sud-Est",
-          value: "SUD_EST",
-          emoji: "↘️",
-        },
-        {
-          label: "Sud",
-          value: "SUD",
-          emoji: "⬇️",
-        },
-        {
-          label: "Sud-Ouest",
-          value: "SUD_OUEST",
-          emoji: "↙️",
-        },
-        {
-          label: "Ouest",
-          value: "OUEST",
-          emoji: "⬅️",
-        },
-        {
-          label: "Nord-Ouest",
-          value: "NORD_OUEST",
-          emoji: "↖️",
-        },
-      ]);
+    const validateButton = new ButtonBuilder()
+      .setCustomId(`expedition_create_validate:${cacheId}`)
+      .setLabel("Valider et choisir direction")
+      .setEmoji("✅")
+      .setStyle(ButtonStyle.Success);
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      directionMenu
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      addButton,
+      validateButton
     );
 
     await interaction.reply({
-      content: `📍 Choisissez la direction initiale de l'expédition **${name}** :`,
-      components: [row],
+      embeds: [embed],
+      components: [buttonRow],
       ephemeral: true,
     });
   } catch (error) {
     logger.error("Error in expedition creation modal:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    await replyEphemeral(
+      interaction,
+      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+      }`
+    );
   }
 }
 
@@ -271,27 +255,54 @@ export async function handleExpeditionDirectionSelect(
 ): Promise<void> {
   try {
     const direction = interaction.values[0];
-    const expeditionData = JSON.parse(interaction.customId.split(":")[1]);
+    const expeditionId = interaction.customId.split(":")[1];
 
-    const character = await getActiveCharacterFromModal(interaction);
+    // Retrieve expedition data from cache
+    const expeditionData = expeditionCache.retrieve(
+      expeditionId,
+      interaction.user.id
+    );
 
-    if (!character) {
+    if (!expeditionData) {
       await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif pour créer une expédition.",
+        content:
+          `${STATUS.ERROR} Oups, on dirait que tu as mis un peu trop de temps à créer ton expédition. Recommence !`,
         ephemeral: true,
       });
       return;
     }
 
-    // Create expedition with direction
+    const character = await getActiveCharacterFromModal(interaction);
+
+    if (!character) {
+      await interaction.reply({
+        content:
+          "❌ Vous devez avoir un personnage actif pour créer une expédition.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Create expedition with direction and resources
     const createData = {
-      ...expeditionData,
+      name: expeditionData.name,
+      townId: expeditionData.townId,
+      initialResources: expeditionData.resources || [], // Resources from new flow
+      duration: expeditionData.duration,
       initialDirection: direction,
       createdBy: interaction.user.id,
-      characterId: character.id,
+      characterId: expeditionData.characterId || character.id,
     };
 
-    const expedition = await apiService.expeditions.createExpedition(createData);
+    logger.debug("Creating expedition with resources", {
+      name: createData.name,
+      resourceCount: createData.initialResources.length,
+      resources: createData.initialResources,
+    });
+
+    const expedition = await apiService.expeditions.createExpedition(
+      createData
+    );
 
     // Auto-join creator
     await apiService.expeditions.joinExpedition(
@@ -299,14 +310,39 @@ export async function handleExpeditionDirectionSelect(
       character.id
     );
 
+    // Get actual resources from database (includes emojis)
+    const expeditionResources = await apiService.getResources('EXPEDITION', expedition.data.id);
+
+    // Remove from cache after successful creation
+    expeditionCache.remove(expeditionId);
+
+    // Build success message with adjustments if any
+    let successMessage = `${EXPEDITION.ICON} L'expédition **${expedition.data.name}** se prépare à partir !\nElle prendra la direction ${getDirectionText(direction)} ${getDirectionEmoji(direction)}`;
+
+    const expeditionWithAdjustments = expedition.data as any;
+    if (expeditionWithAdjustments.resourceAdjustments && expeditionWithAdjustments.resourceAdjustments.length > 0) {
+      successMessage += `\n\n⚠️ **Ajustements de stocks :**\n`;
+      for (const adj of expeditionWithAdjustments.resourceAdjustments) {
+        successMessage += `• ${adj.name} : demandé ${adj.requested}, obtenu ${adj.actual} (${adj.reason})\n`;
+      }
+    }
+
     await interaction.update({
-      content: `✅ Expédition **${expedition.data.name}** créée avec succès !\nDirection initiale : ${getDirectionEmoji(direction)} ${getDirectionText(direction)}`,
+      content: successMessage,
       components: [],
     });
 
     // Send public log message
     try {
-      const logMessage = `🏕️ **Nouvelle expédition créée**\n**${expedition.data.name}** créée par **${character.name}**\n📦 Ressources : ${expeditionData.initialResources.map((r: any) => `${r.quantity} ${r.resourceTypeName}`).join(", ")}\n⏱️ Durée : ${expeditionData.duration} jours\n🧭 Direction : ${getDirectionText(direction)}\n🏛️ Ville : ${character.town?.name || "Inconnue"}`;
+      const logMessage = `${EXPEDITION.ICON} **Nouvelle expédition créée**\n**${character.name
+        }** prépare l'expédition **${expedition.data.name}**.\n\n${RESOURCES.GENERIC
+        } **Ressources** : ${expeditionResources
+          .map(
+            (r: any) =>
+              `${r.quantity} ${r.resourceType.emoji}`
+          )
+          .join("| ")}\n${EXPEDITION.DURATION} **Durée** : ${expeditionData.duration
+        } jours\n${EXPEDITION.LOCATION} **Direction** : ${getDirectionText(direction)}`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,
@@ -327,9 +363,17 @@ export async function handleExpeditionDirectionSelect(
       duration: expeditionData.duration,
     });
   } catch (error: any) {
-    console.error("Error in expedition direction select:", error);
+    logger.error("Error in expedition direction select:", {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+    });
+
+    const errorMessage =
+      error?.response?.data?.error || error?.message || "Erreur inconnue";
     await interaction.reply({
-      content: `❌ Erreur lors de la création : ${error.message}`,
+      content: `❌ Erreur lors de la création : ${errorMessage}`,
       ephemeral: true,
     });
   }

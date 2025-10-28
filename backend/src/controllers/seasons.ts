@@ -1,10 +1,11 @@
-import { RequestHandler } from "express";
+import { Request, Response, NextFunction } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 
 /**
  * Récupère la saison actuelle
  */
-export const getCurrentSeason: RequestHandler = async (req, res) => {
+export const getCurrentSeason = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Récupérer la saison actuelle (il n'y en a qu'une seule avec id = 1)
     const season = await prisma.season.findUnique({
@@ -24,15 +25,14 @@ export const getCurrentSeason: RequestHandler = async (req, res) => {
       res.json(season);
     }
   } catch (error) {
-    console.error("Erreur lors de la récupération de la saison:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
 /**
  * Définit une nouvelle saison
  */
-export const setSeason: RequestHandler = async (req, res) => {
+export const setSeason = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { season: newSeason, adminId } = req.body;
 
@@ -77,8 +77,7 @@ export const setSeason: RequestHandler = async (req, res) => {
       publicMessage: `🌤️ La saison a été changée de **${oldSeason}** à **${updatedSeason.name}** !`,
     });
   } catch (error) {
-    console.error("Erreur lors du changement de saison:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 

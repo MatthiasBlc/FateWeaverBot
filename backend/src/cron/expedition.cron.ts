@@ -1,12 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
-import { ExpeditionService } from "../services/expedition.service";
+import { container } from "../infrastructure/container";
 import { logger } from "../services/logger";
 
 const prisma = new PrismaClient();
-const expeditionService = new ExpeditionService();
 
-async function lockExpeditionsDue() {
+export async function lockExpeditionsDue() {
   try {
     logger.debug("Starting scheduled expedition lock check");
 
@@ -19,15 +18,63 @@ async function lockExpeditionsDue() {
         status: "PLANNING",
         createdAt: { lt: midnightToday }
       },
-      select: { id: true, name: true, initialDirection: true }
+      include: {
+        members: {
+          include: {
+            character: {
+              select: {
+                id: true,
+                name: true,
+                isDead: true,
+                hp: true,
+                hungerLevel: true,
+                pm: true
+              }
+            }
+          }
+        }
+      }
     });
 
     logger.info(`Found ${expeditionsToLock.length} expeditions to lock`);
 
     let lockedCount = 0;
+    let membersRemovedCount = 0;
+
     for (const expedition of expeditionsToLock) {
       try {
-        await expeditionService.lockExpedition(expedition.id);
+        // STEP 1: Check member states and remove those who shouldn't continue
+        for (const member of expedition.members) {
+          const { character } = member;
+          const shouldRemove =
+            character.isDead ||            // Mort
+            character.hp <= 1 ||           // Agonie/Mort (HP)
+            character.hungerLevel <= 1 ||  // Affamé/Agonie (hunger)
+            character.pm <= 1;             // Dépression (PM=0) ou déprime (PM=1)
+
+          if (shouldRemove) {
+            // Determine reason
+            let reason = "";
+            if (character.isDead || character.hp <= 1) reason = "mort/agonie";
+            else if (character.hungerLevel <= 1) reason = "affamé/agonie";
+            else if (character.pm <= 1) reason = "dépression/déprime";
+
+            try {
+              await container.expeditionService.removeMemberBeforeDeparture(
+                expedition.id,
+                character.id,
+                reason
+              );
+              membersRemovedCount++;
+              logger.info(`Member ${character.name} too weak to depart from expedition ${expedition.name} (${reason})`);
+            } catch (error) {
+              logger.error(`Failed to remove member ${character.id} from expedition ${expedition.id}:`, { error });
+            }
+          }
+        }
+
+        // STEP 2: Lock the expedition
+        await container.expeditionService.lockExpedition(expedition.id);
 
         // Set UNKNOWN direction if not set
         if (!expedition.initialDirection || expedition.initialDirection === "UNKNOWN") {
@@ -44,6 +91,7 @@ async function lockExpeditionsDue() {
     }
 
     logger.info(`Locked ${lockedCount} expeditions`);
+    logger.info(`Removed ${membersRemovedCount} members during locking`);
   } catch (error) {
     logger.error("Error in lockExpeditionsDue cron job:", { error });
   }
@@ -66,7 +114,7 @@ async function departExpeditionsDue() {
     let departedCount = 0;
     for (const expedition of expeditionsToDepart) {
       try {
-        await expeditionService.departExpedition(expedition.id);
+        await container.expeditionService.departExpedition(expedition.id);
 
         // Initialize path with initial direction (default to UNKNOWN if null)
         await prisma.expedition.update({
@@ -100,22 +148,49 @@ async function returnExpeditionsDue() {
         status: "DEPARTED",
         returnAt: { lte: now }
       },
-      select: { id: true, name: true, returnAt: true }
+      include: {
+        members: {
+          include: {
+            character: {
+              select: {
+                isDead: true
+              }
+            }
+          }
+        }
+      }
     });
 
-    logger.info(`Found ${expeditionsToReturn.length} expeditions to return`);
+    logger.info(`Found ${expeditionsToReturn.length} expeditions to check for return`);
 
     let returnedCount = 0;
+    let blockedCount = 0;
+
     for (const expedition of expeditionsToReturn) {
       try {
-        await expeditionService.returnExpedition(expedition.id);
+        // Skip expeditions with no members - they are abandoned and cannot return
+        if (!expedition.members || expedition.members.length === 0) {
+          logger.warn(`Expedition ${expedition.id} (${expedition.name}) has no members - blocked from returning`);
+          blockedCount++;
+          continue;
+        }
+
+        // Skip expeditions where ALL members are dead
+        const allMembersDead = expedition.members.every(member => member.character?.isDead === true);
+        if (allMembersDead) {
+          logger.warn(`Expedition ${expedition.id} (${expedition.name}) has only dead members - blocked from returning`);
+          blockedCount++;
+          continue;
+        }
+
+        await container.expeditionService.returnExpedition(expedition.id);
         returnedCount++;
       } catch (error) {
         logger.error(`Failed to return expedition ${expedition.id}:`, { error });
       }
     }
 
-    logger.info(`Returned ${returnedCount} expeditions`);
+    logger.info(`Returned ${returnedCount} expeditions, ${blockedCount} expeditions blocked (no members)`);
   } catch (error) {
     logger.error("Error in returnExpeditionsDue cron job:", { error });
   }
@@ -125,7 +200,7 @@ async function processEmergencyReturns() {
   try {
     logger.debug("Starting emergency return check");
 
-    const emergencyCount = await expeditionService.forceEmergencyReturns();
+    const emergencyCount = await container.expeditionService.forceEmergencyReturns();
 
     if (emergencyCount > 0) {
       logger.info(`Processed ${emergencyCount} emergency returns`);
@@ -152,17 +227,22 @@ async function morningExpeditionUpdate() {
   }
 }
 
-export function setupExpeditionJobs() {
-  // Lock expeditions at midnight (00:00)
-  const lockJob = new CronJob("0 0 * * *", lockExpeditionsDue, null, true, "Europe/Paris");
-  logger.info("Expedition lock job scheduled for midnight daily");
-
+/**
+ * Setup morning expedition job (08:00)
+ * This job is still separate from midnight tasks as it runs at a different time
+ */
+export function setupMorningExpeditionJob() {
   // Morning update at 08:00: Returns → Departs
   const morningJob = new CronJob("0 8 * * *", morningExpeditionUpdate, null, true, "Europe/Paris");
   logger.info("Morning expedition update job scheduled for 08:00 daily (returns then departs)");
 
-  return {
-    lockJob,
-    morningJob
-  };
+  return morningJob;
+}
+
+/**
+ * @deprecated Use setupMorningExpeditionJob instead. Lock is now part of midnight unified job.
+ */
+export function setupExpeditionJobs() {
+  logger.warn("setupExpeditionJobs is deprecated. Use setupMorningExpeditionJob instead.");
+  return setupMorningExpeditionJob();
 }

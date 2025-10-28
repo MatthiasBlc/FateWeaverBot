@@ -6,6 +6,11 @@ export interface CreateSkillDto {
   description: string;
 }
 
+export interface UpdateSkillDto {
+  name?: string;
+  description?: string;
+}
+
 export class SkillAPIService extends BaseAPIService {
   constructor(api: AxiosInstance) {
     super(api);
@@ -32,6 +37,22 @@ export class SkillAPIService extends BaseAPIService {
    */
   async getSkillById(id: string) {
     const response = await this.api.get(`/skills/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Met à jour une compétence
+   */
+  async updateSkill(id: string, data: UpdateSkillDto) {
+    const response = await this.api.patch(`/skills/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Supprime une compétence
+   */
+  async deleteSkill(id: string) {
+    const response = await this.api.delete(`/skills/${id}`);
     return response.data;
   }
 }

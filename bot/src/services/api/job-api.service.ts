@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseAPIService } from "./base-api.service";
 
 export interface JobDto {

@@ -45,8 +45,8 @@ export const ADMIN = {
 // Seasons
 // UNUSED - All SEASON constants are currently not being used in the codebase
 export const SEASON = {
-  // SUMMER: "☀️", // UNUSED
-  // WINTER: "❄️", // UNUSED
+  SUMMER: "☀️", // UNUSED
+  WINTER: "❄️", // UNUSED
   // WEATHER: "🌤️", // UNUSED
 } as const;
 
@@ -64,7 +64,7 @@ export const CHARACTER = {
   PROFILE: "📋", // Used for profile header
   STATUS: "❗", // Used for status section
   // PERSON: "👤", // UNUSED
-  // GROUP: "👥", // UNUSED
+  GROUP: "👥", // UNUSED
   LINK: "🔗", // Used for linked skills display
 } as const;
 
@@ -115,12 +115,14 @@ export const CAPABILITIES = {
 // NOTE: Expedition emojis are currently hardcoded in expedition files
 // These constants should be used once hardcoded emojis are refactored
 export const EXPEDITION = {
-  // PLANNING: "📝", // UNUSED (hardcoded in expedition-create.ts)
-  // LOCKED: "🔒", // UNUSED
-  // DEPARTED: "🚶‍♀️‍➡️", // UNUSED
-  // RETURNED: "🏘️", // UNUSED
+  PLANNING: "📝", // UNUSED (hardcoded in expedition-create.ts)
+  LOCKED: "🔒", // UNUSED
+  DEPARTED: "🚶‍♀️‍➡️", // UNUSED
+  RETURNED: "🏘️", // UNUSED
   ICON: "🧭", // TODO: Should be used (currently hardcoded in expedition-display.ts:450)
   // CAMP: "🏕️", // UNUSED
+  DURATION: "⌛", // 
+  LOCATION: "📍", // 
 } as const;
 
 // Chantiers
@@ -161,6 +163,8 @@ export const RESOURCES = {
   // METAL: "⚙️", // UNUSED (duplicate of MINERAL)
   FABRIC: "🧵", // Used in seed data for "Tissu"
   // PLANKS: "🪵", // UNUSED (duplicate of WOOD)
+  HEAL: "🩸",
+  OTHER_RESOURCES: "🪜",
 } as const;
 
 // Extended Resources
@@ -192,3 +196,44 @@ export const DIRECTION = {
   NORTHWEST: "↖️", // Northwest direction
   UNKNOWN: "❓", // Unknown direction
 } as const;
+
+/**
+ * Returns a curated list of emojis that can be used for custom configurations
+ * such as resources, capabilities, etc.
+ * @returns Array of emoji strings
+ */
+export function getAvailableEmojiList(): string[] {
+  return [
+    // Nature & Plants
+    "🌲", "🌳", "🌴", "🌾", "🌿", "🍀", "🌱", "🌵", "🌾", "🪴",
+    "🌽", "🥕", "🧅", "🥔", "🍄", "🌰", "🫘", "🌶️",
+
+    // Food & Cooking
+    "🥞", "🍖", "🥩", "🍗", "🥓", "🧀", "🍞", "🥖", "🥐", "🫓",
+    "🍲", "🥘", "🍱", "🍜", "🥗", "🫕", "🍴",
+
+    // Materials & Resources
+    "🪵", "⚙️", "🔩", "🔧", "🔨", "⚒️", "🛠️", "⛏️", "🪓", "🪚",
+    "🧰", "🪛", "🔗", "⛓️", "💎", "💍", "🏺", "⚱️",
+
+    // Medical & Healing
+    "🩹", "💊", "🧪", "⚕️", "🏥", "💉", "🩺", "🧬",
+
+    // Crafting & Textiles
+    "🧵", "🪡", "🧶", "🪢", "👕", "🧥", "👗", "🥼",
+
+    // Tools & Equipment
+    "🏹", "🗡️", "🔪", "🪃", "🪤", "🎣", "🕸️", "🪝",
+
+    // Containers & Storage
+    "📦", "🎒", "👜", "💼", "🧳", "🗂️", "📋", "📚",
+
+    // Colors & Shapes
+    "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫", "⚪",
+    "🔴", "🟥", "🟧", "🟨", "🟩", "🟦", "🟪", "🟫", "⬛", "⬜",
+
+    // Misc Objects
+    "🫖", "🍶", "🧉", "🫗", "🪴", "🏮", "🪔", "🕯️",
+    "🪙", "💰", "💸", "🧿", "📿", "🗝️", "🔑",
+  ];
+}

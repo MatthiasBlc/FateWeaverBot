@@ -1,16 +1,15 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../../shared/errors';
 import { prisma } from "../../util/db";
-import { ExpeditionService } from "../../services/expedition.service";
+import { container } from "../../infrastructure/container";
 
-const expeditionService = new ExpeditionService();
-
-export const getAllExpeditions = async (req: Request, res: Response) => {
+export const getAllExpeditions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { includeReturned, townId, status } = req.query;
 
     // If townId is provided, get expeditions for that town
     if (townId) {
-      const expeditions = await expeditionService.getExpeditionsByTown(
+      const expeditions = await container.expeditionService.getExpeditionsByTown(
         townId as string,
         includeReturned === "true"
       );
@@ -58,12 +57,11 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
 
     res.json(filteredExpeditions);
   } catch (error) {
-    console.error("Erreur lors de la récupération des expéditions admin:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const modifyExpedition = async (req: Request, res: Response) => {
+export const modifyExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { duration } = req.body;
@@ -73,7 +71,7 @@ export const modifyExpedition = async (req: Request, res: Response) => {
     }
 
     // Get current expedition
-    const expedition = await expeditionService.getExpeditionById(id);
+    const expedition = await container.expeditionService.getExpeditionById(id);
     if (!expedition) {
       return res.status(404).json({ error: "Expédition non trouvée" });
     }
@@ -119,16 +117,36 @@ export const modifyExpedition = async (req: Request, res: Response) => {
 
     res.json(updatedExpedition);
   } catch (error) {
-    console.error("Erreur lors de la modification de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const forceReturnExpedition = async (req: Request, res: Response) => {
+export const forceReturnExpedition = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    const expedition = await container.expeditionService.returnExpedition(id);
+
+    res.json(expedition);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`[forceReturnExpedition] Error for expedition ${id}:`, error.message);
+      res.status(400).json({ error: error.message });
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const lockExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -136,41 +154,19 @@ export const forceReturnExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.returnExpedition(id);
+    const expedition = await container.expeditionService.lockExpedition(id);
 
     res.json(expedition);
   } catch (error) {
-    console.error("Erreur lors du retour forcé de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const lockExpedition = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({ error: "ID d'expédition requis" });
-    }
-
-    const expedition = await expeditionService.lockExpedition(id);
-
-    res.json(expedition);
-  } catch (error) {
-    console.error("Erreur lors du verrouillage de l'expédition:", error);
-    if (error instanceof Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: "Erreur serveur" });
-    }
-  }
-};
-
-export const addMemberToExpedition = async (req: Request, res: Response) => {
+export const addMemberToExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { characterId } = req.body;
@@ -183,20 +179,19 @@ export const addMemberToExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID du personnage requis" });
     }
 
-    const member = await expeditionService.addMemberToExpedition(id, characterId);
+    const member = await container.expeditionService.addMemberToExpedition(id, characterId);
 
     res.json(member);
   } catch (error) {
-    console.error("Erreur lors de l'ajout du membre à l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const departExpedition = async (req: Request, res: Response) => {
+export const departExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -204,20 +199,19 @@ export const departExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.departExpedition(id);
+    const expedition = await container.expeditionService.departExpedition(id);
 
     res.json(expedition);
   } catch (error) {
-    console.error("Erreur lors du départ de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const removeMemberFromExpedition = async (req: Request, res: Response) => {
+export const removeMemberFromExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id, characterId } = req.params;
 
@@ -229,15 +223,14 @@ export const removeMemberFromExpedition = async (req: Request, res: Response) =>
       return res.status(400).json({ error: "ID du personnage requis" });
     }
 
-    await expeditionService.removeMemberFromExpedition(id, characterId);
+    await container.expeditionService.removeMemberFromExpedition(id, characterId);
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Erreur lors de la suppression du membre de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };

@@ -10,15 +10,11 @@
     // "experimentalDecorators": true,               /* Enable experimental support for TC39 stage 2 draft decorators. */
     // "emitDecoratorMetadata": true,                /* Emit design-type metadata for decorated declarations in source files. */
     /* Modules */
-    "moduleResolution": "node", /* Specify how TypeScript looks up a file from a given module specifier. */
-    "baseUrl": ".", /* Specify the base directory to resolve non-relative module names. */
+    "moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
+    "baseUrl": "." /* Specify the base directory to resolve non-relative module names. */,
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@shared/*": [
-        "../shared/*"
-      ]
+      "@/*": ["src/*"],
+      "@shared/*": ["shared/*"]
     },
     "typeRoots": [
       "node_modules/@types",
@@ -42,14 +38,8 @@
     /* Completeness */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": [
-    "src/**/*",
-    "shared/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+  "include": ["src/**/*", "shared/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"],
   "ts-node": {
     "files": true,
     "compilerOptions": {

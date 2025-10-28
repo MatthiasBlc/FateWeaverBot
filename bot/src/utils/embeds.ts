@@ -101,14 +101,27 @@ export function createErrorEmbed(
  */
 export function createInfoEmbed(
   title: string,
-  description: string,
-  fields?: EmbedField[]
+  descriptionOrFields?: string | EmbedField[],
+  maybeFields?: EmbedField[]
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.INFO)
     .setTitle(title)
-    .setDescription(description)
     .setTimestamp();
+
+  let description: string | undefined;
+  let fields: EmbedField[] | undefined;
+
+  if (Array.isArray(descriptionOrFields)) {
+    fields = descriptionOrFields;
+  } else {
+    description = descriptionOrFields;
+    fields = maybeFields;
+  }
+
+  if (description) {
+    embed.setDescription(description);
+  }
 
   if (fields && fields.length > 0) {
     embed.addFields(fields);

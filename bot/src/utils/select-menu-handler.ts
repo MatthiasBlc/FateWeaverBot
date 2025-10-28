@@ -1,3 +1,4 @@
+import { StringSelectMenuInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 
 /**
@@ -22,7 +23,7 @@ import { logger } from "../services/logger.js";
  */
 export class SelectMenuHandler {
   private static instance: SelectMenuHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: StringSelectMenuInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -41,7 +42,7 @@ export class SelectMenuHandler {
    */
   public registerHandler(
     selectId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: StringSelectMenuInteraction) => Promise<void>
   ) {
     this.handlers.set(selectId, handler);
     logger.info(`Registered select menu handler for: ${selectId}`);
@@ -52,7 +53,7 @@ export class SelectMenuHandler {
    */
   public registerHandlerByPrefix(
     prefix: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: StringSelectMenuInteraction) => Promise<void>
   ) {
     this.handlers.set(`prefix:${prefix}`, handler);
     logger.info(`Registered select menu handler for prefix: ${prefix}`);
@@ -181,6 +182,54 @@ export class SelectMenuHandler {
         logger.error("Error handling expedition admin remove member select:", { error });
         await interaction.reply({
           content: "❌ Erreur lors du traitement de la sélection de retrait de membre.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à ajouter (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_add_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceAddSelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à ajouter.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à modifier (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_modify_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceModifySelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceModifySelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource modify select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à modifier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à supprimer (admin expédition)
+    this.registerHandlerByPrefix("expedition_admin_resource_delete_select_", async (interaction) => {
+      try {
+        const { handleExpeditionAdminResourceDeleteSelect } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionAdminResourceDeleteSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition admin resource delete select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource à supprimer.",
           flags: ["Ephemeral"],
         });
       }
@@ -358,16 +407,64 @@ export class SelectMenuHandler {
 
     // =================== EXPEDITION DIRECTION HANDLERS ===================
     // Gestionnaire pour la sélection de direction lors de la création d'expédition
-    this.registerHandler("expedition_direction", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_direction:", async (interaction) => {
       try {
         const { handleExpeditionDirectionSelect } = await import(
-          "../features/expeditions/expedition.command.js"
+          "../features/expeditions/handlers/expedition-create.js"
         );
         await handleExpeditionDirectionSelect(interaction);
       } catch (error) {
         logger.error("Error handling expedition direction select:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la sélection de direction d'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource lors de la création d'expédition
+    this.registerHandlerByPrefix("expedition_create_select_resource:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceSelected } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionResourceSelected(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition create resource select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à ajouter (gestion ressources)
+    this.registerHandlerByPrefix("expedition_resource_add_select:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceAddSelect } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAddSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de ressource à retirer (gestion ressources)
+    this.registerHandlerByPrefix("expedition_resource_remove_select:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceRemoveSelect } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de ressource.",
           flags: ["Ephemeral"],
         });
       }
@@ -472,12 +569,415 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour la sélection d'une compétence pour bonus d'objet
+    this.registerHandlerByPrefix("object_skill_select:", async (interaction) => {
+      try {
+        const { handleObjectSkillSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectSkillSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la confirmation de sélection d'une compétence pour un objet
+    this.registerHandlerByPrefix("object_skill_confirm:", async (interaction) => {
+      try {
+        const { handleObjectSkillSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectSkillSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill confirm:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour l'ajout de compétence à un objet via modification
+    this.registerHandlerByPrefix("object_skill_confirm_add:", async (interaction) => {
+      try {
+        const { handleObjectSkillAddConfirm } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectSkillAddConfirm(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill confirm add:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le retrait de compétence d'un objet
+    this.registerHandlerByPrefix("object_skill_remove_select:", async (interaction) => {
+      try {
+        const { handleObjectSkillRemoveConfirm } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectSkillRemoveConfirm(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill remove:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour l'ajout de capacité à un objet
+    this.registerHandlerByPrefix("object_capability_confirm_add:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityAddConfirm } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectCapabilityAddConfirm(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability confirm add:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le retrait de capacité d'un objet
+    this.registerHandlerByPrefix("object_capability_remove_select:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityRemoveConfirm } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectCapabilityRemoveConfirm(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability remove:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour l'ajout de bonus capacité à un objet (création d'objet)
+    this.registerHandlerByPrefix("object_capability_bonus_select:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityBonusSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectCapabilityBonusSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability bonus select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== EMOJI ADMIN HANDLERS ===================
+    // Gestionnaire pour la sélection du type d'emoji (ajout)
+    this.registerHandler("emoji_type_select", async (interaction) => {
+      try {
+        const { handleEmojiTypeSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection du type d'emoji (suppression)
+    this.registerHandler("emoji_remove_type_select", async (interaction) => {
+      try {
+        const { handleEmojiRemoveTypeSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove type select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un emoji spécifique pour suppression
+    this.registerHandlerByPrefix("emoji_remove_select:", async (interaction) => {
+      try {
+        const { handleEmojiRemoveSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection de catégorie d'emoji pour une ressource
+    this.registerHandler("resource_emoji_type_select", async (interaction) => {
+      try {
+        const { handleResourceEmojiCategorySelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleResourceEmojiCategorySelect(interaction);
+      } catch (error) {
+        logger.error("Error handling resource emoji category select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des emojis.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un emoji spécifique pour une ressource
+    this.registerHandlerByPrefix("resource_emoji_select:", async (interaction) => {
+      try {
+        const { handleResourceEmojiSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleResourceEmojiSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling resource emoji select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== EDIT/DELETE SELECT MENUS ===================
+    // Gestionnaire pour la sélection d'une ressource à modifier
+    this.registerHandler("select_resource_to_edit", async (interaction) => {
+      try {
+        const { handleSelectResourceToEditMenu } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleSelectResourceToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select resource to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une ressource à supprimer
+    this.registerHandler("select_resource_to_delete", async (interaction) => {
+      try {
+        const { handleSelectResourceToDeleteMenu } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleSelectResourceToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select resource to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un objet à modifier
+    this.registerHandler("select_object_to_edit", async (interaction) => {
+      try {
+        const { handleSelectObjectToEditMenu } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleSelectObjectToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select object to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'un objet à supprimer
+    this.registerHandler("select_object_to_delete", async (interaction) => {
+      try {
+        const { handleSelectObjectToDeleteMenu } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleSelectObjectToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select object to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection finale d'un objet à supprimer (après catégories)
+    this.registerHandler("select_object_to_delete_final", async (interaction) => {
+      try {
+        const { handleSelectObjectToDeleteFinal } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleSelectObjectToDeleteFinal(interaction);
+      } catch (error) {
+        logger.error("Error handling select object to delete final:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une compétence à modifier
+    this.registerHandler("select_skill_to_edit", async (interaction) => {
+      try {
+        const { handleSelectSkillToEditMenu } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleSelectSkillToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select skill to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une compétence à supprimer
+    this.registerHandler("select_skill_to_delete", async (interaction) => {
+      try {
+        const { handleSelectSkillToDeleteMenu } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleSelectSkillToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select skill to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une capacité à modifier
+    this.registerHandler("select_capability_to_edit", async (interaction) => {
+      try {
+        const { handleSelectCapabilityToEditMenu } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleSelectCapabilityToEditMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select capability to edit:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une capacité à supprimer
+    this.registerHandler("select_capability_to_delete", async (interaction) => {
+      try {
+        const { handleSelectCapabilityToDeleteMenu } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleSelectCapabilityToDeleteMenu(interaction);
+      } catch (error) {
+        logger.error("Error handling select capability to delete:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une ressource pour la conversion d'objet
+    this.registerHandlerByPrefix("object_resource_select:", async (interaction) => {
+      try {
+        const { handleObjectResourceSelect } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectResourceSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling object resource select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== GIVE OBJECT HANDLERS ===================
+    // Gestionnaire pour la sélection du destinataire d'un don d'objet
+    this.registerHandlerByPrefix("select_give_recipient:", async (interaction) => {
+      try {
+        const { handleSelectGiveRecipient } = await import(
+          "../features/users/give-object.handlers.js"
+        );
+        await handleSelectGiveRecipient(interaction);
+      } catch (error) {
+        logger.error("Error handling select give recipient:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du destinataire.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection des objets à donner
+    this.registerHandlerByPrefix("select_give_objects:", async (interaction) => {
+      try {
+        const { handleSelectGiveObjects } = await import(
+          "../features/users/give-object.handlers.js"
+        );
+        await handleSelectGiveObjects(interaction);
+      } catch (error) {
+        logger.error("Error handling select give objects:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection des objets.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection du channel d'une expédition
+    this.registerHandlerByPrefix("expedition_channel_select:", async (interaction) => {
+      try {
+        const { handleExpeditionChannelSelect } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionChannelSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition channel select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du channel.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**
    * Traite une interaction de sélection
    */
-  public async handleSelectMenu(interaction: any): Promise<boolean> {
+  public async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`Select menu interaction received: ${customId}`);

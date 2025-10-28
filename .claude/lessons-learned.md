@@ -205,6 +205,24 @@ Le temps passé à:
 
 ---
 
+## 🎨 Emoji Workflow (STRICT)
+
+**Before writing ANY emoji in code:**
+1. Check `@shared/constants/emojis` first
+2. If none fit → Ask user for emoji OR propose new constant
+3. NEVER hardcode emojis directly
+
+**Example violation:**
+```ts
+// ❌ BAD
+name: "🧭 Direction"
+
+// ✅ GOOD
+name: `${EXPEDITION.ICON} Direction`
+```
+
+---
+
 **Date:** 2025-01-16
 **Context:** FateWeaverBot - Objects/Inventory System
 **Lesson:** Ne pas tout déléguer à SUPERNOVA. Garder la main sur les modifications critiques.

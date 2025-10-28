@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
 import { applyAgonyRules } from "../util/agony";
+import { notifyAgonyEntered } from "../util/agony-notification";
+import { CharacterQueries } from "../infrastructure/database/query-builders";
 
 const prisma = new PrismaClient();
 
-async function increaseAllCharactersHunger() {
+export async function increaseAllCharactersHunger() {
   try {
     console.log("Début de l'augmentation automatique de la faim...");
 
@@ -13,6 +15,7 @@ async function increaseAllCharactersHunger() {
       include: {
         user: true,
         town: { include: { guild: true } },
+        job: true,
       },
     });
 
@@ -50,8 +53,10 @@ async function increaseAllCharactersHunger() {
 
       // Merge agony updates
       if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
-      if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
-      if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
+      if (agonyUpdate.hungerLevel !== undefined)
+        updateData.hungerLevel = agonyUpdate.hungerLevel;
+      if (agonyUpdate.agonySince !== undefined)
+        updateData.agonySince = agonyUpdate.agonySince;
 
       await prisma.character.update({
         where: { id: character.id },
@@ -59,6 +64,15 @@ async function increaseAllCharactersHunger() {
       });
 
       updatedCount++;
+
+      // Send notification if character entered agony
+      if (agonyUpdate.enteredAgony && character.town.guild.discordGuildId) {
+        await notifyAgonyEntered(
+          character.town.guild.discordGuildId,
+          character.name || character.user.username,
+          newHunger === 0 ? "hunger" : "other"
+        );
+      }
 
       if (newHunger === 0) {
         deaths.push({
@@ -71,7 +85,9 @@ async function increaseAllCharactersHunger() {
     console.log(
       `Augmentation de la faim terminée. ${updatedCount} personnages mis à jour.`
     );
-    console.log(`  - ${healedCount} personnages soignés (Satiété avant hunger decrease)`);
+    console.log(
+      `  - ${healedCount} personnages soignés (Satiété avant hunger decrease)`
+    );
 
     if (deaths.length > 0) {
       console.log(`💀 ${deaths.length} personnages en agonie (hunger=0):`);
@@ -88,7 +104,7 @@ async function increaseAllCharactersHunger() {
 }
 
 export function setupHungerIncreaseJob() {
-  // Décrément quotidien à minuit (comme les PA)
+  // Décrément quotidien à minuit (00:00:00 - FIRST)
   const job = new CronJob(
     "0 0 0 * * *",
     increaseAllCharactersHunger,
@@ -96,7 +112,9 @@ export function setupHungerIncreaseJob() {
     true,
     "Europe/Paris"
   );
-  console.log("Job CRON pour l'augmentation de la faim configuré (quotidien à minuit)");
+  console.log(
+    "Job CRON pour l'augmentation de la faim configuré (quotidien à 00:00:00)"
+  );
   return job;
 }
 

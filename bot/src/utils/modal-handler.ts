@@ -1,3 +1,4 @@
+import { ModalSubmitInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 
 /**
@@ -24,7 +25,7 @@ import { logger } from "../services/logger.js";
  */
 export class ModalHandler {
   private static instance: ModalHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: ModalSubmitInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -43,7 +44,7 @@ export class ModalHandler {
    */
   public registerHandler(
     modalId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ModalSubmitInteraction) => Promise<void>
   ) {
     this.handlers.set(modalId, handler);
     logger.info(`Registered modal handler for: ${modalId}`);
@@ -121,13 +122,61 @@ export class ModalHandler {
     this.registerHandler("expedition_creation_modal", async (interaction) => {
       try {
         const { handleExpeditionCreationModal } = await import(
-          "../features/expeditions/expedition.command.js"
+          "../features/expeditions/handlers/expedition-create.js"
         );
         await handleExpeditionCreationModal(interaction);
       } catch (error) {
         logger.error("Error handling expedition creation modal:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la création de l'expédition.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de quantité de ressource lors de création d'expédition
+    this.registerHandler("expedition_create_resource_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceQuantityModal } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionResourceQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition create resource quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal d'ajout de ressource (gestion ressources)
+    this.registerHandler("expedition_resource_add_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceAddQuantity } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAddQuantity(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de retrait de ressource (gestion ressources)
+    this.registerHandler("expedition_resource_remove_quantity:", async (interaction) => {
+      try {
+        const { handleExpeditionResourceRemoveQuantity } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemoveQuantity(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource remove quantity modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du retrait de la ressource.",
           flags: ["Ephemeral"],
         });
       }
@@ -169,6 +218,54 @@ export class ModalHandler {
         }
       }
     );
+
+    // Gestionnaire pour le modal de modification de durée d'expédition
+    this.registerHandler("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionDurationModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionDurationModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition duration modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la durée.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal d'ajout de ressource à une expédition
+    this.registerHandler("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionResourceAddModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionResourceAddModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource add modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de ressource d'une expédition
+    this.registerHandler("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleExpeditionResourceModifyModal } = await import(
+          "../features/admin/expedition-admin-resource-handlers.js"
+        );
+        await handleExpeditionResourceModifyModal(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition resource modify modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
 
     // Gestionnaire pour les modals d'investissement dans les chantiers
     this.registerHandler("invest_modal", async (interaction) => {
@@ -383,7 +480,8 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de création de ressource
-    this.registerHandler("new_resource_modal", async (interaction) => {
+    // Gestionnaire pour le modal de création de ressource avec emojis sélectionnés
+    const handleNewResourceModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleResourceModalSubmit } = await import(
           "../features/admin/new-element-admin.handlers.js"
@@ -396,7 +494,9 @@ export class ModalHandler {
           flags: ["Ephemeral"],
         });
       }
-    });
+    };
+    // Enregistrer pour le format new_resource_modal:emoji
+    this.handlers.set("new_resource_modal", handleNewResourceModalAny);
 
     // Gestionnaire pour le modal de création d'objet
     this.registerHandler("new_object_modal", async (interaction) => {
@@ -430,6 +530,33 @@ export class ModalHandler {
       }
     });
 
+    // =================== EMOJI MODALS HANDLERS ===================
+    // Gestionnaire pour le modal d'ajout d'emoji (format: emoji_add_modal:resource)
+    // Utilise un préfixe pour supporter tous les types (resource, capability, etc.)
+    const handleEmojiAddModalAny = async (interaction: ModalSubmitInteraction) => {
+      try {
+        const { handleEmojiAddModal } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiAddModal(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji add modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    };
+
+    // Enregistrer pour tous les types
+    this.handlers.set("emoji_add_modal:resource", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:capability", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:object", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:skill", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:action", handleEmojiAddModalAny);
+    this.handlers.set("emoji_add_modal:custom", handleEmojiAddModalAny);
+
+
     // =================== OBJECT BONUS MODALS HANDLERS ===================
     // Gestionnaire pour le modal de bonus de compétence sur objet
     this.registerHandler("object_skill_bonus_modal:", async (interaction) => {
@@ -448,21 +575,6 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de bonus de capacité sur objet
-    this.registerHandler("object_capability_bonus_modal:", async (interaction) => {
-      try {
-        const { handleObjectCapabilityBonusModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
-        );
-        await handleObjectCapabilityBonusModalSubmit(interaction);
-      } catch (error) {
-        logger.error("Error handling object capability bonus modal:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
-          flags: ["Ephemeral"],
-        });
-      }
-    });
-
     // Gestionnaire pour le modal de conversion en ressource sur objet
     this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
       try {
@@ -478,12 +590,109 @@ export class ModalHandler {
         });
       }
     });
+
+    // =================== EDIT/DELETE MODALS ===================
+    // Gestionnaire pour le modal de modification de ressource
+    this.registerHandler("edit_resource_modal:", async (interaction) => {
+      try {
+        const { handleEditResourceModalSubmit } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleEditResourceModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit resource modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification d'objet
+    this.registerHandler("edit_object_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de compétence
+    this.registerHandler("edit_skill_modal:", async (interaction) => {
+      try {
+        const { handleEditSkillModalSubmit } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleEditSkillModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit skill modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de capacité
+    this.registerHandler("edit_capability_modal:", async (interaction) => {
+      try {
+        const { handleEditCapabilityModalSubmit } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleEditCapabilityModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit capability modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification du nom d'objet
+    this.registerHandler("edit_object_name_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectNameModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectNameModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object name modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification du nom.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le modal de modification de la description d'objet
+    this.registerHandler("edit_object_description_modal:", async (interaction) => {
+      try {
+        const { handleEditObjectDescriptionModalSubmit } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectDescriptionModalSubmit(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object description modal:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la description.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**
    * Traite une interaction de modal
    */
-  public async handleModal(interaction: any): Promise<boolean> {
+  public async handleModal(interaction: ModalSubmitInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`Modal interaction received: ${customId}`);

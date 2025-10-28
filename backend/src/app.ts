@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import userRoutes from "./routes/users";
 import guildRoutes from "./routes/guilds";
@@ -11,13 +10,11 @@ import createHttpError, { isHttpError } from "http-errors";
 import cors from "cors";
 import session from "express-session";
 import env from "./util/validateEnv";
-// import { requireAuth } from "./middleware/auth";
+import { requireAuth, requireAuthOrInternal } from "./middleware/auth";
 import { prisma } from "./util/db";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
-import { setupDailyPaJob } from "./cron/daily-pa.cron";
-import { setupHungerIncreaseJob } from "./cron/hunger-increase.cron";
-import { setupDailyPmJob } from "./cron/daily-pm.cron";
-import { setupExpeditionJobs } from "./cron/expedition.cron";
+import { setupMidnightTasksJob } from "./cron/midnight-tasks.cron";
+import { setupMorningExpeditionJob } from "./cron/expedition.cron";
 import { setupSeasonChangeJob } from "./cron/season-change.cron";
 import { setupDailyMessageJob } from "./cron/daily-message.cron";
 import chantierRoutes from "./routes/chantier";
@@ -30,6 +27,7 @@ import projectsRoutes from "./routes/projects";
 import resourcesRoutes from "./routes/resources";
 import skillsRoutes from "./routes/skills";
 import jobRoutes from "./routes/jobs";
+import adminRoutes from "./routes/admin";
 
 const app = express();
 
@@ -41,31 +39,17 @@ if (process.env.NODE_ENV !== "test") {
   console.log("✅ Starting CRON jobs (not in test mode)");
 
   try {
-    setupDailyPaJob();
-    console.log("✅ Daily PA job started");
+    setupMidnightTasksJob();
+    console.log("✅ Midnight unified job started (Hunger → PM → Expedition Lock → PA Update)");
   } catch (error) {
-    console.error("❌ Failed to start Daily PA job:", error);
+    console.error("❌ Failed to start Midnight unified job:", error);
   }
 
   try {
-    setupHungerIncreaseJob();
-    console.log("✅ Hunger increase job started");
+    setupMorningExpeditionJob();
+    console.log("✅ Morning expedition job started (08:00 - Return → Depart)");
   } catch (error) {
-    console.error("❌ Failed to start Hunger increase job:", error);
-  }
-
-  try {
-    setupDailyPmJob();
-    console.log("✅ Daily PM job started");
-  } catch (error) {
-    console.error("❌ Failed to start Daily PM job:", error);
-  }
-
-  try {
-    setupExpeditionJobs();
-    console.log("✅ Expedition jobs started");
-  } catch (error) {
-    console.error("❌ Failed to start Expedition jobs:", error);
+    console.error("❌ Failed to start Morning expedition job:", error);
   }
 
   try {
@@ -112,8 +96,8 @@ app.use(
       // Skip health checks
       if (req.url === "/health") return true;
 
-      // Don't skip 404 for debugging chantiers issue
-      // if (res.statusCode === 404) return true;
+      // Skip 404 errors (bot scanners)
+      if (res.statusCode === 404) return true;
 
       return false;
     },
@@ -139,25 +123,30 @@ app.use(
   })
 );
 
-// Routes publiques
+// Routes publiques (authentification, inscription, etc.)
 app.use("/api/users", userRoutes);
+
+// Routes publiques pour le bot Discord (protection individuelle avec requireAuthOrInternal)
 app.use("/api/guilds", guildRoutes);
-app.use("/api/characters", characterRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/capabilities", capabilitiesRoutes);
 app.use("/api/skills", skillsRoutes);
-app.use("/api/action-points", actionPointRoutes);
 app.use("/api/towns", townRoutes);
-app.use("/api/objects", objectsRoutes);
-app.use("/api/expeditions", expeditionRoutes);
-app.use("/api/chantiers", chantierRoutes);
-app.use("/api/seasons", seasonsRoutes);
-app.use("/api/projects", projectsRoutes);
 app.use("/api/resources", resourcesRoutes);
-app.use("/api/jobs", jobRoutes);
+
+// Routes protégées - Nécessitent authentification utilisateur OU appel interne (bot Discord)
+app.use("/api/characters", requireAuthOrInternal, characterRoutes);
+app.use("/api/action-points", requireAuthOrInternal, actionPointRoutes);
+app.use("/api/objects", requireAuthOrInternal, objectsRoutes);
+app.use("/api/expeditions", requireAuthOrInternal, expeditionRoutes);
+app.use("/api/chantiers", requireAuthOrInternal, chantierRoutes);
+app.use("/api/projects", requireAuthOrInternal, projectsRoutes);
+app.use("/api/seasons", requireAuthOrInternal, seasonsRoutes);
+app.use("/api/jobs", requireAuthOrInternal, jobRoutes);
 
 // Routes admin
-app.use("/api/admin/expeditions", expeditionAdminRoutes);
+app.use("/api/admin/expeditions", requireAuthOrInternal, expeditionAdminRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Routes protégées
 // app.use("/api/notes", requireAuth, notesRoutes);
@@ -167,11 +156,8 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use((req, _res, next) => {
-  console.error(`🔴 404 NOT FOUND: ${req.method} ${req.originalUrl || req.url}`);
-  console.error(`🔴 Query params:`, req.query);
-  console.error(`🔴 Body:`, req.body);
-  next(createHttpError(404, `Endpoint not found: ${req.method} ${req.originalUrl || req.url}`));
+app.use((_req, _res, next) => {
+  next(createHttpError(404, "Endpoint not found"));
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -180,12 +166,35 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
 
-  if (isHttpError(error)) {
+  // Check for Prisma errors first
+  if (error && typeof error === 'object' && 'code' in error) {
+    const prismaError = error as any;
+
+    // P2002: Unique constraint failed
+    if (prismaError.code === 'P2002') {
+      const field = prismaError.meta?.target?.[0] || 'field';
+      statusCode = 400;
+      errorMessage = `Un élément avec ce ${field === 'name' ? 'nom' : field} existe déjà.`;
+    }
+    // P2025: Record not found
+    else if (prismaError.code === 'P2025') {
+      statusCode = 404;
+      errorMessage = 'Élément non trouvé.';
+    }
+    // P2003: Foreign key constraint failed
+    else if (prismaError.code === 'P2003') {
+      statusCode = 400;
+      errorMessage = 'Référence invalide - assurez-vous que tous les IDs existent.';
+    }
+  }
+  // Check for AppError (custom error classes)
+  else if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
+    statusCode = (error as any).statusCode;
+    errorMessage = (error as any).message;
+  } else if (isHttpError(error)) {
     statusCode = error.status;
     errorMessage = error.message;
-  }
-
-  if (createHttpError.isHttpError(error)) {
+  } else if (createHttpError.isHttpError(error)) {
     statusCode = error.status;
   }
 

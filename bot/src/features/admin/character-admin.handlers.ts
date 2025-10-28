@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { type ChatInputCommandInteraction } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";

@@ -69,7 +69,7 @@ export class CharacterAPIService extends BaseAPIService {
    * Permet à un personnage de manger un type de nourriture alternatif
    */
   public async eatFoodAlternative(characterId: string, resourceTypeName: string): Promise<EatResult> {
-    return this.post(`/characters/${characterId}/eat-alternative`, { resourceTypeName });
+    return this.post(`/characters/${characterId}/eat-alternative`, { foodType: resourceTypeName });
   }
 
   /**

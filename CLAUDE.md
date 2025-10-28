@@ -7,7 +7,7 @@ node scripts/context-helper.js init
 ```
 
 This analyzes your current task and suggests optimal files to load, minimizing tokens.
-See `.claude/context-rules.md` for how the intelligent context system works.
+See `.claude/context-guide.md` for how the intelligent context system works.
 
 ---
 
@@ -34,6 +34,16 @@ See `.claude/context-rules.md` for how the intelligent context system works.
 
 ---
 
+## 📐 Code Conventions
+
+1. **Emoji Centralization (STRICT):**
+   - ❌ NEVER hardcode emojis in code (`"🎉"`, `"✅"`)
+   - ✅ ALWAYS import from `@shared/constants/emojis`
+   - All emojis MUST be documented with usage location
+   - File: `shared/constants/emojis.ts`
+
+---
+
 ## 🔧 Essential Commands
 
 ```bash
@@ -50,18 +60,11 @@ docker compose logs -f backenddev        # Backend logs
 
 ## 📚 Detailed Documentation (Read On-Demand)
 
-- **Full Architecture & Workflows:** `.claude/reference.md` (214 lines - read when modifying structure/adding features)
-- **Collaboration Protocol:** `.claude/collaboration.md` (273 lines - read at start of multi-step projects)
-- **Context System Explained:** `.claude/context-optimization.md` (146 lines - how this system works)
-- **Refactoring Progress:** `docs/refactoring-progress.md` (read when continuing refactoring work)
+- **Full Architecture & Workflows:** `.claude/reference.md` - read when modifying structure/adding features
+- **Supernova Quick Ref:** `.claude/supernova-quick-ref.md` - read before EACH Supernova delegation
+- **Collaboration Protocol:** `.claude/collaboration.md` - read at start of multi-step projects
+- **Context Guide:** `.claude/context-guide.md` - how this system works, when to read what
 - **All .claude/ docs indexed:** `.claude/README.md`
-
----
-
-## 🎯 Current Project Status
-
-**Active Task:** Phase 5 refactoring (applying utils globally)
-**Check:** `docs/refactoring-progress.md` for latest status
 
 ---
 

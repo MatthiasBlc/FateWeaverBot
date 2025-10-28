@@ -76,3 +76,49 @@ export async function sendLogMessage(
     return false;
   }
 }
+
+/**
+ * Envoie un message dans le salon dédié d'une expédition (si configuré et DEPARTED),
+ * sinon dans le salon de logs global de la guilde
+ * @param guildId L'ID de la guilde Discord
+ * @param client Le client Discord
+ * @param message Le message à envoyer
+ * @param characterId L'ID du personnage (optionnel, pour détecter automatiquement l'expédition)
+ * @returns true si le message a été envoyé, false sinon
+ */
+export async function sendLogMessageWithExpeditionContext(
+  guildId: string,
+  client: Client,
+  message: string,
+  characterId?: string
+): Promise<boolean> {
+  try {
+    // Si un characterId est fourni, vérifier s'il est en expédition DEPARTED
+    if (characterId) {
+      try {
+        const expeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(characterId);
+        const departedExpedition = expeditions.find(
+          (exp: any) => exp.status === "DEPARTED"
+        );
+
+        // Si en expédition avec channel dédié, envoyer là-bas
+        if (departedExpedition?.expeditionChannelId) {
+          const expeditionChannel = await client.channels.fetch(departedExpedition.expeditionChannelId);
+          if (expeditionChannel instanceof TextChannel) {
+            await expeditionChannel.send(message);
+            return true;
+          }
+        }
+      } catch (error) {
+        logger.error("Error checking expedition context, falling back to guild log:", error);
+        // Continue to guild log channel as fallback
+      }
+    }
+
+    // Fallback: envoyer dans le channel de logs global
+    return await sendLogMessage(guildId, client, message);
+  } catch (error) {
+    logger.error("Error in sendLogMessageWithExpeditionContext:", { guildId, message, error });
+    return false;
+  }
+}

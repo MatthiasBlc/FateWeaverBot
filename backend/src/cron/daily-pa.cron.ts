@@ -1,19 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { CronJob } from "cron";
+import { container } from "../infrastructure/container";
 
 const prisma = new PrismaClient();
 
 export function setupDailyPaJob() {
-  // Single unified PA job at 00:00:00
-  const mainJob = new CronJob("0 0 * * *", dailyPaUpdate, null, true, "Europe/Paris");
+  // Single unified PA job at 00:00:15 (after hunger, PM, and expedition lock)
+  const mainJob = new CronJob("15 0 0 * * *", dailyPaUpdate, null, true, "Europe/Paris");
 
   console.log("Job CRON pour la mise à jour quotidienne des PA configuré");
-  console.log("  - Job unifié: 00:00:00 (régénération PA + directions + expéditions)");
+  console.log("  - Job unifié: 00:00:15 (régénération PA + directions + expéditions LOCKED/DEPARTED)");
 
   return { mainJob };
 }
 
-async function dailyPaUpdate() {
+export async function dailyPaUpdate() {
   try {
     console.log("=== Début de la mise à jour quotidienne des PA ===");
 
@@ -90,9 +91,23 @@ async function updateAllCharactersActionPoints() {
       // STEP 5: Update PA (regenerate daily at midnight)
       const lastUpdate = character.lastPaUpdate;
 
-      // Check if midnight has passed since last update (compare dates, not time)
-      const lastUpdateDate = new Date(lastUpdate.getFullYear(), lastUpdate.getMonth(), lastUpdate.getDate());
-      const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Convert to Europe/Paris timezone for date comparison
+      // CRON runs at midnight Europe/Paris, but DB stores in UTC
+      const toParisDate = (date: Date) => {
+        // Get date components in Paris timezone
+        const parisDateStr = date.toLocaleDateString('fr-FR', {
+          timeZone: 'Europe/Paris',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const [day, month, year] = parisDateStr.split('/');
+        // Create date at midnight UTC for comparison
+        return new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0, 0));
+      };
+
+      const lastUpdateDate = toParisDate(lastUpdate);
+      const currentDate = toParisDate(now);
       const daysSinceLastUpdate = Math.floor((currentDate.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
 
       // DEBUG: Log PA regeneration check
@@ -141,30 +156,34 @@ async function appendDailyDirections() {
   try {
     console.log("\n--- STEP 6: Append daily expedition directions ---");
 
+    // Get ALL DEPARTED expeditions (with or without direction set)
     const expeditions = await prisma.expedition.findMany({
       where: {
         status: "DEPARTED",
-        currentDayDirection: { not: null },
       },
       select: { id: true, name: true, path: true, currentDayDirection: true },
     });
 
     for (const exp of expeditions) {
+      // If direction set → add to path
+      // If direction NOT set → add "UNKNOWN" to path
+      const directionToAdd = exp.currentDayDirection || "UNKNOWN";
+      const newPath = [...exp.path, directionToAdd];
+
+      await prisma.expedition.update({
+        where: { id: exp.id },
+        data: {
+          path: newPath,
+          currentDayDirection: null,
+          directionSetBy: null,
+          directionSetAt: null,
+        },
+      });
+
       if (exp.currentDayDirection) {
-        // Append direction to path
-        const newPath = [...exp.path, exp.currentDayDirection];
-
-        await prisma.expedition.update({
-          where: { id: exp.id },
-          data: {
-            path: newPath,
-            currentDayDirection: null,
-            directionSetBy: null,
-            directionSetAt: null,
-          },
-        });
-
         console.log(`  - Appended direction ${exp.currentDayDirection} to expedition ${exp.name}`);
+      } else {
+        console.log(`  - ⚠️  No direction chosen for ${exp.name}, appended UNKNOWN`);
       }
     }
 
@@ -178,10 +197,10 @@ async function deductExpeditionPA() {
   try {
     console.log("\n--- STEP 7: Deduct PA for expeditions ---");
 
-    // Get all expedition members from DEPARTED expeditions
+    // Get all expedition members from LOCKED or DEPARTED expeditions
     const expeditionMembers = await prisma.expeditionMember.findMany({
       where: {
-        expedition: { status: "DEPARTED" }
+        expedition: { status: { in: ["LOCKED", "DEPARTED"] } }
       },
       include: {
         character: {
@@ -233,32 +252,19 @@ async function deductExpeditionPA() {
         deductedCount++;
         console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition)`);
       } else {
-        // Check catastrophic return conditions
-        const shouldCatastrophicReturn =
-          character.hungerLevel <= 1 || // Affamé/Agonie (hunger)
-          character.isDead || // Mort
-          character.hp <= 1 || // Agonie/Mort (HP)
-          character.pm <= 2; // Dépression/déprime
+        // Cannot afford 2 PA → catastrophic return
+        // Character pays what they can (their remaining PA) and returns
+        const paidAmount = character.paTotal;
 
-        if (shouldCatastrophicReturn) {
-          // Determine reason for catastrophic return
-          let reason = "";
-          if (character.hungerLevel <= 1) reason = "agonie";
-          else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
-          else if (character.pm <= 2) reason = "dépression";
+        await prisma.character.update({
+          where: { id: character.id },
+          data: { paTotal: 0 }
+        });
 
-          // Remove member catastrophically
-          const expeditionService = (await import("../services/expedition.service")).ExpeditionService;
-          const service = new expeditionService();
+        await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id);
 
-          await service.removeMemberCatastrophic(expedition.id, character.id, reason);
-
-          catastrophicReturns++;
-          console.log(`  - ${character.name}: Retrait catastrophique (${reason})`);
-        } else {
-          // Cannot afford expedition but doesn't meet catastrophic conditions
-          console.warn(`  - ${character.name}: PA insuffisant (${character.paTotal}) mais pas de conditions catastrophiques`);
-        }
+        catastrophicReturns++;
+        console.log(`  - ${character.name}: Retrait catastrophique (PA insuffisant: ${paidAmount}/2 PA payés)`);
       }
     }
 

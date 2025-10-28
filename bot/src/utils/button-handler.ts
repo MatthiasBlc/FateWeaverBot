@@ -1,3 +1,4 @@
+import { ButtonInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 import { apiService } from "../services/api/index.js";
 import { httpClient } from "../services/httpClient.js";
@@ -7,7 +8,7 @@ import { httpClient } from "../services/httpClient.js";
  */
 export class ButtonHandler {
   private static instance: ButtonHandler;
-  private handlers: Map<string, (interaction: any) => Promise<void>> =
+  private handlers: Map<string, (interaction: ButtonInteraction) => Promise<void>> =
     new Map();
 
   private constructor() {
@@ -26,7 +27,7 @@ export class ButtonHandler {
    */
   public registerHandler(
     buttonId: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ButtonInteraction) => Promise<void>
   ) {
     this.handlers.set(buttonId, handler);
     logger.info(`Registered button handler for: ${buttonId}`);
@@ -85,6 +86,26 @@ export class ButtonHandler {
           "../features/expeditions/expedition.command.js"
         );
         await handleExpeditionChooseDirection(interaction);
+      } else if (customId.startsWith("expedition_create_add_resources:")) {
+        const { handleExpeditionAddResources } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionAddResources(interaction);
+      } else if (customId.startsWith("expedition_create_validate:")) {
+        const { handleExpeditionValidateResources } = await import(
+          "../features/expeditions/handlers/expedition-create-resources.js"
+        );
+        await handleExpeditionValidateResources(interaction);
+      } else if (customId.startsWith("expedition_resource_add:")) {
+        const { handleExpeditionResourceAdd } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceAdd(interaction);
+      } else if (customId.startsWith("expedition_resource_remove:")) {
+        const { handleExpeditionResourceRemove } = await import(
+          "../features/expeditions/handlers/expedition-resource-management.js"
+        );
+        await handleExpeditionResourceRemove(interaction);
       }
     });
 
@@ -162,10 +183,10 @@ export class ButtonHandler {
     // Gestionnaire pour manger 1 nourriture
     this.registerHandlerByPrefix("eat_nourriture_1", async (interaction) => {
       try {
-        const { handleEatNourriture1Button } = await import(
+        const { handleEatRepas1Button } = await import(
           "../features/hunger/eat-more.handlers.js"
         );
-        await handleEatNourriture1Button(interaction);
+        await handleEatRepas1Button(interaction);
       } catch (error) {
         logger.error("Error handling eat nourriture 1 button:", { error });
         await interaction.reply({
@@ -194,10 +215,10 @@ export class ButtonHandler {
     // Gestionnaire pour manger nourriture à satiété
     this.registerHandlerByPrefix("eat_nourriture_full", async (interaction) => {
       try {
-        const { handleEatNourritureFull } = await import(
+        const { handleEatRepasFull } = await import(
           "../features/hunger/eat-more.handlers.js"
         );
-        await handleEatNourritureFull(interaction);
+        await handleEatRepasFull(interaction);
       } catch (error) {
         logger.error("Error handling eat nourriture full button:", { error });
         await interaction.reply({
@@ -221,8 +242,14 @@ export class ButtonHandler {
         );
 
         if (response.data.success) {
+          // Envoyer le message public au channel admin
+          if (response.data.publicMessage && interaction.guildId) {
+            const { sendLogMessage } = await import("../utils/channels");
+            await sendLogMessage(interaction.guildId, interaction.client, response.data.publicMessage);
+          }
+
           await interaction.editReply({
-            content: `✅ ${response.data.message}`,
+            content: response.data.message,
             embeds: [],
             components: [],
           });
@@ -233,11 +260,11 @@ export class ButtonHandler {
             components: [],
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error("Error handling use cataplasme button:", { error });
 
-        const errorMessage = error.response?.data?.error ||
-                            error.response?.data?.message ||
+        const errorMessage = (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error ||
+                            (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.message ||
                             "Une erreur est survenue lors de l'utilisation du cataplasme.";
 
         await interaction.editReply({
@@ -361,6 +388,22 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Donner un objet"
+    this.registerHandlerByPrefix("give_object:", async (interaction) => {
+      try {
+        const { handleProfileButtonInteraction } = await import(
+          "../features/users/users.handlers.js"
+        );
+        await handleProfileButtonInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling give object button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de votre objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour le bouton d'ajout de stock admin
     this.registerHandler("stock_admin_add", async (interaction) => {
       try {
@@ -404,6 +447,38 @@ export class ButtonHandler {
         logger.error("Error handling chantier participate button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la participation au chantier.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton admin "Ajouter un chantier"
+    this.registerHandler("chantier_admin_add", async (interaction) => {
+      try {
+        const { handleAdminAddButton } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
+        await handleAdminAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier admin add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'accès au formulaire d'ajout.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton admin "Supprimer un chantier"
+    this.registerHandler("chantier_admin_delete", async (interaction) => {
+      try {
+        const { handleAdminDeleteButton } = await import(
+          "../features/chantiers/chantiers.handlers.js"
+        );
+        await handleAdminDeleteButton(interaction);
+      } catch (error) {
+        logger.error("Error handling chantier admin delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'accès au formulaire de suppression.",
           flags: ["Ephemeral"],
         });
       }
@@ -485,15 +560,15 @@ export class ButtonHandler {
 
         // Le message de succès est déjà affiché dans l'embed de réponse
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error("❌ Erreur lors du changement de saison:", {
-          error: error.message,
-          stack: error.stack,
-          response: error.response?.data,
-          status: error.response?.status
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          response: (error as { response?: { data?: unknown } })?.response?.data,
+          status: (error as { response?: { status?: number } })?.response?.status
         });
         await interaction.editReply({
-          content: `❌ Erreur lors du changement de saison : ${error.message || 'Erreur inconnue'}`,
+          content: `❌ Erreur lors du changement de saison : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
           embeds: [],
           components: []
         });
@@ -614,6 +689,131 @@ export class ButtonHandler {
     });
 
     // =================== NEW ELEMENT ADMIN HANDLERS ===================
+    // Gestionnaire pour les boutons de catégorie (niveau 1 du menu)
+    this.registerHandler("element_category_resource", async (interaction) => {
+      try {
+        const { handleElementCategoryButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleElementCategoryButton(interaction);
+      } catch (error) {
+        logger.error("Error handling element category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandler("element_category_object", async (interaction) => {
+      try {
+        const { handleElementCategoryButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleElementCategoryButton(interaction);
+      } catch (error) {
+        logger.error("Error handling element category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandler("element_category_skill", async (interaction) => {
+      try {
+        const { handleElementCategoryButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleElementCategoryButton(interaction);
+      } catch (error) {
+        logger.error("Error handling element category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandler("element_category_capability", async (interaction) => {
+      try {
+        const { handleElementCategoryButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleElementCategoryButton(interaction);
+      } catch (error) {
+        logger.error("Error handling element category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le menu des emojis
+    this.registerHandler("element_category_emoji", async (interaction) => {
+      try {
+        const { handleEmojiMenuButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiMenuButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji menu button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement du menu des emojis.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour l'ajout d'emoji
+    this.registerHandler("emoji_add", async (interaction) => {
+      try {
+        const { handleEmojiAddButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la liste des emojis
+    this.registerHandler("emoji_list", async (interaction) => {
+      try {
+        const { handleEmojiListButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiListButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji list button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage de la liste.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la suppression d'emoji
+    this.registerHandler("emoji_remove", async (interaction) => {
+      try {
+        const { handleEmojiRemoveButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleEmojiRemoveButton(interaction);
+      } catch (error) {
+        logger.error("Error handling emoji remove button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour le bouton "Nouvelle Capacité"
     this.registerHandler("new_element_capability", async (interaction) => {
       try {
@@ -678,6 +878,457 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton "Modifier Ressource"
+    this.registerHandler("edit_element_resource", async (interaction) => {
+      try {
+        const { handleEditResourceButton } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleEditResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling edit resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Supprimer Ressource"
+    this.registerHandler("delete_element_resource", async (interaction) => {
+      try {
+        const { handleDeleteResourceButton } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleDeleteResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling delete resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour confirmer la suppression d'une ressource
+    this.registerHandlerByPrefix("confirm_delete_resource:", async (interaction) => {
+      try {
+        const { handleConfirmDeleteResourceButton } = await import(
+          "../features/admin/element-resource-admin.handlers.js"
+        );
+        await handleConfirmDeleteResourceButton(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete resource button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Modifier Objet"
+    this.registerHandler("edit_element_object", async (interaction) => {
+      try {
+        const { handleEditObjectButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleEditObjectButton(interaction);
+      } catch (error) {
+        logger.error("Error handling edit object button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Supprimer Objet"
+    this.registerHandler("delete_element_object", async (interaction) => {
+      try {
+        const { handleDeleteObjectButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleDeleteObjectButton(interaction);
+      } catch (error) {
+        logger.error("Error handling delete object button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour confirmer la suppression d'un objet
+    this.registerHandlerByPrefix("confirm_delete_object:", async (interaction) => {
+      try {
+        const { handleConfirmDeleteObjectButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleConfirmDeleteObjectButton(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete object button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les catégories d'édition d'objet
+    this.registerHandlerByPrefix("object_edit_category:", async (interaction) => {
+      try {
+        const { handleEditObjectCategory } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        const parts = interaction.customId.split(':');
+        const category = parts[1] as 'simple' | 'capacity' | 'skill' | 'resource';
+        const page = parseInt(parts[2], 10) || 0;
+        await handleEditObjectCategory(interaction, category, page);
+      } catch (error) {
+        logger.error("Error handling object edit category button:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du chargement de la catégorie.",
+            flags: ["Ephemeral"],
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erreur lors du chargement de la catégorie.",
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour supprimer un objet par catégorie
+    this.registerHandlerByPrefix("object_delete_category:", async (interaction) => {
+      try {
+        const { handleDeleteObjectCategory } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        const parts = interaction.customId.split(':');
+        const category = parts[1] as 'simple' | 'capacity' | 'skill' | 'resource';
+        const page = parseInt(parts[2], 10) || 0;
+        await handleDeleteObjectCategory(interaction, category, page);
+      } catch (error) {
+        logger.error("Error handling object delete category button:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du chargement de la catégorie.",
+            flags: ["Ephemeral"],
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erreur lors du chargement de la catégorie.",
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour modifier le nom d'un objet
+    this.registerHandlerByPrefix("object_modify_name:", async (interaction) => {
+      try {
+        const { handleModifyObjectNameButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleModifyObjectNameButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object modify name button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification du nom.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour modifier la description d'un objet
+    this.registerHandlerByPrefix("object_modify_description:", async (interaction) => {
+      try {
+        const { handleModifyObjectDescriptionButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleModifyObjectDescriptionButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object modify description button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la description.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour supprimer un objet
+    this.registerHandlerByPrefix("object_delete:", async (interaction) => {
+      try {
+        const { handleConfirmDeleteObjectButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleConfirmDeleteObjectButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour gérer les compétences d'un objet
+    this.registerHandlerByPrefix("object_modify_skills:", async (interaction) => {
+      try {
+        const { handleModifyObjectSkillsButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleModifyObjectSkillsButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object modify skills button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour gérer les capacités d'un objet
+    this.registerHandlerByPrefix("object_modify_capabilities:", async (interaction) => {
+      try {
+        const { handleModifyObjectCapabilitiesButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleModifyObjectCapabilitiesButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object modify capabilities button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des capacités.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour ajouter une compétence à un objet (mode édition)
+    this.registerHandlerByPrefix("object_skill_add:", async (interaction) => {
+      try {
+        const { handleObjectSkillAddButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectSkillAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour sélectionner une catégorie de compétence à ajouter à un objet
+    this.registerHandlerByPrefix("object_skill_category_add:", async (interaction) => {
+      try {
+        const { handleObjectSkillCategoryAddButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectSkillCategoryAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill category add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour retirer une compétence d'un objet
+    this.registerHandlerByPrefix("object_skill_remove:", async (interaction) => {
+      try {
+        const { handleObjectSkillRemoveButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectSkillRemoveButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill remove button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des compétences.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour ajouter une capacité à un objet
+    this.registerHandlerByPrefix("object_capability_add:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityAddButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectCapabilityAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des capacités.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour retirer une capacité d'un objet
+    this.registerHandlerByPrefix("object_capability_remove:", async (interaction) => {
+      try {
+        const { handleObjectCapabilityRemoveButton } = await import(
+          "../features/admin/element-object-admin.handlers.js"
+        );
+        await handleObjectCapabilityRemoveButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object capability remove button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des capacités.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Modifier Compétence"
+    this.registerHandler("edit_element_skill", async (interaction) => {
+      try {
+        const { handleEditSkillButton } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleEditSkillButton(interaction);
+      } catch (error) {
+        logger.error("Error handling edit skill button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Supprimer Compétence"
+    this.registerHandler("delete_element_skill", async (interaction) => {
+      try {
+        const { handleDeleteSkillButton } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleDeleteSkillButton(interaction);
+      } catch (error) {
+        logger.error("Error handling delete skill button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour confirmer la suppression d'une compétence
+    this.registerHandlerByPrefix("confirm_delete_skill:", async (interaction) => {
+      try {
+        const { handleConfirmDeleteSkillButton } = await import(
+          "../features/admin/element-skill-admin.handlers.js"
+        );
+        await handleConfirmDeleteSkillButton(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete skill button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Modifier Capacité"
+    this.registerHandler("edit_element_capability", async (interaction) => {
+      try {
+        const { handleEditCapabilityButton } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleEditCapabilityButton(interaction);
+      } catch (error) {
+        logger.error("Error handling edit capability button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la modification de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Supprimer Capacité"
+    this.registerHandler("delete_element_capability", async (interaction) => {
+      try {
+        const { handleDeleteCapabilityButton } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleDeleteCapabilityButton(interaction);
+      } catch (error) {
+        logger.error("Error handling delete capability button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour confirmer la suppression d'une capacité
+    this.registerHandlerByPrefix("confirm_delete_capability:", async (interaction) => {
+      try {
+        const { handleConfirmDeleteCapabilityButton } = await import(
+          "../features/admin/element-capability-admin.handlers.js"
+        );
+        await handleConfirmDeleteCapabilityButton(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete capability button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de la capacité.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour annuler une suppression
+    this.registerHandler("cancel_delete", async (interaction) => {
+      try {
+        const { handleCancelDeleteButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleCancelDeleteButton(interaction);
+      } catch (error) {
+        logger.error("Error handling cancel delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'annulation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // =================== EMOJI ADMIN HANDLERS ===================
+    // Gestionnaire pour confirmer la suppression d'un emoji
+    this.registerHandlerByPrefix("confirm_delete_emoji_", async (interaction) => {
+      try {
+        const { handleEmojiDeleteConfirmation } = await import(
+          "../features/admin/emoji-admin.handlers.js"
+        );
+        await handleEmojiDeleteConfirmation(interaction);
+      } catch (error) {
+        logger.error("Error handling confirm delete emoji button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la suppression de l'emoji.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour annuler la suppression d'un emoji
+    this.registerHandlerByPrefix("cancel_delete_emoji_", async (interaction) => {
+      try {
+        const { handleEmojiDeleteCancellation } = await import(
+          "../features/admin/emoji-admin.handlers.js"
+        );
+        await handleEmojiDeleteCancellation(interaction);
+      } catch (error) {
+        logger.error("Error handling cancel delete emoji button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'annulation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // =================== OBJECT BONUS HANDLERS ===================
     // Gestionnaire pour le bouton "Terminé" après création d'objet
     this.registerHandlerByPrefix("object_done:", async (interaction) => {
@@ -706,6 +1357,22 @@ export class ButtonHandler {
         logger.error("Error handling object add skill bonus button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la sélection d'une catégorie de compétence pour un objet
+    this.registerHandlerByPrefix("object_skill_category:", async (interaction) => {
+      try {
+        const { handleObjectSkillCategoryButton } = await import(
+          "../features/admin/new-element-admin.handlers.js"
+        );
+        await handleObjectSkillCategoryButton(interaction);
+      } catch (error) {
+        logger.error("Error handling object skill category button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors du chargement des compétences.",
           flags: ["Ephemeral"],
         });
       }
@@ -899,7 +1566,7 @@ export class ButtonHandler {
    */
   private registerHandlerByPrefix(
     prefix: string,
-    handler: (interaction: any) => Promise<void>
+    handler: (interaction: ButtonInteraction) => Promise<void>
   ) {
     this.handlers.set(`prefix:${prefix}`, handler);
   }
@@ -907,7 +1574,7 @@ export class ButtonHandler {
   /**
    * Traite une interaction de bouton
    */
-  public async handleButton(interaction: any): Promise<boolean> {
+  public async handleButton(interaction: ButtonInteraction): Promise<boolean> {
     const { customId } = interaction;
 
     logger.info(`🔍 Button interaction received: ${customId} from ${interaction.user.username}`);

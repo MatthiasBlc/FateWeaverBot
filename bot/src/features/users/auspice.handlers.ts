@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -44,8 +45,17 @@ async function executeAuspice(
   try {
     logger.info("Executing auspice with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Auspice pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const auspiceCapability = capabilities.find((cap: any) => cap.capability.name === "Auspice");
+
+    if (!auspiceCapability) {
+      throw new Error("Capacité Auspice non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Auspice",
+      capabilityId: auspiceCapability.capability.id,
       paToUse,
     });
 
@@ -80,7 +90,7 @@ async function executeAuspice(
       }
 
       logger.info("Sending log message for auspice");
-      await sendLogMessage(interaction.guildId, interaction.client, finalMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, finalMessage, characterId);
       logger.info("Log message sent successfully");
     }
 

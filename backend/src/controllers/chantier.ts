@@ -1,11 +1,14 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 import { actionPointService } from "../services/action-point.service";
 import { chantierService } from "../services/chantier.service";
 import { logger } from "../services/logger";
 import { validateCanUsePA } from "../util/character-validators";
+import { ChantierQueries } from "../infrastructure/database/query-builders/chantier.queries";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
-export const createChantier = async (req: Request, res: Response) => {
+export const createChantier = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       name,
@@ -72,11 +75,11 @@ export const createChantier = async (req: Request, res: Response) => {
     res.status(201).json(fullChantier);
   } catch (error) {
     logger.error("Error creating chantier", { error });
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const getChantiersByGuild = async (req: Request, res: Response) => {
+export const getChantiersByGuild = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { guildId } = req.params;
     const isDiscordId = /^\d{17,19}$/.test(guildId);
@@ -102,11 +105,11 @@ export const getChantiersByGuild = async (req: Request, res: Response) => {
     res.json(chantiers);
   } catch (error) {
     logger.error("Error fetching chantiers", { error });
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const getChantierById = async (req: Request, res: Response) => {
+export const getChantierById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const chantier = await chantierService.getChantierById(id);
@@ -118,22 +121,21 @@ export const getChantierById = async (req: Request, res: Response) => {
     res.json(chantier);
   } catch (error) {
     logger.error("Error fetching chantier", { error });
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const deleteChantier = async (req: Request, res: Response) => {
+export const deleteChantier = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     await prisma.chantier.delete({ where: { id } });
     res.status(200).json({ message: "Chantier supprimé avec succès" });
   } catch (error) {
-    console.error("Erreur lors de la suppression du chantier:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const investInChantier = async (req: Request, res: Response) => {
+export const investInChantier = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { chantierId } = req.params;
     const { characterId, points } = req.body;
@@ -144,9 +146,7 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     const chantier = await prisma.chantier.findUnique({
       where: { id: chantierId },
-      include: {
-        resourceCosts: true,
-      },
+      ...ChantierQueries.withResourceCosts(),
     });
 
     if (!chantier) {
@@ -159,13 +159,7 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      include: {
-        expeditionMembers: {
-          include: {
-            expedition: true,
-          },
-        },
-      },
+      ...CharacterQueries.withExpeditions(),
     });
 
     if (!character) {
@@ -183,7 +177,7 @@ export const investInChantier = async (req: Request, res: Response) => {
 
     if (inDepartedExpedition) {
       return res.status(400).json({
-        error: "Vous êtes en expédition et ne pouvez pas accéder aux chantiers de la ville",
+        error: "Tu es en expédition et ne peux pas accéder aux chantiers de la ville",
       });
     }
 
@@ -243,11 +237,11 @@ export const investInChantier = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error("Error investing in chantier", { error });
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const contributeResources = async (req: Request, res: Response) => {
+export const contributeResources = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { characterId, contributions } = req.body;
@@ -311,6 +305,6 @@ export const contributeResources = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };

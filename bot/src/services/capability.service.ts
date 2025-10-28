@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from './httpClient';
 import { logger } from './logger';
 import { formatErrorForLog } from '../utils/errors';

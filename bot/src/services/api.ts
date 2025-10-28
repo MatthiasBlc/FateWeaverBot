@@ -32,6 +32,7 @@ import { ResourceAPIService } from "./api/resource-api.service";
 import { ProjectAPIService } from "./api/project-api.service";
 import { ObjectAPIService } from "./api/object-api.service";
 import { SkillAPIService } from "./api/skill-api.service";
+import { EmojiAPIService } from "./api/emoji-api.service";
 /**
  * Service API principal - Façade qui maintient l'interface existante
  * Délègue aux services spécialisés pour séparer les responsabilités
@@ -51,6 +52,7 @@ class APIService {
   public readonly resources: ResourceAPIService;
   public readonly objects: ObjectAPIService;
   public readonly skills: SkillAPIService;
+  public readonly emojis: EmojiAPIService;
 
   private constructor() {
     // Use shared HTTP client
@@ -67,6 +69,7 @@ class APIService {
     this.resources = new ResourceAPIService(this.api);
     this.objects = new ObjectAPIService(this.api);
     this.skills = new SkillAPIService(this.api);
+    this.emojis = new EmojiAPIService(this.api);
   }
 
   public static getInstance(): APIService {

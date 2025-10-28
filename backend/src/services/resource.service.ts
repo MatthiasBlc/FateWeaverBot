@@ -1,26 +1,22 @@
 import { PrismaClient, LocationType } from "@prisma/client";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ResourceUtils } from "../shared/utils";
+import { ResourceRepository } from "../domain/repositories/resource.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 export class ResourceService {
-  constructor(private prisma: PrismaClient) {}
+  private resourceRepo: ResourceRepository;
+
+  constructor(private prisma: PrismaClient, resourceRepo?: ResourceRepository) {
+    // For backward compatibility, create a new repository if not provided
+    this.resourceRepo = resourceRepo || new ResourceRepository(prisma);
+  }
 
   /**
    * Récupère les ressources d'un lieu (ville ou expédition)
    */
   async getLocationResources(locationType: LocationType, locationId: string) {
-    return await this.prisma.resourceStock.findMany({
-      where: {
-        locationType,
-        locationId
-      },
-      include: {
-        resourceType: true
-      },
-      orderBy: {
-        resourceType: {
-          name: "asc"
-        }
-      }
-    });
+    return await this.resourceRepo.getLocationResources(locationType, locationId);
   }
 
   /**
@@ -33,33 +29,10 @@ export class ResourceService {
     quantity: number
   ): Promise<void> {
     // Récupérer le type de ressource
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     // Ajouter ou mettre à jour le stock
-    await this.prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
-      update: {
-        quantity: { increment: quantity }
-      },
-      create: {
-        locationType,
-        locationId,
-        resourceTypeId: resourceType.id,
-        quantity
-      }
-    });
+    await ResourceUtils.upsertStock(locationType, locationId, resourceType.id, quantity);
   }
 
   /**
@@ -71,36 +44,13 @@ export class ResourceService {
     resourceTypeName: string,
     newQuantity: number
   ): Promise<void> {
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (newQuantity < 0) {
-      throw new Error("La quantité ne peut pas être négative");
+      throw new BadRequestError("La quantité ne peut pas être négative");
     }
 
-    await this.prisma.resourceStock.upsert({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
-      update: {
-        quantity: newQuantity
-      },
-      create: {
-        locationType,
-        locationId,
-        resourceTypeId: resourceType.id,
-        quantity: newQuantity
-      }
-    });
+    await this.resourceRepo.setStock(locationType, locationId, resourceType.id, newQuantity);
   }
 
   /**
@@ -112,45 +62,20 @@ export class ResourceService {
     resourceTypeName: string,
     quantity: number
   ): Promise<void> {
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
-
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
     if (quantity <= 0) {
-      throw new Error("La quantité à retirer doit être positive");
+      throw new BadRequestError("La quantité à retirer doit être positive");
     }
 
     // Vérifier que le lieu a assez de ressources
-    const currentStock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      }
-    });
+    const currentStock = await ResourceUtils.getStock(locationType, locationId, resourceType.id);
 
     if (!currentStock || currentStock.quantity < quantity) {
-      throw new Error(`Pas assez de ${resourceTypeName} disponibles`);
+      throw new BadRequestError(`Pas assez de ${resourceTypeName} disponibles`);
     }
 
-    await this.prisma.resourceStock.update({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: resourceType.id
-        }
-      },
-      data: {
-        quantity: { decrement: quantity }
-      }
-    });
+    await this.resourceRepo.decrementStock(locationType, locationId, resourceType.id, quantity);
   }
 
   /**
@@ -165,79 +90,32 @@ export class ResourceService {
     quantity: number
   ): Promise<void> {
     if (fromLocationType === toLocationType && fromLocationId === toLocationId) {
-      throw new Error("Impossible de transférer vers le même lieu");
+      throw new BadRequestError("Impossible de transférer vers le même lieu");
     }
 
     if (quantity <= 0) {
-      throw new Error("La quantité doit être positive");
+      throw new BadRequestError("La quantité doit être positive");
     }
 
-    const resourceType = await this.prisma.resourceType.findFirst({
-      where: { name: resourceTypeName }
-    });
+    const resourceType = await ResourceUtils.getResourceTypeByName(resourceTypeName);
 
-    if (!resourceType) {
-      throw new Error(`Type de ressource "${resourceTypeName}" non trouvé`);
-    }
-
-    // Effectuer le transfert en transaction
-    await this.prisma.$transaction([
-      // Retirer du lieu source
-      this.prisma.resourceStock.update({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: fromLocationType,
-            locationId: fromLocationId,
-            resourceTypeId: resourceType.id
-          }
-        },
-        data: {
-          quantity: { decrement: quantity }
-        }
-      }),
-      // Ajouter au lieu destination
-      this.prisma.resourceStock.upsert({
-        where: {
-          locationType_locationId_resourceTypeId: {
-            locationType: toLocationType,
-            locationId: toLocationId,
-            resourceTypeId: resourceType.id
-          }
-        },
-        update: {
-          quantity: { increment: quantity }
-        },
-        create: {
-          locationType: toLocationType,
-          locationId: toLocationId,
-          resourceTypeId: resourceType.id,
-          quantity
-        }
-      })
-    ]);
+    await this.resourceRepo.transferResource(
+      fromLocationType,
+      fromLocationId,
+      toLocationType,
+      toLocationId,
+      resourceType.id,
+      quantity
+    );
   }
 
   /**
    * Récupère le stock de vivres d'un lieu
    */
   async getVivresStock(locationType: LocationType, locationId: string): Promise<number> {
-    const vivresType = await this.prisma.resourceType.findFirst({
-      where: { name: "Vivres" }
-    });
+    const vivresType = await ResourceUtils.getResourceTypeByName("Vivres");
 
-    if (!vivresType) {
-      return 0;
-    }
-
-    const stock = await this.prisma.resourceStock.findUnique({
-      where: {
-        locationType_locationId_resourceTypeId: {
-          locationType,
-          locationId,
-          resourceTypeId: vivresType.id
-        }
-      }
-    });
+    const stock = await ResourceUtils.getStock(locationType, locationId, vivresType.id);
 
     return stock?.quantity || 0;
   }

@@ -11,6 +11,7 @@ import {
   type ModalSubmitInteraction,
   ModalActionRowComponentBuilder,
   type ChatInputCommandInteraction,
+  type ButtonInteraction,
   Client,
   ButtonBuilder,
   ButtonStyle,
@@ -77,6 +78,34 @@ import { ERROR_MESSAGES } from "../../constants/messages.js";
  */
 export async function handleChantiersCommand(interaction: CommandInteraction) {
   try {
+    // Récupérer le personnage actif pour vérifier s'il est en expédition
+    const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
+
+    if (!town) {
+      return interaction.reply({
+        content: "Impossible de trouver la ville associée à ce serveur.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const character = await apiService.characters.getActiveCharacter(
+      interaction.user.id,
+      town.id
+    );
+
+    if (character) {
+      // Vérifier si le personnage est en expédition DEPARTED
+      const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+      const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
+
+      if (inDepartedExpedition) {
+        return interaction.reply({
+          content: "❌ Tu es en expédition et ne peux pas voir les chantiers de la ville. Ça aura peut être avancé d'ici ton retour !",
+          flags: ["Ephemeral"],
+        });
+      }
+    }
+
     const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
     );
@@ -245,6 +274,17 @@ export async function handleParticipateButton(interaction: any) {
       });
     }
 
+    // Vérifier si le personnage est en expédition DEPARTED
+    const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+    const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
+
+    if (inDepartedExpedition) {
+      return interaction.reply({
+        content: "❌ pouvez pas participer aux chantiers de la ville. Attendez votre retour !",
+        flags: ["Ephemeral"],
+      });
+    }
+
     // Récupérer les chantiers de la guilde
     const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
       interaction.guildId!
@@ -309,17 +349,12 @@ export async function handleParticipateButton(interaction: any) {
       if (!response) return;
 
       const selectedChantierId = response.values[0];
-      logger.info("🏗️ [PARTICIPATE] Chantier sélectionné", {
-        chantierId: selectedChantierId,
-        userId: interaction.user.id
-      });
-
       const selectedChantier = availableChantiers.find(
         (c) => c.id === selectedChantierId
       );
 
       if (!selectedChantier) {
-        logger.error("🏗️ [PARTICIPATE] Chantier non trouvé", { chantierId: selectedChantierId });
+        logger.error("Chantier non trouvé", { chantierId: selectedChantierId });
         await response.update({
           content: "Chantier non trouvé. Veuillez réessayer.",
           components: [],
@@ -327,18 +362,12 @@ export async function handleParticipateButton(interaction: any) {
         return;
       }
 
-      logger.info("🏗️ [PARTICIPATE] Détails du chantier", {
-        name: selectedChantier.name,
-        status: selectedChantier.status,
-        hasResourceCosts: !!selectedChantier.resourceCosts?.length,
-        resourceCostsCount: selectedChantier.resourceCosts?.length || 0,
-        townId: town.id
-      });
-
       // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
+      // Discord limite les titres de modal à 45 caractères
+      const modalTitle = `Construire ${selectedChantier.name}`.substring(0, 45);
       const modal = new ModalBuilder()
         .setCustomId(`invest_modal_${selectedChantierId}`)
-        .setTitle(`Construire ${selectedChantier.name}`);
+        .setTitle(modalTitle);
 
       const actionRows: ActionRowBuilder<ModalActionRowComponentBuilder>[] = [];
 
@@ -363,15 +392,8 @@ export async function handleParticipateButton(interaction: any) {
 
       // Ajouter champs pour les ressources requises (max 4 ressources)
       if (selectedChantier.resourceCosts && selectedChantier.resourceCosts.length > 0) {
-        logger.info("🏗️ [PARTICIPATE] Récupération des ressources de la ville", {
-          locationType: "CITY",
-          townId: town.id
-        });
         // Récupérer le stock de ressources de la ville
         const townResources = await apiService.getResources("CITY", town.id);
-        logger.info("🏗️ [PARTICIPATE] Ressources récupérées", {
-          resourcesCount: Array.isArray(townResources) ? townResources.length : 0
-        });
 
         const resourceCosts = selectedChantier.resourceCosts.slice(0, 4); // Max 4 ressources (5 champs max - 1 pour PA)
 
@@ -410,14 +432,7 @@ export async function handleParticipateButton(interaction: any) {
 
       modal.addComponents(...actionRows);
 
-      logger.info("🏗️ [PARTICIPATE] Affichage du modal", {
-        chantierId: selectedChantierId,
-        actionRowsCount: actionRows.length
-      });
-
       await response.showModal(modal);
-
-      logger.info("🏗️ [PARTICIPATE] Modal affiché avec succès");
 
       // La soumission du modal sera gérée par handleInvestModalSubmit via le système centralisé
     } catch (error) {
@@ -528,9 +543,11 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
       }
 
       // Demander le nombre de PA à investir avec l'ID du chantier encodé dans le custom ID du modal
+      // Discord limite les titres de modal à 45 caractères
+      const modalTitle = `Construire ${selectedChantier.name}`.substring(0, 45);
       const modal = new ModalBuilder()
         .setCustomId(`invest_modal_${selectedChantierId}`)
-        .setTitle(`Construire ${selectedChantier.name}`);
+        .setTitle(modalTitle);
 
       const pointsInput = new TextInputBuilder()
         .setCustomId("points_input")
@@ -579,6 +596,95 @@ export async function handleInvestCommand(interaction: CommandInteraction) {
         flags: ["Ephemeral"],
       });
     }
+  }
+}
+
+/**
+ * Commande /chantiers-admin - Affiche liste des chantiers + boutons Ajouter/Supprimer
+ */
+export async function handleChantiersAdminCommand(interaction: CommandInteraction) {
+  try {
+    // Vérifier que l'utilisateur est admin
+    const isUserAdmin = await checkAdmin(interaction);
+    if (!isUserAdmin) {
+      return interaction.reply({
+        content: "Seuls les administrateurs peuvent accéder à cette commande.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const chantiers: Chantier[] = await apiService.chantiers.getChantiersByServer(
+      interaction.guildId!
+    );
+
+    const embed = createInfoEmbed(
+      `${CHANTIER.ICON} Gestion des chantiers`,
+      "Liste des chantiers et options d'administration :"
+    );
+
+    // Grouper les chantiers par statut
+    const chantiersParStatut = chantiers.reduce<Record<string, Chantier[]>>(
+      (acc, chantier) => {
+        if (!acc[chantier.status]) {
+          acc[chantier.status] = [];
+        }
+        acc[chantier.status].push(chantier);
+        return acc;
+      },
+      {}
+    );
+
+    // Ajouter une section pour chaque statut
+    for (const [statut, listeChantiers] of Object.entries(chantiersParStatut)) {
+      const chantiersText = listeChantiers
+        .map((chantier) => {
+          let text = `**${chantier.name}** - ${chantier.spendOnIt}/${chantier.cost} PA`;
+
+          // Ajouter les ressources si présentes
+          if (chantier.resourceCosts && chantier.resourceCosts.length > 0) {
+            const resourcesText = chantier.resourceCosts
+              .map(
+                (rc) =>
+                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
+              )
+              .join(" ");
+            text += ` | ${resourcesText}`;
+          }
+
+          return text;
+        })
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
+        value: chantiersText || "Aucun chantier dans cette catégorie",
+        inline: false,
+      });
+    }
+
+    // Ajouter boutons Ajouter et Supprimer
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId("chantier_admin_add")
+        .setLabel("➕ Ajouter un chantier")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId("chantier_admin_delete")
+        .setLabel("➖ Supprimer un chantier")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [buttonRow],
+      flags: ["Ephemeral"]
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la récupération des chantiers admin :", { error });
+    await interaction.reply({
+      content: ERROR_MESSAGES.CHANTIER_FETCH_ERROR,
+      flags: ["Ephemeral"],
+    });
   }
 }
 
@@ -663,31 +769,37 @@ export async function handleInvestModalSubmit(
     }
 
     // Parse PA input (now optional)
-    const inputValue = interaction.fields.getTextInputValue("points_input");
     let points = 0;
 
-    if (inputValue && inputValue.trim() !== "") {
-      // Vérifier si c'est un nombre décimal
-      if (inputValue.includes('.') || inputValue.includes(',')) {
-        await interaction.reply({
-          content:
-            `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
-          flags: ["Ephemeral"],
-        });
-        return;
-      }
+    try {
+      const inputValue = interaction.fields.getTextInputValue("points_input");
 
-      points = parseInt(inputValue, 10);
+      if (inputValue && inputValue.trim() !== "") {
+        // Vérifier si c'est un nombre décimal
+        if (inputValue.includes('.') || inputValue.includes(',')) {
+          await interaction.reply({
+            content:
+              `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement (pas de décimales).`,
+            flags: ["Ephemeral"],
+          });
+          return;
+        }
 
-      // Validation des points
-      if (isNaN(points) || points < 0) {
-        await interaction.reply({
-          content:
-            `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, 0 ou plus).`,
-          flags: ["Ephemeral"],
-        });
-        return;
+        points = parseInt(inputValue, 10);
+
+        // Validation des points
+        if (isNaN(points) || points < 0) {
+          await interaction.reply({
+            content:
+              `${STATUS.ERROR} Veuillez entrer un nombre valide de points d'action (entiers uniquement, 0 ou plus).`,
+            flags: ["Ephemeral"],
+          });
+          return;
+        }
       }
+    } catch (error) {
+      // Field is empty or doesn't exist - that's ok, points = 0
+      points = 0;
     }
 
     // Parse resource contributions from modal
@@ -1129,4 +1241,22 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
       });
     }
   }
+}
+
+/**
+ * Handler wrapper pour le bouton admin "Ajouter un chantier"
+ * Convertit ButtonInteraction en ChatInputCommandInteraction pour handleAddChantierCommand
+ */
+export async function handleAdminAddButton(interaction: ButtonInteraction) {
+  // ButtonInteraction hérite les méthodes nécessaires, on peut le passer directement
+  await handleAddChantierCommand(interaction as any);
+}
+
+/**
+ * Handler wrapper pour le bouton admin "Supprimer un chantier"
+ * Convertit ButtonInteraction en CommandInteraction pour handleDeleteCommand
+ */
+export async function handleAdminDeleteButton(interaction: ButtonInteraction) {
+  // ButtonInteraction hérite les méthodes nécessaires, on peut le passer directement
+  await handleDeleteCommand(interaction as any);
 }

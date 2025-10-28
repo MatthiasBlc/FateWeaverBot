@@ -3,11 +3,11 @@ import {
   type GuildMember,
 } from "discord.js";
 import { logger } from "../../../services/logger";
-import { getHungerLevelText } from "../../../utils/hunger";
 import { apiService } from "../../../services/api";
 import { sendLogMessage } from "../../../utils/channels";
 import { getActiveCharacterFromModal } from "../../../utils/character";
 import { createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
+import { getHungerLevelText } from "../../../utils/hunger";
 import type { Character } from "../character-admin.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,

@@ -15,6 +15,7 @@ import { replyEphemeral } from "../../../utils/interaction-helpers";
 import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
+import { getResourceEmoji } from "../../../services/emoji-cache";
 
 /**
  * Handler pour le bouton "Retirer des ressources"
@@ -53,10 +54,13 @@ export async function handleStockAdminRemoveButton(interaction: any) {
       .setCustomId("stock_admin_remove_select")
       .setPlaceholder("Sélectionnez le type de ressource à retirer")
       .addOptions(
-        availableResources.map((resource: any) => ({
-          label: `${resource.resourceType.emoji} ${resource.resourceType.name}`,
-          description: `Stock actuel: ${resource.quantity} unités`,
-          value: resource.resourceType.id.toString(),
+        await Promise.all(availableResources.map(async (resource: any) => {
+          const emoji = await getResourceEmoji(resource.resourceType.name, resource.resourceType.emoji);
+          return {
+            label: `${emoji} ${resource.resourceType.name}`,
+            description: `Stock actuel: ${resource.quantity} unités`,
+            value: resource.resourceType.id.toString(),
+          };
         }))
       );
 
@@ -124,10 +128,11 @@ export async function handleStockAdminRemoveSelect(
     }
 
     // Créer le modal pour saisir la quantité
+    const emoji = await getResourceEmoji(selectedResource.resourceType.name, selectedResource.resourceType.emoji);
     const modal = new ModalBuilder()
       .setCustomId(`stock_admin_remove_modal_${resourceTypeId}`)
       .setTitle(
-        `Retirer ${selectedResource.resourceType.emoji} ${selectedResource.resourceType.name}`
+        `Retirer ${emoji} ${selectedResource.resourceType.name}`
       );
 
     const amountInput = new TextInputBuilder()

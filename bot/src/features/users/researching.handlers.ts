@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -44,8 +45,17 @@ async function executeResearching(
   try {
     logger.info("Executing researching with PA:", { characterId, paToUse });
 
+    // Récupérer la capacité Rechercher pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const researchingCapability = capabilities.find((cap: any) => cap.capability.name === "Rechercher");
+
+    if (!researchingCapability) {
+      throw new Error("Capacité Rechercher non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Rechercher",
+      capabilityId: researchingCapability.capability.id,
       paToUse,
     });
 
@@ -80,7 +90,7 @@ async function executeResearching(
       }
 
       logger.info("Sending log message for researching");
-      await sendLogMessage(interaction.guildId, interaction.client, finalMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, finalMessage, characterId);
       logger.info("Log message sent successfully");
     }
 

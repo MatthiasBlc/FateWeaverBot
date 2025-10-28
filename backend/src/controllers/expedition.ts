@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
-import { ExpeditionService } from "../services/expedition.service";
+import { container } from "../infrastructure/container";
+import { CharacterQueries } from "../infrastructure/database/query-builders/character.queries";
 
-const expeditionService = new ExpeditionService();
-
-export const createExpedition = async (req: Request, res: Response) => {
+export const createExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       name,
@@ -13,18 +13,8 @@ export const createExpedition = async (req: Request, res: Response) => {
       townId,
       discordGuildId,
       createdBy: requestCreatedBy,
+      initialDirection,  // ✅ Ajouter initialDirection
     } = req.body;
-
-    console.log("DEBUG: Requête de création d'expédition reçue:", {
-      name,
-      initialResources,
-      duration,
-      townId,
-      discordGuildId,
-      requestCreatedBy,
-      body: JSON.stringify(req.body),
-      headers: req.headers['x-internal-request']
-    });
 
     const createdBy =
       req.get("x-internal-request") === "true"
@@ -53,25 +43,17 @@ export const createExpedition = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de ville manquant" });
     }
 
-    console.log("DEBUG: Paramètres après traitement:", {
-      name,
-      initialResources,
-      duration,
-      internalTownId,
-      createdBy
-    });
-
     if (!name || !initialResources || !duration) {
-      console.log("DEBUG: Paramètres manquants détectés");
       return res.status(400).json({ error: "Nom, ressources initiales et durée requis" });
     }
 
-    const expedition = await expeditionService.createExpedition({
+    const expedition = await container.expeditionService.createExpedition({
       name,
       townId: internalTownId,
       initialResources: initialResources,  // ✅ Utiliser directement initialResources
       duration: parseInt(duration, 10),
       createdBy,
+      initialDirection,  // ✅ Passer initialDirection au service
     });
 
     // Nettoyer l'objet expedition pour éviter les références circulaires
@@ -89,16 +71,15 @@ export const createExpedition = async (req: Request, res: Response) => {
 
     res.status(201).json(safeExpedition);
   } catch (error) {
-    console.error("Erreur lors de la création de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const getExpeditionById = async (req: Request, res: Response) => {
+export const getExpeditionById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -106,7 +87,7 @@ export const getExpeditionById = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const expedition = await expeditionService.getExpeditionById(id);
+    const expedition = await container.expeditionService.getExpeditionById(id);
 
     if (!expedition) {
       return res.status(404).json({ error: "Expédition non trouvée" });
@@ -114,12 +95,11 @@ export const getExpeditionById = async (req: Request, res: Response) => {
 
     res.json(expedition);
   } catch (error) {
-    console.error("Erreur lors de la récupération de l'expédition:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const getExpeditionsByTown = async (req: Request, res: Response) => {
+export const getExpeditionsByTown = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { townId } = req.params;
     const { includeReturned } = req.query;
@@ -128,19 +108,18 @@ export const getExpeditionsByTown = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID de ville requis" });
     }
 
-    const expeditions = await expeditionService.getExpeditionsByTown(
+    const expeditions = await container.expeditionService.getExpeditionsByTown(
       townId,
       includeReturned === "true"
     );
 
     res.json(expeditions);
   } catch (error) {
-    console.error("Erreur lors de la récupération des expéditions:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const joinExpedition = async (req: Request, res: Response) => {
+export const joinExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { characterId } = req.body;
@@ -185,20 +164,19 @@ export const joinExpedition = async (req: Request, res: Response) => {
       }
     }
 
-    const member = await expeditionService.joinExpedition(id, characterId);
+    const member = await container.expeditionService.joinExpedition(id, characterId);
 
     res.status(201).json(member);
   } catch (error) {
-    console.error("Erreur lors de la participation à l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const leaveExpedition = async (req: Request, res: Response) => {
+export const leaveExpedition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { characterId } = req.body;
@@ -243,42 +221,61 @@ export const leaveExpedition = async (req: Request, res: Response) => {
       }
     }
 
-    await expeditionService.leaveExpedition(id, characterId);
+    await container.expeditionService.leaveExpedition(id, characterId);
 
     res.status(204).send();
   } catch (error) {
-    console.error("Erreur lors du départ de l'expédition:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const getActiveExpeditionsForCharacter = async (req: Request, res: Response) => {
+export const getActiveExpeditionsForCharacter = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { characterId } = req.params;
+    const { userId } = req.query; // Discord user ID pour vérifier les votes
 
     if (!characterId) {
       return res.status(400).json({ error: "ID de personnage requis" });
     }
 
-    const expeditions = await expeditionService.getActiveExpeditionsForCharacter(
+    const expeditions = await container.expeditionService.getActiveExpeditionsForCharacter(
       characterId
     );
 
-    res.json(expeditions);
+    // Map _count.emergencyVotes to emergencyVotesCount for easier access on frontend
+    // Also check if the current user has voted if userId is provided
+    const mappedExpeditions = await Promise.all(expeditions.map(async (exp: any) => {
+      let currentUserVoted = false;
+
+      // Check if current user has voted for emergency return
+      if (userId && exp.status === 'DEPARTED') {
+        currentUserVoted = await container.expeditionService.hasUserVotedForEmergency(
+          exp.id,
+          userId as string
+        );
+      }
+
+      return {
+        ...exp,
+        emergencyVotesCount: exp._count?.emergencyVotes || 0,
+        currentUserVoted, // Ajout du statut de vote de l'utilisateur actuel
+      };
+    }));
+
+    res.json(mappedExpeditions);
   } catch (error) {
-    console.error("Erreur lors de la récupération des expéditions actives:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-export const getAllExpeditions = async (req: Request, res: Response) => {
+export const getAllExpeditions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const includeReturned = req.query.includeReturned === 'true';
-    const expeditions = await expeditionService.getAllExpeditions(includeReturned);
+    const expeditions = await container.expeditionService.getAllExpeditions(includeReturned);
     res.json(expeditions);
   } catch (error) {
     console.error('Error getting all expeditions:', error);
@@ -286,7 +283,7 @@ export const getAllExpeditions = async (req: Request, res: Response) => {
   }
 };
 
-export const getExpeditionResources = async (req: Request, res: Response) => {
+export const getExpeditionResources = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -294,19 +291,18 @@ export const getExpeditionResources = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID d'expédition requis" });
     }
 
-    const resources = await expeditionService.getExpeditionResources(id);
+    const resources = await container.expeditionService.getExpeditionResources(id);
     res.json(resources);
   } catch (error) {
-    console.error("Erreur lors de la récupération des ressources:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
 
-export const transferExpeditionResource = async (req: Request, res: Response) => {
+export const transferExpeditionResource = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { resourceType, amount, direction } = req.body;
@@ -326,7 +322,7 @@ export const transferExpeditionResource = async (req: Request, res: Response) =>
       return res.status(400).json({ error: "Direction invalide (to_town ou from_town)" });
     }
 
-    await expeditionService.transferResource(
+    await container.expeditionService.transferResource(
       id,
       resourceType,
       parseInt(amount, 10),
@@ -335,11 +331,10 @@ export const transferExpeditionResource = async (req: Request, res: Response) =>
 
     res.status(204).send();
   } catch (error) {
-    console.error("Erreur lors du transfert de ressources:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
@@ -348,7 +343,7 @@ export const transferExpeditionResource = async (req: Request, res: Response) =>
  * Toggle emergency return vote for an expedition
  * POST /expeditions/:id/emergency-vote
  */
-export const toggleEmergencyVote = async (req: Request, res: Response) => {
+export const toggleEmergencyVote = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: expeditionId } = req.params;
     const { userId } = req.body;
@@ -364,18 +359,17 @@ export const toggleEmergencyVote = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "userId requis" });
     }
 
-    const result = await expeditionService.toggleEmergencyVote(expeditionId, userId);
+    const result = await container.expeditionService.toggleEmergencyVote(expeditionId, userId);
 
     res.status(200).json({
       success: true,
       data: result,
     });
   } catch (error) {
-    console.error("Erreur lors du vote d'urgence:", error);
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
-      res.status(500).json({ error: "Erreur serveur" });
+      next(error);
     }
   }
 };
@@ -418,12 +412,61 @@ export const setExpeditionDirection = async (
       return;
     }
 
-    const expedition = expeditionService;
+    const expedition = container.expeditionService;
     await expedition.setNextDirection(id, direction, characterId);
 
     res.status(200).json({ message: "Direction set successfully" });
   } catch (error: unknown) {
-    console.error("Error setting expedition direction:", error);
     res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
+  }
+};
+
+/**
+ * Configure or update expedition dedicated channel
+ * POST /api/expeditions/:id/channel
+ */
+export const setExpeditionChannel = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { channelId, configuredBy } = req.body; // channelId = null pour désactiver
+
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    const expedition = await container.expeditionService.setExpeditionChannel(
+      id,
+      channelId,
+      configuredBy
+    );
+
+    res.json(expedition);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Send a log message to expedition's dedicated channel
+ * POST /api/expeditions/:id/log
+ */
+export const sendExpeditionLog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { guildId, message } = req.body;
+
+    if (!id || !guildId || !message) {
+      return res.status(400).json({ error: "Paramètres manquants" });
+    }
+
+    const sent = await container.discordNotificationService.sendExpeditionNotification(
+      id,
+      guildId,
+      message
+    );
+
+    res.json({ success: sent });
+  } catch (error) {
+    next(error);
   }
 };

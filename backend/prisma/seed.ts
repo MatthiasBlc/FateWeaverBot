@@ -4,7 +4,7 @@ import {
   SeasonType,
   CapacityBonusType,
 } from "@prisma/client";
-import { RESOURCES } from "../shared/constants/emojis";
+import { RESOURCES } from "@shared/constants/emojis";
 
 const prisma = new PrismaClient();
 

@@ -14,6 +14,7 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { getStatusEmoji } from "../expedition-utils";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
+import { EXPEDITION } from "@shared/constants/emojis";
 
 /**
  * Gestionnaire pour le bouton "Quitter l'expédition"
@@ -98,13 +99,13 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     if (expeditionTerminated) {
       // Update the message to show expedition was terminated
       await interaction.update({
-        content: `✅ Vous avez quitté l'expédition avec succès!\n\n🏁 **L'expédition a été terminée automatiquement** car vous étiez le dernier membre. Toute la nourriture restante a été restituée à la ville.`,
+        content: `${EXPEDITION.ICON} Tu as quitté l'expédition **${currentExpedition.name}**.\n\nL'expédition est annulée faute de volontaires. Toutes les resources ont été remises dans le stock.`,
         embeds: [],
         components: [],
       });
 
       // Send log message
-      const logMessage = `🚪 **${character.name}** a quitté l'expédition "**${currentExpedition.name}**" (dernier membre - expédition terminée)`;
+      const logMessage = `${EXPEDITION.ICON} L'expédition**${currentExpedition.name}** est annulée, faute de volontaires.`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,
@@ -113,13 +114,13 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     } else {
       // Update the message to show successful departure
       await interaction.update({
-        content: `✅ Vous avez quitté l'expédition **${currentExpedition.name}** avec succès!`,
+        content: `${EXPEDITION.ICON} Tu as quitté l'expédition avec succès!`,
         embeds: [],
         components: [],
       });
 
       // Send log message
-      const logMessage = `🚪 **${character.name}** a quitté l'expédition "**${currentExpedition.name}**"`;
+      const logMessage = `${EXPEDITION.ICON} **${character.name}** a quitté l'expédition **${currentExpedition.name}**`;
       await sendLogMessage(
         interaction.guildId!,
         interaction.client,

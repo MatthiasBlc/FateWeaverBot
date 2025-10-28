@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import createHttpError from "http-errors";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 import { prisma } from "../util/db";
 
 export const upsertGuild: RequestHandler = async (req, res, next) => {
@@ -7,7 +7,7 @@ export const upsertGuild: RequestHandler = async (req, res, next) => {
     const { discordId, name, memberCount } = req.body;
 
     if (!discordId || !name) {
-      throw createHttpError(400, "Les champs discordId et name sont requis");
+      throw new BadRequestError("Les champs discordId et name sont requis");
     }
 
     const existingGuild = await prisma.guild.findUnique({
@@ -52,7 +52,7 @@ export const getGuildByDiscordId: RequestHandler = async (req, res, next) => {
     });
 
     if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+      throw new NotFoundError("Guilde non trouvée");
     }
 
     res.status(200).json(guild);
@@ -70,7 +70,7 @@ export const getGuildById: RequestHandler = async (req, res, next) => {
     });
 
     if (!guild) {
-      throw createHttpError(404, "Guilde non trouvée");
+      throw new NotFoundError("Guilde non trouvée");
     }
 
     res.status(200).json(guild);

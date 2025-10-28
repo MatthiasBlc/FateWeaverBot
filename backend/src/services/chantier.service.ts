@@ -2,6 +2,9 @@ import { PrismaClient, ChantierStatus, Prisma } from "@prisma/client";
 import type { Chantier } from "@prisma/client";
 import { logger } from "./logger";
 import { dailyEventLogService } from "./daily-event-log.service";
+import { ResourceQueries } from "../infrastructure/database/query-builders/resource.queries";
+import { ChantierRepository } from "../domain/repositories/chantier.repository";
+import { NotFoundError, BadRequestError, ValidationError, UnauthorizedError } from '../shared/errors';
 
 const prisma = new PrismaClient();
 
@@ -20,6 +23,11 @@ export interface ResourceContribution {
 }
 
 export class ChantierService {
+  private chantierRepo: ChantierRepository;
+
+  constructor(chantierRepo?: ChantierRepository) {
+    this.chantierRepo = chantierRepo || new ChantierRepository(prisma);
+  }
   /**
    * Create a new chantier with optional resource costs
    */
@@ -32,14 +40,14 @@ export class ChantierService {
       });
 
       if (!town) {
-        throw new Error("Town not found");
+        throw new NotFoundError("Town", data.townId);
       }
 
       // Validate resource costs if provided
       if (data.resourceCosts && data.resourceCosts.length > 0) {
         for (const resourceCost of data.resourceCosts) {
           if (resourceCost.quantity <= 0) {
-            throw new Error(
+            throw new BadRequestError(
               `Resource quantity must be positive for resource type ID ${resourceCost.resourceTypeId}`
             );
           }
@@ -50,8 +58,9 @@ export class ChantierService {
           });
 
           if (!resourceType) {
-            throw new Error(
-              `Resource type with ID ${resourceCost.resourceTypeId} not found`
+            throw new NotFoundError(
+              `Resource type with ID ${resourceCost.resourceTypeId}`,
+              resourceCost.resourceTypeId
             );
           }
         }
@@ -99,33 +108,14 @@ export class ChantierService {
    * Get chantiers by town with resource costs included
    */
   async getChantiersByTown(townId: string) {
-    return await prisma.chantier.findMany({
-      where: { townId },
-      include: {
-        resourceCosts: {
-          include: {
-            resourceType: true,
-          },
-        },
-      },
-      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    });
+    return await this.chantierRepo.findAllByTown(townId);
   }
 
   /**
    * Get a single chantier by ID with resource costs
    */
   async getChantierById(chantierId: string) {
-    return await prisma.chantier.findUnique({
-      where: { id: chantierId },
-      include: {
-        resourceCosts: {
-          include: {
-            resourceType: true,
-          },
-        },
-      },
-    });
+    return await this.chantierRepo.findById(chantierId);
   }
 
   /**
@@ -146,11 +136,11 @@ export class ChantierService {
       });
 
       if (!chantier) {
-        throw new Error("Chantier not found");
+        throw new NotFoundError("Chantier", chantierId);
       }
 
       if (chantier.status === ChantierStatus.COMPLETED) {
-        throw new Error("This chantier is already completed");
+        throw new BadRequestError("This chantier is already completed");
       }
 
       // Check character exists and is not dead
@@ -166,11 +156,11 @@ export class ChantierService {
       });
 
       if (!character) {
-        throw new Error("Character not found");
+        throw new NotFoundError("Character", characterId);
       }
 
       if (character.isDead) {
-        throw new Error("This character is dead");
+        throw new BadRequestError("This character is dead");
       }
 
       // Block if character is in a DEPARTED expedition
@@ -179,18 +169,18 @@ export class ChantierService {
       );
 
       if (inDepartedExpedition) {
-        throw new Error("You are on expedition and cannot access city chantiers");
+        throw new BadRequestError("You are on expedition and cannot access city chantiers");
       }
 
       // Check character is in the same town as the chantier
       if (character.townId !== chantier.townId) {
-        throw new Error("Character is not in the same town as this chantier");
+        throw new BadRequestError("Character is not in the same town as this chantier");
       }
 
       // Validate contributions and check town has enough resources
       for (const contribution of contributions) {
         if (contribution.quantity <= 0) {
-          throw new Error("Contribution quantity must be positive");
+          throw new BadRequestError("Contribution quantity must be positive");
         }
 
         // Find the corresponding resource cost
@@ -199,7 +189,7 @@ export class ChantierService {
         );
 
         if (!resourceCost) {
-          throw new Error(
+          throw new BadRequestError(
             `This chantier does not require resource type ID ${contribution.resourceTypeId}`
           );
         }
@@ -208,27 +198,21 @@ export class ChantierService {
         const remainingNeeded =
           resourceCost.quantityRequired - resourceCost.quantityContributed;
         if (contribution.quantity > remainingNeeded) {
-          throw new Error(
+          throw new BadRequestError(
             `Cannot contribute ${contribution.quantity} of resource type ID ${contribution.resourceTypeId}. Only ${remainingNeeded} needed.`
           );
         }
 
         // Check town stock
         const townStock = await tx.resourceStock.findUnique({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: chantier.townId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", chantier.townId, contribution.resourceTypeId),
         });
 
         if (!townStock || townStock.quantity < contribution.quantity) {
           const resourceType = await tx.resourceType.findUnique({
             where: { id: contribution.resourceTypeId },
           });
-          throw new Error(
+          throw new BadRequestError(
             `Not enough ${resourceType?.name || "resources"} in town stock`
           );
         }
@@ -238,13 +222,7 @@ export class ChantierService {
       for (const contribution of contributions) {
         // Deduct from town
         await tx.resourceStock.update({
-          where: {
-            locationType_locationId_resourceTypeId: {
-              locationType: "CITY",
-              locationId: chantier.townId,
-              resourceTypeId: contribution.resourceTypeId,
-            },
-          },
+          where: ResourceQueries.stockWhere("CITY", chantier.townId, contribution.resourceTypeId),
           data: {
             quantity: { decrement: contribution.quantity },
           },
@@ -303,9 +281,7 @@ export class ChantierService {
         where: { id: chantierId },
         include: {
           resourceCosts: {
-            include: {
-              resourceType: true,
-            },
+            ...ResourceQueries.withResourceType(),
           },
         },
       });

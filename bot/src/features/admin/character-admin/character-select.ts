@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   StringSelectMenuInteraction,
   ButtonInteraction,
@@ -6,16 +7,20 @@ import { apiService } from "../../../services/api";
 import { logger } from "../../../services/logger";
 import { createSuccessEmbed, createErrorEmbed, createInfoEmbed } from "../../../utils/embeds";
 import type { Character } from "../character-admin.types";
+import type { ActionPointsResponse } from "../../users/users.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
   createStatsModal,
   createAdvancedStatsModal,
   createCharacterDetailsContent,
   createCharacterActionButtons,
+  createAdminProfileEmbed,
 } from "../character-admin.components";
+import { getCharacterCapabilities } from "../../../services/capability.service";
 
 /**
  * Gère la sélection d'un personnage dans le menu déroulant.
+ * Affiche l'embed profil complet avec les boutons admin.
  */
 export async function handleCharacterSelect(
   interaction: StringSelectMenuInteraction
@@ -32,14 +37,56 @@ export async function handleCharacterSelect(
     return;
   }
 
-  const content = createCharacterDetailsContent(character);
-  const buttonRows = createCharacterActionButtons(character);
+  try {
+    logger.info("Character data received:", {
+      hungerLevel: character.hungerLevel,
+      hungerState: (character as any).hungerState,
+      hunger: (character as any).hunger,
+      allKeys: Object.keys(character).filter(k => k.includes('hunger') || k.includes('Hunger')),
+    });
 
-  await interaction.reply({
-    content,
-    components: buttonRows,
-    flags: ["Ephemeral"],
-  });
+    // Récupérer les points d'action du personnage
+    let actionPoints = 0;
+    try {
+      const apResponse = (await apiService.characters.getActionPoints(character.id)) as ActionPointsResponse;
+      // Utiliser actionPointsData?.points en fallback sur character.paTotal comme dans /profil
+      actionPoints = apResponse?.data?.points || (character as any).paTotal || 0;
+    } catch (error) {
+      // Fallback sur paTotal si l'API échoue
+      actionPoints = (character as any).paTotal || 0;
+      logger.debug("Erreur lors de la récupération des points d'action, utilisant paTotal:", { error });
+    }
+
+    // Récupérer les capacités du personnage
+    let capabilities: any[] = [];
+    try {
+      capabilities = await getCharacterCapabilities(character.id);
+    } catch (error) {
+      logger.debug("Erreur lors de la récupération des capacités:", { error });
+    }
+
+    // Créer l'embed profil admin avec tous les détails
+    const enrichedCharacter = {
+      ...character,
+      actionPoints,
+      capabilities,
+    };
+
+    const embed = await createAdminProfileEmbed(enrichedCharacter);
+    const buttonRows = createCharacterActionButtons(character);
+
+    await interaction.reply({
+      embeds: [embed],
+      components: buttonRows,
+      flags: ["Ephemeral"],
+    });
+  } catch (error) {
+    logger.error("Erreur lors de la création du profil admin:", { error });
+    await interaction.reply({
+      content: "❌ Erreur lors de la création du profil admin.",
+      flags: ["Ephemeral"],
+    });
+  }
 }
 
 /**

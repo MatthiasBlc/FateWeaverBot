@@ -5,15 +5,18 @@
   "main": "dist/src/server.js",
   "scripts": {
     "devstart": "nodemon src/server.ts",
-    "start": "node dist/src/server.js",
+    "start": "node -r tsconfig-paths/register dist/src/server.js",
     "dev": "ts-node --transpile-only -r tsconfig-paths/register src/server.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:migrate:prod": "prisma migrate deploy && prisma db seed && node dist/src/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "start:migrate:prod": "prisma migrate deploy && prisma db seed && node -r tsconfig-paths/register dist/src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "tsx --tsconfig tsconfig.json prisma/seed.ts",
     "migrate:full": "prisma migrate dev && npm run prisma:seed",
     "postinstall": "prisma generate"
   },
@@ -21,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "sh scripts/seed-docker.sh"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -29,17 +32,20 @@
     "@types/express": "^4.17.19",
     "@types/express-session": "^1.17.10",
     "@types/http-errors": "^2.0.3",
+    "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.7",
     "@types/node": "^24.8.0",
+    "@types/supertest": "^6.0.3",
     "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",
     "eslint": "^8.51.0",
+    "jest": "^30.2.0",
     "nodemon": "^3.0.1",
     "prisma": "^5.5.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.20.6",
     "typescript": "^5.2.2"
   },
   "dependencies": {
@@ -56,6 +62,9 @@
     "express-session": "^1.17.3",
     "http-errors": "^2.0.0",
     "morgan": "^1.10.0",
-    "winston": "^3.18.3"
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.6",
+    "winston": "^3.18.3",
+    "zod": "^3.25.76"
   }
 }

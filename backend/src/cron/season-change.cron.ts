@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { CronJob } from 'cron';
-import { SeasonService } from '../services/season.service';
+import { container } from '../infrastructure/container';
 import { logger } from '../services/logger';
 
 const prisma = new PrismaClient();
@@ -13,10 +13,9 @@ async function checkAndUpdateSeason() {
   try {
     logger.info('Vérification du changement de saison...');
 
-    const seasonService = new SeasonService(prisma);
-    await seasonService.initialize();
+    await container.seasonService.initialize();
 
-    const result = await seasonService.checkAndUpdateSeason();
+    const result = await container.seasonService.checkAndUpdateSeason();
 
     if (result.changed && result.newSeason) {
       logger.info(`La saison a changé pour : ${result.newSeason.name}`);

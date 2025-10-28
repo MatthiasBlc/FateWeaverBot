@@ -15,6 +15,7 @@ import { replyEphemeral } from "../../../utils/interaction-helpers";
 import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
+import { getResourceEmoji } from "../../../services/emoji-cache";
 
 /**
  * Handler pour le bouton "Ajouter des ressources"
@@ -62,7 +63,7 @@ export async function handleStockAdminAddButton(interaction: any) {
       .setCustomId("stock_admin_add_select")
       .setPlaceholder("Sélectionnez le type de ressource à ajouter")
       .addOptions(
-        allResourceTypes.map((resourceType: any) => {
+        await Promise.all(allResourceTypes.map(async (resourceType: any) => {
           // Trouver le stock actuel de cette ressource dans la ville (sera 0 si n'existe pas)
           const currentStock = townResources?.find(
             (townResource: any) =>
@@ -70,14 +71,16 @@ export async function handleStockAdminAddButton(interaction: any) {
           );
           const currentQuantity = currentStock?.quantity || 0;
 
+          const emoji = await getResourceEmoji(resourceType.name, resourceType.emoji);
+
           return {
-            label: `${resourceType.emoji} ${resourceType.name}`,
+            label: `${emoji} ${resourceType.name}`,
             description: `Stock actuel: ${currentQuantity} unités${
               resourceType.description ? ` - ${resourceType.description}` : ""
             }`,
             value: resourceType.id.toString(),
           };
-        })
+        }))
       );
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js";
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -139,8 +139,17 @@ async function executeCooking(
   inputQuantity: number
 ) {
   try {
+    // Récupérer la capacité Cuisiner pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const cookingCapability = capabilities.find((cap: any) => cap.capability.name === "Cuisiner");
+
+    if (!cookingCapability) {
+      throw new Error("Capacité Cuisiner non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Cuisiner",
+      capabilityId: cookingCapability.capability.id,
       paToUse,
       inputQuantity,
     });
@@ -149,7 +158,7 @@ async function executeCooking(
 
     // Afficher le résultat
     if (result.publicMessage && interaction.guildId) {
-      await sendLogMessage(interaction.guildId, interaction.client, result.publicMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, result.publicMessage, characterId);
     }
 
     await interaction.editReply({

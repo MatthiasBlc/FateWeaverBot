@@ -174,9 +174,9 @@ export class DailyEventLogService {
   }
 
   /**
-   * Log a character catastrophic return event
+   * Log when a character cannot depart with expedition (at lock time)
    */
-  async logCharacterCatastrophicReturn(
+  async logCharacterCannotDepart(
     characterId: string,
     characterName: string,
     townId: string,
@@ -190,11 +190,38 @@ export class DailyEventLogService {
         eventType: DailyEventType.CHARACTER_CATASTROPHIC_RETURN,
         eventDate: today,
         townId,
-        description: `💀 **${characterName}** est rentré en catastrophe ! Raison : ${reason}`,
+        description: `😔 **${characterName}** se sent trop faible pour partir en expédition et reste en ville. Raison : ${reason}`,
         metadata: {
           characterId,
           characterName,
           reason,
+          context: 'pre-departure'
+        },
+      },
+    });
+  }
+
+  /**
+   * Log a character catastrophic return event (from active expedition)
+   */
+  async logCharacterCatastrophicReturn(
+    characterId: string,
+    characterName: string,
+    townId: string
+  ): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await prisma.dailyEventLog.create({
+      data: {
+        eventType: DailyEventType.CHARACTER_CATASTROPHIC_RETURN,
+        eventDate: today,
+        townId,
+        description: `❗ **${characterName}** est rentré en catastrophe !`,
+        metadata: {
+          characterId,
+          characterName,
+          context: 'from-expedition'
         },
       },
     });

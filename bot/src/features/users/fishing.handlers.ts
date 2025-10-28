@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -43,8 +43,17 @@ async function executeFishing(
   paToUse: number
 ) {
   try {
+    // Récupérer la capacité Pêcher pour obtenir son ID
+    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
+    const capabilities = capabilitiesResponse.data;
+    const fishingCapability = capabilities.find((cap: any) => cap.capability.name === "Pêcher");
+
+    if (!fishingCapability) {
+      throw new Error("Capacité Pêcher non trouvée");
+    }
+
     const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityName: "Pêcher",
+      capabilityId: fishingCapability.capability.id,
       paToUse,
     });
 
@@ -52,7 +61,7 @@ async function executeFishing(
 
     // Afficher le résultat
     if (result.publicMessage && interaction.guildId) {
-      await sendLogMessage(interaction.guildId, interaction.client, result.publicMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, result.publicMessage, characterId);
     }
 
     await interaction.editReply({
