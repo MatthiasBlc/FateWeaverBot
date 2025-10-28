@@ -1052,14 +1052,6 @@ export async function handleExpeditionChannelSelect(
       content: confirmMessage,
       components: [],
     });
-
-    // Log de l'action dans le channel global
-    const { sendLogMessage } = await import("../../utils/channels");
-    const logMessage = channelId
-      ? `📺 **${interaction.user.username}** a configuré le channel <#${channelId}> pour l'expédition **${expedition.name}**`
-      : `📺 **${interaction.user.username}** a désactivé le channel dédié pour l'expédition **${expedition.name}**`;
-
-    await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
   } catch (error) {
     logger.error("Error in handleExpeditionChannelSelect:", error);
     await interaction.editReply({
