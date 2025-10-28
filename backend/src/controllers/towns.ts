@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { NotFoundError, BadRequestError } from '../shared/errors';
 import { prisma } from "../util/db";
-import { HUNGER } from "@shared/constants/emojis";
+import { HUNGER } from "../../shared/constants/emojis";
 import { ResourceUtils } from "../shared/utils";
 import { ResourceQueries } from "../infrastructure/database/query-builders";
 import { dailyMessageService } from "../services/daily-message.service";
