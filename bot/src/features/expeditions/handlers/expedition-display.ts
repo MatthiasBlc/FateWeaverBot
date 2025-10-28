@@ -6,6 +6,7 @@ import {
   StringSelectMenuBuilder,
   type GuildMember,
   type ChatInputCommandInteraction,
+  TextChannel,
 } from "discord.js";
 import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
@@ -750,12 +751,28 @@ export async function handleExpeditionSetDirection(
       characterId
     );
 
+    const directionMessage = `✅ Direction définie : ${getDirectionEmoji(
+      direction
+    )} ${getDirectionText(direction)}`;
+
     await interaction.update({
-      content: `✅ Direction définie : ${getDirectionEmoji(
-        direction
-      )} ${getDirectionText(direction)}`,
+      content: directionMessage,
       components: [],
     });
+
+    // Send log to expedition dedicated channel if configured
+    try {
+      const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
+      if (expedition?.expeditionChannelId && expedition.status === "DEPARTED") {
+        const channel = await interaction.client.channels.fetch(expedition.expeditionChannelId);
+        if (channel instanceof TextChannel) {
+          await channel.send(directionMessage);
+        }
+      }
+    } catch (logError) {
+      logger.error("Error sending direction log to expedition channel:", logError);
+      // Don't fail the main operation if logging fails
+    }
   } catch (error: any) {
     console.error("Error setting direction:", error);
     await interaction.reply({
