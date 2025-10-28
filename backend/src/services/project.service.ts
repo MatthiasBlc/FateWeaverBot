@@ -212,6 +212,7 @@ class ProjectServiceClass {
           paRequired,
           paContributed: 0,
           outputResourceTypeId: blueprint.outputResourceTypeId,
+          outputObjectTypeId: blueprint.outputObjectTypeId,
           outputQuantity: blueprint.outputQuantity,
           status: ProjectStatus.ACTIVE,
           townId: blueprint.townId,
@@ -231,18 +232,9 @@ class ProjectServiceClass {
 
       // Use blueprint resource costs if available
       if (blueprint.blueprintResourceCosts.length > 0) {
-        // Copy blueprint costs as regular costs
+        // Copy blueprint costs as regular costs for the instance
+        // (les instances n'ont PAS besoin de blueprintResourceCosts car elles ne deviennent pas blueprints)
         await tx.projectResourceCost.createMany({
-          data: blueprint.blueprintResourceCosts.map((cost) => ({
-            projectId: newProject.id,
-            resourceTypeId: cost.resourceTypeId,
-            quantityRequired: cost.quantityRequired,
-            quantityProvided: 0,
-          })),
-        });
-
-        // Also create blueprint costs for the new project
-        await tx.projectBlueprintResourceCost.createMany({
           data: blueprint.blueprintResourceCosts.map((cost) => ({
             projectId: newProject.id,
             resourceTypeId: cost.resourceTypeId,
@@ -343,6 +335,19 @@ class ProjectServiceClass {
             } PA maximum`
           );
         }
+
+        // Vérifier que le personnage a assez de PA
+        if (character.paTotal < paAmount) {
+          throw new BadRequestError(
+            `Vous n'avez que ${character.paTotal} PA disponibles`
+          );
+        }
+
+        // Déduire les PA du personnage
+        await tx.character.update({
+          where: { id: characterId },
+          data: { paTotal: { decrement: paAmount } },
+        });
 
         await tx.project.update({
           where: { id: projectId },
@@ -526,6 +531,20 @@ class ProjectServiceClass {
               slotId: slot.id,
             };
           }
+        }
+
+        // Si le projet a des coûts blueprint ET n'est pas une instance d'un blueprint, le transformer en blueprint
+        // (les instances ne deviennent pas blueprints, seul le blueprint original reste disponible)
+        const isInstance = updatedProject!.originalProjectId !== null;
+        const hasBlueprintCosts =
+          updatedProject!.paBlueprintRequired !== null ||
+          (updatedProject!.blueprintResourceCosts && updatedProject!.blueprintResourceCosts.length > 0);
+
+        if (hasBlueprintCosts && !isInstance) {
+          await tx.project.update({
+            where: { id: projectId },
+            data: { isBlueprint: true },
+          });
         }
 
         const finalProject = await tx.project.findUnique({

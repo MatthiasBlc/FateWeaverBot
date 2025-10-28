@@ -436,6 +436,176 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton d'ajout de projet admin
+    this.registerHandler("project_admin_add", async (interaction) => {
+      try {
+        const { handleProjectAdminAddButton } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminAddButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin add button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage du formulaire de création.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton de modification de projet admin
+    this.registerHandler("project_admin_edit", async (interaction) => {
+      try {
+        const { handleProjectAdminEditButton } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminEditButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin edit button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage de la modification.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton de suppression de projet admin
+    this.registerHandler("project_admin_delete", async (interaction) => {
+      try {
+        const { handleProjectAdminDeleteButton } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminDeleteButton(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin delete button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'affichage de la suppression.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour la confirmation de suppression de projet admin
+    this.registerHandlerByPrefix("project_admin_delete_confirm", async (interaction) => {
+      try {
+        const { handleProjectAdminDeleteConfirm } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminDeleteConfirm(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin delete confirm:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la confirmation de suppression.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaires pour le flux de création de projet (multi-étapes)
+    this.registerHandlerByPrefix("project_add_object_category:", async (interaction) => {
+      try {
+        const { handleProjectAddObjectCategory } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddObjectCategory(interaction);
+      } catch (error) {
+        logger.error("Error handling project add object category:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la navigation dans les catégories.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_add_resource:", async (interaction) => {
+      try {
+        const { handleProjectAddAddResource } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddAddResource(interaction);
+      } catch (error) {
+        logger.error("Error handling project add resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_validate_costs:", async (interaction) => {
+      try {
+        const { handleProjectAddValidateCosts } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddValidateCosts(interaction);
+      } catch (error) {
+        logger.error("Error handling project validate costs:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la validation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_blueprint_no:", async (interaction) => {
+      try {
+        const { handleProjectAddBlueprintNo } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddBlueprintNo(interaction);
+      } catch (error) {
+        logger.error("Error handling project blueprint no:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la création.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_blueprint_yes:", async (interaction) => {
+      try {
+        const { handleProjectAddBlueprintYes } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddBlueprintYes(interaction);
+      } catch (error) {
+        logger.error("Error handling project blueprint yes:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la configuration.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_add_blueprint_resource:", async (interaction) => {
+      try {
+        const { handleProjectAddAddBlueprintResource } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddAddBlueprintResource(interaction);
+      } catch (error) {
+        logger.error("Error handling project add blueprint resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_finalize:", async (interaction) => {
+      try {
+        const { handleProjectAddFinalize } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddFinalize(interaction);
+      } catch (error) {
+        logger.error("Error handling project finalize:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la finalisation.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour le bouton "Participer" des chantiers
     this.registerHandler("chantier_participate", async (interaction) => {
       try {

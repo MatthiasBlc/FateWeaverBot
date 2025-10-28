@@ -51,6 +51,17 @@ export class ModalHandler {
   }
 
   /**
+   * Enregistre un gestionnaire pour tous les modals commençant par un préfixe
+   */
+  public registerHandlerByPrefix(
+    prefix: string,
+    handler: (interaction: ModalSubmitInteraction) => Promise<void>
+  ) {
+    this.handlers.set(`prefix:${prefix}`, handler);
+    logger.info(`Registered modal handler for prefix: ${prefix}`);
+  }
+
+  /**
    * Enregistre les gestionnaires par défaut
    *
    * ⚠️ ZONE D'AJOUT SÉCURISÉE :
@@ -342,6 +353,159 @@ export class ModalHandler {
 
     // =================== NOUVEAUX HANDLERS ===================
     // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
+
+    // Gestionnaire pour le modal d'ajout de projet admin (étape 1)
+    this.registerHandler("project_admin_add_step1_modal", async (interaction) => {
+      try {
+        const { handleProjectAdminAddStep1Modal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminAddStep1Modal(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin add step1 modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de la création du projet.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de la création du projet.",
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour les modals de modification de projet admin
+    this.registerHandler("project_admin_edit_modal", async (interaction) => {
+      try {
+        const { handleProjectAdminEditModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminEditModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin edit modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de la modification du projet.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de la modification du projet.",
+          });
+        }
+      }
+    });
+
+    // Gestionnaires pour le flux de création de projet (multi-étapes)
+    this.registerHandler("project_admin_add_step1_modal", async (interaction) => {
+      try {
+        const { handleProjectAdminAddStep1Modal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminAddStep1Modal(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin add step1 modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de la création du projet.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de la création du projet.",
+          });
+        }
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_quantity_modal:", async (interaction) => {
+      try {
+        const { handleProjectAddQuantityModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project add quantity modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du traitement.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors du traitement.",
+          });
+        }
+      }
+    });
+
+    // Note: project_add_pa_modal est géré par project_add_quantity_modal (PA + quantité combinés)
+
+    this.registerHandlerByPrefix("project_add_resource_quantity_modal:", async (interaction) => {
+      try {
+        const { handleProjectAddResourceQuantityModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddResourceQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project add resource quantity modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de l'ajout de ressource.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de l'ajout de ressource.",
+          });
+        }
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_blueprint_pa_modal:", async (interaction) => {
+      try {
+        const { handleProjectAddBlueprintPAModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddBlueprintPAModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project add blueprint PA modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors du traitement.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors du traitement.",
+          });
+        }
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_blueprint_resource_quantity_modal:", async (interaction) => {
+      try {
+        const { handleProjectAddBlueprintResourceQuantityModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddBlueprintResourceQuantityModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project add blueprint resource quantity modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+          });
+        }
+      }
+    });
+
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
 
@@ -400,7 +564,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'investissement dans les projets
-    this.registerHandler("invest_project_modal_", async (interaction) => {
+    this.registerHandlerByPrefix("invest_project_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
           "../features/projects/projects.handlers.js"
@@ -697,14 +861,17 @@ export class ModalHandler {
 
     logger.info(`Modal interaction received: ${customId}`);
 
-    // Essayer d'abord avec l'ID exact
+    // Chercher un gestionnaire exact
     let handler = this.handlers.get(customId);
 
-    // Si aucun gestionnaire trouvé et que l'ID commence par un préfixe connu, essayer avec le préfixe
+    // Si pas trouvé, chercher par préfixe
     if (!handler) {
-      for (const [prefix, registeredHandler] of this.handlers.entries()) {
-        if (customId.startsWith(prefix)) {
-          handler = registeredHandler;
+      for (const [key, handlerFn] of this.handlers.entries()) {
+        if (
+          key.startsWith("prefix:") &&
+          customId.startsWith(key.substring(7))
+        ) {
+          handler = handlerFn;
           break;
         }
       }
@@ -716,10 +883,7 @@ export class ModalHandler {
     }
 
     // Aucun gestionnaire trouvé
-    await interaction.reply({
-      content: `Modal non reconnu: ${customId}`,
-      flags: ["Ephemeral"],
-    });
+    logger.info(`No handler found for modal: ${customId}`);
     return false;
   }
 

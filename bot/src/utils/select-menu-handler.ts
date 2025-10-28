@@ -272,6 +272,114 @@ export class SelectMenuHandler {
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
 
+    // Gestionnaire pour les sélections de modification de projet admin
+    this.registerHandler("project_admin_edit_select", async (interaction) => {
+      try {
+        const { handleProjectAdminEditSelect } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminEditSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin edit select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour les sélections de suppression de projet admin
+    this.registerHandler("project_admin_delete_select", async (interaction) => {
+      try {
+        const { handleProjectAdminDeleteSelect } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAdminDeleteSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project admin delete select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaires pour le flux de création de projet (multi-étapes)
+    this.registerHandlerByPrefix("project_add_select_resource:", async (interaction) => {
+      try {
+        const { handleProjectAddSelectResource } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddSelectResource(interaction);
+      } catch (error) {
+        logger.error("Error handling project add select resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_select_object:", async (interaction) => {
+      try {
+        const { handleProjectAddSelectObject } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddSelectObject(interaction);
+      } catch (error) {
+        logger.error("Error handling project add select object:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_select_object_from_category:", async (interaction) => {
+      try {
+        const { handleProjectAddSelectObject } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddSelectObject(interaction);
+      } catch (error) {
+        logger.error("Error handling project add select object from category:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de l'objet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_select_cost_resource:", async (interaction) => {
+      try {
+        const { handleProjectAddSelectCostResource } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddSelectCostResource(interaction);
+      } catch (error) {
+        logger.error("Error handling project add select cost resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    this.registerHandlerByPrefix("project_add_select_blueprint_resource:", async (interaction) => {
+      try {
+        const { handleProjectAddSelectBlueprintResource } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddSelectBlueprintResource(interaction);
+      } catch (error) {
+        logger.error("Error handling project add select blueprint resource:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection de la ressource blueprint.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour la sélection de ressource lors de la création de chantier
     this.registerHandler("chantier_select_resource", async (interaction) => {
       try {

@@ -227,9 +227,9 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
       const projectsText = listeProjects
         .map((project) => {
           // Craft types emojis + libellés
-          const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
+          const craftEmojis = project.craftTypes.map((ct: any) => getCraftTypeEmoji(ct.craftType || ct)).join("");
           const craftNames = project.craftTypes
-            .map((craftType) => getCraftDisplayName(craftType))
+            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
             .filter(Boolean)
             .join(", ");
 
@@ -372,7 +372,8 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     }
 
     // Récupérer les capacités craft du personnage
-    const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
+    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const capabilities = normalizeCapabilities(rawCapabilities);
     const craftsFromCapabilities = capabilities
       .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
       .filter((entry) => entry.craft !== undefined);
@@ -422,7 +423,7 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
         sortedProjects.map((project) => ({
           label: project.name,
           description: `${project.paContributed}/${project.paRequired} PA - ${project.craftTypes
-            .map((craftType) => getCraftDisplayName(craftType))
+            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
             .join(", ")}`,
           value: project.id,
         }))
@@ -771,7 +772,7 @@ export async function handleRestartBlueprintButton(interaction: ButtonInteractio
 
     // Restart blueprint
     const newProject = await apiService.projects.restartBlueprint(
-      parseInt(projectId),
+      projectId,
       interaction.user.id
     );
 
@@ -850,7 +851,8 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     }
 
     // Récupérer les capacités du personnage
-    const capabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as Capability[];
+    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const capabilities = normalizeCapabilities(rawCapabilities);
 
     // Filtrer les capacités craft
     const craftsFromCapabilities = capabilities
@@ -909,9 +911,9 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
       const projectsText = listeProjects
         .map((project) => {
           // Craft types emojis + libellés
-          const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
+          const craftEmojis = project.craftTypes.map((ct: any) => getCraftTypeEmoji(ct.craftType || ct)).join("");
           const craftNames = project.craftTypes
-            .map((craftType) => getCraftDisplayName(craftType))
+            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
             .filter(Boolean)
             .join(", ");
 

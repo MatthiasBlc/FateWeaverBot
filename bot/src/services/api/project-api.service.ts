@@ -54,6 +54,27 @@ export class ProjectAPIService extends BaseAPIService {
   }
 
   /**
+   * Met à jour un projet existant
+   */
+  public async updateProject(
+    id: string,
+    updateData: {
+      name?: string;
+      paRequired?: number;
+      craftTypes?: string[];
+      outputResourceTypeId?: number;
+      outputObjectTypeId?: number;
+      outputQuantity?: number;
+      resourceCosts?: { resourceTypeId: number; quantityRequired: number }[];
+      paBlueprintRequired?: number;
+      blueprintResourceCosts?: { resourceTypeId: number; quantityRequired: number }[];
+    }
+  ) {
+    const response = await this.api.put(`/projects/${id}`, updateData);
+    return response.data;
+  }
+
+  /**
    * Supprime un projet par son ID
    */
   public async deleteProject(id: string) {
@@ -71,7 +92,7 @@ export class ProjectAPIService extends BaseAPIService {
     resourceContributions?: { resourceTypeId: number; quantity: number }[]
   ) {
     const response = await this.api.post(
-      `/characters/${characterId}/projects/${projectId}/contribute`,
+      `/projects/characters/${characterId}/projects/${projectId}/contribute`,
       {
         paAmount: paAmount || 0,
         resourceContributions: resourceContributions || []
@@ -83,7 +104,7 @@ export class ProjectAPIService extends BaseAPIService {
   /**
    * Redémarre un blueprint pour créer un nouveau projet
    */
-  public async restartBlueprint(projectId: number, createdBy: string): Promise<Project> {
+  public async restartBlueprint(projectId: string, createdBy: string): Promise<Project> {
     const response = await this.api.post(`/projects/${projectId}/restart`, { createdBy });
     return response.data;
   }
