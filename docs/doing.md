@@ -8,8 +8,7 @@ docker compose exec -T backenddev npx ts-node /app/src/scripts/debug-pa-regen.ts
 A l'image du message de log public pour @manger, il faut faire la même chose pour tout les messages de log qui peuvent être envoyés par un personnage en expédition DEPARTED pour qu'ils soient bien envoyés dans le channel dédié (configuré par expedition-admin)
 (exemple messages de retour d'urgence)
 
-WTF ?
-Lorsque le retour d'urgence a son seuil atteint, remet en place le timer avant le retour qui était en place dans des commits précédents (calcul du timer avant le retour soir 8h00 le lendemain matin)
+Lorsque le retour d'urgence a son seuil atteint, remet en place le timer dans le résumé d'expédition /expedition (si le character est en DEPARTED) avant le retour qui était en place dans des commits précédents (calcul du timer avant le retour soir 8h00 le lendemain matin)
 
 ---
 
