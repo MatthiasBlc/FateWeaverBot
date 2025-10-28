@@ -45,6 +45,9 @@ export interface ExpeditionWithDetails extends Expedition {
   currentDayDirection: Direction | null;
   directionSetBy: string | null;
   directionSetAt: Date | null;
+  expeditionChannelId: string | null;
+  channelConfiguredAt: Date | null;
+  channelConfiguredBy: string | null;
 }
 
 export class ExpeditionService {
@@ -355,6 +358,9 @@ export class ExpeditionService {
       currentDayDirection: expedition.currentDayDirection,
       directionSetBy: expedition.directionSetBy,
       directionSetAt: expedition.directionSetAt,
+      expeditionChannelId: expedition.expeditionChannelId,
+      channelConfiguredAt: expedition.channelConfiguredAt,
+      channelConfiguredBy: expedition.channelConfiguredBy,
       town: expedition.town,
       members: expedition.members,
     };
