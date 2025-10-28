@@ -7,7 +7,7 @@ import { CapabilityService } from "../capability.service";
 import { CharacterRepository } from "../../domain/repositories/character.repository";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { NotFoundError, BadRequestError } from '../../shared/errors';
-import { CHARACTER } from "@shared/index";
+import { CHARACTER } from '../../../shared/index';
 
 const prisma = new PrismaClient();
 

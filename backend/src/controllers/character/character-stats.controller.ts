@@ -7,7 +7,7 @@ import { notifyAgonyEntered } from "../../util/agony-notification";
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { ResourceQueries } from "../../infrastructure/database/query-builders/resource.queries";
 import { ResourceUtils } from "../../shared/utils";
-import { CAPABILITIES, CHARACTER, RESOURCES } from "@shared/index";
+import { CAPABILITIES, CHARACTER, RESOURCES } from '../../../shared/index';
 
 export const eatFood: RequestHandler = async (req, res, next) => {
   try {
