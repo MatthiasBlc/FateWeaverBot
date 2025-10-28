@@ -556,8 +556,10 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
       const objectsText = objects
         .map(
-          (obj: any) =>
-            `**${obj.name}**${obj.description ? ` • ${obj.description}` : ""}`
+          (obj: any) => {
+            const countText = obj.count > 1 ? ` (x${obj.count})` : "";
+            return `**${obj.name}**${countText}${obj.description ? ` • ${obj.description}` : ""}`;
+          }
         )
         .join("\n");
 

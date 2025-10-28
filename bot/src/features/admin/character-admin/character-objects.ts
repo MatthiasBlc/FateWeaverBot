@@ -37,7 +37,10 @@ export async function handleObjectsButton(
       content += "*Aucun objet pour le moment.*\n\n";
     } else {
       content += currentObjects
-        .map((obj: ObjectType) => `• **${obj.name}**${obj.description ? `\n  ${obj.description}` : ''}`)
+        .map((obj: any) => {
+          const countText = obj.count > 1 ? ` (x${obj.count})` : '';
+          return `• **${obj.name}**${countText}${obj.description ? `\n  ${obj.description}` : ''}`;
+        })
         .join('\n') + '\n\n';
     }
 
@@ -100,30 +103,19 @@ export async function handleAddObjects(
   try {
     await interaction.deferReply({ flags: ["Ephemeral"] });
 
-    // Récupérer tous les objets et ceux du personnage
-    const [allObjectsResponse, currentObjectsResponse] = await Promise.all([
-      httpClient.get('/objects'),
-      httpClient.get(`/characters/${character.id}/objects`)
-    ]);
-
+    // Récupérer tous les objets disponibles
+    const allObjectsResponse = await httpClient.get('/objects');
     const allObjects = allObjectsResponse.data || [];
-    const currentObjects = currentObjectsResponse.data || [];
-    const currentObjectIds = new Set(currentObjects.map((o: ObjectType) => o.id));
 
-    // Filtrer pour ne garder que les objets non possédés
-    const availableObjects = allObjects.filter(
-      (obj: any) => !currentObjectIds.has(obj.id)
-    );
-
-    if (availableObjects.length === 0) {
+    if (allObjects.length === 0) {
       await interaction.editReply({
-        content: `ℹ️ **${character.name}** possède déjà tous les objets disponibles.`,
+        content: `ℹ️ Aucun objet disponible dans le système.`,
       });
       return;
     }
 
-    // Catégoriser les objets
-    const categories = categorizeObjects(availableObjects);
+    // Catégoriser les objets (on ne filtre plus les objets déjà possédés)
+    const categories = categorizeObjects(allObjects);
 
     // Créer les boutons de catégories
     const categoryButtons = [];
@@ -163,7 +155,7 @@ export async function handleAddObjects(
     const buttonRow = createActionButtons(categoryButtons);
 
     await interaction.editReply({
-      content: `## ➕ Ajouter des objets à ${character.name}\n\n**${availableObjects.length} objets disponibles**\n\nChoisissez une catégorie :`,
+      content: `## ➕ Ajouter des objets à ${character.name}\n\n**${allObjects.length} objets disponibles**\n\nChoisissez une catégorie :`,
       components: [buttonRow],
     });
   } catch (error) {
@@ -275,20 +267,18 @@ export async function handleObjectCategory(
   try {
     await interaction.deferUpdate();
 
-    // Récupérer tous les objets et ceux du personnage
-    const [allObjectsResponse, currentObjectsResponse] = await Promise.all([
-      httpClient.get('/objects'),
-      httpClient.get(`/characters/${character.id}/objects`)
-    ]);
+    // Récupérer les objets selon l'action
+    let objectsToFilter: any[];
 
-    const allObjects = allObjectsResponse.data || [];
-    const currentObjects = currentObjectsResponse.data || [];
-    const currentObjectIds = new Set(currentObjects.map((o: ObjectType) => o.id));
-
-    // Filtrer selon l'action (add ou remove)
-    const objectsToFilter = action === 'add'
-      ? allObjects.filter((obj: any) => !currentObjectIds.has(obj.id))
-      : currentObjects;
+    if (action === 'add') {
+      // Pour l'ajout, on affiche tous les objets disponibles (même déjà possédés)
+      const allObjectsResponse = await httpClient.get('/objects');
+      objectsToFilter = allObjectsResponse.data || [];
+    } else {
+      // Pour la suppression, on affiche les objets possédés
+      const currentObjectsResponse = await httpClient.get(`/characters/${character.id}/objects`);
+      objectsToFilter = currentObjectsResponse.data || [];
+    }
 
     // Catégoriser
     const categories = categorizeObjects(objectsToFilter);
