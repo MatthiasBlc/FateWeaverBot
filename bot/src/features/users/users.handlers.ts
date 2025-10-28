@@ -170,6 +170,20 @@ export async function handleProfileCommand(interaction: any) {
           )) as ActionPointsResponse;
         const actionPointsData = actionPointsResponse.data;
 
+        // Vérifier si le personnage est en expédition LOCKED ou DEPARTED
+        let expeditionStatus: 'LOCKED' | 'DEPARTED' | null = null;
+        try {
+          const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
+          if (activeExpeditions && activeExpeditions.length > 0) {
+            const expedition = activeExpeditions[0];
+            if (expedition.status === 'LOCKED' || expedition.status === 'DEPARTED') {
+              expeditionStatus = expedition.status as 'LOCKED' | 'DEPARTED';
+            }
+          }
+        } catch (error) {
+          logger.debug("Could not fetch expedition status for character", { characterId: character.id, error });
+        }
+
         // Préparer les données pour l'affichage avec les rôles récupérés du personnage
         const profileData: ProfileData = {
           character: {
@@ -188,6 +202,7 @@ export async function handleProfileCommand(interaction: any) {
               costPA: cap.costPA,
               emojiTag: cap.emojiTag,
             })),
+            expeditionStatus, // Ajouter le statut d'expédition
           },
           actionPoints: {
             points: actionPointsData?.points || character.paTotal || 0,
@@ -569,7 +584,8 @@ async function createProfileEmbed(data: ProfileData): Promise<{
       data.actionPoints.points || 0, // Ajouter les PA actuels du personnage
       data.character.hp, // Ajouter les points de vie actuels du personnage
       data.character.hungerLevel, // Ajouter le niveau de faim actuel du personnage
-      data.character.isDead // Ajouter l'état mort du personnage
+      data.character.isDead, // Ajouter l'état mort du personnage
+      data.character.expeditionStatus // Ajouter le statut d'expédition
     );
     if (capabilityButtons) {
       components.push(...capabilityButtons); // Étendre le tableau
@@ -1204,7 +1220,8 @@ function createCapabilityButtons(
   currentPA: number,
   characterHp?: number,
   characterHungerLevel?: number,
-  characterIsDead?: boolean
+  characterIsDead?: boolean,
+  expeditionStatus?: 'LOCKED' | 'DEPARTED' | null
 ): ActionRowBuilder<ButtonBuilder>[] | null {
   if (!capabilities || capabilities.length === 0) {
     return null;
@@ -1255,8 +1272,12 @@ function createCapabilityButtons(
       const hasEnoughPA = currentPA >= cap.costPA;
       const isInAgony =
         (characterHp === 1 || characterHungerLevel === 0) && !characterIsDead;
+
+      // Vérifier si le personnage est en expédition LOCKED ou DEPARTED
+      const isInExpedition = expeditionStatus === 'LOCKED' || expeditionStatus === 'DEPARTED';
+
       const buttonStyle =
-        hasEnoughPA && !isInAgony ? ButtonStyle.Primary : ButtonStyle.Secondary;
+        hasEnoughPA && !isInAgony && !isInExpedition ? ButtonStyle.Primary : ButtonStyle.Secondary;
 
       // Construire le label du bouton
       const showPA = !capabilitiesWithPAMenu.includes(cap.name);
@@ -1269,8 +1290,8 @@ function createCapabilityButtons(
         .setStyle(buttonStyle)
         .setEmoji(getEmojiForCapability(cap.emojiTag));
 
-      // Désactiver le bouton si pas assez de PA ou si en agonie
-      if (!hasEnoughPA || isInAgony) {
+      // Désactiver le bouton si pas assez de PA, si en agonie, ou si en expédition
+      if (!hasEnoughPA || isInAgony || isInExpedition) {
         button.setDisabled(true);
       }
 

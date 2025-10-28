@@ -872,8 +872,137 @@ export class ExpeditionService {
   }
 
   /**
+   * Retourne une expédition avec pertes de ressources (pour retours d'urgence)
+   * Pour chaque type de ressource, perd un montant aléatoire entre 0 et la moitié (arrondie supérieure)
+   */
+  async returnExpeditionWithLosses(expeditionId: string): Promise<{
+    expedition: Expedition;
+    lostResources: Array<{ resourceName: string; lost: number; remaining: number }>;
+    returnedResources: Array<{ resourceName: string; quantity: number }>;
+  }> {
+    return await prisma.$transaction(async (tx) => {
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: {
+          id: true,
+          status: true,
+          name: true,
+          townId: true,
+        },
+      });
+
+      if (!expedition) {
+        throw new NotFoundError('Expedition', expeditionId);
+      }
+
+      if (expedition.status !== ExpeditionStatus.DEPARTED) {
+        throw new BadRequestError("Can only emergency return expeditions in DEPARTED status");
+      }
+
+      // Get expedition resources BEFORE processing losses
+      const expeditionResources = await tx.resourceStock.findMany({
+        where: {
+          locationType: "EXPEDITION",
+          locationId: expeditionId,
+        },
+        ...ResourceQueries.withResourceType(),
+      });
+
+      const lostResources: Array<{ resourceName: string; lost: number; remaining: number }> = [];
+      const returnedResources: Array<{ resourceName: string; quantity: number }> = [];
+
+      // Process each resource with random losses
+      for (const resource of expeditionResources) {
+        const originalQuantity = resource.quantity;
+
+        // Calculate maximum loss (half of quantity, rounded up)
+        const maxLoss = Math.ceil(originalQuantity / 2);
+
+        // Random loss between 0 and maxLoss (inclusive)
+        const lostQuantity = Math.floor(Math.random() * (maxLoss + 1));
+
+        // Calculate remaining quantity
+        const remainingQuantity = originalQuantity - lostQuantity;
+
+        lostResources.push({
+          resourceName: resource.resourceType.name,
+          lost: lostQuantity,
+          remaining: remainingQuantity,
+        });
+
+        if (remainingQuantity > 0) {
+          // Add remaining resources to town stock
+          await tx.resourceStock.upsert({
+            where: {
+              locationType_locationId_resourceTypeId: {
+                locationType: "CITY",
+                locationId: expedition.townId,
+                resourceTypeId: resource.resourceTypeId,
+              },
+            },
+            update: {
+              quantity: { increment: remainingQuantity },
+            },
+            create: {
+              locationType: "CITY",
+              locationId: expedition.townId,
+              resourceTypeId: resource.resourceTypeId,
+              quantity: remainingQuantity,
+            },
+          });
+
+          returnedResources.push({
+            resourceName: resource.resourceType.name,
+            quantity: remainingQuantity,
+          });
+        }
+
+        // Delete from expedition
+        await tx.resourceStock.delete({
+          where: {
+            locationType_locationId_resourceTypeId: {
+              locationType: "EXPEDITION",
+              locationId: expeditionId,
+              resourceTypeId: resource.resourceTypeId,
+            },
+          },
+        });
+
+        logger.info(`Emergency return resource loss: ${resource.resourceType.name}`, {
+          expeditionId,
+          expeditionName: expedition.name,
+          original: originalQuantity,
+          lost: lostQuantity,
+          remaining: remainingQuantity,
+        });
+      }
+
+      // Remove all members from expedition
+      await tx.expeditionMember.deleteMany({
+        where: { expeditionId },
+      });
+
+      // Update expedition status
+      const updatedExpedition = await tx.expedition.update({
+        where: { id: expeditionId },
+        data: {
+          status: ExpeditionStatus.RETURNED,
+          returnAt: new Date(),
+        },
+      });
+
+      return {
+        expedition: updatedExpedition,
+        lostResources,
+        returnedResources,
+      };
+    });
+  }
+
+  /**
    * Force emergency return for all expeditions with pendingEmergencyReturn flag
    * Called by cron job
+   * Emergency returns incur random resource losses (0 to half of each resource type)
    */
   async forceEmergencyReturns(): Promise<number> {
     const expeditions = await prisma.expedition.findMany({
@@ -914,30 +1043,35 @@ export class ExpeditionService {
           continue;
         }
 
-        await this.returnExpedition(expedition.id);
+        // Use emergency return with resource losses
+        const result = await this.returnExpeditionWithLosses(expedition.id);
 
         // Clear votes after return
         await prisma.expeditionEmergencyVote.deleteMany({
           where: { expeditionId: expedition.id },
         });
 
-        // Log emergency return
-        const exp = await prisma.expedition.findUnique({
-          where: { id: expedition.id },
-          select: { townId: true },
-        });
+        // Log emergency return with resource loss details
+        await dailyEventLogService.logExpeditionEmergencyReturn(
+          expedition.id,
+          expedition.name,
+          result.expedition.townId
+        );
 
-        if (exp) {
-          await dailyEventLogService.logExpeditionEmergencyReturn(
-            expedition.id,
-            expedition.name,
-            exp.townId
-          );
+        // Log detailed resource losses
+        if (result.lostResources.length > 0) {
+          logger.info("expedition_emergency_return_losses", {
+            expeditionId: expedition.id,
+            expeditionName: expedition.name,
+            losses: result.lostResources,
+          });
         }
 
         logger.info("expedition_emergency_return_executed", {
           expeditionId: expedition.id,
           expeditionName: expedition.name,
+          totalLostResources: result.lostResources.length,
+          totalReturnedResources: result.returnedResources.length,
         });
 
         returnedCount++;
@@ -1207,6 +1341,75 @@ export class ExpeditionService {
         expeditionName: expedition.name,
         characterId,
       });
+    });
+  }
+
+  /**
+   * Remove a member before departure (during lock phase)
+   * Used when a character is too weak to depart
+   */
+  async removeMemberBeforeDeparture(
+    expeditionId: string,
+    characterId: string,
+    reason: string
+  ): Promise<{ characterName: string; townId: string }> {
+    return await prisma.$transaction(async (tx) => {
+      // Check if expedition exists and is PLANNING
+      const expedition = await tx.expedition.findUnique({
+        where: { id: expeditionId },
+        select: { id: true, status: true, name: true, townId: true },
+      });
+
+      if (!expedition) {
+        throw new NotFoundError('Expedition', expeditionId);
+      }
+
+      if (expedition.status !== ExpeditionStatus.PLANNING) {
+        throw new BadRequestError("Can only remove members before departure from PLANNING expeditions");
+      }
+
+      // Check if character is a member
+      const member = await tx.expeditionMember.findFirst({
+        where: {
+          expeditionId,
+          characterId,
+        },
+        include: {
+          character: {
+            select: { id: true, name: true, userId: true },
+          },
+        },
+      });
+
+      if (!member) {
+        throw new BadRequestError("Character is not a member of this expedition");
+      }
+
+      // Remove member from expedition (no PA penalty before departure)
+      await tx.expeditionMember.delete({
+        where: { id: member.id },
+      });
+
+      // Log that character cannot depart
+      await dailyEventLogService.logCharacterCannotDepart(
+        characterId,
+        member.character.name,
+        expedition.townId,
+        reason
+      );
+
+      logger.info("character_cannot_depart", {
+        expeditionId,
+        expeditionName: expedition.name,
+        characterId,
+        characterName: member.character.name,
+        reason,
+      });
+
+      return {
+        characterName: member.character.name,
+        townId: expedition.townId,
+      };
     });
   }
 

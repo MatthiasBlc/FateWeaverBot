@@ -60,13 +60,13 @@ export async function lockExpeditionsDue() {
             else if (character.pm <= 1) reason = "dépression/déprime";
 
             try {
-              await container.expeditionService.removeMemberCatastrophic(
+              await container.expeditionService.removeMemberBeforeDeparture(
                 expedition.id,
                 character.id,
                 reason
               );
               membersRemovedCount++;
-              logger.info(`Member ${character.name} removed from expedition ${expedition.name} during lock (${reason})`);
+              logger.info(`Member ${character.name} too weak to depart from expedition ${expedition.name} (${reason})`);
             } catch (error) {
               logger.error(`Failed to remove member ${character.id} from expedition ${expedition.id}:`, { error });
             }
