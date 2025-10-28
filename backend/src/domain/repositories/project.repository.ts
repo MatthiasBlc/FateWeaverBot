@@ -26,7 +26,9 @@ export class ProjectRepository {
         },
         blueprintResourceCosts: {
           ...ResourceQueries.withResourceType()
-        }
+        },
+        outputResourceType: true,
+        outputObjectType: true
       }
     });
   }
@@ -42,15 +44,7 @@ export class ProjectRepository {
   async findByTown(townId: string) {
     return this.prisma.project.findMany({
       where: { townId },
-      include: {
-        craftTypes: true,
-        resourceCosts: {
-          ...ResourceQueries.withResourceType()
-        },
-        blueprintResourceCosts: {
-          ...ResourceQueries.withResourceType()
-        }
-      },
+      ...ProjectQueries.fullInclude(),
       orderBy: [
         { status: "asc" },
         { createdAt: "asc" }
@@ -69,12 +63,7 @@ export class ProjectRepository {
           }
         }
       },
-      include: {
-        craftTypes: true,
-        resourceCosts: {
-          ...ResourceQueries.withResourceType()
-        }
-      },
+      ...ProjectQueries.fullInclude(),
       orderBy: {
         createdAt: "asc"
       }

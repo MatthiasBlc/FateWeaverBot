@@ -168,7 +168,7 @@ model Project {
   paContributed          Int                            @default(0) @map("pa_contributed") // PA déjà investis
   outputResourceTypeId   Int?                           @map("output_resource_type_id") // Ressource produite
   outputQuantity         Int                            @map("output_quantity") // Quantité produite
-  outputObjectTypeId     Int?                           @map("output_object_type_id") // NOUVEAU
+  outputObjectTypeId     Int?                           @map("output_object_type_id") // Objet produit (optionnel)
   status                 ProjectStatus                  @default(ACTIVE)
   town                   Town                           @relation(fields: [townId], references: [id], onDelete: Cascade)
   townId                 String                         @map("town_id")

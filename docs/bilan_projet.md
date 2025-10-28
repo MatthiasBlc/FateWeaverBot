@@ -2,7 +2,7 @@
 
 Ce rapport synthétise le fonctionnement réel constaté dans le code de l’application (backend + bot) au 2025-10-28. Il couvre:
 
-- Les capacités d’artisanat: Tisser, Forger, Menuiser (souvent appelée « Travailler le bois » dans la doc)
+- Les capacités d’artisanat: Tisser, Forger, Travailler le bois (alias `CraftType.MENUISER`)
 - Le système de Projets: modèle de données, endpoints backend, intégration côté bot, flux utilisateur
 - Les incohérences détectées et recommandations
 
@@ -17,12 +17,12 @@ Sources principales analysées:
 
 ## 1) Résumé exécutif
 
-- Les « capacités d’artisanat » Tisser, Forger et Menuiser ne sont PAS exécutées comme les autres capacités (Chasser, Cueillir, etc.). Elles sont gérées exclusivement via le système de Projets.
+- Les « capacités d’artisanat » Tisser, Forger et Travailler le bois ne sont PAS exécutées comme les autres capacités (Chasser, Cueillir, etc.). Elles sont gérées exclusivement via le système de Projets.
 - L’énumération de référence est `CraftType` définie dans Prisma: `TISSER`, `FORGER`, `MENUISER`.
 - Le backend expose des endpoints pour créer, lister, contribuer (PA/ressources) et redémarrer des « blueprints » de projets.
 - Le bot fournit l’UX Discord: consulter projets liés aux crafts du personnage, contribuer via modal (PA + ressources), créer un projet (admin) avec craft types et coûts.
-- « Travailler le bois » dans la documentation correspond au CraftType `MENUISER` dans le code.
-- Plusieurs décalages existent entre la définition du backend et celle du bot (ex: validators Zod vs payload effectif; support des outputs « objet » côté bot mais pas encore géré au backend lors de la complétion).
+- « Travailler le bois » dans la documentation correspond au CraftType `MENUISER` dans le code (alias géré par les maps d’affichage et de normalisation).
+- Les validators et contrôleurs backend, ainsi que la complétion côté service, sont désormais alignés avec le bot (alias « Travailler le bois » acceptés, récompense objet ou ressource traitée).
 
 ---
 
@@ -33,7 +33,7 @@ Sources principales analysées:
 - Les noms en jeu:
   - Tisser → `CraftType.TISSER`
   - Forger → `CraftType.FORGER`
-  - Menuiser (anciennement « Travailler le bois » dans la doc) → `CraftType.MENUISER`
+  - Travailler le bois (alias interne `CraftType.MENUISER`)
 
 Points clés:
 
@@ -43,7 +43,7 @@ Points clés:
 Références code:
 
 - Dépréciation craft direct: backend/src/services/capability.service.ts → `executeCraft(...)` lève une erreur.
-- Filtrage bot par capacités: bot/src/features/projects/projects.handlers.ts (recherche des capacités "Tisser", "Forger", "Menuiser"), mapping vers `TISSER|FORGER|MENUISER`.
+- Filtrage bot par capacités: bot/src/features/projects/projects.handlers.ts (normalisation via `toCraftEnum` acceptant « Tisser », « Forger », « Travailler le bois », etc.), mapping vers `TISSER|FORGER|MENUISER`.
 
 ---
 
@@ -90,7 +90,7 @@ Remarque historique:
     - Ressources: décrémente stock ville (`ResourceStock`) et incrémente `quantityContributed` sans dépasser `quantityRequired`.
     - Si PA et ressources sont complètes → passe `status=COMPLETED` et crédite la sortie:
       - Si `outputResourceTypeId` non null → `ResourceStock` de ville +`outputQuantity`.
-      - TODO explicite: si `outputObjectTypeId` non null, à implémenter (ex: inventaire personnage).
+      - Si `outputObjectTypeId` non null → ajoute l’objet à l’inventaire du personnage finisseur (ou applique les conversions ressources associées à l’objet).
   - `getAllProjectsForTown(townId)`
   - `deleteProject(projectId)` avec garde-fous (pas terminé, pas de contributions)
   - Blueprints:
@@ -102,7 +102,7 @@ Remarque historique:
 
 - **Récompense obligatoire à la création**:
   - Ressource → ajoutée au stock de la ville à la fin.
-  - Objet → ajouté à l’inventaire de la personne qui termine le projet.
+  - Objet → ajouté à l’inventaire de la personne qui termine le projet (ou distribué sous forme de conversions si l’objet en possède).
 - **Coûts définis dès la création**:
   - Coûts du projet: PA requis et 0..X ressources (chaque ressource peut être à 0..X).
   - Coûts du blueprint: PA requis et 0..X ressources (peuvent différer des coûts projet).
@@ -127,17 +127,15 @@ Remarque historique:
   - POST `/projects/:projectId/restart` → redémarrer un blueprint
 
 - Validations (Zod): backend/src/api/validators/project.schema.ts
-  - Décalage relevé: `CreateProjectSchema` attend `{ townId, blueprintId, characterId }` (obligatoires) alors que `controllers/projects.ts::createProject` consomme `{ name, paRequired, outputResourceTypeId, outputQuantity, townId, createdBy, craftTypes, resourceCosts }`.
+  - `CreateProjectSchema` reflète désormais la charge utile réelle (nom, PA, alias craft, récompense ressource/objet, coûts projet et blueprint).
   - Les autres schémas (Get, Contribute, Delete, Restart) correspondent aux routes.
-
-Conclusion: le validator de création ne matche pas l’implémentation actuelle du contrôleur. À corriger.
 
 ### 3.4 Intégration côté bot (Discord)
 
 - Consultation des projets par un joueur: `handleProjectsCommand`
 
   - Récupère la ville (via guild), le personnage actif, et ses capacités.
-  - Filtre les capacités pour ne garder que « Tisser », « Forger », « Menuiser ».
+  - Filtre les capacités pour ne garder que « Tisser », « Forger », « Travailler le bois ».
   - Map vers `CraftType` puis appelle `apiService.projects.getProjectsByCraftType` pour chacune.
   - Regroupe, déduplique, groupe par statut, et affiche un embed.
   - Ajoute boutons:
@@ -181,7 +179,7 @@ Conclusion: le validator de création ne matche pas l’implémentation actuelle
   - Si plusieurs crafts sont attribués au projet/blueprint, l’accès est accordé à toute personne ayant au moins l’un de ces crafts (OU).
 - Complétion et récompense:
   - Ressource: créditée au stock de la ville à la fin.
-  - Objet: crédité à l’inventaire du personnage qui termine le projet (règle confirmée; implémentation système à finaliser si nécessaire).
+  - Objet: crédité à l’inventaire du personnage qui termine le projet (implémentation active, conversions gérées si l’objet transforme des ressources).
 - Blueprints:
   - Relançables indéfiniment après complétion du projet initial.
   - **Une seule instance active** par blueprint simultanément.
@@ -195,8 +193,8 @@ Conclusion: le validator de création ne matche pas l’implémentation actuelle
 - Support des objets en sortie:
   - Le schéma et le bot gèrent `outputObjectTypeId`, mais le contrôleur de création ne le prend pas en compte et la complétion n’ajoute pas encore l’objet (TODO dans `ProjectService`).
 - Nommage craft bois:
-  - Code standardisé: `MENUISER`.
-  - Docs/typages: quelques occurrences encore de `TRAVAILLER_LE_BOIS` (ex: bot/src/features/projects/projects.types.ts). À aligner.
+  - Code standardisé: `TRAVAILLER_LE_BOIS`.
+  - Docs/typages: quelques occurrences encore de `MENUISER` (ex: bot/src/features/projects/projects.types.ts). À aligner.
 - Exécution craft dépréciée:
   - `CapabilityService.executeCraft` est obsolète et lève systématiquement une erreur; s’assurer qu’aucun appel côté bot/clients n’y pointe encore.
 
@@ -210,7 +208,7 @@ Conclusion: le validator de création ne matche pas l’implémentation actuelle
 - Implémenter la récompense objet lors de la complétion:
   - Si `outputObjectTypeId` ≠ null → décider du destinataire (ville vs inventaire créateur vs inventaires d’artisans) et implémenter en base (`CharacterInventorySlot`) selon le design voulu.
 - Uniformiser le vocabulaire:
-  - Remplacer toutes les mentions de `TRAVAILLER_LE_BOIS` par `MENUISER` côté bot/types et docs.
+  - Remplacer toutes les mentions de `MENUISER` par `TRAVAILLER_LE_BOIS` côté bot/types et docs.
 - Tests/QA:
   - Cas limites de contributions (dépassement PA et ressources)
   - Contributions simultanées (transactions Prisma déjà utilisées)
@@ -221,14 +219,14 @@ Conclusion: le validator de création ne matche pas l’implémentation actuelle
 
 ## 8) Checklist de vérification (rapide)
 
-- Projets listés par craft du perso seulement (TISSER/FORGER/MENUISER) — OK
+- Projets listés par craft du perso seulement (TISSER/FORGER/TRAVAILLER_LE_BOIS) — OK
 - Contribution refuse si expédition `DEPARTED` — OK
 - Complétion crédite la ressource de sortie — OK
 - Création projet admin: support craftTypes multiples + coûts ressources — OK
 - Blueprints: restart crée copie ACTIVE avec coûts blueprint — OK
 - Incohérences validators/contrôleur — À corriger
 - Sortie objet: support schéma/UI, pas de crédit automatique — À implémenter
-- Vocabulaire bois: utiliser `MENUISER` partout — À aligner
+- Vocabulaire bois: utiliser `TRAVAILLER_LE_BOIS` partout — À aligner
 
 ## 9) Annexes — Références de code clés
 
@@ -241,20 +239,20 @@ Conclusion: le validator de création ne matche pas l’implémentation actuelle
 
 ## 10) Guide non-développeur — Flows et règles détaillées
 
-Ce guide explique le fonctionnement « comme dans un jeu », sans jargon technique. Il couvre les rôles, les étapes, les règles, et des exemples concrets pour Tisser, Forger, Menuiser.
+Ce guide explique le fonctionnement « comme dans un jeu », sans jargon technique. Il couvre les rôles, les étapes, les règles, et des exemples concrets pour Tisser, Forger, Travailler le bois.
 
 ### A. Concepts clés
 
 - **PA (Points d’Action)**: l’énergie d’un personnage pour participer à des projets.
 - **Ressources**: biens stockés par la ville (ex: Bois, Minerai) utilisés comme coûts ou obtenus en récompense.
-- **Capacités d’artisanat**: Tisser, Forger, Menuiser. Elles donnent le droit de contribuer aux projets correspondants.
+- **Capacités d’artisanat**: Tisser, Forger, Travailler le bois. Elles donnent le droit de contribuer aux projets correspondants.
 - **Projet**: une tâche artisanale collaborative. Il demande un total de PA et parfois des ressources pour produire un résultat.
 - **Blueprint (Plan)**: un modèle de projet réutilisable. On peut le redémarrer pour lancer une nouvelle copie du projet.
 
 ### B. Rôles et responsabilités
 
 - **Joueur artisan**:
-  - Voit les projets compatibles avec ses crafts (Tisser/Forger/Menuiser).
+  - Voit les projets compatibles avec ses crafts (Tisser/Forger/Travailler le bois).
   - Contribue des PA et/ou dépose des ressources depuis le stock de la ville.
 - **Administration (MJ/Staff)**:
   - Crée les projets (nom, crafts autorisés, PA requis, coûts, résultat).
@@ -284,7 +282,7 @@ Ce guide explique le fonctionnement « comme dans un jeu », sans jargon techniq
 ### D. Parcours administration — création et gestion
 
 1. **Créer un projet**
-   - Choisir: nom, craft(s) autorisé(s) (Tisser/Forger/Menuiser), PA requis, résultat (ressource ou objet) et quantité, coûts en ressources.
+   - Choisir: nom, craft(s) autorisé(s) (Tisser/Forger/Travailler le bois), PA requis, résultat (ressource ou objet) et quantité, coûts en ressources.
 2. **Blueprints**
    - Optionnel: définir un plan réutilisable avec ses propres coûts/PA.
    - Une fois un blueprint en place, on peut le **redémarrer** pour créer une nouvelle instance « Active ».
@@ -312,7 +310,7 @@ Ce guide explique le fonctionnement « comme dans un jeu », sans jargon techniq
 - **Forger (FORGING)**
   - Idée: Transformer du Minerai en **Métal** via un projet de forge.
   - Exemple: « Forge de fortune » — 12 PA + 15 Minerai → 8 Métal.
-- **Menuiser (WOODWORKING)**
+- **Travailler le bois (WOODWORKING)**
   - Idée: Transformer du Bois en **Planches** via un atelier de menuiserie.
   - Exemple: « Atelier de menuiserie » — 8 PA + 12 Bois → 12 Planches.
 
@@ -329,7 +327,7 @@ Ce guide explique le fonctionnement « comme dans un jeu », sans jargon techniq
 - **Q: Que se passe-t-il si le stock de la ville est insuffisant ?**
   - R: La contribution en ressources est refusée pour la quantité excédentaire; ajustez à ce qui est disponible.
 - **Q: Qui reçoit la récompense ?**
-  - R: Par défaut, la ville reçoit la ressource. Pour les objets, la règle sera définie (à implémenter).
+  - R: Par défaut, la ville reçoit la ressource. Pour les objets, l’objet est ajouté à l’inventaire du personnage qui termine (ou décomposé automatiquement si l’objet représente un lot de ressources).
 - **Q: Peut-on arrêter un projet lancé ?**
   - R: On peut le supprimer seulement s’il n’a pas encore reçu de contributions et n’est pas terminé.
 - **Q: Puis-je contribuer en plusieurs fois ?**

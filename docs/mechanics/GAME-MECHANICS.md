@@ -260,7 +260,7 @@ Transform raw resources through artisan **Projects** (not raw crafting):
 | ------------ | ------- | -------- | -------------------------------------- |
 | **Tisser**   | Bois    | Tissu    | Create Project with CraftType.TISSER   |
 | **Forger**   | Minerai | Métal    | Create Project with CraftType.FORGER   |
-| **Menuiser** | Bois    | Planches | Create Project with CraftType.MENUISER |
+| **Travailler le bois** | Bois    | Planches | Create Project with CraftType.MENUISER |
 
 **Cuisiner** is a standalone character capability (see HARVEST section above)
 

@@ -62,7 +62,7 @@
 
 ### CRAFT Capacities (Project-based, not character capabilities)
 
-**IMPORTANT:** Tisser, Forger, and Menuiser are implemented as **Project mechanics** (CraftType enum), not as standalone character capabilities for raw resource transformation.
+**IMPORTANT:** Tisser, Forger, and Travailler le bois (internally `CraftType.MENUISER`) are implemented as **Project mechanics** (CraftType enum), not as standalone character capabilities for raw resource transformation.
 
 **Tisser:** Project crafting only
 - Input: Bois
@@ -74,7 +74,7 @@
 - Output: Métal
 - Access: Create Project with CraftType.FORGER
 
-**Menuiser:** Project crafting only
+**Travailler le bois:** Project crafting only
 - Input: Bois
 - Output: Planches
 - Access: Create Project with CraftType.MENUISER
@@ -251,7 +251,7 @@ Each capability service handles its own execution logic.
 1. **Weighted Pools:** Check hunting results distribution (summer vs winter)
 2. **Cooking:** Test output range for various input amounts (1 vivre → 0-3 repas)
 3. **Divertir:** Use capacity 5 times, verify counter and PM boost
-4. **Project Crafts:** Verify Tisser/Forger/Menuiser only accessible via projects
+4. **Capacités d’artisanat:** Tisser, Forger, Travailler le bois. Elles donnent le droit de contribuer aux projets correspondants.
 5. **PA Validation:** Test with 0/1/2 PA available
 
 ### Database Checks:
@@ -282,8 +282,8 @@ WHERE rt.name = 'Cataplasme' AND rs.locationId IN (
 ## Changes from Previous Versions
 
 **V2 Updates (2025-10-27):**
-- ✅ Verified all 14 capabilities exist and are implemented
-- ✅ Clarified Tisser/Forger/Menuiser are Project mechanics only
+- ✅ Verified all 14 capacities exist and are implemented
+- ✅ Clarified Tisser/Forger/Travailler le bois are Project mechanics only
 - ✅ Added Cuisiner as HARVEST capability (cooking transformation)
 - ✅ Updated Soigner with HEAL_EXTRA bonus (20% chance +2 HP)
 - ✅ Verified cataplasme 3-limit implementation

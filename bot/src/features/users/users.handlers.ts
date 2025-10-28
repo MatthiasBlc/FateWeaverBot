@@ -6,6 +6,7 @@ import {
   RESOURCES,
   RESOURCES_EXTENDED,
 } from "../../constants/emojis";
+import { toCraftEnum } from "../projects/projects.utils";
 import { ERROR_MESSAGES, INFO_MESSAGES } from "../../constants/messages.js";
 import {
   EmbedBuilder,
@@ -654,7 +655,7 @@ async function createProfileEmbed(data: ProfileData): Promise<{
 
   // Ajouter le bouton "Projets" si le personnage a une capacité craft
   const craftCapabilities = data.character.capabilities?.filter((cap) =>
-    ["Tisser", "Forger", "Menuiser"].includes(cap.name)
+    Boolean(toCraftEnum(cap.name))
   );
 
   if (craftCapabilities && craftCapabilities.length > 0) {
