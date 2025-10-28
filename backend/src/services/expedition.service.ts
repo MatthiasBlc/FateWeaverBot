@@ -1542,4 +1542,50 @@ export class ExpeditionService {
       });
     });
   }
+
+  /**
+   * Set or update expedition dedicated channel
+   */
+  async setExpeditionChannel(
+    expeditionId: string,
+    channelId: string | null,
+    configuredBy: string
+  ): Promise<Expedition> {
+    return await prisma.expedition.update({
+      where: { id: expeditionId },
+      data: {
+        expeditionChannelId: channelId,
+        channelConfiguredAt: channelId ? new Date() : null,
+        channelConfiguredBy: channelId ? configuredBy : null,
+      },
+      include: {
+        town: true,
+        members: {
+          include: {
+            character: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Get expedition channel ID (if configured and expedition is DEPARTED)
+   */
+  async getExpeditionChannelId(expeditionId: string): Promise<string | null> {
+    const expedition = await prisma.expedition.findUnique({
+      where: { id: expeditionId },
+      select: {
+        status: true,
+        expeditionChannelId: true,
+      },
+    });
+
+    // Only return channel if expedition is DEPARTED and channel is configured
+    if (expedition?.status === ExpeditionStatus.DEPARTED && expedition.expeditionChannelId) {
+      return expedition.expeditionChannelId;
+    }
+
+    return null;
+  }
 }

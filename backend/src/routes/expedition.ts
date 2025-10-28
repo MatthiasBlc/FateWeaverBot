@@ -10,7 +10,9 @@ import {
   leaveExpedition,
   transferExpeditionResource,
   toggleEmergencyVote,
-  setExpeditionDirection, // NOUVEAU
+  setExpeditionDirection,
+  setExpeditionChannel,
+  sendExpeditionLog,
 } from "../controllers/expedition";
 import { validate } from "../api/middleware/validation.middleware";
 import {
@@ -61,5 +63,11 @@ router.post("/:id/emergency-vote", requireAuthOrInternal, validate(ToggleEmergen
 
 // Définir la direction d'une expédition
 router.post("/:id/set-direction", requireAuthOrInternal, validate(SetExpeditionDirectionSchema), setExpeditionDirection);
+
+// Configurer le channel dédié d'une expédition
+router.post("/:id/channel", requireAuthOrInternal, setExpeditionChannel);
+
+// Envoyer un log au channel dédié d'une expédition
+router.post("/:id/log", requireAuthOrInternal, sendExpeditionLog);
 
 export default router;

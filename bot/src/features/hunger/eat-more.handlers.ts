@@ -358,13 +358,14 @@ async function handleEatResource(
     let locationType = "CITY";
     let locationId = updatedCharacter.townId;
     let locationName = "ville";
+    let activeExpedition: any = null;
 
     try {
       const expeditions = await apiService.expeditions.getExpeditionsByTown(
         updatedCharacter.townId
       );
 
-      const activeExpedition = expeditions.find(
+      activeExpedition = expeditions.find(
         (exp: any) =>
           exp.status === "DEPARTED" &&
           exp.members?.some((m: any) => m.characterId === updatedCharacter.id)
@@ -390,11 +391,23 @@ async function handleEatResource(
     });
 
     // Message de log public
-    await sendLogMessage(
-      interaction.guildId!,
-      interaction.client,
-      `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji}**, il reste **${remainingStock}** ${emoji} dans ${locationName}`
-    );
+    const logMessage = `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji}**, il reste **${remainingStock}** ${emoji} dans ${locationName}`;
+
+    if (activeExpedition) {
+      // Envoyer au channel dédié via le backend
+      await apiService.expeditions.sendExpeditionLog(
+        activeExpedition.id,
+        interaction.guildId!,
+        logMessage
+      );
+    } else {
+      // Comportement normal (ville)
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        logMessage
+      );
+    }
   } catch (error: any) {
     logger.error("Erreur dans handleEatResource:", { message: error?.message, status: error?.response?.status, data: error?.response?.data });
     await interaction.editReply({

@@ -21,6 +21,9 @@ export interface Expedition {
   directionSetAt?: string | null;
   emergencyVotesCount?: number; // Number of emergency return votes
   currentUserVoted?: boolean; // Whether the current user has voted for emergency return
+  expeditionChannelId?: string | null; // Discord Channel ID for dedicated logs
+  channelConfiguredAt?: string | null;
+  channelConfiguredBy?: string | null;
   town?: {
     id: string;
     name: string;

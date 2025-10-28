@@ -142,4 +142,50 @@ export class ExpeditionAPIService {
       characterId,
     });
   }
+
+  /**
+   * Set expedition dedicated channel
+   */
+  async setExpeditionChannel(
+    expeditionId: string,
+    channelId: string | null,
+    configuredBy: string
+  ): Promise<Expedition> {
+    try {
+      const response = await this.api.post<Expedition>(
+        `${this.basePath}/${expeditionId}/channel`,
+        {
+          channelId,
+          configuredBy,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      logger.error("Error setting expedition channel:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send a log message for an expedition
+   */
+  async sendExpeditionLog(
+    expeditionId: string,
+    guildId: string,
+    message: string
+  ): Promise<boolean> {
+    try {
+      const response = await this.api.post<{ success: boolean }>(
+        `${this.basePath}/${expeditionId}/log`,
+        {
+          guildId,
+          message,
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      logger.error("Error sending expedition log:", error);
+      return false;
+    }
+  }
 }

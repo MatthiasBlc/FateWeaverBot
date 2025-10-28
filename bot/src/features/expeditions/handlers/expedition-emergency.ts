@@ -76,9 +76,9 @@ export async function handleEmergencyReturnButton(interaction: any) {
         ? `🚨 **${character.name}** a voté pour le retour d'urgence (${totalVotes}/${membersCount})`
         : `🔄 **${character.name}** a retiré son vote de retour d'urgence (${totalVotes}/${membersCount})`;
 
-      await sendLogMessage(
+      await apiService.expeditions.sendExpeditionLog(
+        expeditionId,
         interaction.guildId!,
-        interaction.client,
         logMessage
       );
 
