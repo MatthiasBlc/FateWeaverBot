@@ -121,6 +121,34 @@ export async function handleExpeditionMainCommand(
           value: votesDisplay,
           inline: false,
         });
+
+        // Add countdown to emergency return if threshold is reached
+        if (expedition.emergencyVotesCount >= threshold) {
+          const now = new Date();
+          const tomorrow8am = new Date(now);
+          tomorrow8am.setDate(tomorrow8am.getDate() + 1);
+          tomorrow8am.setHours(8, 0, 0, 0);
+
+          // If it's already past 8am today, return is tomorrow at 8am
+          // If it's before 8am today, return is today at 8am
+          const today8am = new Date(now);
+          today8am.setHours(8, 0, 0, 0);
+
+          const returnTime = now < today8am ? today8am : tomorrow8am;
+          const hoursUntilReturn = Math.floor(
+            (returnTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+          );
+          const minutesUntilReturn = Math.floor(
+            ((returnTime.getTime() - now.getTime()) % (1000 * 60 * 60)) /
+            (1000 * 60)
+          );
+
+          fields.push({
+            name: `🚨 Retour d'urgence - Retour dans`,
+            value: `${hoursUntilReturn}h ${minutesUntilReturn}min`,
+            inline: true,
+          });
+        }
       }
 
       // Add initial direction if PLANNING or LOCKED and direction is set

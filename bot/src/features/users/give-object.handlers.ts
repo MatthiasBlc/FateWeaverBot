@@ -4,6 +4,7 @@ import {
   StringSelectMenuBuilder,
   ButtonInteraction,
   Client,
+  TextChannel,
 } from "discord.js";
 import { logger } from "../../services/logger.js";
 import { apiService } from "../../services/api/index.js";
@@ -389,7 +390,47 @@ export async function handleSelectGiveObjects(
 
       const logMessage = `📦 **${sourceCharacterInfo.name}** a donné **${objectNames.join(", ")}** à **${targetCharacterInfo.name}**`;
 
-      await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      // Vérifier si le personnage source est en expédition DEPARTED
+      let activeExpedition: any = null;
+      try {
+        const expeditions = await apiService.expeditions.getExpeditionsByTown(
+          sourceCharacterInfo.townId
+        );
+
+        activeExpedition = expeditions.find(
+          (exp: any) =>
+            exp.status === "DEPARTED" &&
+            exp.members?.some((m: any) => m.characterId === sourceCharacterInfo.id)
+        );
+      } catch (error: any) {
+        logger.error("Erreur lors de la récupération de l'expédition:", {
+          message: error?.message,
+          status: error?.response?.status,
+          data: error?.response?.data
+        });
+      }
+
+      if (activeExpedition) {
+        // Send to expedition's dedicated channel if configured
+        if (activeExpedition.expeditionChannelId && activeExpedition.status === "DEPARTED") {
+          try {
+            const channel = await interaction.client.channels.fetch(activeExpedition.expeditionChannelId);
+            if (channel instanceof TextChannel) {
+              await channel.send(logMessage);
+            }
+          } catch (error) {
+            logger.error("Error sending give log to expedition channel:", error);
+            // Fallback to guild log channel if expedition channel fails
+            await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+          }
+        } else {
+          // No dedicated channel, send to guild log channel
+          await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+        }
+      } else {
+        // Comportement normal (ville)
+        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      }
     } catch (logError) {
       logger.warn("Impossible d'envoyer le log public:", {
         error: formatErrorForLog(logError),
