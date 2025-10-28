@@ -5,6 +5,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   type ButtonInteraction,
+  TextChannel,
 } from "discord.js";
 import { apiService } from "../../services/api";
 import { logger } from "../../services/logger";
@@ -394,12 +395,22 @@ async function handleEatResource(
     const logMessage = `🍽️ **${updatedCharacter.name}** a mangé **${quantity}x ${emoji}**, il reste **${remainingStock}** ${emoji} dans ${locationName}`;
 
     if (activeExpedition) {
-      // Envoyer au channel dédié via le backend
-      await apiService.expeditions.sendExpeditionLog(
-        activeExpedition.id,
-        interaction.guildId!,
-        logMessage
-      );
+      // Send to expedition's dedicated channel if configured
+      if (activeExpedition.expeditionChannelId && activeExpedition.status === "DEPARTED") {
+        try {
+          const channel = await interaction.client.channels.fetch(activeExpedition.expeditionChannelId);
+          if (channel instanceof TextChannel) {
+            await channel.send(logMessage);
+          }
+        } catch (error) {
+          logger.error("Error sending eat log to expedition channel:", error);
+          // Fallback to guild log channel if expedition channel fails
+          await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+        }
+      } else {
+        // No dedicated channel, send to guild log channel
+        await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+      }
     } else {
       // Comportement normal (ville)
       await sendLogMessage(
