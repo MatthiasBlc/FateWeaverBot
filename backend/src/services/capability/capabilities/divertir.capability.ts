@@ -2,7 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasDivertExtraBonus } from "../../../util/character-validators";
-import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
+import { RESOURCES, CHARACTER, CAPABILITIES } from '../../../../shared/index';
 
 /**
  * Capacité Divertir

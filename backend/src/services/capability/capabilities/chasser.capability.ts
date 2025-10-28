@@ -3,7 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
 import { getHuntYield } from "../../../util/capacityRandom";
-import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
+import { RESOURCES, CHARACTER, CAPABILITIES } from '../../../../shared/index';
 
 /**
  * Capacité Chasser

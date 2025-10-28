@@ -2,7 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
-import { RESOURCES, CHARACTER, CAPABILITIES } from "@shared/index";
+import { RESOURCES, CHARACTER, CAPABILITIES } from '../../../../shared/index';
 
 /**
  * Capacité Pêcher

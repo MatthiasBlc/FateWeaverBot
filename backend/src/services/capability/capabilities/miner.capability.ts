@@ -2,7 +2,7 @@ import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
 import { hasLuckyRollBonus } from "../../../util/character-validators";
-import { CAPABILITIES, RESOURCES } from "@shared/index";
+import { CAPABILITIES, RESOURCES } from '../../../../shared/index';
 
 /**
  * Capacité Miner

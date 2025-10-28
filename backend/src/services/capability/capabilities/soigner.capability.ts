@@ -3,7 +3,7 @@ import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError, BadRequestError, ValidationError } from "../../../shared/errors";
 import { hasHealExtraBonus } from "../../../util/character-validators";
 import { ResourceUtils } from "../../../shared/utils";
-import { CAPABILITIES, CHARACTER, RESOURCES } from "@shared/index";
+import { CAPABILITIES, CHARACTER, RESOURCES } from '../../../../shared/index';
 
 /**
  * Capacité Soigner
