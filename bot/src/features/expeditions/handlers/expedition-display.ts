@@ -68,7 +68,8 @@ export async function handleExpeditionMainCommand(
     // Check if character is already on an active expedition
     const activeExpeditions =
       await apiService.expeditions.getActiveExpeditionsForCharacter(
-        character.id
+        character.id,
+        user.id // Pass userId to check if user has voted
       );
 
     if (activeExpeditions && activeExpeditions.length > 0) {
@@ -263,10 +264,15 @@ export async function handleExpeditionMainCommand(
         );
         components.push(buttonRow);
       } else if (expedition.status === "DEPARTED") {
+        // Determine button label based on vote status
+        const emergencyButtonLabel = expedition.currentUserVoted
+          ? "❌ Annuler retour d'urgence"
+          : "🚨 Voter retour d'urgence";
+
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(`expedition_emergency_return:${expedition.id}`)
-            .setLabel("🚨 Voter retour d'urgence")
+            .setLabel(emergencyButtonLabel)
             .setStyle(ButtonStyle.Secondary)
         );
 
@@ -459,7 +465,8 @@ export async function handleExpeditionInfoCommand(
     // Get character's active expeditions
     const activeExpeditions =
       await apiService.expeditions.getActiveExpeditionsForCharacter(
-        character.id
+        character.id,
+        user.id // Pass userId to check if user has voted
       );
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
@@ -596,10 +603,15 @@ export async function handleExpeditionInfoCommand(
       );
       components.push(buttonRow);
     } else if (currentExpedition.status === "DEPARTED") {
+      // Determine button label based on vote status
+      const emergencyButtonLabel = currentExpedition.currentUserVoted
+        ? "❌ Annuler retour d'urgence"
+        : "🚨 Voter retour d'urgence";
+
       const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId(`expedition_emergency_return:${currentExpedition.id}`)
-          .setLabel("🚨 Voter retour d'urgence")
+          .setLabel(emergencyButtonLabel)
           .setStyle(ButtonStyle.Secondary)
       );
 

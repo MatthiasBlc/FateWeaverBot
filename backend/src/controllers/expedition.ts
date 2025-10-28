@@ -236,6 +236,7 @@ export const leaveExpedition = async (req: Request, res: Response, next: NextFun
 export const getActiveExpeditionsForCharacter = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { characterId } = req.params;
+    const { userId } = req.query; // Discord user ID pour vérifier les votes
 
     if (!characterId) {
       return res.status(400).json({ error: "ID de personnage requis" });
@@ -246,9 +247,23 @@ export const getActiveExpeditionsForCharacter = async (req: Request, res: Respon
     );
 
     // Map _count.emergencyVotes to emergencyVotesCount for easier access on frontend
-    const mappedExpeditions = expeditions.map((exp: any) => ({
-      ...exp,
-      emergencyVotesCount: exp._count?.emergencyVotes || 0,
+    // Also check if the current user has voted if userId is provided
+    const mappedExpeditions = await Promise.all(expeditions.map(async (exp: any) => {
+      let currentUserVoted = false;
+
+      // Check if current user has voted for emergency return
+      if (userId && exp.status === 'DEPARTED') {
+        currentUserVoted = await container.expeditionService.hasUserVotedForEmergency(
+          exp.id,
+          userId as string
+        );
+      }
+
+      return {
+        ...exp,
+        emergencyVotesCount: exp._count?.emergencyVotes || 0,
+        currentUserVoted, // Ajout du statut de vote de l'utilisateur actuel
+      };
     }));
 
     res.json(mappedExpeditions);

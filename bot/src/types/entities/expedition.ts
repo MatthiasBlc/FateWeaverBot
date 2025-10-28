@@ -20,6 +20,7 @@ export interface Expedition {
   directionSetBy?: string | null;
   directionSetAt?: string | null;
   emergencyVotesCount?: number; // Number of emergency return votes
+  currentUserVoted?: boolean; // Whether the current user has voted for emergency return
   town?: {
     id: string;
     name: string;

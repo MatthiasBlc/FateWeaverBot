@@ -29,9 +29,12 @@ export class ExpeditionAPIService {
     };
   }
 
-  async getActiveExpeditionsForCharacter(characterId: string): Promise<Expedition[]> {
+  async getActiveExpeditionsForCharacter(characterId: string, userId?: string): Promise<Expedition[]> {
     try {
-      const response = await this.api.get<Expedition[]>(`${this.basePath}/character/${characterId}/active`);
+      const url = userId
+        ? `${this.basePath}/character/${characterId}/active?userId=${userId}`
+        : `${this.basePath}/character/${characterId}/active`;
+      const response = await this.api.get<Expedition[]>(url);
       return response.data;
     } catch (error) {
       logger.error('Error fetching active expeditions for character:', error);

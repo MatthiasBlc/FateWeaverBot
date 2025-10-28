@@ -853,6 +853,25 @@ export class ExpeditionService {
   }
 
   /**
+   * Vérifie si un utilisateur a voté pour le retour d'urgence
+   */
+  async hasUserVotedForEmergency(
+    expeditionId: string,
+    userId: string
+  ): Promise<boolean> {
+    const vote = await prisma.expeditionEmergencyVote.findUnique({
+      where: {
+        expedition_vote_unique: {
+          expeditionId,
+          userId,
+        },
+      },
+    });
+
+    return !!vote;
+  }
+
+  /**
    * Force emergency return for all expeditions with pendingEmergencyReturn flag
    * Called by cron job
    */
