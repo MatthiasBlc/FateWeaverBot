@@ -1228,6 +1228,14 @@ function createCapabilityButtons(
     return null;
   }
 
+  const actionableCapabilities = capabilities.filter(
+    (cap) => !toCraftEnum(cap.name)
+  );
+
+  if (actionableCapabilities.length === 0) {
+    return null;
+  }
+
   // Capacités avec menu de choix de PA
   const capabilitiesWithPAMenu = [
     "Auspice",
@@ -1245,10 +1253,10 @@ function createCapabilityButtons(
   // Diviser les capacités en groupes de 5
   for (
     let i = 0;
-    i < capabilities.length && rows.length < maxRows;
+    i < actionableCapabilities.length && rows.length < maxRows;
     i += maxButtonsPerRow
   ) {
-    const group = capabilities.slice(i, i + maxButtonsPerRow);
+    const group = actionableCapabilities.slice(i, i + maxButtonsPerRow);
     const buttons = group.map((cap) => {
       // Déterminer l'emoji selon l'emojiTag de la capacité
       const getEmojiForCapability = (emojiTag?: string): string => {

@@ -28,14 +28,20 @@ export async function handleEmergencyReturnButton(interaction: any) {
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour voter. Utilisez d'abord la commande `/start` pour créer un personnage.");
+        await replyEphemeral(
+          interaction,
+          "❌ Tu dois avoir un personnage actif pour voter. Utilisez d'abord la commande `/start` pour créer un personnage."
+        );
         return;
       }
       throw error;
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour voter.");
+      await replyEphemeral(
+        interaction,
+        "❌ Tu dois avoir un personnage actif pour voter."
+      );
       return;
     }
 
@@ -60,13 +66,15 @@ export async function handleEmergencyReturnButton(interaction: any) {
 
       // Build response message
       let message = voted
-        ? `✅ Votre vote pour le retour d'urgence a été enregistré.`
-        : `✅ Votre vote pour le retour d'urgence a été retiré.`;
+        ? `✅ Ton vote pour le retour d'urgence a été enregistré.`
+        : `✅ Ton vote pour le retour d'urgence a été retiré.`;
 
-      message += `\n\n📊 **Votes:** ${totalVotes}/${membersCount} (Seuil: ${Math.ceil(membersCount / 2)})`;
+      message += `\n\n📊 **Votes:** ${totalVotes}/${membersCount} (Seuil: ${Math.ceil(
+        membersCount / 2
+      )})`;
 
       if (thresholdReached) {
-        message += `\n\n🚨 **Seuil atteint!** L'expédition sera de retour dans les 10 prochaines minutes.`;
+        message += `\n\n🚨 **Le retour d'urgence a été voté !**\n\n L'expédition sera de retour demain matin.`;
       }
 
       await replyEphemeral(interaction, message);
@@ -100,11 +108,14 @@ export async function handleEmergencyReturnButton(interaction: any) {
         errorMessage = error.response.data.error;
       } else if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
 
-      await replyEphemeral(interaction, `❌ Erreur lors du vote: ${errorMessage}`);
+      await replyEphemeral(
+        interaction,
+        `❌ Erreur lors du vote: ${errorMessage}`
+      );
 
       // Log error safely without circular references
       logger.error("Error toggling emergency vote:", {
@@ -117,8 +128,13 @@ export async function handleEmergencyReturnButton(interaction: any) {
   } catch (error) {
     logger.error("Error in emergency return button handler:", {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    await replyEphemeral(interaction, `❌ Erreur lors du traitement de votre vote: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    await replyEphemeral(
+      interaction,
+      `❌ Erreur lors du traitement de votre vote: ${
+        error instanceof Error ? error.message : "Erreur inconnue"
+      }`
+    );
   }
 }

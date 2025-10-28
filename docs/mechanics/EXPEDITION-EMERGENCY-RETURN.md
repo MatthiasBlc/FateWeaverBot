@@ -28,20 +28,20 @@ Dès que le seuil est atteint :
 - Les membres sont informés que le seuil est atteint
 
 ### ⚠️ Réversibilité
-**IMPORTANT :** Le retour d'urgence peut être **annulé** !
+**IMPORTANT :** Le retour d'urgence peut être **annulé** uniquement **jusqu'à minuit**.
 
-Si suffisamment de personnes retirent leur vote et que le total descend **sous le seuil** :
+Si suffisamment de personnes retirent leur vote et que le total descend **sous le seuil** **avant minuit** :
 - ✅ Le flag `pendingEmergencyReturn` repasse à `false`
 - ✅ Le retour d'urgence est annulé
 - ✅ L'expédition continue normalement
-- ⚠️ À minuit : Les 2 PA seront à nouveau déduits
+- ⚠️ Lors du passage à minuit, les 2 PA seront à nouveau déduits
 
 **Exemple (5 membres, seuil = 3) :**
 - 3 votes → `pendingEmergencyReturn = true` ✓ Activé
-- 1 retire son vote (2 votes) → `pendingEmergencyReturn = false` ✗ Annulé
-- 1 vote à nouveau (3 votes) → `pendingEmergencyReturn = true` ✓ Réactivé
+- 1 retire son vote (2 votes) **avant minuit** → `pendingEmergencyReturn = false` ✗ Annulé
+- 1 vote à nouveau (3 votes) **avant minuit** → `pendingEmergencyReturn = true` ✓ Réactivé
 
-Le système est **dynamique** jusqu'au moment de l'exécution à 8h du matin.
+Après minuit, le flag `pendingEmergencyReturn` est verrouillé : les votes ne peuvent plus annuler le retour d'urgence. Le cron du matin appliquera donc le retour à 08:00.
 
 ---
 

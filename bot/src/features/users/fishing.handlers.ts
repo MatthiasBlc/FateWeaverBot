@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
-import { sendLogMessage } from "../../utils/channels";
+import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
 
 /**
@@ -61,7 +61,7 @@ async function executeFishing(
 
     // Afficher le résultat
     if (result.publicMessage && interaction.guildId) {
-      await sendLogMessage(interaction.guildId, interaction.client, result.publicMessage);
+      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, result.publicMessage, characterId);
     }
 
     await interaction.editReply({

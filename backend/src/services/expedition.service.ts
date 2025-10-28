@@ -8,6 +8,18 @@ import { ExpeditionRepository } from "../domain/repositories/expedition.reposito
 import { ResourceRepository } from "../domain/repositories/resource.repository";
 import { NotFoundError, BadRequestError, ValidationError } from "../shared/errors";
 
+const PARIS_TIMEZONE = "Europe/Paris";
+const PARIS_HOUR_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: PARIS_TIMEZONE,
+  hour: "2-digit",
+  hour12: false,
+});
+
+function isParisTimeBetweenMidnightAndMorning(date: Date): boolean {
+  const hour = parseInt(PARIS_HOUR_FORMATTER.format(date), 10);
+  return hour >= 0 && hour < 8;
+}
+
 const prisma = new PrismaClient();
 
 export interface CreateExpeditionData {
@@ -803,6 +815,9 @@ export class ExpeditionService {
       let voted: boolean;
 
       if (existingVote) {
+        if (expedition.pendingEmergencyReturn && isParisTimeBetweenMidnightAndMorning(new Date())) {
+          throw new BadRequestError("Les votes de retour d'urgence sont verrouillés après minuit (heure de Paris).");
+        }
         // Remove vote (dévote)
         await tx.expeditionEmergencyVote.delete({
           where: { id: existingVote.id },
