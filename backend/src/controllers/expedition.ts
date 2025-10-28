@@ -420,3 +420,53 @@ export const setExpeditionDirection = async (
     res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
   }
 };
+
+/**
+ * Configure or update expedition dedicated channel
+ * POST /api/expeditions/:id/channel
+ */
+export const setExpeditionChannel = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { channelId, configuredBy } = req.body; // channelId = null pour désactiver
+
+    if (!id) {
+      return res.status(400).json({ error: "ID d'expédition requis" });
+    }
+
+    const expedition = await container.expeditionService.setExpeditionChannel(
+      id,
+      channelId,
+      configuredBy
+    );
+
+    res.json(expedition);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Send a log message to expedition's dedicated channel
+ * POST /api/expeditions/:id/log
+ */
+export const sendExpeditionLog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { guildId, message } = req.body;
+
+    if (!id || !guildId || !message) {
+      return res.status(400).json({ error: "Paramètres manquants" });
+    }
+
+    const sent = await container.discordNotificationService.sendExpeditionNotification(
+      id,
+      guildId,
+      message
+    );
+
+    res.json({ success: sent });
+  } catch (error) {
+    next(error);
+  }
+};

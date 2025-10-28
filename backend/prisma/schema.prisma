@@ -357,6 +357,10 @@ model Expedition {
   currentDayDirection    Direction?                @map("current_day_direction") // Direction du jour en cours
   directionSetBy         String?                   @map("direction_set_by") // User ID qui a défini la direction
   directionSetAt         DateTime?                 @map("direction_set_at") // Quand la direction a été définie
+  // Dedicated channel fields
+  expeditionChannelId    String?                   @map("expedition_channel_id") // Discord Channel ID pour les logs de cette expédition
+  channelConfiguredAt    DateTime?                 @map("channel_configured_at") // Quand le channel a été configuré
+  channelConfiguredBy    String?                   @map("channel_configured_by") // User ID qui a configuré le channel
   members                ExpeditionMember[]
   emergencyVotes         ExpeditionEmergencyVote[] // Votes pour retour d'urgence
   createdAt              DateTime                  @default(now()) @map("created_at")

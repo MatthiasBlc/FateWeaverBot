@@ -956,6 +956,22 @@ export class SelectMenuHandler {
         });
       }
     });
+
+    // Gestionnaire pour la sélection du channel d'une expédition
+    this.registerHandlerByPrefix("expedition_channel_select:", async (interaction) => {
+      try {
+        const { handleExpeditionChannelSelect } = await import(
+          "../features/admin/expedition-admin.handlers.js"
+        );
+        await handleExpeditionChannelSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling expedition channel select:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du channel.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
   }
 
   /**

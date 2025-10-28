@@ -1415,8 +1415,7 @@ export class ExpeditionService {
 
   async removeMemberCatastrophic(
     expeditionId: string,
-    characterId: string,
-    reason: string
+    characterId: string
   ): Promise<{ characterName: string; townId: string }> {
     return await prisma.$transaction(async (tx) => {
       // Check if expedition exists and is DEPARTED
@@ -1450,12 +1449,6 @@ export class ExpeditionService {
         throw new BadRequestError("Character is not a member of this expedition");
       }
 
-      // Set character PA to 0
-      await tx.character.update({
-        where: { id: characterId },
-        data: { paTotal: 0 },
-      });
-
       // Remove member from expedition
       await tx.expeditionMember.delete({
         where: { id: member.id },
@@ -1465,8 +1458,7 @@ export class ExpeditionService {
       await dailyEventLogService.logCharacterCatastrophicReturn(
         characterId,
         member.character.name,
-        expedition.townId,
-        reason
+        expedition.townId
       );
 
       logger.info("expedition_catastrophic_return", {
@@ -1474,7 +1466,6 @@ export class ExpeditionService {
         expeditionName: expedition.name,
         characterId,
         characterName: member.character.name,
-        reason,
       });
 
       return {
@@ -1541,5 +1532,51 @@ export class ExpeditionService {
         setBy: characterId,
       });
     });
+  }
+
+  /**
+   * Set or update expedition dedicated channel
+   */
+  async setExpeditionChannel(
+    expeditionId: string,
+    channelId: string | null,
+    configuredBy: string
+  ): Promise<Expedition> {
+    return await prisma.expedition.update({
+      where: { id: expeditionId },
+      data: {
+        expeditionChannelId: channelId,
+        channelConfiguredAt: channelId ? new Date() : null,
+        channelConfiguredBy: channelId ? configuredBy : null,
+      },
+      include: {
+        town: true,
+        members: {
+          include: {
+            character: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Get expedition channel ID (if configured and expedition is DEPARTED)
+   */
+  async getExpeditionChannelId(expeditionId: string): Promise<string | null> {
+    const expedition = await prisma.expedition.findUnique({
+      where: { id: expeditionId },
+      select: {
+        status: true,
+        expeditionChannelId: true,
+      },
+    });
+
+    // Only return channel if expedition is DEPARTED and channel is configured
+    if (expedition?.status === ExpeditionStatus.DEPARTED && expedition.expeditionChannelId) {
+      return expedition.expeditionChannelId;
+    }
+
+    return null;
   }
 }

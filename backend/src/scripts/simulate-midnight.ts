@@ -350,22 +350,18 @@ async function deductExpeditionPA() {
       deductedCount++;
       console.log(`   - ${character.name}: -2 PA (expédition)`);
     } else {
-      const shouldCatastrophicReturn =
-        character.hungerLevel <= 1 ||
-        character.isDead ||
-        character.hp <= 1 ||
-        character.pm <= 1;
+      // Cannot afford 2 PA → catastrophic return
+      // Character pays what they can and returns
+      const paidAmount = character.paTotal;
 
-      if (shouldCatastrophicReturn) {
-        let reason = "";
-        if (character.hungerLevel <= 1) reason = "affamé/agonie";
-        else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
-        else if (character.pm <= 1) reason = "dépression/déprime";
+      await prisma.character.update({
+        where: { id: character.id },
+        data: { paTotal: 0 }
+      });
 
-        await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id, reason);
-        catastrophicReturns++;
-        console.log(`   - ${character.name}: Retrait catastrophique (${reason})`);
-      }
+      await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id);
+      catastrophicReturns++;
+      console.log(`   - ${character.name}: Retrait catastrophique (PA insuffisant: ${paidAmount}/2 PA payés)`);
     }
   }
 
@@ -429,7 +425,7 @@ async function expeditionLock() {
         else if (character.hungerLevel <= 1) reason = "affamé/agonie";
         else if (character.pm <= 1) reason = "dépression/déprime";
 
-        await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id, reason);
+        await container.expeditionService.removeMemberBeforeDeparture(expedition.id, character.id, reason);
         membersRemovedCount++;
         console.log(`   - ${character.name} retiré de ${expedition.name} (${reason})`);
       }

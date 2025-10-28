@@ -207,8 +207,7 @@ export class DailyEventLogService {
   async logCharacterCatastrophicReturn(
     characterId: string,
     characterName: string,
-    townId: string,
-    reason: string
+    townId: string
   ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -218,11 +217,10 @@ export class DailyEventLogService {
         eventType: DailyEventType.CHARACTER_CATASTROPHIC_RETURN,
         eventDate: today,
         townId,
-        description: `💀 **${characterName}** est rentré en catastrophe ! Raison : ${reason}`,
+        description: `❗ **${characterName}** est rentré en catastrophe !`,
         metadata: {
           characterId,
           characterName,
-          reason,
           context: 'from-expedition'
         },
       },

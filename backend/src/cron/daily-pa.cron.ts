@@ -252,28 +252,19 @@ async function deductExpeditionPA() {
         deductedCount++;
         console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition)`);
       } else {
-        // Check catastrophic return conditions (when character cannot afford 2 PA)
-        const shouldCatastrophicReturn =
-          character.hungerLevel <= 1 || // Affamé/Agonie (hunger level 0-1)
-          character.isDead || // Mort
-          character.hp <= 1 || // Agonie/Mort (HP = 0-1)
-          character.pm <= 1; // Dépression (PM=0) ou déprime (PM=1)
+        // Cannot afford 2 PA → catastrophic return
+        // Character pays what they can (their remaining PA) and returns
+        const paidAmount = character.paTotal;
 
-        if (shouldCatastrophicReturn) {
-          // Determine reason for catastrophic return
-          let reason = "";
-          if (character.hungerLevel <= 1) reason = "affamé/agonie";
-          else if (character.isDead || character.hp <= 1) reason = "mort/agonie";
-          else if (character.pm <= 1) reason = "dépression/déprime";
+        await prisma.character.update({
+          where: { id: character.id },
+          data: { paTotal: 0 }
+        });
 
-          await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id, reason);
+        await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id);
 
-          catastrophicReturns++;
-          console.log(`  - ${character.name}: Retrait catastrophique (${reason})`);
-        } else {
-          // Cannot afford expedition but doesn't meet catastrophic conditions
-          console.warn(`  - ${character.name}: PA insuffisant (${character.paTotal}) mais pas de conditions catastrophiques`);
-        }
+        catastrophicReturns++;
+        console.log(`  - ${character.name}: Retrait catastrophique (PA insuffisant: ${paidAmount}/2 PA payés)`);
       }
     }
 

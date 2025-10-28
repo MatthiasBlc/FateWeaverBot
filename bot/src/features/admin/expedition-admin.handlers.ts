@@ -10,7 +10,12 @@ import {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ChannelType,
+  TextChannel,
   type ChatInputCommandInteraction,
+  type ButtonInteraction,
+  type StringSelectMenuInteraction,
 } from "discord.js";
 import {
   createExpeditionModifyModal,
@@ -134,16 +139,23 @@ export async function handleExpeditionAdminSelect(interaction: any) {
         .setStyle(ButtonStyle.Secondary)
     );
 
+    const buttonRow2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`expedition_admin_channel_${expeditionId}`)
+        .setLabel("📺 Configurer Channel")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
     // Only show force return button for LOCKED or DEPARTED expeditions
-    const components = [buttonRow1];
+    const components = [buttonRow1, buttonRow2];
     if (expedition.status === "LOCKED" || expedition.status === "DEPARTED") {
-      const buttonRow2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      const buttonRow3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId(`expedition_admin_return_${expeditionId}`)
           .setLabel("Retour forcé")
           .setStyle(ButtonStyle.Danger)
       );
-      components.push(buttonRow2);
+      components.push(buttonRow3);
     }
 
     // Create embed with expedition details
@@ -178,6 +190,15 @@ export async function handleExpeditionAdminSelect(interaction: any) {
         inline: true,
       }
     );
+
+    // Add channel field if configured
+    if (expedition.expeditionChannelId) {
+      embed.addFields({
+        name: "📺 Channel Dédié",
+        value: `<#${expedition.expeditionChannelId}>`,
+        inline: true,
+      });
+    }
 
     await interaction.update({
       embeds: [embed],
@@ -892,6 +913,9 @@ export async function handleExpeditionAdminButton(interaction: any) {
     } else if (customId.startsWith("expedition_admin_return_")) {
       const expeditionId = customId.replace("expedition_admin_return_", "");
       await handleExpeditionAdminReturn(interaction, expeditionId);
+    } else if (customId.startsWith("expedition_admin_channel_")) {
+      const expeditionId = customId.replace("expedition_admin_channel_", "");
+      await handleExpeditionAdminConfigureChannel(interaction, expeditionId);
     } else {
       await replyEphemeral(
         interaction,
@@ -904,5 +928,142 @@ export async function handleExpeditionAdminButton(interaction: any) {
       interaction,
       "❌ Erreur lors de l'administration de l'expédition"
     );
+  }
+}
+
+/**
+ * Handler: expedition_admin_channel_${expeditionId}
+ * Affiche la sélection du channel Discord
+ */
+async function handleExpeditionAdminConfigureChannel(
+  interaction: ButtonInteraction,
+  expeditionId: string
+) {
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    // Récupérer l'expédition
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
+    if (!expedition) {
+      await interaction.editReply({
+        content: "❌ Expédition introuvable.",
+      });
+      return;
+    }
+
+    // Récupérer tous les canaux textuels du serveur
+    const guild = interaction.guild;
+    if (!guild) {
+      await interaction.editReply({
+        content: "❌ Impossible de récupérer les informations du serveur.",
+      });
+      return;
+    }
+
+    const channels = guild.channels.cache
+      .filter((channel) => channel.type === ChannelType.GuildText)
+      .sort((a, b) => a.position - b.position);
+
+    // Créer le menu de sélection (max 25 options)
+    const options: StringSelectMenuOptionBuilder[] = [
+      new StringSelectMenuOptionBuilder()
+        .setLabel("🚫 Aucun (désactiver)")
+        .setValue("none")
+        .setDescription("Désactiver le channel dédié pour cette expédition"),
+    ];
+
+    channels.forEach((channel) => {
+      if (options.length < 25) {
+        const textChannel = channel as TextChannel;
+        options.push(
+          new StringSelectMenuOptionBuilder()
+            .setLabel(`#${textChannel.name}`)
+            .setValue(textChannel.id)
+            .setDescription(`Catégorie: ${textChannel.parent?.name || "Aucune"}`)
+        );
+      }
+    });
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`expedition_channel_select:${expeditionId}`)
+      .setPlaceholder("Sélectionnez un channel pour cette expédition")
+      .addOptions(options);
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    const currentChannelText = expedition.expeditionChannelId
+      ? `<#${expedition.expeditionChannelId}>`
+      : "Aucun configuré";
+
+    await interaction.editReply({
+      content: `📺 **Configuration du Channel pour "${expedition.name}"**\n\n` +
+        `Channel actuel : ${currentChannelText}\n\n` +
+        `Sélectionnez un channel Discord où les logs de cette expédition seront envoyés pendant qu'elle est DEPARTED.`,
+      components: [row],
+    });
+  } catch (error) {
+    logger.error("Error in handleExpeditionAdminConfigureChannel:", error);
+    await interaction.editReply({
+      content: "❌ Une erreur est survenue.",
+    });
+  }
+}
+
+/**
+ * Handler: expedition_channel_select:${expeditionId}
+ * Confirme et enregistre le channel sélectionné
+ */
+export async function handleExpeditionChannelSelect(
+  interaction: StringSelectMenuInteraction
+) {
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    const expeditionId = interaction.customId.split(":")[1];
+    const selectedChannelId = interaction.values[0];
+
+    // Récupérer l'expédition
+    const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
+    if (!expedition) {
+      await interaction.editReply({
+        content: "❌ Expédition introuvable.",
+      });
+      return;
+    }
+
+    // Préparer les données
+    const channelId = selectedChannelId === "none" ? null : selectedChannelId;
+
+    // Appel API pour configurer le channel
+    await apiService.expeditions.setExpeditionChannel(
+      expeditionId,
+      channelId,
+      interaction.user.id
+    );
+
+    // Message de confirmation
+    const confirmMessage = channelId
+      ? `✅ Channel <#${channelId}> configuré pour l'expédition **${expedition.name}**.\n\n` +
+        `Les logs seront envoyés dans ce channel lorsque l'expédition sera en statut DEPARTED.`
+      : `✅ Channel dédié désactivé pour l'expédition **${expedition.name}**.\n\n` +
+        `Les logs seront envoyés dans le channel de logs global.`;
+
+    await interaction.editReply({
+      content: confirmMessage,
+      components: [],
+    });
+
+    // Log de l'action dans le channel global
+    const { sendLogMessage } = await import("../../utils/channels");
+    const logMessage = channelId
+      ? `📺 **${interaction.user.username}** a configuré le channel <#${channelId}> pour l'expédition **${expedition.name}**`
+      : `📺 **${interaction.user.username}** a désactivé le channel dédié pour l'expédition **${expedition.name}**`;
+
+    await sendLogMessage(interaction.guildId!, interaction.client, logMessage);
+  } catch (error) {
+    logger.error("Error in handleExpeditionChannelSelect:", error);
+    await interaction.editReply({
+      content: "❌ Erreur lors de la configuration du channel.",
+    });
   }
 }
