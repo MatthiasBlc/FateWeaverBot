@@ -79,26 +79,33 @@ function normalizeCapabilities(rawCapabilities: any[]): Capability[] {
 }
 
 function getProjectOutputText(project: Project): string {
+  // Ressources : 10x🥞 (quantité + emoji uniquement)
   if (project.outputResourceType && project.outputResourceTypeId !== null) {
-    return `${project.outputResourceType.emoji} ${project.outputQuantity}x ${project.outputResourceType.name}`;
+    return `${project.outputQuantity}x${project.outputResourceType.emoji}`;
   }
 
+  // Objets : Canari(x1) (nom + parenthèses avec quantité)
   if (project.outputObjectType && project.outputObjectTypeId !== null) {
-    return `${PROJECT.ICON} ${project.outputQuantity}x ${project.outputObjectType.name}`;
+    return `${project.outputObjectType.name}(x${project.outputQuantity})`;
   }
 
+  // Fallbacks
   if (project.outputResourceTypeId !== null) {
-    return `${PROJECT.ICON} ${project.outputQuantity}x ressources`;
+    return `${project.outputQuantity}x${PROJECT.ICON}`;
   }
 
   if (project.outputObjectTypeId !== null) {
-    return `${PROJECT.ICON} ${project.outputQuantity}x objet`;
+    return `objet(x${project.outputQuantity})`;
   }
 
   return "";
 }
 
-function formatRewardMessage(project: Project, reward: ProjectReward | undefined, finisherName?: string): string {
+function formatRewardMessage(
+  project: Project,
+  reward: ProjectReward | undefined,
+  finisherName?: string
+): string {
   if (!reward) {
     const defaultOutput = getProjectOutputText(project);
     return defaultOutput
@@ -160,7 +167,9 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     const userCharacters = townCharacters.filter(
       (char: any) => char.user?.discordId === interaction.user.id
     );
-    const activeCharacter = userCharacters.find((char: any) => char.isActive) as ActiveCharacter | undefined;
+    const activeCharacter = userCharacters.find(
+      (char: any) => char.isActive
+    ) as ActiveCharacter | undefined;
 
     if (!activeCharacter) {
       return interaction.reply({
@@ -170,7 +179,10 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     }
 
     // Récupérer les capacités du personnage
-    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const rawCapabilities =
+      (await apiService.characters.getCharacterCapabilities(
+        activeCharacter.id
+      )) as any[];
     const capabilities = normalizeCapabilities(rawCapabilities);
 
     // Identifier les capacités craft (tolère les alias/nouveaux noms)
@@ -180,7 +192,8 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 
     if (craftsFromCapabilities.length === 0) {
       return interaction.reply({
-        content: "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
+        content:
+          "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
         flags: ["Ephemeral"],
       });
     }
@@ -192,133 +205,172 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
     // Récupérer tous les projets pour chaque craft type
     let allProjects: Project[] = [];
     for (const craftType of uniqueCraftEnums) {
-      const projects = (await apiService.projects.getProjectsByCraftType(town.id, craftType)) as Project[];
+      const projects = (await apiService.projects.getProjectsByCraftType(
+        town.id,
+        craftType
+      )) as Project[];
       allProjects = allProjects.concat(projects);
     }
 
     // Dédupliquer (un projet peut avoir plusieurs craft types)
     const uniqueProjects = Array.from(
-      new Map(allProjects.map(p => [p.id, p])).values()
+      new Map(allProjects.map((p) => [p.id, p])).values()
     );
 
     if (uniqueProjects.length === 0) {
       return interaction.reply({
-        content: "Aucun projet artisanal n'a encore été créé pour vos capacités.",
+        content:
+          "Aucun projet artisanal n'a encore été créé pour vos capacités.",
         flags: ["Ephemeral"],
       });
     }
 
-    const embed = createInfoEmbed(`🛠️ Projets artisanaux`, "Voici les projets disponibles pour vos capacités :");
-
-    // Grouper par statut
-    const projectsParStatut = uniqueProjects.reduce<Record<string, Project[]>>(
-      (acc, project) => {
-        if (!acc[project.status]) {
-          acc[project.status] = [];
-        }
-        acc[project.status].push(project);
-        return acc;
-      },
-      {}
+    const embed = createInfoEmbed(
+      `🛠️ Projets artisanaux`,
+      "Voici les projets disponibles pour vos capacités :"
     );
 
-    // Ajouter une section pour chaque statut
-    for (const [statut, listeProjects] of Object.entries(projectsParStatut)) {
-      const projectsText = listeProjects
-        .map((project) => {
-          // Craft types emojis + libellés
-          const craftEmojis = project.craftTypes.map((ct: any) => getCraftTypeEmoji(ct.craftType || ct)).join("");
-          const craftNames = project.craftTypes
-            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
-            .filter(Boolean)
-            .join(", ");
+    // Séparer les projets en 3 catégories
+    const activeProjects = uniqueProjects.filter(
+      (p) => p.status === "ACTIVE" && !(p as any).isBlueprint
+    );
+    const blueprintProjects = uniqueProjects.filter(
+      (p) => (p as any).isBlueprint
+    );
+    const completedProjects = uniqueProjects.filter(
+      (p) => p.status === "COMPLETED"
+    );
 
-          // Output resource
-          const outputText = getProjectOutputText(project);
+    // Fonction helper pour formater un projet
+    // Format: 🔨🧵 • Nom optionnel • 10x🥞 - 0/2PA⚡|0/1🪵
+    const formatProject = (project: Project) => {
+      const craftEmojis = project.craftTypes
+        .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+        .join("");
+      const outputText = getProjectOutputText(project);
 
-          let text = `${craftEmojis} **${project.name}** - ${project.paContributed}/${project.paRequired} PA`;
+      let text = `${craftEmojis} •`;
 
-          if (outputText) {
-            text += ` → ${outputText}`;
-          }
+      // Nom optionnel (si présent, ajouter avec séparateur)
+      if (project.name && project.name.trim()) {
+        text += ` ${project.name} •`;
+      }
 
-          // Ressources requises
-          if (project.resourceCosts && project.resourceCosts.length > 0) {
-            const resourcesText = project.resourceCosts
-              .map(
-                (rc) =>
-                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
-              )
-              .join(" ");
-            text += ` | ${resourcesText}`;
-          }
+      // Output
+      text += ` ${outputText}`;
 
-          if (craftNames) {
-            text += `\n🛠️ ${craftNames}`;
-          }
+      // PA avec emoji
+      text += ` - ${project.paContributed}/${project.paRequired}PA⚡`;
 
-          // Show blueprint info if applicable
-          if ((project as any).isBlueprint) {
-            const blueprintPA = (project as any).paBlueprintRequired ?? project.paRequired;
-            text += `\n📋 **Blueprint** - Peut être recommencé pour ${blueprintPA} PA`;
+      // Ressources requises
+      if (project.resourceCosts && project.resourceCosts.length > 0) {
+        const resourcesText = project.resourceCosts
+          .map(
+            (rc) =>
+              `${rc.quantityContributed}/${rc.quantityRequired}${rc.resourceType.emoji}`
+          )
+          .join("|");
+        text += `|${resourcesText}`;
+      }
 
-            if ((project as any).blueprintResourceCosts && (project as any).blueprintResourceCosts.length > 0) {
-              text += "\n**Coûts Blueprint:**\n";
-              (project as any).blueprintResourceCosts.forEach((cost: any) => {
-                text += `  • ${cost.quantityRequired} ${cost.resourceType.name}\n`;
-              });
-            }
-          }
+      return text;
+    };
 
-          return text;
-        })
-        .join("\n");
+    // Fonction helper pour trier par type d'output puis par métier (sans sous-titres)
+    const sortByCraftAndOutputType = (projects: Project[]) => {
+      return projects.sort((a, b) => {
+        // D'abord par type d'output (ressources avant objets)
+        const aIsResource =
+          a.outputResourceTypeId !== null &&
+          a.outputResourceTypeId !== undefined;
+        const bIsResource =
+          b.outputResourceTypeId !== null &&
+          b.outputResourceTypeId !== undefined;
+
+        if (aIsResource !== bIsResource) {
+          return aIsResource ? -1 : 1; // ressources en premier
+        }
+
+        // Ensuite par craft type (tri alphabétique des emojis craft)
+        const aCraftKey = a.craftTypes
+          .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+          .join("");
+        const bCraftKey = b.craftTypes
+          .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+          .join("");
+
+        return aCraftKey.localeCompare(bCraftKey);
+      });
+    };
+
+    // Section 1: Projets Actifs
+    if (activeProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(activeProjects);
+      const sectionText = sortedProjects.map(formatProject).join("\n");
 
       embed.addFields({
-        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
-        value: projectsText || "Aucun projet dans cette catégorie",
+        name: `${getStatusEmoji("ACTIVE")} Projets Actifs`,
+        value: sectionText || "Aucun projet actif",
         inline: false,
       });
     }
 
-    // Bouton "Participer" si au moins un projet ACTIVE
-    const activeProjects = uniqueProjects.filter((p) => p.status === "ACTIVE");
-    const blueprintProjects = uniqueProjects.filter((p) => (p as any).isBlueprint);
+    // Section 2: Blueprints Disponibles
+    if (blueprintProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(blueprintProjects);
+      const sectionText = sortedProjects.map(formatProject).join("\n");
 
-    const components = [];
-
-    if (activeProjects.length > 0) {
-      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId("project_participate")
-          .setLabel("🛠️ Participer")
-          .setStyle(ButtonStyle.Primary)
-      );
-      components.push(buttonRow);
+      embed.addFields({
+        name: `📋 Blueprints Disponibles`,
+        value: `\n${sectionText}` || "Aucun blueprint disponible",
+        inline: false,
+      });
     }
 
-    // Add restart buttons for blueprints (up to 5 buttons per row)
-    if (blueprintProjects.length > 0) {
-      const restartButtons = blueprintProjects.slice(0, 5).map((project) =>
+    // Section 3: Projets Terminés
+    if (completedProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(completedProjects);
+      const sectionText = sortedProjects
+        .map((p) => `✅ **${p.name}**`)
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji("COMPLETED")} Projets Terminés`,
+        value: `\n${sectionText}` || "Aucun projet terminé",
+        inline: false,
+      });
+    }
+
+    // Boutons d'interaction
+    const components = [];
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>();
+
+    if (activeProjects.length > 0) {
+      buttonRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`project_restart:${project.id}`)
-          .setLabel(`🔄 ${project.name}`)
+          .setCustomId("project_participate")
+          .setLabel("🛠️ Participer Projets")
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+
+    if (blueprintProjects.length > 0) {
+      buttonRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId("blueprint_participate")
+          .setLabel("📋 Participer Blueprints")
           .setStyle(ButtonStyle.Success)
       );
+    }
 
-      // Group buttons in rows of up to 5
-      for (let i = 0; i < restartButtons.length; i += 5) {
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-          ...restartButtons.slice(i, i + 5)
-        );
-        components.push(row);
-      }
+    if (buttonRow.components.length > 0) {
+      components.push(buttonRow);
     }
 
     await interaction.reply({
       embeds: [embed],
       components,
-      flags: ["Ephemeral"]
+      flags: ["Ephemeral"],
     });
   } catch (error) {
     logger.error("Erreur lors de la récupération des projets :", { error });
@@ -330,10 +382,15 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 }
 
 /**
- * Handler pour le bouton "Participer" - Affiche select menu des projets
+ * Handler pour le bouton "Participer" - Affiche select menu des projets avec pagination
  */
 export async function handleParticipateButton(interaction: ButtonInteraction) {
   try {
+    // Extraire le numéro de page du customId (format: project_participate ou project_participate:page:N)
+    const page = interaction.customId.includes(":page:")
+      ? parseInt(interaction.customId.split(":page:")[1], 10)
+      : 0;
+
     // Récupérer l'utilisateur
     const user = await apiService.getOrCreateUser(
       interaction.user.id,
@@ -362,7 +419,9 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     const userCharacters = townCharacters.filter(
       (char: any) => char.user?.discordId === interaction.user.id
     );
-    const activeCharacter = userCharacters.find((char: any) => char.isActive) as ActiveCharacter | undefined;
+    const activeCharacter = userCharacters.find(
+      (char: any) => char.isActive
+    ) as ActiveCharacter | undefined;
 
     if (!activeCharacter) {
       return interaction.reply({
@@ -372,7 +431,10 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     }
 
     // Récupérer les capacités craft du personnage
-    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const rawCapabilities =
+      (await apiService.characters.getCharacterCapabilities(
+        activeCharacter.id
+      )) as any[];
     const capabilities = normalizeCapabilities(rawCapabilities);
     const craftsFromCapabilities = capabilities
       .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
@@ -389,16 +451,21 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       new Set(craftsFromCapabilities.map((entry) => entry.craft as CraftEnum))
     );
 
-    // Récupérer tous les projets ACTIVE
+    // Récupérer tous les projets ACTIVE (non-blueprints)
     let allProjects: Project[] = [];
     for (const craftType of uniqueCraftEnums) {
-      const projects = (await apiService.projects.getProjectsByCraftType(town.id, craftType)) as Project[];
-      allProjects = allProjects.concat(projects.filter((p) => p.status === "ACTIVE"));
+      const projects = (await apiService.projects.getProjectsByCraftType(
+        town.id,
+        craftType
+      )) as Project[];
+      allProjects = allProjects.concat(
+        projects.filter((p) => p.status === "ACTIVE" && !(p as any).isBlueprint)
+      );
     }
 
     // Dédupliquer
     const uniqueProjects = Array.from(
-      new Map(allProjects.map(p => [p.id, p])).values()
+      new Map(allProjects.map((p) => [p.id, p])).values()
     );
 
     // Trier par PA manquants (du plus petit au plus grand)
@@ -415,29 +482,86 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       });
     }
 
+    // Pagination
+    const ITEMS_PER_PAGE = 25;
+    const totalPages = Math.ceil(sortedProjects.length / ITEMS_PER_PAGE);
+    const currentPage = Math.max(0, Math.min(page, totalPages - 1));
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    const endIndex = Math.min(
+      startIndex + ITEMS_PER_PAGE,
+      sortedProjects.length
+    );
+    const projectsPage = sortedProjects.slice(startIndex, endIndex);
+
     // Créer menu de sélection
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("select_project_invest")
       .setPlaceholder("Sélectionnez un projet")
       .addOptions(
-        sortedProjects.map((project) => ({
+        projectsPage.map((project) => ({
           label: project.name,
-          description: `${project.paContributed}/${project.paRequired} PA - ${project.craftTypes
+          description: `${project.paContributed}/${
+            project.paRequired
+          } PA - ${project.craftTypes
             .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
             .join(", ")}`,
           value: project.id,
         }))
       );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      selectMenu
-    );
+    const components: ActionRowBuilder<any>[] = [
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu),
+    ];
 
-    await interaction.reply({
-      content: "Choisissez un projet dans lequel contribuer :",
-      components: [row],
-      flags: ["Ephemeral"],
-    });
+    // Ajouter boutons de pagination si nécessaire
+    if (totalPages > 1) {
+      const paginationRow = new ActionRowBuilder<ButtonBuilder>();
+
+      if (currentPage > 0) {
+        paginationRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`project_participate:page:${currentPage - 1}`)
+            .setLabel("◀️ Précédent")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+
+      paginationRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId("page_info")
+          .setLabel(`Page ${currentPage + 1}/${totalPages}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true)
+      );
+
+      if (currentPage < totalPages - 1) {
+        paginationRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`project_participate:page:${currentPage + 1}`)
+            .setLabel("Suivant ▶️")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+
+      components.push(paginationRow);
+    }
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.update({
+        content: `Choisissez un projet dans lequel contribuer (${
+          sortedProjects.length
+        } projet${sortedProjects.length > 1 ? "s" : ""}) :`,
+        components,
+      });
+    } else {
+      await interaction.reply({
+        content: `Choisissez un projet dans lequel contribuer (${
+          sortedProjects.length
+        } projet${sortedProjects.length > 1 ? "s" : ""}) :`,
+        components,
+        flags: ["Ephemeral"],
+      });
+    }
 
     // Gérer la sélection
     const filter = (i: StringSelectMenuInteraction) =>
@@ -494,7 +618,10 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       );
 
       // Champs ressources (max 4)
-      if (selectedProject.resourceCosts && selectedProject.resourceCosts.length > 0) {
+      if (
+        selectedProject.resourceCosts &&
+        selectedProject.resourceCosts.length > 0
+      ) {
         const resourceCosts = selectedProject.resourceCosts.slice(0, 4);
 
         for (const rc of resourceCosts) {
@@ -511,9 +638,9 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
             .setMaxLength(4);
 
           actionRows.push(
-            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
-              resourceInput,
-            ])
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+              [resourceInput]
+            )
           );
         }
       }
@@ -521,7 +648,6 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       modal.addComponents(...actionRows);
 
       await response.showModal(modal);
-
     } catch (error) {
       logger.error("Erreur lors de la sélection du projet:", { error });
       if (!interaction.replied) {
@@ -535,6 +661,305 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     logger.error("Erreur lors de la préparation de la participation :", {
       error,
     });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: "❌ Erreur lors de la préparation de la participation.",
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.followUp({
+        content: "❌ Erreur lors de la préparation de la participation.",
+        flags: ["Ephemeral"],
+      });
+    }
+  }
+}
+
+/**
+ * Handler pour le bouton "Participer Blueprints" - Affiche select menu des blueprints avec pagination
+ */
+export async function handleBlueprintParticipateButton(
+  interaction: ButtonInteraction
+) {
+  try {
+    // Extraire le numéro de page du customId (format: blueprint_participate ou blueprint_participate:page:N)
+    const page = interaction.customId.includes(":page:")
+      ? parseInt(interaction.customId.split(":page:")[1], 10)
+      : 0;
+
+    // Récupérer l'utilisateur
+    const user = await apiService.getOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.discriminator
+    );
+
+    if (!user) {
+      throw new Error("Impossible de créer ou récupérer l'utilisateur");
+    }
+
+    // Récupérer la ville
+    const townResponse = await apiService.guilds.getTownByGuildId(
+      interaction.guildId!
+    );
+    const town = townResponse as unknown as Town;
+
+    if (!town || !town.id) {
+      throw new Error("Ville non trouvée");
+    }
+
+    // Récupérer le personnage actif
+    const townCharacters = (await apiService.characters.getTownCharacters(
+      town.id
+    )) as any[];
+    const userCharacters = townCharacters.filter(
+      (char: any) => char.user?.discordId === interaction.user.id
+    );
+    const activeCharacter = userCharacters.find(
+      (char: any) => char.isActive
+    ) as ActiveCharacter | undefined;
+
+    if (!activeCharacter) {
+      return interaction.reply({
+        content: `${STATUS.ERROR} Vous devez avoir un personnage actif.`,
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Récupérer les capacités craft du personnage
+    const rawCapabilities =
+      (await apiService.characters.getCharacterCapabilities(
+        activeCharacter.id
+      )) as any[];
+    const capabilities = normalizeCapabilities(rawCapabilities);
+    const craftsFromCapabilities = capabilities
+      .map((cap: Capability) => ({ cap, craft: toCraftEnum(cap.name) }))
+      .filter((entry) => entry.craft !== undefined);
+
+    if (craftsFromCapabilities.length === 0) {
+      return interaction.reply({
+        content: "🛠️ Vous n'avez aucune capacité artisanale.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    const uniqueCraftEnums = Array.from(
+      new Set(craftsFromCapabilities.map((entry) => entry.craft as CraftEnum))
+    );
+
+    // Récupérer tous les blueprints
+    let allProjects: Project[] = [];
+    for (const craftType of uniqueCraftEnums) {
+      const projects = (await apiService.projects.getProjectsByCraftType(
+        town.id,
+        craftType
+      )) as Project[];
+      allProjects = allProjects.concat(
+        projects.filter((p) => (p as any).isBlueprint)
+      );
+    }
+
+    // Dédupliquer
+    const uniqueProjects = Array.from(
+      new Map(allProjects.map((p) => [p.id, p])).values()
+    );
+
+    // Trier par PA manquants (du plus petit au plus grand)
+    const sortedProjects = uniqueProjects.sort((a, b) => {
+      const aRemaining = a.paRequired - a.paContributed;
+      const bRemaining = b.paRequired - b.paContributed;
+      return aRemaining - bRemaining;
+    });
+
+    if (sortedProjects.length === 0) {
+      return interaction.reply({
+        content: "Aucun blueprint n'est disponible pour l'instant.",
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Pagination
+    const ITEMS_PER_PAGE = 25;
+    const totalPages = Math.ceil(sortedProjects.length / ITEMS_PER_PAGE);
+    const currentPage = Math.max(0, Math.min(page, totalPages - 1));
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    const endIndex = Math.min(
+      startIndex + ITEMS_PER_PAGE,
+      sortedProjects.length
+    );
+    const projectsPage = sortedProjects.slice(startIndex, endIndex);
+
+    // Créer menu de sélection
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("select_blueprint_invest")
+      .setPlaceholder("Sélectionnez un blueprint")
+      .addOptions(
+        projectsPage.map((project) => ({
+          label: `📋 ${project.name}`,
+          description: `${project.paContributed}/${
+            project.paRequired
+          } PA - ${project.craftTypes
+            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
+            .join(", ")}`,
+          value: project.id,
+        }))
+      );
+
+    const components: ActionRowBuilder<any>[] = [
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu),
+    ];
+
+    // Ajouter boutons de pagination si nécessaire
+    if (totalPages > 1) {
+      const paginationRow = new ActionRowBuilder<ButtonBuilder>();
+
+      if (currentPage > 0) {
+        paginationRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`blueprint_participate:page:${currentPage - 1}`)
+            .setLabel("◀️ Précédent")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+
+      paginationRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId("page_info")
+          .setLabel(`Page ${currentPage + 1}/${totalPages}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true)
+      );
+
+      if (currentPage < totalPages - 1) {
+        paginationRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`blueprint_participate:page:${currentPage + 1}`)
+            .setLabel("Suivant ▶️")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+
+      components.push(paginationRow);
+    }
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.update({
+        content: `Choisissez un blueprint dans lequel contribuer (${
+          sortedProjects.length
+        } blueprint${sortedProjects.length > 1 ? "s" : ""}) :`,
+        components,
+      });
+    } else {
+      await interaction.reply({
+        content: `Choisissez un blueprint dans lequel contribuer (${
+          sortedProjects.length
+        } blueprint${sortedProjects.length > 1 ? "s" : ""}) :`,
+        components,
+        flags: ["Ephemeral"],
+      });
+    }
+
+    // Gérer la sélection
+    const filter = (i: StringSelectMenuInteraction) =>
+      i.customId === "select_blueprint_invest" &&
+      i.user.id === interaction.user.id;
+
+    try {
+      const response = (await interaction.channel?.awaitMessageComponent({
+        filter,
+        componentType: ComponentType.StringSelect,
+        time: 60000,
+      })) as StringSelectMenuInteraction;
+
+      if (!response) return;
+
+      const selectedProjectId = response.values[0];
+      const selectedProject = sortedProjects.find(
+        (p) => p.id === selectedProjectId
+      );
+
+      if (!selectedProject) {
+        await response.update({
+          content: "Blueprint non trouvé. Veuillez réessayer.",
+          components: [],
+        });
+        return;
+      }
+
+      // Créer modal avec PA + ressources
+      const modal = new ModalBuilder()
+        .setCustomId(`invest_project_modal_${selectedProjectId}`)
+        .setTitle(`Contribuer: ${selectedProject.name}`);
+
+      const actionRows: ActionRowBuilder<ModalActionRowComponentBuilder>[] = [];
+
+      // Champ PA
+      const pointsInput = new TextInputBuilder()
+        .setCustomId("points_input")
+        .setLabel(
+          `PA à investir (max: ${
+            selectedProject.paRequired - selectedProject.paContributed
+          } PA)`
+        )
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false)
+        .setPlaceholder("Entrez le nombre de PA (ou 0)")
+        .setMinLength(1)
+        .setMaxLength(2);
+
+      actionRows.push(
+        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents([
+          pointsInput,
+        ])
+      );
+
+      // Champs ressources (max 4)
+      if (
+        selectedProject.resourceCosts &&
+        selectedProject.resourceCosts.length > 0
+      ) {
+        const resourceCosts = selectedProject.resourceCosts.slice(0, 4);
+
+        for (const rc of resourceCosts) {
+          const remaining = rc.quantityRequired - rc.quantityContributed;
+          const resourceInput = new TextInputBuilder()
+            .setCustomId(`resource_${rc.resourceTypeId}`)
+            .setLabel(
+              `${rc.resourceType.emoji} ${rc.resourceType.name} (max: ${remaining})`
+            )
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setPlaceholder(`0-${remaining}`)
+            .setMinLength(1)
+            .setMaxLength(4);
+
+          actionRows.push(
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+              [resourceInput]
+            )
+          );
+        }
+      }
+
+      modal.addComponents(...actionRows);
+
+      await response.showModal(modal);
+    } catch (error) {
+      logger.error("Erreur lors de la sélection du blueprint:", { error });
+      if (!interaction.replied) {
+        await interaction.followUp({
+          content: "Temps écoulé ou erreur lors de la sélection.",
+          flags: ["Ephemeral"],
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      "Erreur lors de la préparation de la participation aux blueprints :",
+      {
+        error,
+      }
+    );
     if (!interaction.replied) {
       await interaction.reply({
         content: "❌ Erreur lors de la préparation de la participation.",
@@ -587,7 +1012,9 @@ export async function handleInvestModalSubmit(
     const userCharacters = townCharacters.filter(
       (char: any) => char.user?.discordId === interaction.user.id
     );
-    const activeCharacter = userCharacters.find((char: any) => char.isActive) as ActiveCharacter | undefined;
+    const activeCharacter = userCharacters.find(
+      (char: any) => char.isActive
+    ) as ActiveCharacter | undefined;
 
     if (!activeCharacter) {
       await interaction.reply({
@@ -600,7 +1027,8 @@ export async function handleInvestModalSubmit(
     // Vérifications état personnage
     if (activeCharacter.isDead) {
       await interaction.reply({
-        content: "💀 Un mort ne peut pas travailler ! Votre personnage est mort.",
+        content:
+          "💀 Un mort ne peut pas travailler ! Votre personnage est mort.",
         flags: ["Ephemeral"],
       });
       return;
@@ -623,7 +1051,7 @@ export async function handleInvestModalSubmit(
     let points = 0;
 
     if (inputValue && inputValue.trim() !== "") {
-      if (inputValue.includes('.') || inputValue.includes(',')) {
+      if (inputValue.includes(".") || inputValue.includes(",")) {
         await interaction.reply({
           content: `${STATUS.ERROR} Veuillez entrer un nombre entier uniquement.`,
           flags: ["Ephemeral"],
@@ -643,12 +1071,17 @@ export async function handleInvestModalSubmit(
     }
 
     // Parse resource contributions
-    const resourceContributions: { resourceTypeId: number; quantity: number }[] = [];
+    const resourceContributions: {
+      resourceTypeId: number;
+      quantity: number;
+    }[] = [];
 
     if (project.resourceCosts && project.resourceCosts.length > 0) {
       for (const rc of project.resourceCosts) {
         try {
-          const fieldValue = interaction.fields.getTextInputValue(`resource_${rc.resourceTypeId}`);
+          const fieldValue = interaction.fields.getTextInputValue(
+            `resource_${rc.resourceTypeId}`
+          );
 
           if (fieldValue && fieldValue.trim() !== "") {
             const quantity = parseInt(fieldValue.trim(), 10);
@@ -701,7 +1134,9 @@ export async function handleInvestModalSubmit(
     if (resourceContributions.length > 0) {
       const resourcesText = resourceContributions
         .map((rc) => {
-          const rcInfo = project.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
+          const rcInfo = project.resourceCosts?.find(
+            (r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId
+          );
           return `• ${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
         })
         .join("\n");
@@ -714,24 +1149,42 @@ export async function handleInvestModalSubmit(
     if (resourceContributions.length > 0) {
       const resText = resourceContributions
         .map((rc) => {
-          const rcInfo = project.resourceCosts?.find((r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId);
+          const rcInfo = project.resourceCosts?.find(
+            (r: ResourceCost) => r.resourceTypeId === rc.resourceTypeId
+          );
           return `${rcInfo?.resourceType.emoji} ${rc.quantity} ${rcInfo?.resourceType.name}`;
         })
         .join(", ");
       contributionParts.push(resText);
     }
 
-    const contributionLogMessage = `🛠️ **${activeCharacter.name}** a contribué ${contributionParts.join(" et ")} au projet "**${project.name}**".`;
-    await sendLogMessage(interaction.guildId!, interaction.client, contributionLogMessage);
+    const contributionLogMessage = `🛠️ **${
+      activeCharacter.name
+    }** a contribué ${contributionParts.join(" et ")} au projet "**${
+      project.name
+    }**".`;
+    await sendLogMessage(
+      interaction.guildId!,
+      interaction.client,
+      contributionLogMessage
+    );
 
     // Vérifier complétion
     if (result.project && result.project.status === "COMPLETED") {
-      const rewardText = formatRewardMessage(result.project, result.reward, activeCharacter.name);
+      const rewardText = formatRewardMessage(
+        result.project,
+        result.reward,
+        activeCharacter.name
+      );
 
       responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le projet est terminé !\n${rewardText}`;
 
       const completionLogMessage = `${PROJECT.CELEBRATION} Le projet "**${result.project.name}**" est terminé ! ${rewardText}`;
-      await sendLogMessage(interaction.guildId!, interaction.client, completionLogMessage);
+      await sendLogMessage(
+        interaction.guildId!,
+        interaction.client,
+        completionLogMessage
+      );
     }
 
     await interaction.reply({
@@ -749,57 +1202,12 @@ export async function handleInvestModalSubmit(
 }
 
 /**
- * Handler pour le bouton "Recommencer" des blueprints
- */
-export async function handleRestartBlueprintButton(interaction: ButtonInteraction): Promise<void> {
-  try {
-    const projectId = interaction.customId.split(":")[1];
-
-    // Récupérer l'utilisateur
-    const user = await apiService.getOrCreateUser(
-      interaction.user.id,
-      interaction.user.username,
-      interaction.user.discriminator
-    );
-
-    if (!user) {
-      await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif.",
-        flags: ["Ephemeral"],
-      });
-      return;
-    }
-
-    // Restart blueprint
-    const newProject = await apiService.projects.restartBlueprint(
-      projectId,
-      interaction.user.id
-    );
-
-    await interaction.reply({
-      content: `✅ Blueprint **${newProject.name}** redémarré avec succès !`,
-      flags: ["Ephemeral"],
-    });
-
-    // Optionally refresh the project list
-    await interaction.followUp({
-      content: "🔄 Projet redémarré ! Consultez le bouton 'Projets' dans votre profil pour voir la liste mise à jour.",
-      flags: ["Ephemeral"],
-    });
-  } catch (error: any) {
-    console.error("Error restarting blueprint:", error);
-    await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
-      flags: ["Ephemeral"],
-    });
-  }
-}
-
-/**
  * Handler pour le bouton "Voir les projets" depuis le profil
  * Réutilise la logique de handleProjectsCommand
  */
-export async function handleViewProjectsFromProfile(interaction: ButtonInteraction) {
+export async function handleViewProjectsFromProfile(
+  interaction: ButtonInteraction
+) {
   try {
     // Extraire les IDs du customId
     const [, characterId, userId] = interaction.customId.split(":");
@@ -841,7 +1249,9 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     const userCharacters = townCharacters.filter(
       (char: any) => char.user?.discordId === interaction.user.id
     );
-    const activeCharacter = userCharacters.find((char: any) => char.isActive) as ActiveCharacter | undefined;
+    const activeCharacter = userCharacters.find(
+      (char: any) => char.isActive
+    ) as ActiveCharacter | undefined;
 
     if (!activeCharacter) {
       return interaction.reply({
@@ -851,7 +1261,10 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     }
 
     // Récupérer les capacités du personnage
-    const rawCapabilities = await apiService.characters.getCharacterCapabilities(activeCharacter.id) as any[];
+    const rawCapabilities =
+      (await apiService.characters.getCharacterCapabilities(
+        activeCharacter.id
+      )) as any[];
     const capabilities = normalizeCapabilities(rawCapabilities);
 
     // Filtrer les capacités craft
@@ -861,7 +1274,8 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
 
     if (craftsFromCapabilities.length === 0) {
       return interaction.reply({
-        content: "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
+        content:
+          "🛠️ Vous n'avez aucune capacité artisanale. Les projets sont réservés aux artisans !",
         flags: ["Ephemeral"],
       });
     }
@@ -873,18 +1287,22 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
     // Récupérer tous les projets pour chaque craft type
     let allProjects: Project[] = [];
     for (const craftType of uniqueCraftEnums) {
-      const projects = await apiService.projects.getProjectsByCraftType(town.id, craftType);
+      const projects = await apiService.projects.getProjectsByCraftType(
+        town.id,
+        craftType
+      );
       allProjects = allProjects.concat(projects);
     }
 
     // Dédupliquer (un projet peut avoir plusieurs craft types)
     const uniqueProjects = Array.from(
-      new Map(allProjects.map(p => [p.id, p])).values()
+      new Map(allProjects.map((p) => [p.id, p])).values()
     );
 
     if (uniqueProjects.length === 0) {
       return interaction.reply({
-        content: "Aucun projet artisanal n'a encore été créé pour vos capacités.",
+        content:
+          "Aucun projet artisanal n'a encore été créé pour vos capacités.",
         flags: ["Ephemeral"],
       });
     }
@@ -894,118 +1312,152 @@ export async function handleViewProjectsFromProfile(interaction: ButtonInteracti
       "Voici les projets disponibles pour vos capacités :"
     );
 
-    // Grouper par statut
-    const projectsParStatut = uniqueProjects.reduce<Record<string, Project[]>>(
-      (acc, project) => {
-        if (!acc[project.status]) {
-          acc[project.status] = [];
-        }
-        acc[project.status].push(project);
-        return acc;
-      },
-      {}
+    // Séparer les projets en 3 catégories
+    const activeProjects = uniqueProjects.filter(
+      (p) => p.status === "ACTIVE" && !(p as any).isBlueprint
+    );
+    const blueprintProjects = uniqueProjects.filter(
+      (p) => (p as any).isBlueprint
+    );
+    const completedProjects = uniqueProjects.filter(
+      (p) => p.status === "COMPLETED"
     );
 
-    // Ajouter une section pour chaque statut
-    for (const [statut, listeProjects] of Object.entries(projectsParStatut)) {
-      const projectsText = listeProjects
-        .map((project) => {
-          // Craft types emojis + libellés
-          const craftEmojis = project.craftTypes.map((ct: any) => getCraftTypeEmoji(ct.craftType || ct)).join("");
-          const craftNames = project.craftTypes
-            .map((ct: any) => getCraftDisplayName(ct.craftType || ct))
-            .filter(Boolean)
-            .join(", ");
+    // Fonction helper pour formater un projet
+    // Format: 🔨🧵 • Nom optionnel • 10x🥞 - 0/2PA⚡|0/1🪵
+    const formatProject = (project: Project) => {
+      const craftEmojis = project.craftTypes
+        .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+        .join("");
+      const outputText = getProjectOutputText(project);
 
-          // Output resource
-          const outputText = getProjectOutputText(project);
+      let text = `${craftEmojis} •`;
 
-          let text = `${craftEmojis} **${project.name}** - ${project.paContributed}/${project.paRequired} PA`;
+      // Nom optionnel (si présent, ajouter avec séparateur)
+      if (project.name && project.name.trim()) {
+        text += ` ${project.name} •`;
+      }
 
-          if (outputText) {
-            text += ` → ${outputText}`;
-          }
+      // Output
+      text += ` ${outputText}`;
 
-          // Ressources requises
-          if (project.resourceCosts && project.resourceCosts.length > 0) {
-            const resourcesText = project.resourceCosts
-              .map(
-                (rc) =>
-                  `${rc.resourceType.emoji} ${rc.quantityContributed}/${rc.quantityRequired}`
-              )
-              .join(" ");
-            text += ` | ${resourcesText}`;
-          }
+      // PA avec emoji
+      text += ` - ${project.paContributed}/${project.paRequired}PA⚡`;
 
-          if (craftNames) {
-            text += `\n🛠️ ${craftNames}`;
-          }
+      // Ressources requises
+      if (project.resourceCosts && project.resourceCosts.length > 0) {
+        const resourcesText = project.resourceCosts
+          .map(
+            (rc) =>
+              `${rc.quantityContributed}/${rc.quantityRequired}${rc.resourceType.emoji}`
+          )
+          .join("|");
+        text += `|${resourcesText}`;
+      }
 
-          // Show blueprint info if applicable
-          if ((project as any).isBlueprint) {
-            const blueprintPA = (project as any).paBlueprintRequired ?? project.paRequired;
-            text += `\n📋 **Blueprint** - Peut être recommencé pour ${blueprintPA} PA`;
+      return text;
+    };
 
-            if ((project as any).blueprintResourceCosts && (project as any).blueprintResourceCosts.length > 0) {
-              text += "\n**Coûts Blueprint:**\n";
-              (project as any).blueprintResourceCosts.forEach((cost: any) => {
-                text += `  • ${cost.quantityRequired} ${cost.resourceType.name}\n`;
-              });
-            }
-          }
+    // Fonction helper pour trier par type d'output puis par métier (sans sous-titres)
+    const sortByCraftAndOutputType = (projects: Project[]) => {
+      return projects.sort((a, b) => {
+        // D'abord par type d'output (ressources avant objets)
+        const aIsResource =
+          a.outputResourceTypeId !== null &&
+          a.outputResourceTypeId !== undefined;
+        const bIsResource =
+          b.outputResourceTypeId !== null &&
+          b.outputResourceTypeId !== undefined;
 
-          return text;
-        })
-        .join("\n");
+        if (aIsResource !== bIsResource) {
+          return aIsResource ? -1 : 1; // ressources en premier
+        }
+
+        // Ensuite par craft type (tri alphabétique des emojis craft)
+        const aCraftKey = a.craftTypes
+          .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+          .join("");
+        const bCraftKey = b.craftTypes
+          .map((ct: any) => getCraftTypeEmoji(ct.craftType || ct))
+          .join("");
+
+        return aCraftKey.localeCompare(bCraftKey);
+      });
+    };
+
+    // Section 1: Projets Actifs
+    if (activeProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(activeProjects);
+      const sectionText = sortedProjects.map(formatProject).join("\n");
 
       embed.addFields({
-        name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
-        value: projectsText || "Aucun projet dans cette catégorie",
+        name: `${getStatusEmoji("ACTIVE")} Projets Actifs`,
+        value: sectionText || "Aucun projet actif",
         inline: false,
       });
     }
 
-    // Bouton "Participer" si au moins un projet ACTIVE
-    const activeProjects = uniqueProjects.filter((p) => p.status === "ACTIVE");
-    const blueprintProjects = uniqueProjects.filter((p) => (p as any).isBlueprint);
+    // Section 2: Blueprints Disponibles
+    if (blueprintProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(blueprintProjects);
+      const sectionText = sortedProjects.map(formatProject).join("\n");
 
-    const components = [];
-
-    if (activeProjects.length > 0) {
-      const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId("project_participate")
-          .setLabel("🛠️ Participer")
-          .setStyle(ButtonStyle.Primary)
-      );
-      components.push(buttonRow);
+      embed.addFields({
+        name: `📋 Blueprints Disponibles`,
+        value: `\n${sectionText}` || "Aucun blueprint disponible",
+        inline: false,
+      });
     }
 
-    // Add restart buttons for blueprints (up to 5 buttons per row)
-    if (blueprintProjects.length > 0) {
-      const restartButtons = blueprintProjects.slice(0, 5).map((project) =>
+    // Section 3: Projets Terminés
+    if (completedProjects.length > 0) {
+      const sortedProjects = sortByCraftAndOutputType(completedProjects);
+      const sectionText = sortedProjects
+        .map((p) => `✅ **${p.name}**`)
+        .join("\n");
+
+      embed.addFields({
+        name: `${getStatusEmoji("COMPLETED")} Projets Terminés`,
+        value: `\n${sectionText}` || "Aucun projet terminé",
+        inline: false,
+      });
+    }
+
+    // Boutons d'interaction
+    const components = [];
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>();
+
+    if (activeProjects.length > 0) {
+      buttonRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`project_restart:${project.id}`)
-          .setLabel(`🔄 ${project.name}`)
+          .setCustomId("project_participate")
+          .setLabel("🛠️ Participer Projets")
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+
+    if (blueprintProjects.length > 0) {
+      buttonRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId("blueprint_participate")
+          .setLabel("📋 Participer Blueprints")
           .setStyle(ButtonStyle.Success)
       );
+    }
 
-      // Group buttons in rows of up to 5
-      for (let i = 0; i < restartButtons.length; i += 5) {
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-          ...restartButtons.slice(i, i + 5)
-        );
-        components.push(row);
-      }
+    if (buttonRow.components.length > 0) {
+      components.push(buttonRow);
     }
 
     await interaction.reply({
       embeds: [embed],
       components,
-      flags: ["Ephemeral"]
+      flags: ["Ephemeral"],
     });
   } catch (error) {
-    logger.error("Erreur lors de l'affichage des projets depuis le profil :", { error });
+    logger.error("Erreur lors de l'affichage des projets depuis le profil :", {
+      error,
+    });
     await interaction.reply({
       content: "❌ Erreur lors de l'affichage des projets.",
       flags: ["Ephemeral"],

@@ -1,50 +1,26 @@
+Ajoute des fields vides (comme dans /profil) pour espacer les blocs
 
-> je viens de terminer un projet de type objet. Je ne 
-vois pas cet objet dans mon inventaire en faisant 
-/profil 
+🛠️ Projets artisanaux
+Voici les projets disponibles pour vos capacités :
 
+[Field vide]
+🔧 Projets Actifs
+🧵 • 10x🥞 - 0/4PA⚡|0/1🪵|0/1🧵|0/1🌾
+🧵 • - • Enclume(x1) - 0/14PA⚡|0/5⚙️|0/4🌾|0/45🪵
 
+[field vide]
+📋 Blueprints Disponibles
+🧵🪚 • 8eme merveille du monde • Canari(x1) - 0/1PA⚡
 
+[field vide]
+✅ Projets Terminés
+🪚 • nom du projet • output - 14/14PA⚡|8/8⚙️
 
-  7. Système de blueprints complet ✅ ✅ ✅
+[field vide]
+Aujourd’hui à 14:29
 
-  Backend (project.service.ts & project.repository.ts):
-  - ✅ Transformation automatique en blueprint quand le
-   projet est terminé (si coûts blueprint définis)
-  - ✅ Seul le projet original devient blueprint, pas
-  les instances
-  - ✅ Les blueprints sont inclus dans les requêtes
-  getProjectsByCraftType (avec OR condition)
-  - ✅ Copie correcte des coûts lors du restart (sans
-  créer de blueprintResourceCosts pour les instances)
-  - ✅ Support des objets en output lors du restart
+Validation du projet, manque un message public de log
 
-  Frontend (projects.handlers.ts & 
-  project-api.service.ts):
-  - ✅ Affichage des blueprints dans le bouton
-  "Projets" du /profil
-  - ✅ Boutons "🔄 Relancer" pour chaque blueprint
-  - ✅ Handler handleRestartBlueprintButton fonctionnel
-  - ✅ Correction du type projectId de number à string
-  (CUID)
+Validation de blueprint, manque un message public de log
 
-  🔄 Workflow final des blueprints
-
-  1. Admin crée un projet avec blueprint costs (PA +
-  ressources blueprint)
-  2. Premier projet ACTIVE → Les joueurs contribuent
-  3. Projet terminé → Devient blueprint automatiquement
-   (si coûts blueprint définis)
-  4. Blueprint visible dans /profil → Bouton "Projets"
-  → Section "COMPLETED" avec bouton "🔄 Relancer"
-  5. Clic sur "🔄 Relancer" → Crée une nouvelle 
-  instance ACTIVE avec les coûts blueprint
-  6. Instance terminée → Reste COMPLETED mais NE 
-  devient PAS blueprint
-  7. Blueprint original toujours disponible → Retour à
-  l'étape 4 (infini)
-
-  Vous pouvez maintenant cliquer sur le bouton
-  "Projets" dans votre /profil et vous devriez voir
-  votre projet "Tissu" en tant que blueprint avec un
-  bouton "🔄 Tissu" pour le relancer ! 🚀
+il reste des "menuiser" à remplacer par Travailler le bois

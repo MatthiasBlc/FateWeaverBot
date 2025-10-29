@@ -21,66 +21,50 @@ import { replyEphemeral } from "../../../utils/interaction-helpers";
 
 /**
  * ÉTAPE 1: Handler pour le bouton "Ajouter un projet"
- * Affiche un modal pour les informations de base
+ * Affiche directement l'écran de sélection (craft types + output type)
  */
 export async function handleProjectAdminAddButton(interaction: ButtonInteraction) {
   try {
-    // Créer le modal initial
-    const modal = new ModalBuilder()
-      .setCustomId("project_admin_add_step1_modal")
-      .setTitle("➕ Créer un projet - Étape 1/4");
+    await interaction.deferReply({ flags: ["Ephemeral"] });
 
-    // Nom du projet
-    const nameInput = new TextInputBuilder()
-      .setCustomId("project_name")
-      .setLabel("Nom du projet")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("Ex: Construction d'une forge")
-      .setMaxLength(100);
+    // Récupérer la ville
+    const town = await getTownByGuildId(interaction.guildId || "");
+    if (!town) {
+      await interaction.editReply({
+        content: "❌ Aucune ville trouvée pour ce serveur.",
+      });
+      return;
+    }
 
-    // Types de craft (comma-separated)
-    const craftTypesInput = new TextInputBuilder()
-      .setCustomId("project_craft_types")
-      .setLabel("Types d'artisanat (séparés par virgules)")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("Ex: TISSER, FORGER, MENUISER")
-      .setMaxLength(100);
+    // Créer l'entrée dans le cache SANS nom (optionnel)
+    const cacheId = projectCreationCache.store(interaction.user.id, {
+      name: "", // Nom vide par défaut, sera optionnel
+      townId: town.id,
+      craftTypes: [],
+      outputType: null as any,
+      outputQuantity: 1,
+      paRequired: 0,
+      resourceCosts: [],
+    });
 
-    // Type d'output
-    const outputTypeInput = new TextInputBuilder()
-      .setCustomId("project_output_type")
-      .setLabel("Type de production (RESOURCE ou OBJECT)")
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true)
-      .setPlaceholder("RESOURCE ou OBJECT")
-      .setMaxLength(10);
+    // Afficher l'écran de sélection avec 2 select menus
+    await showCraftAndOutputSelection(interaction, cacheId, "");
 
-    modal.addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(craftTypesInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(outputTypeInput)
-    );
-
-    await interaction.showModal(modal);
-
-    logger.info("Project add step 1 modal shown", {
+    logger.info("Project add started", {
       userId: interaction.user.id,
       guildId: interaction.guildId,
     });
   } catch (error) {
-    logger.error("Error showing project add step 1 modal:", { error });
-    await interaction.reply({
+    logger.error("Error starting project add:", { error });
+    await interaction.editReply({
       content: "❌ Erreur lors de l'affichage du formulaire.",
-      flags: ["Ephemeral"],
     });
   }
 }
 
 /**
  * ÉTAPE 1: Handler pour la soumission du modal initial
- * Valide les données et passe à l'étape 2 (sélection de l'output)
+ * Affiche les 2 select menus + bouton valider
  */
 export async function handleProjectAdminAddStep1Modal(
   interaction: ModalSubmitInteraction
@@ -97,60 +81,380 @@ export async function handleProjectAdminAddStep1Modal(
       return;
     }
 
-    // Récupérer les valeurs du modal
+    // Récupérer le nom du projet
     const name = interaction.fields.getTextInputValue("project_name").trim();
-    const craftTypesRaw = interaction.fields.getTextInputValue("project_craft_types").trim();
-    const outputTypeRaw = interaction.fields.getTextInputValue("project_output_type").trim().toUpperCase();
 
-    // Validation du type d'output
-    if (outputTypeRaw !== "RESOURCE" && outputTypeRaw !== "OBJECT") {
-      await interaction.editReply({
-        content: "❌ Le type de production doit être RESOURCE ou OBJECT.",
-      });
-      return;
-    }
-
-    // Parse craft types
-    const craftTypes = craftTypesRaw
-      .split(",")
-      .map((ct) => ct.trim().toUpperCase())
-      .filter(Boolean);
-
-    if (craftTypes.length === 0) {
-      await interaction.editReply({
-        content: "❌ Vous devez spécifier au moins un type d'artisanat.",
-      });
-      return;
-    }
-
-    // Valider les craft types
-    const validCraftTypes = ["TISSER", "FORGER", "MENUISER"];
-    const invalidCrafts = craftTypes.filter((ct) => !validCraftTypes.includes(ct));
-    if (invalidCrafts.length > 0) {
-      await interaction.editReply({
-        content: `❌ Types d'artisanat invalides : ${invalidCrafts.join(", ")}.\nValides : ${validCraftTypes.join(", ")}`,
-      });
-      return;
-    }
-
-    // Créer l'entrée dans le cache
+    // Créer l'entrée dans le cache (sans craft types ni output type encore)
     const cacheId = projectCreationCache.store(interaction.user.id, {
       name,
       townId: town.id,
-      craftTypes,
-      outputType: outputTypeRaw as "RESOURCE" | "OBJECT",
-      outputQuantity: 1, // Par défaut
+      craftTypes: [],
+      outputType: null as any, // Sera rempli après sélection
+      outputQuantity: 1,
       paRequired: 0,
       resourceCosts: [],
     });
 
-    // Passer à l'étape 2 : sélection de l'output spécifique
-    await showOutputSelection(interaction, cacheId, outputTypeRaw as "RESOURCE" | "OBJECT");
+    // Afficher l'écran de sélection avec 2 select menus
+    await showCraftAndOutputSelection(interaction, cacheId, name);
 
   } catch (error: any) {
     logger.error("Error in project add step 1:", { error });
     await interaction.editReply({
       content: `❌ Erreur : ${error.message || "Erreur inconnue"}`,
+    });
+  }
+}
+
+/**
+ * ÉTAPE 2: Afficher l'écran avec 2 select menus (craft types + output type) + boutons
+ */
+async function showCraftAndOutputSelection(
+  interaction: ButtonInteraction | ModalSubmitInteraction,
+  cacheId: string,
+  projectName: string
+) {
+  try {
+    // Select menu 1: Types d'artisanat (multi-sélection)
+    const craftTypesMenu = new StringSelectMenuBuilder()
+      .setCustomId(`project_add_craft_types:${cacheId}`)
+      .setPlaceholder("Sélectionnez les corps d'artisanat")
+      .setMinValues(1)
+      .setMaxValues(3)
+      .addOptions([
+        { label: "Tisser", value: "TISSER", emoji: "🧵" },
+        { label: "Forger", value: "FORGER", emoji: "🔨" },
+        { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
+      ]);
+
+    // Select menu 2: Type de sortie (resource ou object)
+    const outputTypeMenu = new StringSelectMenuBuilder()
+      .setCustomId(`project_add_output_type:${cacheId}`)
+      .setPlaceholder("Type de production")
+      .addOptions([
+        { label: "Ressource", value: "RESOURCE", emoji: "📦" },
+        { label: "Objet", value: "OBJECT", emoji: "⚒️" },
+      ]);
+
+    // Boutons : Nom optionnel + Valider
+    const nameButton = new ButtonBuilder()
+      .setCustomId(`project_add_optional_name:${cacheId}`)
+      .setLabel("Ajouter nom (optionnel)")
+      .setEmoji("✏️")
+      .setStyle(ButtonStyle.Secondary);
+
+    const validateButton = new ButtonBuilder()
+      .setCustomId(`project_add_validate_selection:${cacheId}`)
+      .setLabel("Valider")
+      .setEmoji("✅")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(true); // Désactivé jusqu'à ce que les 2 menus soient remplis
+
+    const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(craftTypesMenu);
+    const row2 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(outputTypeMenu);
+    const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(nameButton, validateButton);
+
+    const displayName = projectName && projectName.trim() ? projectName : "Sans nom";
+
+    await interaction.editReply({
+      content: `${PROJECT.ICON} **Nouveau projet : ${displayName}**\n\n` +
+               `📝 **Étape 1/4** : Configuration de base\n\n` +
+               `Veuillez sélectionner :\n` +
+               `• Les corps d'artisanat concernés\n` +
+               `• Le type de production\n\n` +
+               `Cliquez ensuite sur **Valider** pour continuer.`,
+      components: [row1, row2, row3],
+    });
+
+  } catch (error: any) {
+    logger.error("Error showing craft and output selection:", { error });
+    await interaction.editReply({
+      content: `❌ Erreur : ${error.message || "Erreur inconnue"}`,
+    });
+  }
+}
+
+/**
+ * Handler pour le bouton nom optionnel
+ */
+export async function handleProjectAddOptionalName(interaction: ButtonInteraction) {
+  try {
+    const cacheId = interaction.customId.split(":")[1];
+    const data = projectCreationCache.retrieve(cacheId, interaction.user.id);
+
+    if (!data || !cacheId) {
+      await interaction.reply({
+        content: "❌ Session expirée. Recommencez la création du projet.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Afficher modal pour le nom
+    const modal = new ModalBuilder()
+      .setCustomId(`project_add_name_modal:${cacheId}`)
+      .setTitle("Nom du projet (optionnel)");
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId("project_name")
+      .setLabel("Nom du projet")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false)
+      .setPlaceholder("Ex: Construction d'une forge")
+      .setMaxLength(100)
+      .setValue(data.name || ""); // Pré-remplir avec le nom existant s'il y en a un
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput)
+    );
+
+    await interaction.showModal(modal);
+
+  } catch (error: any) {
+    logger.error("Error showing optional name modal:", { error });
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Handler pour le modal de nom optionnel
+ */
+export async function handleProjectAddNameModal(interaction: ModalSubmitInteraction) {
+  try {
+    await interaction.deferReply({ flags: ["Ephemeral"] });
+
+    const cacheId = interaction.customId.split(":")[1];
+    const data = projectCreationCache.retrieve(cacheId, interaction.user.id);
+
+    if (!data || !cacheId) {
+      await interaction.editReply({
+        content: "❌ Session expirée. Recommencez la création du projet.",
+      });
+      return;
+    }
+
+    // Récupérer le nom
+    const name = interaction.fields.getTextInputValue("project_name").trim();
+    data.name = name;
+    projectCreationCache.store(interaction.user.id, data, cacheId);
+
+    // Vérifier si les deux sélections sont faites
+    const canValidate = data.craftTypes.length > 0 && data.outputType !== null;
+
+    // Reconstruire les components avec le nom mis à jour
+    await updateSelectionMessage(interaction, cacheId, data.name, data.craftTypes, data.outputType, canValidate);
+
+  } catch (error: any) {
+    logger.error("Error handling name modal:", { error });
+    await interaction.editReply({
+      content: `❌ Erreur : ${error.message}`,
+    });
+  }
+}
+
+/**
+ * Handler pour la sélection des craft types
+ */
+export async function handleProjectAddCraftTypesSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const cacheId = interaction.customId.split(":")[1];
+    const data = projectCreationCache.retrieve(cacheId, interaction.user.id);
+
+    if (!data || !cacheId) {
+      await interaction.reply({
+        content: "❌ Session expirée. Recommencez la création du projet.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Mettre à jour le cache avec les craft types sélectionnés
+    data.craftTypes = interaction.values;
+    projectCreationCache.store(interaction.user.id, data, cacheId);
+
+    // Vérifier si les deux sélections sont faites
+    const canValidate = data.craftTypes.length > 0 && data.outputType !== null;
+
+    // Reconstruire les components avec le bouton valider activé si nécessaire
+    await updateSelectionMessage(interaction, cacheId, data.name, data.craftTypes, data.outputType, canValidate);
+
+  } catch (error: any) {
+    logger.error("Error handling craft types select:", { error });
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Handler pour la sélection du type de sortie
+ */
+export async function handleProjectAddOutputTypeSelect(interaction: StringSelectMenuInteraction) {
+  try {
+    const cacheId = interaction.customId.split(":")[1];
+    const data = projectCreationCache.retrieve(cacheId, interaction.user.id);
+
+    if (!data || !cacheId) {
+      await interaction.reply({
+        content: "❌ Session expirée. Recommencez la création du projet.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Mettre à jour le cache avec le type de sortie sélectionné
+    data.outputType = interaction.values[0] as "RESOURCE" | "OBJECT";
+    projectCreationCache.store(interaction.user.id, data, cacheId);
+
+    // Vérifier si les deux sélections sont faites
+    const canValidate = data.craftTypes.length > 0 && data.outputType !== null;
+
+    // Reconstruire les components avec le bouton valider activé si nécessaire
+    await updateSelectionMessage(interaction, cacheId, data.name, data.craftTypes, data.outputType, canValidate);
+
+  } catch (error: any) {
+    logger.error("Error handling output type select:", { error });
+    await interaction.reply({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
+    });
+  }
+}
+
+/**
+ * Helper pour mettre à jour le message avec les sélections actuelles
+ */
+async function updateSelectionMessage(
+  interaction: StringSelectMenuInteraction | ModalSubmitInteraction,
+  cacheId: string,
+  projectName: string,
+  craftTypes: string[],
+  outputType: string | null,
+  canValidate: boolean
+) {
+  // Select menu 1: Types d'artisanat (multi-sélection)
+  const craftTypesMenu = new StringSelectMenuBuilder()
+    .setCustomId(`project_add_craft_types:${cacheId}`)
+    .setPlaceholder("Sélectionnez les corps d'artisanat")
+    .setMinValues(1)
+    .setMaxValues(3)
+    .addOptions([
+      { label: "Tisser", value: "TISSER", emoji: "🧵" },
+      { label: "Forger", value: "FORGER", emoji: "🔨" },
+      { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
+    ]);
+
+  // Select menu 2: Type de sortie (resource ou object)
+  const outputTypeMenu = new StringSelectMenuBuilder()
+    .setCustomId(`project_add_output_type:${cacheId}`)
+    .setPlaceholder("Type de production")
+    .addOptions([
+      { label: "Ressource", value: "RESOURCE", emoji: "📦" },
+      { label: "Objet", value: "OBJECT", emoji: "⚒️" },
+    ]);
+
+  // Boutons : Nom optionnel + Valider
+  const nameButton = new ButtonBuilder()
+    .setCustomId(`project_add_optional_name:${cacheId}`)
+    .setLabel("Ajouter nom (optionnel)")
+    .setEmoji("✏️")
+    .setStyle(ButtonStyle.Secondary);
+
+  const validateButton = new ButtonBuilder()
+    .setCustomId(`project_add_validate_selection:${cacheId}`)
+    .setLabel("Valider")
+    .setEmoji("✅")
+    .setStyle(ButtonStyle.Success)
+    .setDisabled(!canValidate);
+
+  const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(craftTypesMenu);
+  const row2 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(outputTypeMenu);
+  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(nameButton, validateButton);
+
+  // Construire le message avec les sélections actuelles
+  const displayName = projectName && projectName.trim() ? projectName : "Sans nom";
+  let content = `${PROJECT.ICON} **Nouveau projet : ${displayName}**\n\n` +
+                `📝 **Étape 1/4** : Configuration de base\n\n`;
+
+  if (craftTypes.length > 0) {
+    content += `✅ **Corps d'artisanat** : ${craftTypes.map(ct => {
+      const emoji = ct === "TISSER" ? "🧵" : ct === "FORGER" ? "🔨" : "🪚";
+      return `${emoji} ${ct}`;
+    }).join(", ")}\n`;
+  } else {
+    content += `⏳ **Corps d'artisanat** : Non sélectionné\n`;
+  }
+
+  if (outputType) {
+    const typeLabel = outputType === "RESOURCE" ? "📦 Ressource" : "⚒️ Objet";
+    content += `✅ **Type de production** : ${typeLabel}\n`;
+  } else {
+    content += `⏳ **Type de production** : Non sélectionné\n`;
+  }
+
+  content += `\n${canValidate ? "✅ Cliquez sur **Valider** pour continuer." : "⏳ Complétez les sélections ci-dessus."}`;
+
+  // Use update for StringSelectMenuInteraction, editReply for ModalSubmitInteraction
+  if (interaction instanceof StringSelectMenuInteraction) {
+    await interaction.update({
+      content,
+      components: [row1, row2, row3],
+    });
+  } else {
+    await interaction.editReply({
+      content,
+      components: [row1, row2, row3],
+    });
+  }
+}
+
+/**
+ * Handler pour le bouton Valider
+ */
+export async function handleProjectAddValidateSelection(interaction: ButtonInteraction) {
+  try {
+    await interaction.deferUpdate();
+
+    const cacheId = interaction.customId.split(":")[1];
+    const data = projectCreationCache.retrieve(cacheId, interaction.user.id);
+
+    if (!data || !cacheId) {
+      await interaction.followUp({
+        content: "❌ Session expirée. Recommencez la création du projet.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Vérifier que les sélections sont complètes
+    if (data.craftTypes.length === 0 || !data.outputType) {
+      await interaction.followUp({
+        content: "❌ Veuillez compléter toutes les sélections.",
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    // Passer à l'étape suivante (sélection de l'output spécifique)
+    // On utilise l'ancienne fonction showOutputSelection qui existe déjà
+    // Mais on doit créer un mock interaction pour la compatibilité
+    const mockInteraction = {
+      editReply: interaction.editReply.bind(interaction),
+      user: interaction.user,
+      guildId: interaction.guildId,
+    } as any;
+
+    await showOutputSelection(mockInteraction, cacheId, data.outputType);
+
+  } catch (error: any) {
+    logger.error("Error validating selection:", { error });
+    await interaction.followUp({
+      content: `❌ Erreur : ${error.message}`,
+      flags: ["Ephemeral"],
     });
   }
 }

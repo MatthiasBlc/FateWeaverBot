@@ -6,7 +6,6 @@ import {
   contributeToProject,
   getAllProjectsForTown,
   deleteProject,
-  restartBlueprint,
 } from '../controllers/projects';
 import { validate } from '../api/middleware/validation.middleware';
 import {
@@ -16,7 +15,6 @@ import {
   GetProjectByIdSchema,
   ContributeToProjectSchema,
   DeleteProjectSchema,
-  RestartBlueprintSchema
 } from '../api/validators/project.schema';
 
 const router = Router();
@@ -27,6 +25,5 @@ router.get('/town/:townId/craft-type/:craftType', validate(GetProjectsByCraftTyp
 router.get('/:projectId', validate(GetProjectByIdSchema), getProjectById);
 router.post('/characters/:characterId/projects/:projectId/contribute', validate(ContributeToProjectSchema), contributeToProject);
 router.delete('/:projectId', validate(DeleteProjectSchema), deleteProject);
-router.post('/:projectId/restart', validate(RestartBlueprintSchema), restartBlueprint);
 
 export default router;

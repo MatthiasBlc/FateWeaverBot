@@ -177,12 +177,9 @@ model Project {
   resourceCosts          ProjectResourceCost[] // Coûts en ressources optionnels
   // Blueprint fields
   isBlueprint            Boolean                        @default(false)
-  originalProjectId      String?
   paBlueprintRequired    Int?
   blueprintResourceCosts ProjectBlueprintResourceCost[]
 
-  originalProject    Project?      @relation("ProjectBlueprint", fields: [originalProjectId], references: [id], onDelete: SetNull)
-  blueprintCopies    Project[]     @relation("ProjectBlueprint")
   outputResourceType ResourceType? @relation("ProjectResourceOutput", fields: [outputResourceTypeId], references: [id])
   outputObjectType   ObjectType?   @relation("ProjectObjectOutput", fields: [outputObjectTypeId], references: [id])
   createdAt          DateTime      @default(now()) @map("created_at")

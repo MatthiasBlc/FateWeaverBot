@@ -10,7 +10,7 @@ const resourceCostSchema = z.object({
 // POST /projects
 export const CreateProjectSchema = z.object({
   body: z.object({
-    name: z.string().min(1, "Le nom du projet est requis"),
+    name: z.string(), // Nom optionnel (peut être vide)
     paRequired: z.number().int().positive("paRequired doit être > 0"),
     outputQuantity: z.number().int().positive("outputQuantity doit être > 0"),
     townId: z.string().cuid(),
@@ -56,13 +56,6 @@ export const ContributeToProjectSchema = z.object({
 
 // DELETE /projects/:projectId
 export const DeleteProjectSchema = z.object({
-  params: z.object({
-    projectId: z.string().cuid()
-  })
-});
-
-// POST /projects/:projectId/restart
-export const RestartBlueprintSchema = z.object({
   params: z.object({
     projectId: z.string().cuid()
   })

@@ -164,105 +164,6 @@ class ProjectServiceClass {
     return project;
   }
 
-  async convertToBlueprint(projectId: string): Promise<void> {
-    await this.projectRepo.update(projectId, { isBlueprint: true });
-  }
-
-  async restartBlueprint(blueprintId: string, createdBy: string): Promise<any> {
-    return await prisma.$transaction(async (tx) => {
-      // Get the blueprint project
-      const blueprint = await tx.project.findUnique({
-        where: { id: blueprintId },
-        include: {
-          craftTypes: true,
-          blueprintResourceCosts: {
-            ...ResourceQueries.withResourceType(),
-          },
-        },
-      });
-
-      if (!blueprint) {
-        throw new NotFoundError("Blueprint", blueprintId);
-      }
-
-      if (!blueprint.isBlueprint) {
-        throw new BadRequestError("This project is not a blueprint");
-      }
-
-      const activeInstance = await tx.project.findFirst({
-        where: {
-          originalProjectId: blueprintId,
-          status: ProjectStatus.ACTIVE,
-        },
-      });
-
-      if (activeInstance) {
-        throw new BadRequestError(
-          "Cette blueprint possède déjà une instance active"
-        );
-      }
-
-      // Use blueprint costs if available, otherwise use original costs
-      const paRequired = blueprint.paBlueprintRequired ?? blueprint.paRequired;
-
-      // Create new project from blueprint
-      const newProject = await tx.project.create({
-        data: {
-          name: blueprint.name,
-          paRequired,
-          paContributed: 0,
-          outputResourceTypeId: blueprint.outputResourceTypeId,
-          outputObjectTypeId: blueprint.outputObjectTypeId,
-          outputQuantity: blueprint.outputQuantity,
-          status: ProjectStatus.ACTIVE,
-          townId: blueprint.townId,
-          createdBy,
-          originalProjectId: blueprintId,
-          paBlueprintRequired: blueprint.paBlueprintRequired,
-        },
-      });
-
-      // Copy craft types
-      await tx.projectCraftType.createMany({
-        data: blueprint.craftTypes.map((ct) => ({
-          projectId: newProject.id,
-          craftType: ct.craftType,
-        })),
-      });
-
-      // Use blueprint resource costs if available
-      if (blueprint.blueprintResourceCosts.length > 0) {
-        // Copy blueprint costs as regular costs for the instance
-        // (les instances n'ont PAS besoin de blueprintResourceCosts car elles ne deviennent pas blueprints)
-        await tx.projectResourceCost.createMany({
-          data: blueprint.blueprintResourceCosts.map((cost) => ({
-            projectId: newProject.id,
-            resourceTypeId: cost.resourceTypeId,
-            quantityRequired: cost.quantityRequired,
-            quantityProvided: 0,
-          })),
-        });
-      } else {
-        // No blueprint costs defined, use original costs from ProjectResourceCost
-        const originalCosts = await tx.projectResourceCost.findMany({
-          where: { projectId: blueprintId },
-        });
-
-        if (originalCosts.length > 0) {
-          await tx.projectResourceCost.createMany({
-            data: originalCosts.map((cost) => ({
-              projectId: newProject.id,
-              resourceTypeId: cost.resourceTypeId,
-              quantityRequired: cost.quantityRequired,
-              quantityProvided: 0,
-            })),
-          });
-        }
-      }
-
-      return newProject;
-    });
-  }
 
   async getActiveProjectsForCraftType(townId: string, craftType: CraftType) {
     return this.projectRepo.findActiveProjectsForCraftType(townId, craftType);
@@ -432,11 +333,6 @@ class ProjectServiceClass {
       );
 
       if (paComplete && resourcesComplete) {
-        await tx.project.update({
-          where: { id: projectId },
-          data: { status: ProjectStatus.COMPLETED },
-        });
-
         // Si le projet produit une ressource (et non un objet)
         if (updatedProject!.outputResourceTypeId !== null) {
           await tx.resourceStock.upsert({
@@ -533,17 +429,45 @@ class ProjectServiceClass {
           }
         }
 
-        // Si le projet a des coûts blueprint ET n'est pas une instance d'un blueprint, le transformer en blueprint
-        // (les instances ne deviennent pas blueprints, seul le blueprint original reste disponible)
-        const isInstance = updatedProject!.originalProjectId !== null;
+        // Vérifier si le projet a des coûts blueprint
         const hasBlueprintCosts =
           updatedProject!.paBlueprintRequired !== null ||
           (updatedProject!.blueprintResourceCosts && updatedProject!.blueprintResourceCosts.length > 0);
 
-        if (hasBlueprintCosts && !isInstance) {
+        if (hasBlueprintCosts) {
+          // BLUEPRINT: recycler le projet au lieu de le compléter
+          // 1. Remettre les PA à 0
           await tx.project.update({
             where: { id: projectId },
-            data: { isBlueprint: true },
+            data: {
+              paContributed: 0,
+              paRequired: updatedProject!.paBlueprintRequired ?? updatedProject!.paRequired,
+              isBlueprint: true,
+              status: ProjectStatus.ACTIVE
+            },
+          });
+
+          // 2. Supprimer les anciens resource costs
+          await tx.projectResourceCost.deleteMany({
+            where: { projectId },
+          });
+
+          // 3. Créer les nouveaux resource costs basés sur blueprintResourceCosts
+          if (updatedProject!.blueprintResourceCosts && updatedProject!.blueprintResourceCosts.length > 0) {
+            await tx.projectResourceCost.createMany({
+              data: updatedProject!.blueprintResourceCosts.map((cost) => ({
+                projectId,
+                resourceTypeId: cost.resourceTypeId,
+                quantityRequired: cost.quantityRequired,
+                quantityContributed: 0,
+              })),
+            });
+          }
+        } else {
+          // Projet normal sans blueprint: le compléter définitivement
+          await tx.project.update({
+            where: { id: projectId },
+            data: { status: ProjectStatus.COMPLETED },
           });
         }
 

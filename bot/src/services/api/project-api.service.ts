@@ -100,12 +100,4 @@ export class ProjectAPIService extends BaseAPIService {
     );
     return response.data;
   }
-
-  /**
-   * Redémarre un blueprint pour créer un nouveau projet
-   */
-  public async restartBlueprint(projectId: string, createdBy: string): Promise<Project> {
-    const response = await this.api.post(`/projects/${projectId}/restart`, { createdBy });
-    return response.data;
-  }
 }

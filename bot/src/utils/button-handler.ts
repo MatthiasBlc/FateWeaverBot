@@ -452,6 +452,40 @@ export class ButtonHandler {
       }
     });
 
+    // Gestionnaire pour le bouton nom optionnel
+    this.registerHandlerByPrefix("project_add_optional_name:", async (interaction) => {
+      try {
+        const { handleProjectAddOptionalName } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddOptionalName(interaction);
+      } catch (error) {
+        logger.error("Error handling project add optional name button:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de l'affichage du formulaire.",
+            flags: ["Ephemeral"],
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour le bouton de validation de sélection (étape 1)
+    this.registerHandlerByPrefix("project_add_validate_selection:", async (interaction) => {
+      try {
+        const { handleProjectAddValidateSelection } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddValidateSelection(interaction);
+      } catch (error) {
+        logger.error("Error handling project add validate selection:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la validation de la sélection.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     // Gestionnaire pour le bouton de modification de projet admin
     this.registerHandler("project_admin_edit", async (interaction) => {
       try {
@@ -778,8 +812,8 @@ export class ButtonHandler {
     });
 
     // =================== PROJECTS HANDLERS ===================
-    // Gestionnaire pour le bouton "Participer" des projets
-    this.registerHandler("project_participate", async (interaction) => {
+    // Gestionnaire pour le bouton "Participer Projets" (avec pagination)
+    this.registerHandlerByPrefix("project_participate", async (interaction) => {
       try {
         const { handleParticipateButton } = await import(
           "../features/projects/projects.handlers.js"
@@ -789,6 +823,22 @@ export class ButtonHandler {
         logger.error("Error handling project participate button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de la participation au projet.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Gestionnaire pour le bouton "Participer Blueprints" (avec pagination)
+    this.registerHandlerByPrefix("blueprint_participate", async (interaction) => {
+      try {
+        const { handleBlueprintParticipateButton } = await import(
+          "../features/projects/projects.handlers.js"
+        );
+        await handleBlueprintParticipateButton(interaction);
+      } catch (error) {
+        logger.error("Error handling blueprint participate button:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la participation au blueprint.",
           flags: ["Ephemeral"],
         });
       }
@@ -1575,23 +1625,6 @@ export class ButtonHandler {
         logger.error("Error handling object add resource conversion button:", { error });
         await interaction.reply({
           content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
-          flags: ["Ephemeral"],
-        });
-      }
-    });
-
-    // =================== BLUEPRINT PROJECTS HANDLERS ===================
-    // Gestionnaire pour les boutons de redémarrage de blueprints
-    this.registerHandlerByPrefix("project_restart:", async (interaction) => {
-      try {
-        const { handleRestartBlueprintButton } = await import(
-          "../features/projects/projects.handlers.js"
-        );
-        await handleRestartBlueprintButton(interaction);
-      } catch (error) {
-        logger.error("Error handling project restart blueprint button:", { error });
-        await interaction.reply({
-          content: "❌ Erreur lors du redémarrage du blueprint.",
           flags: ["Ephemeral"],
         });
       }

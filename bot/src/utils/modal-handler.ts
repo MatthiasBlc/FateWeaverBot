@@ -506,6 +506,27 @@ export class ModalHandler {
       }
     });
 
+    this.registerHandlerByPrefix("project_add_name_modal:", async (interaction) => {
+      try {
+        const { handleProjectAddNameModal } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddNameModal(interaction);
+      } catch (error) {
+        logger.error("Error handling project add name modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erreur lors de la mise à jour du nom.",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "❌ Erreur lors de la mise à jour du nom.",
+          });
+        }
+      }
+    });
+
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
 

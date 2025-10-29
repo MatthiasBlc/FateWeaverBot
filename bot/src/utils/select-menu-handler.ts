@@ -305,6 +305,38 @@ export class SelectMenuHandler {
     });
 
     // Gestionnaires pour le flux de création de projet (multi-étapes)
+    // Handler pour la sélection des craft types
+    this.registerHandlerByPrefix("project_add_craft_types:", async (interaction) => {
+      try {
+        const { handleProjectAddCraftTypesSelect } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddCraftTypesSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project add craft types:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection des corps d'artisanat.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
+    // Handler pour la sélection du type de sortie
+    this.registerHandlerByPrefix("project_add_output_type:", async (interaction) => {
+      try {
+        const { handleProjectAddOutputTypeSelect } = await import(
+          "../features/admin/projects-admin.command.js"
+        );
+        await handleProjectAddOutputTypeSelect(interaction);
+      } catch (error) {
+        logger.error("Error handling project add output type:", { error });
+        await interaction.reply({
+          content: "❌ Erreur lors de la sélection du type de sortie.",
+          flags: ["Ephemeral"],
+        });
+      }
+    });
+
     this.registerHandlerByPrefix("project_add_select_resource:", async (interaction) => {
       try {
         const { handleProjectAddSelectResource } = await import(

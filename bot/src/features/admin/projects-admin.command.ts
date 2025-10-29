@@ -10,6 +10,11 @@ export { handleProjectsAdminCommand } from "./projects-admin/project-display";
 export {
   handleProjectAdminAddButton,
   handleProjectAdminAddStep1Modal,
+  handleProjectAddOptionalName,
+  handleProjectAddNameModal,
+  handleProjectAddCraftTypesSelect,
+  handleProjectAddOutputTypeSelect,
+  handleProjectAddValidateSelection,
   handleProjectAddSelectResource,
   handleProjectAddObjectCategory,
   handleProjectAddSelectObject,
