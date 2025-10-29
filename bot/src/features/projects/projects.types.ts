@@ -66,7 +66,7 @@ export interface InvestResult {
 export type ProjectReward =
   | { type: "RESOURCE"; resourceTypeId: number; quantity: number }
   | { type: "RESOURCE_CONVERSION"; resources: { resourceTypeId: number; quantity: number; resourceName: string }[] }
-  | { type: "OBJECT"; objectType: { id: number; name: string }; slotId: string };
+  | { type: "OBJECT"; objectType: { id: number; name: string }; slotId: string; quantity: number };
 
 export interface ContributionResult {
   project: Project;

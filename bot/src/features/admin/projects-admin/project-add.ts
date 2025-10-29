@@ -124,7 +124,7 @@ async function showCraftAndOutputSelection(
       .addOptions([
         { label: "Tisser", value: "TISSER", emoji: "🧵" },
         { label: "Forger", value: "FORGER", emoji: "🔨" },
-        { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
+        { label: "Travailler le bois", value: "MENUISER", emoji: "🪚" },
       ]);
 
     // Select menu 2: Type de sortie (resource ou object)
@@ -345,7 +345,7 @@ async function updateSelectionMessage(
     .addOptions([
       { label: "Tisser", value: "TISSER", emoji: "🧵" },
       { label: "Forger", value: "FORGER", emoji: "🔨" },
-      { label: "Menuiser", value: "MENUISER", emoji: "🪚" },
+      { label: "Travailler le bois", value: "MENUISER", emoji: "🪚" },
     ]);
 
   // Select menu 2: Type de sortie (resource ou object)

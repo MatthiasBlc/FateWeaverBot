@@ -127,7 +127,8 @@ function formatRewardMessage(
     }
     case "OBJECT": {
       const owner = finisherName ? `à **${finisherName}**` : "à l'artisan";
-      return `🎁 ${reward.objectType.name} remis ${owner} !`;
+      const quantityText = reward.quantity > 1 ? `${reward.quantity}x ` : "";
+      return `🎁 ${quantityText}${reward.objectType.name} remis ${owner} !`;
     }
     default:
       return "✅ Récompense enregistrée !";
@@ -303,6 +304,9 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
       });
     };
 
+    // Field vide initial pour espacement
+    embed.addFields({ name: " ", value: " ", inline: false });
+
     // Section 1: Projets Actifs
     if (activeProjects.length > 0) {
       const sortedProjects = sortByCraftAndOutputType(activeProjects);
@@ -313,6 +317,9 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
         value: sectionText || "Aucun projet actif",
         inline: false,
       });
+
+      // Field vide pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Section 2: Blueprints Disponibles
@@ -322,9 +329,12 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 
       embed.addFields({
         name: `📋 Blueprints Disponibles`,
-        value: `\n${sectionText}` || "Aucun blueprint disponible",
+        value: sectionText || "Aucun blueprint disponible",
         inline: false,
       });
+
+      // Field vide pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Section 3: Projets Terminés
@@ -336,9 +346,12 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
 
       embed.addFields({
         name: `${getStatusEmoji("COMPLETED")} Projets Terminés`,
-        value: `\n${sectionText}` || "Aucun projet terminé",
+        value: sectionText || "Aucun projet terminé",
         inline: false,
       });
+
+      // Field vide final pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Boutons d'interaction
@@ -499,7 +512,9 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
       .setPlaceholder("Sélectionnez un projet")
       .addOptions(
         projectsPage.map((project) => ({
-          label: project.name,
+          label: project.name && project.name.trim() !== ""
+            ? project.name
+            : getProjectOutputText(project) || "Projet sans nom",
           description: `${project.paContributed}/${
             project.paRequired
           } PA - ${project.craftTypes
@@ -795,7 +810,9 @@ export async function handleBlueprintParticipateButton(
       .setPlaceholder("Sélectionnez un blueprint")
       .addOptions(
         projectsPage.map((project) => ({
-          label: `📋 ${project.name}`,
+          label: project.name && project.name.trim() !== ""
+            ? `📋 ${project.name}`
+            : `📋 ${getProjectOutputText(project) || "Blueprint sans nom"}`,
           description: `${project.paContributed}/${
             project.paRequired
           } PA - ${project.craftTypes
@@ -1169,22 +1186,39 @@ export async function handleInvestModalSubmit(
       contributionLogMessage
     );
 
-    // Vérifier complétion
-    if (result.project && result.project.status === "COMPLETED") {
+    // Vérifier complétion (projets normaux ET blueprints)
+    if (result.completed && result.project) {
       const rewardText = formatRewardMessage(
         result.project,
         result.reward,
         activeCharacter.name
       );
 
-      responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le projet est terminé !\n${rewardText}`;
+      // Distinguer blueprint validé vs projet normal terminé
+      const isBlueprint = result.project.status === "ACTIVE" && (result.project as any).isBlueprint;
 
-      const completionLogMessage = `${PROJECT.CELEBRATION} Le projet "**${result.project.name}**" est terminé ! ${rewardText}`;
-      await sendLogMessage(
-        interaction.guildId!,
-        interaction.client,
-        completionLogMessage
-      );
+      if (isBlueprint) {
+        // Blueprint validé et recyclé
+        const outputText = getProjectOutputText(result.project);
+        responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le blueprint est validé !\n${rewardText}\n\nLe blueprint peut maintenant être utilisé pour créer ${outputText}.`;
+
+        const completionLogMessage = `${PROJECT.CELEBRATION} Le blueprint "**${result.project.name}**" a été validé ! ${rewardText}\n\nIl peut maintenant être utilisé pour créer ${outputText}.`;
+        await sendLogMessage(
+          interaction.guildId!,
+          interaction.client,
+          completionLogMessage
+        );
+      } else {
+        // Projet normal terminé
+        responseMessage += `\n\n${PROJECT.CELEBRATION} Félicitations ! Le projet est terminé !\n${rewardText}`;
+
+        const completionLogMessage = `${PROJECT.CELEBRATION} Le projet "**${result.project.name}**" est terminé ! ${rewardText}`;
+        await sendLogMessage(
+          interaction.guildId!,
+          interaction.client,
+          completionLogMessage
+        );
+      }
     }
 
     await interaction.reply({
@@ -1385,6 +1419,9 @@ export async function handleViewProjectsFromProfile(
       });
     };
 
+    // Field vide initial pour espacement
+    embed.addFields({ name: " ", value: " ", inline: false });
+
     // Section 1: Projets Actifs
     if (activeProjects.length > 0) {
       const sortedProjects = sortByCraftAndOutputType(activeProjects);
@@ -1395,6 +1432,9 @@ export async function handleViewProjectsFromProfile(
         value: sectionText || "Aucun projet actif",
         inline: false,
       });
+
+      // Field vide pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Section 2: Blueprints Disponibles
@@ -1404,9 +1444,12 @@ export async function handleViewProjectsFromProfile(
 
       embed.addFields({
         name: `📋 Blueprints Disponibles`,
-        value: `\n${sectionText}` || "Aucun blueprint disponible",
+        value: sectionText || "Aucun blueprint disponible",
         inline: false,
       });
+
+      // Field vide pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Section 3: Projets Terminés
@@ -1418,9 +1461,12 @@ export async function handleViewProjectsFromProfile(
 
       embed.addFields({
         name: `${getStatusEmoji("COMPLETED")} Projets Terminés`,
-        value: `\n${sectionText}` || "Aucun projet terminé",
+        value: sectionText || "Aucun projet terminé",
         inline: false,
       });
+
+      // Field vide final pour espacement
+      embed.addFields({ name: " ", value: " ", inline: false });
     }
 
     // Boutons d'interaction

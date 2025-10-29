@@ -62,12 +62,15 @@ class ProjectServiceClass {
       blueprintResourceCosts,
     } = input;
 
-    const existingProject = await this.projectRepo.findFirst({ name, townId });
+    // Vérifier l'unicité du nom seulement si le nom n'est pas vide
+    if (name && name.trim() !== "") {
+      const existingProject = await this.projectRepo.findFirst({ name, townId });
 
-    if (existingProject) {
-      throw new BadRequestError(
-        `Un projet nommé "${name}" existe déjà dans cette ville`
-      );
+      if (existingProject) {
+        throw new BadRequestError(
+          `Un projet nommé "${name}" existe déjà dans cette ville`
+        );
+      }
     }
 
     if (!outputResourceTypeId && !outputObjectTypeId) {
@@ -411,12 +414,17 @@ class ProjectServiceClass {
               update: {},
             });
 
-            const slot = await tx.characterInventorySlot.create({
-              data: {
-                inventoryId: inventory.id,
-                objectTypeId: objectType.id,
-              },
-            });
+            // Créer autant de slots que spécifié dans outputQuantity
+            const slots = [];
+            for (let i = 0; i < updatedProject!.outputQuantity; i++) {
+              const slot = await tx.characterInventorySlot.create({
+                data: {
+                  inventoryId: inventory.id,
+                  objectTypeId: objectType.id,
+                },
+              });
+              slots.push(slot);
+            }
 
             reward = {
               type: "OBJECT",
@@ -424,7 +432,8 @@ class ProjectServiceClass {
                 id: objectType.id,
                 name: objectType.name,
               },
-              slotId: slot.id,
+              slotId: slots[0].id,
+              quantity: updatedProject!.outputQuantity,
             };
           }
         }
