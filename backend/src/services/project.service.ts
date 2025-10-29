@@ -62,12 +62,15 @@ class ProjectServiceClass {
       blueprintResourceCosts,
     } = input;
 
-    const existingProject = await this.projectRepo.findFirst({ name, townId });
+    // Vérifier l'unicité du nom seulement si le nom n'est pas vide
+    if (name && name.trim() !== "") {
+      const existingProject = await this.projectRepo.findFirst({ name, townId });
 
-    if (existingProject) {
-      throw new BadRequestError(
-        `Un projet nommé "${name}" existe déjà dans cette ville`
-      );
+      if (existingProject) {
+        throw new BadRequestError(
+          `Un projet nommé "${name}" existe déjà dans cette ville`
+        );
+      }
     }
 
     if (!outputResourceTypeId && !outputObjectTypeId) {
@@ -164,113 +167,6 @@ class ProjectServiceClass {
     return project;
   }
 
-  async convertToBlueprint(projectId: string): Promise<void> {
-    await this.projectRepo.update(projectId, { isBlueprint: true });
-  }
-
-  async restartBlueprint(blueprintId: string, createdBy: string): Promise<any> {
-    return await prisma.$transaction(async (tx) => {
-      // Get the blueprint project
-      const blueprint = await tx.project.findUnique({
-        where: { id: blueprintId },
-        include: {
-          craftTypes: true,
-          blueprintResourceCosts: {
-            ...ResourceQueries.withResourceType(),
-          },
-        },
-      });
-
-      if (!blueprint) {
-        throw new NotFoundError("Blueprint", blueprintId);
-      }
-
-      if (!blueprint.isBlueprint) {
-        throw new BadRequestError("This project is not a blueprint");
-      }
-
-      const activeInstance = await tx.project.findFirst({
-        where: {
-          originalProjectId: blueprintId,
-          status: ProjectStatus.ACTIVE,
-        },
-      });
-
-      if (activeInstance) {
-        throw new BadRequestError(
-          "Cette blueprint possède déjà une instance active"
-        );
-      }
-
-      // Use blueprint costs if available, otherwise use original costs
-      const paRequired = blueprint.paBlueprintRequired ?? blueprint.paRequired;
-
-      // Create new project from blueprint
-      const newProject = await tx.project.create({
-        data: {
-          name: blueprint.name,
-          paRequired,
-          paContributed: 0,
-          outputResourceTypeId: blueprint.outputResourceTypeId,
-          outputQuantity: blueprint.outputQuantity,
-          status: ProjectStatus.ACTIVE,
-          townId: blueprint.townId,
-          createdBy,
-          originalProjectId: blueprintId,
-          paBlueprintRequired: blueprint.paBlueprintRequired,
-        },
-      });
-
-      // Copy craft types
-      await tx.projectCraftType.createMany({
-        data: blueprint.craftTypes.map((ct) => ({
-          projectId: newProject.id,
-          craftType: ct.craftType,
-        })),
-      });
-
-      // Use blueprint resource costs if available
-      if (blueprint.blueprintResourceCosts.length > 0) {
-        // Copy blueprint costs as regular costs
-        await tx.projectResourceCost.createMany({
-          data: blueprint.blueprintResourceCosts.map((cost) => ({
-            projectId: newProject.id,
-            resourceTypeId: cost.resourceTypeId,
-            quantityRequired: cost.quantityRequired,
-            quantityProvided: 0,
-          })),
-        });
-
-        // Also create blueprint costs for the new project
-        await tx.projectBlueprintResourceCost.createMany({
-          data: blueprint.blueprintResourceCosts.map((cost) => ({
-            projectId: newProject.id,
-            resourceTypeId: cost.resourceTypeId,
-            quantityRequired: cost.quantityRequired,
-            quantityProvided: 0,
-          })),
-        });
-      } else {
-        // No blueprint costs defined, use original costs from ProjectResourceCost
-        const originalCosts = await tx.projectResourceCost.findMany({
-          where: { projectId: blueprintId },
-        });
-
-        if (originalCosts.length > 0) {
-          await tx.projectResourceCost.createMany({
-            data: originalCosts.map((cost) => ({
-              projectId: newProject.id,
-              resourceTypeId: cost.resourceTypeId,
-              quantityRequired: cost.quantityRequired,
-              quantityProvided: 0,
-            })),
-          });
-        }
-      }
-
-      return newProject;
-    });
-  }
 
   async getActiveProjectsForCraftType(townId: string, craftType: CraftType) {
     return this.projectRepo.findActiveProjectsForCraftType(townId, craftType);
@@ -343,6 +239,19 @@ class ProjectServiceClass {
             } PA maximum`
           );
         }
+
+        // Vérifier que le personnage a assez de PA
+        if (character.paTotal < paAmount) {
+          throw new BadRequestError(
+            `Vous n'avez que ${character.paTotal} PA disponibles`
+          );
+        }
+
+        // Déduire les PA du personnage
+        await tx.character.update({
+          where: { id: characterId },
+          data: { paTotal: { decrement: paAmount } },
+        });
 
         await tx.project.update({
           where: { id: projectId },
@@ -427,11 +336,6 @@ class ProjectServiceClass {
       );
 
       if (paComplete && resourcesComplete) {
-        await tx.project.update({
-          where: { id: projectId },
-          data: { status: ProjectStatus.COMPLETED },
-        });
-
         // Si le projet produit une ressource (et non un objet)
         if (updatedProject!.outputResourceTypeId !== null) {
           await tx.resourceStock.upsert({
@@ -510,12 +414,17 @@ class ProjectServiceClass {
               update: {},
             });
 
-            const slot = await tx.characterInventorySlot.create({
-              data: {
-                inventoryId: inventory.id,
-                objectTypeId: objectType.id,
-              },
-            });
+            // Créer autant de slots que spécifié dans outputQuantity
+            const slots = [];
+            for (let i = 0; i < updatedProject!.outputQuantity; i++) {
+              const slot = await tx.characterInventorySlot.create({
+                data: {
+                  inventoryId: inventory.id,
+                  objectTypeId: objectType.id,
+                },
+              });
+              slots.push(slot);
+            }
 
             reward = {
               type: "OBJECT",
@@ -523,9 +432,52 @@ class ProjectServiceClass {
                 id: objectType.id,
                 name: objectType.name,
               },
-              slotId: slot.id,
+              slotId: slots[0].id,
+              quantity: updatedProject!.outputQuantity,
             };
           }
+        }
+
+        // Vérifier si le projet a des coûts blueprint
+        const hasBlueprintCosts =
+          updatedProject!.paBlueprintRequired !== null ||
+          (updatedProject!.blueprintResourceCosts && updatedProject!.blueprintResourceCosts.length > 0);
+
+        if (hasBlueprintCosts) {
+          // BLUEPRINT: recycler le projet au lieu de le compléter
+          // 1. Remettre les PA à 0
+          await tx.project.update({
+            where: { id: projectId },
+            data: {
+              paContributed: 0,
+              paRequired: updatedProject!.paBlueprintRequired ?? updatedProject!.paRequired,
+              isBlueprint: true,
+              status: ProjectStatus.ACTIVE
+            },
+          });
+
+          // 2. Supprimer les anciens resource costs
+          await tx.projectResourceCost.deleteMany({
+            where: { projectId },
+          });
+
+          // 3. Créer les nouveaux resource costs basés sur blueprintResourceCosts
+          if (updatedProject!.blueprintResourceCosts && updatedProject!.blueprintResourceCosts.length > 0) {
+            await tx.projectResourceCost.createMany({
+              data: updatedProject!.blueprintResourceCosts.map((cost) => ({
+                projectId,
+                resourceTypeId: cost.resourceTypeId,
+                quantityRequired: cost.quantityRequired,
+                quantityContributed: 0,
+              })),
+            });
+          }
+        } else {
+          // Projet normal sans blueprint: le compléter définitivement
+          await tx.project.update({
+            where: { id: projectId },
+            data: { status: ProjectStatus.COMPLETED },
+          });
         }
 
         const finalProject = await tx.project.findUnique({

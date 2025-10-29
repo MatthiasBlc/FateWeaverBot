@@ -203,7 +203,7 @@ class ObjectServiceClass {
       return [];
     }
 
-    // Dédupliquer les types d'objets
+    // Dédupliquer les types d'objets et compter les occurrences
     const objectTypesMap = new Map();
     inventory.slots.forEach(slot => {
       if (!objectTypesMap.has(slot.objectType.id)) {
@@ -211,6 +211,7 @@ class ObjectServiceClass {
           id: slot.objectType.id,
           name: slot.objectType.name,
           description: slot.objectType.description,
+          count: 1,
           skillBonuses: slot.objectType.skillBonuses.map(sb => ({
             id: sb.id,
             skill: {
@@ -230,6 +231,10 @@ class ObjectServiceClass {
             bonusType: cb.bonusType
           }))
         });
+      } else {
+        // Incrémenter le compteur si l'objet existe déjà
+        const existingObject = objectTypesMap.get(slot.objectType.id);
+        existingObject.count++;
       }
     });
 

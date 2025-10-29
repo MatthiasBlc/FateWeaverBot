@@ -56,7 +56,10 @@ export class ProjectRepository {
     return this.prisma.project.findMany({
       where: {
         townId,
-        status: ProjectStatus.ACTIVE,
+        OR: [
+          { status: ProjectStatus.ACTIVE },
+          { isBlueprint: true }
+        ],
         craftTypes: {
           some: {
             craftType

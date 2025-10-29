@@ -46,7 +46,8 @@ export const createProject = async (req: Request, res: Response) => {
     } = req.body;
 
     if (
-      !name ||
+      name === undefined ||
+      name === null ||
       !paRequired ||
       !outputQuantity ||
       !townId ||
@@ -206,28 +207,3 @@ export const deleteProject = async (
   }
 };
 
-export const restartBlueprint = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { projectId } = req.params;
-    const { createdBy } = req.body;
-
-    if (!createdBy) {
-      return res.status(400).json({ error: "Created by is required" });
-    }
-
-    const newProject = await container.projectService.restartBlueprint(
-      projectId,
-      createdBy
-    );
-
-    return res.status(201).json(newProject);
-  } catch (error: any) {
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal server error" });
-  }
-};

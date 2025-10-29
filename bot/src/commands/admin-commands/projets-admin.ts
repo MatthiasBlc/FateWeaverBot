@@ -1,38 +1,24 @@
-import { SlashCommandBuilder, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
-import {
-  handleAddProjectCommand,
-  handleDeleteProjectCommand,
-} from "../../features/projects/project-creation";
+import { handleProjectsAdminCommand } from "../../features/admin/projects-admin.command";
 
+// Commande admin unifiée pour gérer les projets artisanaux (réservé aux admins)
 const projetsAdminCommand: Command = {
   data: new SlashCommandBuilder()
     .setName("projets-admin")
     .setDescription("Administration des projets artisanaux (réservé aux admins)")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption((option) =>
-      option
-        .setName("action")
-        .setDescription("Action à effectuer")
-        .setRequired(true)
-        .addChoices(
-          { name: "Ajouter un projet", value: "add" },
-          { name: "Supprimer un projet", value: "delete" }
-        )
-    ),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
 
-    const action = interaction.options.getString("action", true);
-
     try {
-      if (action === "add") {
-        await handleAddProjectCommand(interaction);
-      } else if (action === "delete") {
-        await handleDeleteProjectCommand(interaction);
-      }
+      await handleProjectsAdminCommand(interaction);
     } catch (error) {
       logger.error("Error in projets admin command:", { error });
       await interaction.reply({
