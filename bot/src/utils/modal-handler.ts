@@ -1,5 +1,7 @@
 import { ModalSubmitInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Gestionnaire centralisé des interactions de modals
@@ -79,7 +81,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling character creation modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du personnage.",
+          content: `${STATUS.ERROR} Erreur lors de la création du personnage.`,
           flags: ["Ephemeral"],
         });
       }
@@ -93,7 +95,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling reroll modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du reroll du personnage.",
+          content: `${STATUS.ERROR} Erreur lors du reroll du personnage.`,
           flags: ["Ephemeral"],
         });
       }
@@ -122,7 +124,7 @@ export class ModalHandler {
           }
           await interaction.reply({
             content:
-              "❌ Erreur lors de la modification des statistiques avancées du personnage.",
+              `${STATUS.ERROR} Erreur lors de la modification des statistiques avancées du personnage.`,
             flags: ["Ephemeral"],
           });
         }
@@ -139,7 +141,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition creation modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de l'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la création de l'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -155,7 +157,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition create resource quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -171,7 +173,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource add quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -187,7 +189,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource remove quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du retrait de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors du retrait de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -203,7 +205,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition modify modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de l'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de l'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -223,7 +225,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors du transfert de nourriture.",
+            content: `${STATUS.ERROR} Erreur lors du transfert de nourriture.`,
             flags: ["Ephemeral"],
           });
         }
@@ -240,7 +242,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition duration modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la durée.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la durée.`,
           flags: ["Ephemeral"],
         });
       }
@@ -256,7 +258,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource add modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -272,7 +274,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource modify modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -290,13 +292,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         }
@@ -315,13 +317,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'ajout de ressources.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'ajout de ressources.`,
           });
         }
       }
@@ -339,13 +341,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire de retrait de ressources.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
             content:
-              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire de retrait de ressources.`,
           });
         }
       }
@@ -365,12 +367,12 @@ export class ModalHandler {
         logger.error("Error handling project admin add step1 modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           });
         }
       }
@@ -387,12 +389,12 @@ export class ModalHandler {
         logger.error("Error handling project admin edit modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la modification du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la modification du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la modification du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la modification du projet.`,
           });
         }
       }
@@ -409,12 +411,12 @@ export class ModalHandler {
         logger.error("Error handling project admin add step1 modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           });
         }
       }
@@ -430,12 +432,12 @@ export class ModalHandler {
         logger.error("Error handling project add quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
           });
         }
       }
@@ -453,12 +455,12 @@ export class ModalHandler {
         logger.error("Error handling project add resource quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de l'ajout de ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           });
         }
       }
@@ -474,12 +476,12 @@ export class ModalHandler {
         logger.error("Error handling project add blueprint PA modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
           });
         }
       }
@@ -495,12 +497,12 @@ export class ModalHandler {
         logger.error("Error handling project add blueprint resource quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource blueprint.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource blueprint.`,
           });
         }
       }
@@ -516,12 +518,12 @@ export class ModalHandler {
         logger.error("Error handling project add name modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la mise à jour du nom.",
+            content: `${STATUS.ERROR} Erreur lors de la mise à jour du nom.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la mise à jour du nom.",
+            content: `${STATUS.ERROR} Erreur lors de la mise à jour du nom.`,
           });
         }
       }
@@ -540,7 +542,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling chantier create modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du chantier.",
+          content: `${STATUS.ERROR} Erreur lors de la création du chantier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -560,7 +562,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de la ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
             flags: ["Ephemeral"],
           });
         }
@@ -578,7 +580,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling project create modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du projet.",
+          content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -596,13 +598,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         }
@@ -623,7 +625,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de la ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
             flags: ["Ephemeral"],
           });
         }
@@ -641,7 +643,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling blueprint cost quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du coût blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du coût blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -658,7 +660,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling new capability modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -675,7 +677,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling new resource modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -693,7 +695,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling new object modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la création de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -709,7 +711,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling new skill modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -727,7 +729,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling emoji add modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de l'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de l'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -753,7 +755,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling object skill bonus modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du bonus de compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -770,7 +772,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling object resource conversion modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la conversion en ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -787,7 +789,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit resource modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -803,7 +805,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit object modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -819,7 +821,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit skill modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -835,7 +837,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit capability modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -851,7 +853,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit object name modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification du nom.",
+          content: `${STATUS.ERROR} Erreur lors de la modification du nom.`,
           flags: ["Ephemeral"],
         });
       }
@@ -867,7 +869,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit object description modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la description.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la description.`,
           flags: ["Ephemeral"],
         });
       }

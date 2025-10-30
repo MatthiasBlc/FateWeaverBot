@@ -15,6 +15,8 @@ import { getStatusEmoji } from "../expedition-utils";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { EXPEDITION } from "@shared/constants/emojis";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gestionnaire pour le bouton "Quitter l'expédition"
@@ -39,7 +41,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour quitter une expédition.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif pour quitter une expédition.`);
       return;
     }
 
@@ -59,7 +61,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     );
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Votre personnage ne participe à aucune expédition active.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Votre personnage ne participe à aucune expédition active.`);
       return;
     }
 
@@ -71,7 +73,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     );
 
     if (!isMember) {
-      await replyEphemeral(interaction, "❌ Votre personnage n'est pas membre de cette expédition.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Votre personnage n'est pas membre de cette expédition.`);
       return;
     }
 

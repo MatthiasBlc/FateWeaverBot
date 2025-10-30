@@ -15,6 +15,8 @@ import { getTownByGuildId } from "../../../utils/town";
 import { PROJECT } from "@shared/constants/emojis";
 import { getCraftTypeEmoji } from "../../projects/projects.utils";
 import type { Project } from "../../projects/projects.types";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler pour le bouton "Modifier un projet"
@@ -28,7 +30,7 @@ export async function handleProjectAdminEditButton(interaction: ButtonInteractio
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         embeds: [],
         components: [],
       });
@@ -40,7 +42,7 @@ export async function handleProjectAdminEditButton(interaction: ButtonInteractio
 
     if (!projects || projects.length === 0) {
       await interaction.editReply({
-        content: "❌ Aucun projet à modifier.",
+        content: `${STATUS.ERROR} Aucun projet à modifier.`,
         embeds: [],
         components: [],
       });
@@ -83,7 +85,7 @@ export async function handleProjectAdminEditButton(interaction: ButtonInteractio
   } catch (error) {
     logger.error("Error showing project edit menu:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage du menu de modification.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage du menu de modification.`,
       embeds: [],
       components: [],
     });
@@ -104,7 +106,7 @@ export async function handleProjectAdminEditSelect(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée.",
+        content: `${STATUS.ERROR} Aucune ville trouvée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -116,7 +118,7 @@ export async function handleProjectAdminEditSelect(
 
     if (!project) {
       await interaction.reply({
-        content: "❌ Projet introuvable.",
+        content: `${STATUS.ERROR} Projet introuvable.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -199,7 +201,7 @@ export async function handleProjectAdminEditSelect(
   } catch (error) {
     logger.error("Error showing project edit modal:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage du formulaire.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire.`,
       flags: ["Ephemeral"],
     });
   }
@@ -227,7 +229,7 @@ export async function handleProjectAdminEditModal(
     // Validation PA
     if (isNaN(paRequired) || paRequired <= 0) {
       await interaction.editReply({
-        content: "❌ Le nombre de PA doit être un nombre positif valide.",
+        content: `${STATUS.ERROR} Le nombre de PA doit être un nombre positif valide.`,
       });
       return;
     }
@@ -240,7 +242,7 @@ export async function handleProjectAdminEditModal(
 
     if (craftTypes.length === 0) {
       await interaction.editReply({
-        content: "❌ Vous devez spécifier au moins un type d'artisanat.",
+        content: `${STATUS.ERROR} Vous devez spécifier au moins un type d'artisanat.`,
       });
       return;
     }
@@ -259,7 +261,7 @@ export async function handleProjectAdminEditModal(
     const outputParts = outputRaw.split(":");
     if (outputParts.length !== 3) {
       await interaction.editReply({
-        content: "❌ Format de production invalide. Utilisez : RESOURCE:ID:QTÉ ou OBJECT:ID:QTÉ",
+        content: `${STATUS.ERROR} Format de production invalide. Utilisez : RESOURCE:ID:QTÉ ou OBJECT:ID:QTÉ`,
       });
       return;
     }
@@ -270,7 +272,7 @@ export async function handleProjectAdminEditModal(
 
     if (isNaN(outputId) || isNaN(outputQuantity) || outputQuantity <= 0) {
       await interaction.editReply({
-        content: "❌ L'ID et la quantité de production doivent être des nombres positifs.",
+        content: `${STATUS.ERROR} L'ID et la quantité de production doivent être des nombres positifs.`,
       });
       return;
     }
@@ -284,7 +286,7 @@ export async function handleProjectAdminEditModal(
       outputObjectTypeId = outputId;
     } else {
       await interaction.editReply({
-        content: "❌ Le type de production doit être RESOURCE ou OBJECT.",
+        content: `${STATUS.ERROR} Le type de production doit être RESOURCE ou OBJECT.`,
       });
       return;
     }
@@ -308,7 +310,7 @@ export async function handleProjectAdminEditModal(
           });
       } catch (error) {
         await interaction.editReply({
-          content: "❌ Format de coûts ressources invalide. Utilisez : ID:QTÉ;ID:QTÉ",
+          content: `${STATUS.ERROR} Format de coûts ressources invalide. Utilisez : ID:QTÉ;ID:QTÉ`,
         });
         return;
       }

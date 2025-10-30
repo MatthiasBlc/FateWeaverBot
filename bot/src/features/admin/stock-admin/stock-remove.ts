@@ -16,6 +16,8 @@ import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 import { getResourceEmoji } from "../../../services/emoji-cache";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler pour le bouton "Retirer des ressources"
@@ -28,7 +30,7 @@ export async function handleStockAdminRemoveButton(interaction: any) {
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         embeds: [],
         components: [],
       });
@@ -42,7 +44,7 @@ export async function handleStockAdminRemoveButton(interaction: any) {
 
     if (availableResources.length === 0) {
       await interaction.editReply({
-        content: "❌ La ville n'a aucune ressource en stock.",
+        content: `${STATUS.ERROR} La ville n'a aucune ressource en stock.`,
         embeds: [],
         components: [],
       });
@@ -107,7 +109,7 @@ export async function handleStockAdminRemoveSelect(
 
     if (!town) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -121,7 +123,7 @@ export async function handleStockAdminRemoveSelect(
 
     if (!selectedResource) {
       await interaction.reply({
-        content: "❌ Ressource non trouvée dans la ville.",
+        content: `${STATUS.ERROR} Ressource non trouvée dans la ville.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -175,7 +177,7 @@ export async function handleStockAdminRemoveModal(
 
     if (isNaN(amount) || amount <= 0) {
       await interaction.editReply({
-        content: "❌ Veuillez entrer un nombre valide (supérieur à 0).",
+        content: `${STATUS.ERROR} Veuillez entrer un nombre valide (supérieur à 0).`,
       });
       return;
     }
@@ -193,7 +195,7 @@ export async function handleStockAdminRemoveModal(
 
     if (!town) {
       await interaction.editReply({
-        content: "❌ Informations manquantes pour effectuer l'opération.",
+        content: `${STATUS.ERROR} Informations manquantes pour effectuer l'opération.`,
       });
       return;
     }
@@ -209,7 +211,7 @@ export async function handleStockAdminRemoveModal(
       logger.error("Could not get resource types for modal", { error });
       await interaction.editReply({
         content:
-          "❌ Service de récupération des types de ressources non disponible.",
+          `${STATUS.ERROR} Service de récupération des types de ressources non disponible.`,
       });
       return;
     }
@@ -220,7 +222,7 @@ export async function handleStockAdminRemoveModal(
 
     if (!selectedResourceType) {
       await interaction.editReply({
-        content: "❌ Type de ressource non trouvé.",
+        content: `${STATUS.ERROR} Type de ressource non trouvé.`,
       });
       return;
     }
@@ -279,7 +281,7 @@ export async function handleStockAdminRemoveModal(
     } else {
       // Ressource n'existe pas : erreur car on ne peut pas retirer une ressource qui n'existe pas
       await interaction.editReply({
-        content: "❌ Impossible de retirer une ressource qui n'existe pas dans la ville.",
+        content: `${STATUS.ERROR} Impossible de retirer une ressource qui n'existe pas dans la ville.`,
       });
       return;
     }

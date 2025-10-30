@@ -17,6 +17,8 @@ import {
 import { getCharacterCapabilities } from "../../../services/capability.service";
 import { httpClient } from "../../../services/httpClient";
 import { CAPABILITIES } from "@/constants/emojis";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gestionnaire pour le bouton "Gérer Capacités".
@@ -61,7 +63,7 @@ export async function handleCapabilitiesButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des capacités.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des capacités.`,
       flags: ["Ephemeral"],
     });
   }
@@ -114,12 +116,12 @@ export async function handleAddCapabilities(
     logger.error("Erreur lors de la préparation de l'ajout de capacités:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de capacités.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de capacités.`,
       });
     }
   }
@@ -162,12 +164,12 @@ export async function handleRemoveCapabilities(
     logger.error("Erreur lors de la préparation de la suppression de capacités:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de capacités.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de capacités.`,
       });
     }
   }
@@ -206,7 +208,7 @@ export async function handleViewCapabilities(
   } catch (error) {
     logger.error("Erreur lors de l'affichage des capacités:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des capacités.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des capacités.`,
       flags: ["Ephemeral"],
     });
   }
@@ -225,7 +227,7 @@ export async function handleCapabilitySelect(
 
     if (selectedCapabilityIds.length === 0) {
       await interaction.reply({
-        content: "❌ Aucune capacité sélectionnée.",
+        content: `${STATUS.ERROR} Aucune capacité sélectionnée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -233,7 +235,7 @@ export async function handleCapabilitySelect(
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
         flags: ["Ephemeral"],
       });
       return;

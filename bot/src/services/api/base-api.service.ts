@@ -1,6 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosInstance, AxiosResponse } from "axios";
 import { logger } from "../logger";
+
+/**
+ * Types for API query parameters and request data
+ */
+type QueryParamValue = string | number | boolean | null | undefined;
+type QueryParams = Record<string, QueryParamValue | QueryParamValue[]>;
 
 /**
  * Service de base pour les appels API
@@ -16,7 +21,7 @@ export abstract class BaseAPIService {
   /**
    * Effectue un appel GET avec gestion d'erreur standardisée
    */
-  protected async get<T>(url: string, params?: Record<string, any>): Promise<T> {
+  protected async get<T>(url: string, params?: QueryParams): Promise<T> {
     try {
       logger.info(`API GET request`, { url, baseURL: this.api.defaults.baseURL });
 
@@ -29,18 +34,8 @@ export abstract class BaseAPIService {
       });
 
       return response.data;
-    } catch (error: any) {
-      logger.error(`API GET error`, {
-        url,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
+    } catch (error: unknown) {
+      this.logApiError('GET', url, error);
       throw error;
     }
   }
@@ -48,7 +43,7 @@ export abstract class BaseAPIService {
   /**
    * Effectue un appel POST avec gestion d'erreur standardisée
    */
-  protected async post<T>(url: string, data?: any): Promise<T> {
+  protected async post<T, D = unknown>(url: string, data?: D): Promise<T> {
     try {
       logger.info(`API POST request`, { url, baseURL: this.api.defaults.baseURL });
 
@@ -61,19 +56,8 @@ export abstract class BaseAPIService {
       });
 
       return response.data;
-    } catch (error: any) {
-      logger.error(`API POST error`, {
-        url,
-        requestData: data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        responseData: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
+    } catch (error: unknown) {
+      this.logApiError('POST', url, error, data);
       throw error;
     }
   }
@@ -81,7 +65,7 @@ export abstract class BaseAPIService {
   /**
    * Effectue un appel PATCH avec gestion d'erreur standardisée
    */
-  protected async patch<T>(url: string, data?: any): Promise<T> {
+  protected async patch<T, D = unknown>(url: string, data?: D): Promise<T> {
     try {
       logger.info(`API PATCH request`, { url, baseURL: this.api.defaults.baseURL });
 
@@ -94,19 +78,8 @@ export abstract class BaseAPIService {
       });
 
       return response.data;
-    } catch (error: any) {
-      logger.error(`API PATCH error`, {
-        url,
-        requestData: data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        responseData: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
+    } catch (error: unknown) {
+      this.logApiError('PATCH', url, error, data);
       throw error;
     }
   }
@@ -127,19 +100,56 @@ export abstract class BaseAPIService {
       });
 
       return response.data;
-    } catch (error: any) {
-      logger.error(`API DELETE error`, {
-        url,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        } : error,
-      });
+    } catch (error: unknown) {
+      this.logApiError('DELETE', url, error);
       throw error;
     }
+  }
+
+  /**
+   * Helper method to log API errors with proper type handling
+   */
+  private logApiError(
+    method: string,
+    url: string,
+    error: unknown,
+    requestData?: unknown
+  ): void {
+    const logData: Record<string, unknown> = { url };
+
+    if (requestData !== undefined) {
+      logData.requestData = requestData;
+    }
+
+    // Check if it's an Axios error with response
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object'
+    ) {
+      const response = error.response as {
+        status?: number;
+        statusText?: string;
+        data?: unknown;
+      };
+      logData.status = response.status;
+      logData.statusText = response.statusText;
+      logData.responseData = response.data;
+    }
+
+    // Add error details if it's an Error instance
+    if (error instanceof Error) {
+      logData.error = {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      };
+    } else {
+      logData.error = error;
+    }
+
+    logger.error(`API ${method} error`, logData);
   }
 }

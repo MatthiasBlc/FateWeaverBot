@@ -18,6 +18,8 @@ import {
   getCraftDisplayName,
 } from "../../projects/projects.utils";
 import type { Project } from "../../projects/projects.types";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler principal pour la commande /projects-admin
@@ -44,7 +46,7 @@ export async function handleProjectsAdminCommand(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -173,7 +175,7 @@ export async function handleProjectsAdminCommand(
   } catch (error) {
     logger.error("Error in projects admin command:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des projets.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des projets.`,
       flags: ["Ephemeral"],
     });
   }

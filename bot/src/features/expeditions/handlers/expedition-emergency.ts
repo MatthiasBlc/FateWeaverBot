@@ -5,6 +5,8 @@ import { sendLogMessage } from "../../../utils/channels";
 import { getActiveCharacterFromCommand } from "../../../utils/character";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gestionnaire pour le bouton "Voter retour d'urgence"
@@ -15,7 +17,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     const expeditionId = interaction.customId.split(":")[1];
 
     if (!expeditionId) {
-      await replyEphemeral(interaction, "❌ ID d'expédition invalide.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} ID d'expédition invalide.`);
       return;
     }
 
@@ -40,7 +42,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     if (!character) {
       await replyEphemeral(
         interaction,
-        "❌ Tu dois avoir un personnage actif pour voter."
+        `${STATUS.ERROR} Tu dois avoir un personnage actif pour voter.`
       );
       return;
     }

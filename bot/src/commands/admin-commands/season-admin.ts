@@ -3,6 +3,8 @@ import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import { httpClient } from "../../services/httpClient";
 import { SEASON } from "../../constants/emojis";
+import { STATUS } from "../../constants/emojis.js";
+
 
 const seasonAdminCommand: Command = {
   data: new SlashCommandBuilder()
@@ -22,7 +24,7 @@ const seasonAdminCommand: Command = {
 
       if (!currentSeason) {
         await interaction.editReply({
-          content: "❌ Impossible de récupérer la saison actuelle."
+          content: `${STATUS.ERROR} Impossible de récupérer la saison actuelle.`
         });
         return;
       }
@@ -65,7 +67,7 @@ const seasonAdminCommand: Command = {
     } catch (error) {
       logger.error("Erreur dans la commande season-admin:", { error });
       await interaction.editReply({
-        content: "❌ Une erreur est survenue lors de l'exécution de la commande."
+        content: `${STATUS.ERROR} Une erreur est survenue lors de l'exécution de la commande.`
       });
     }
   },

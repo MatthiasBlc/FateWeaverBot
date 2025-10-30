@@ -51,7 +51,7 @@ export async function handleViewStockCommand(interaction: any) {
     const townResponse = await apiService.towns.getTownById(character.townId);
 
     if (!townResponse) {
-      await replyEphemeral(interaction, "❌ Ville de votre personnage introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ville de votre personnage introuvable.`);
       return;
     }
 
@@ -59,7 +59,7 @@ export async function handleViewStockCommand(interaction: any) {
     const resourcesResponse = await apiService.getResources("CITY", character.townId);
 
     if (!resourcesResponse || !Array.isArray(resourcesResponse)) {
-      await replyEphemeral(interaction, "❌ Impossible de récupérer le stock de ressources.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Impossible de récupérer le stock de ressources.`);
       return;
     }
 

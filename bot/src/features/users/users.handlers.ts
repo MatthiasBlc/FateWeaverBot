@@ -1182,30 +1182,31 @@ function createCapabilitiesDisplay(
 
   // Obtenir l'emoji correspondant à l'emojiTag depuis l'objet CAPABILITIES
   const getEmojiForCapability = (emojiTag?: string): string => {
-    console.log("getEmojiForCapability - emojiTag reçu:", emojiTag);
+    logger.debug("getEmojiForCapability called", { emojiTag });
     if (!emojiTag) {
-      console.log("Aucun emojiTag fourni, utilisation de CAPABILITIES.GENERIC");
+      logger.debug("No emojiTag provided, using CAPABILITIES.GENERIC");
       return CAPABILITIES.GENERIC;
     }
 
     const upperEmojiTag = emojiTag.toUpperCase();
-    console.log("Recherche de la clé dans CAPABILITIES:", upperEmojiTag);
+    logger.debug("Searching for key in CAPABILITIES", { upperEmojiTag });
 
     // Vérifier si l'emojiTag existe comme clé dans CAPABILITIES
     const capabilityKey = Object.keys(CAPABILITIES).find(
       (key) => key === upperEmojiTag
     ) as keyof typeof CAPABILITIES | undefined;
 
-    console.log("Clé trouvée dans CAPABILITIES:", capabilityKey);
+    logger.debug("Key found in CAPABILITIES", { capabilityKey });
 
     if (capabilityKey) {
       const emoji = CAPABILITIES[capabilityKey];
-      console.log(`Emoji trouvé pour ${capabilityKey}:`, emoji);
+      logger.debug("Emoji found for capability", { capabilityKey, emoji });
       return emoji;
     }
 
-    console.warn(`EmojiTag inconnu: ${emojiTag}`);
-    console.log("CAPABILITIES disponibles:", Object.entries(CAPABILITIES));
+    logger.warn(`Unknown emojiTag: ${emojiTag}`, {
+      availableCapabilities: Object.keys(CAPABILITIES)
+    });
     return CAPABILITIES.GENERIC;
   };
 

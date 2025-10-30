@@ -89,7 +89,7 @@ export async function handleAddProjectCommand(interaction: ChatInputCommandInter
   } catch (error) {
     logger.error("Erreur modal création:", { error });
     await interaction.reply({
-      content: "❌ Erreur.",
+      content: `${STATUS.ERROR} Erreur.`,
       flags: ["Ephemeral"],
     });
   }
@@ -154,7 +154,7 @@ export async function handleProjectCreateModal(interaction: ModalSubmitInteracti
   } catch (error) {
     logger.error("Erreur création:", { error });
     await interaction.reply({
-      content: "❌ Erreur.",
+      content: `${STATUS.ERROR} Erreur.`,
       flags: ["Ephemeral"],
     });
   }
@@ -513,7 +513,7 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
     const town = townResponse as any;
 
     if (!town || !town.id) {
-      await interaction.editReply({ content: "❌ Ville non trouvée." });
+      await interaction.editReply({ content: `${STATUS.ERROR} Ville non trouvée.` });
       return;
     }
 
@@ -557,7 +557,7 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
     await interaction.editReply({ content: message });
   } catch (error) {
     logger.error("Erreur création finale:", { error });
-    await interaction.editReply({ content: "❌ Erreur." });
+    await interaction.editReply({ content: `${STATUS.ERROR} Erreur.` });
   }
 }
 
@@ -571,7 +571,7 @@ export async function handleDeleteProjectCommand(interaction: ChatInputCommandIn
 
     if (!town || !town.id) {
       await interaction.reply({
-        content: "❌ Ville non trouvée.",
+        content: `${STATUS.ERROR} Ville non trouvée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -581,7 +581,7 @@ export async function handleDeleteProjectCommand(interaction: ChatInputCommandIn
 
     if (projects.length === 0) {
       await interaction.reply({
-        content: "❌ Aucun projet trouvé.",
+        content: `${STATUS.ERROR} Aucun projet trouvé.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -662,7 +662,7 @@ function createProjectButtons(draft: ProjectDraft): ActionRowBuilder<ButtonBuild
       : []),
     new ButtonBuilder()
       .setCustomId("project_create_final")
-      .setLabel("✅ Créer")
+      .setLabel(`${STATUS.SUCCESS} Créer`)
       .setStyle(ButtonStyle.Success)
       .setDisabled(!canCreate)
   );
@@ -740,7 +740,7 @@ export async function handleAddBlueprintCostButton(interaction: ButtonInteractio
       flags: ["Ephemeral"],
     });
   } catch (error: any) {
-    console.error("Error showing blueprint cost menu:", error);
+    logger.error("Error showing blueprint cost menu", { error });
     await interaction.reply({
       content: `❌ Erreur : ${error.message}`,
       flags: ["Ephemeral"],
@@ -757,7 +757,7 @@ export async function handleBlueprintCostSelect(interaction: StringSelectMenuInt
 
     if (!selectedResource) {
       await interaction.reply({
-        content: "❌ Ressource non trouvée.",
+        content: `${STATUS.ERROR} Ressource non trouvée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -780,7 +780,7 @@ export async function handleBlueprintCostSelect(interaction: StringSelectMenuInt
 
     await interaction.showModal(modal);
   } catch (error: any) {
-    console.error("Error showing blueprint quantity modal:", error);
+    logger.error("Error showing blueprint quantity modal", { error });
     await interaction.reply({
       content: `❌ Erreur : ${error.message}`,
       flags: ["Ephemeral"],
@@ -795,7 +795,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
 
     if (isNaN(quantity) || quantity <= 0) {
       await interaction.reply({
-        content: "❌ La quantité doit être un nombre positif.",
+        content: `${STATUS.ERROR} La quantité doit être un nombre positif.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -806,7 +806,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
 
     if (!selectedResource) {
       await interaction.reply({
-        content: "❌ Ressource non trouvée.",
+        content: `${STATUS.ERROR} Ressource non trouvée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -815,7 +815,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
     const draft = projectDrafts.get(interaction.user.id);
     if (!draft) {
       await interaction.reply({
-        content: "❌ Session expirée.",
+        content: `${STATUS.ERROR} Session expirée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -846,7 +846,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
       flags: ["Ephemeral"],
     });
   } catch (error: any) {
-    console.error("Error adding blueprint cost:", error);
+    logger.error("Error adding blueprint cost", { error });
     await interaction.reply({
       content: `❌ Erreur : ${error.message}`,
       flags: ["Ephemeral"],

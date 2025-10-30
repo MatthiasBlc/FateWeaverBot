@@ -31,7 +31,7 @@ export async function handleProjectAdminAddButton(interaction: ButtonInteraction
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
       });
       return;
     }
@@ -57,7 +57,7 @@ export async function handleProjectAdminAddButton(interaction: ButtonInteraction
   } catch (error) {
     logger.error("Error starting project add:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage du formulaire.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire.`,
     });
   }
 }
@@ -76,7 +76,7 @@ export async function handleProjectAdminAddStep1Modal(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
       });
       return;
     }
@@ -146,7 +146,7 @@ async function showCraftAndOutputSelection(
     const validateButton = new ButtonBuilder()
       .setCustomId(`project_add_validate_selection:${cacheId}`)
       .setLabel("Valider")
-      .setEmoji("✅")
+      .setEmoji(`${STATUS.SUCCESS}`)
       .setStyle(ButtonStyle.Success)
       .setDisabled(true); // Désactivé jusqu'à ce que les 2 menus soient remplis
 
@@ -184,7 +184,7 @@ export async function handleProjectAddOptionalName(interaction: ButtonInteractio
 
     if (!data || !cacheId) {
       await interaction.reply({
-        content: "❌ Session expirée. Recommencez la création du projet.",
+        content: `${STATUS.ERROR} Session expirée. Recommencez la création du projet.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -231,7 +231,7 @@ export async function handleProjectAddNameModal(interaction: ModalSubmitInteract
 
     if (!data || !cacheId) {
       await interaction.editReply({
-        content: "❌ Session expirée. Recommencez la création du projet.",
+        content: `${STATUS.ERROR} Session expirée. Recommencez la création du projet.`,
       });
       return;
     }
@@ -265,7 +265,7 @@ export async function handleProjectAddCraftTypesSelect(interaction: StringSelect
 
     if (!data || !cacheId) {
       await interaction.reply({
-        content: "❌ Session expirée. Recommencez la création du projet.",
+        content: `${STATUS.ERROR} Session expirée. Recommencez la création du projet.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -300,7 +300,7 @@ export async function handleProjectAddOutputTypeSelect(interaction: StringSelect
 
     if (!data || !cacheId) {
       await interaction.reply({
-        content: "❌ Session expirée. Recommencez la création du projet.",
+        content: `${STATUS.ERROR} Session expirée. Recommencez la création du projet.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -367,7 +367,7 @@ async function updateSelectionMessage(
   const validateButton = new ButtonBuilder()
     .setCustomId(`project_add_validate_selection:${cacheId}`)
     .setLabel("Valider")
-    .setEmoji("✅")
+    .setEmoji(`${STATUS.SUCCESS}`)
     .setStyle(ButtonStyle.Success)
     .setDisabled(!canValidate);
 
@@ -396,7 +396,7 @@ async function updateSelectionMessage(
     content += `⏳ **Type de production** : Non sélectionné\n`;
   }
 
-  content += `\n${canValidate ? "✅ Cliquez sur **Valider** pour continuer." : "⏳ Complétez les sélections ci-dessus."}`;
+  content += `\n${canValidate ? `${STATUS.SUCCESS} Cliquez sur **Valider** pour continuer.` : "⏳ Complétez les sélections ci-dessus."}`;
 
   // Use update for StringSelectMenuInteraction, editReply for ModalSubmitInteraction
   if (interaction instanceof StringSelectMenuInteraction) {
@@ -424,7 +424,7 @@ export async function handleProjectAddValidateSelection(interaction: ButtonInter
 
     if (!data || !cacheId) {
       await interaction.followUp({
-        content: "❌ Session expirée. Recommencez la création du projet.",
+        content: `${STATUS.ERROR} Session expirée. Recommencez la création du projet.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -433,7 +433,7 @@ export async function handleProjectAddValidateSelection(interaction: ButtonInter
     // Vérifier que les sélections sont complètes
     if (data.craftTypes.length === 0 || !data.outputType) {
       await interaction.followUp({
-        content: "❌ Veuillez compléter toutes les sélections.",
+        content: `${STATUS.ERROR} Veuillez compléter toutes les sélections.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -498,7 +498,7 @@ async function showOutputSelection(
 
       if (!resourceTypes || resourceTypes.length === 0) {
         await interaction.editReply({
-          content: "❌ Aucun type de ressource disponible.",
+          content: `${STATUS.ERROR} Aucun type de ressource disponible.`,
         });
         return;
       }
@@ -528,7 +528,7 @@ async function showOutputSelection(
 
       if (!objects || objects.length === 0) {
         await interaction.editReply({
-          content: "❌ Aucun objet disponible.",
+          content: `${STATUS.ERROR} Aucun objet disponible.`,
         });
         return;
       }
@@ -585,7 +585,7 @@ async function showOutputSelection(
   } catch (error) {
     logger.error("Error showing output selection:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage des choix.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des choix.`,
     });
   }
 }
@@ -642,7 +642,7 @@ export async function handleProjectAddSelectResource(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in handleProjectAddSelectResource:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection.`);
   }
 }
 
@@ -776,7 +776,7 @@ export async function handleProjectAddObjectCategory(
   } catch (error) {
     logger.error("Error in handleProjectAddObjectCategory:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage de la catégorie.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage de la catégorie.`,
       components: [],
     });
   }
@@ -834,7 +834,7 @@ export async function handleProjectAddSelectObject(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in handleProjectAddSelectObject:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection.`);
   }
 }
 
@@ -860,14 +860,14 @@ export async function handleProjectAddQuantityModal(
 
     if (isNaN(quantity) || quantity <= 0) {
       await interaction.editReply({
-        content: "❌ La quantité doit être un nombre positif.",
+        content: `${STATUS.ERROR} La quantité doit être un nombre positif.`,
       });
       return;
     }
 
     if (isNaN(paRequired) || paRequired <= 0) {
       await interaction.editReply({
-        content: "❌ Le nombre de PA doit être un nombre positif.",
+        content: `${STATUS.ERROR} Le nombre de PA doit être un nombre positif.`,
       });
       return;
     }
@@ -899,7 +899,7 @@ export async function handleProjectAddQuantityModal(
   } catch (error) {
     logger.error("Error in handleProjectAddQuantityModal:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors du traitement.",
+      content: `${STATUS.ERROR} Erreur lors du traitement.`,
     });
   }
 }
@@ -932,7 +932,7 @@ async function showResourceManagementInterface(
 
   const validateButton = new ButtonBuilder()
     .setCustomId(`project_add_validate_costs:${cacheId}`)
-    .setLabel("✅ Valider et continuer")
+    .setLabel(`${STATUS.SUCCESS} Valider et continuer`)
     .setStyle(ButtonStyle.Primary);
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -972,7 +972,7 @@ export async function handleProjectAddAddResource(
     if (!resourceTypes || resourceTypes.length === 0) {
       await replyEphemeral(
         interaction,
-        "❌ Aucun type de ressource disponible."
+        `${STATUS.ERROR} Aucun type de ressource disponible.`
       );
       return;
     }
@@ -997,7 +997,7 @@ export async function handleProjectAddAddResource(
     });
   } catch (error) {
     logger.error("Error in handleProjectAddAddResource:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'affichage des ressources.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'affichage des ressources.`);
   }
 }
 
@@ -1027,7 +1027,7 @@ export async function handleProjectAddSelectCostResource(
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ressource introuvable.`);
       return;
     }
 
@@ -1052,7 +1052,7 @@ export async function handleProjectAddSelectCostResource(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in handleProjectAddSelectCostResource:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection.`);
   }
 }
 
@@ -1074,7 +1074,7 @@ export async function handleProjectAddResourceQuantityModal(
 
     if (isNaN(quantity) || quantity <= 0) {
       await interaction.editReply({
-        content: "❌ La quantité doit être un nombre positif.",
+        content: `${STATUS.ERROR} La quantité doit être un nombre positif.`,
       });
       return;
     }
@@ -1095,7 +1095,7 @@ export async function handleProjectAddResourceQuantityModal(
 
     if (!resourceType) {
       await interaction.editReply({
-        content: "❌ Ressource introuvable.",
+        content: `${STATUS.ERROR} Ressource introuvable.`,
       });
       return;
     }
@@ -1127,7 +1127,7 @@ export async function handleProjectAddResourceQuantityModal(
   } catch (error) {
     logger.error("Error in handleProjectAddResourceQuantityModal:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'ajout.",
+      content: `${STATUS.ERROR} Erreur lors de l'ajout.`,
     });
   }
 }
@@ -1160,7 +1160,7 @@ export async function handleProjectAddValidateCosts(
   } catch (error) {
     logger.error("Error in handleProjectAddValidateCosts:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de la validation.",
+      content: `${STATUS.ERROR} Erreur lors de la validation.`,
       components: [],
     });
   }
@@ -1180,12 +1180,12 @@ async function showBlueprintInterface(
 
   const yesButton = new ButtonBuilder()
     .setCustomId(`project_add_blueprint_yes:${cacheId}`)
-    .setLabel("✅ Oui, configurer le blueprint")
+    .setLabel(`${STATUS.SUCCESS} Oui, configurer le blueprint`)
     .setStyle(ButtonStyle.Success);
 
   const noButton = new ButtonBuilder()
     .setCustomId(`project_add_blueprint_no:${cacheId}`)
-    .setLabel("❌ Non, créer le projet maintenant")
+    .setLabel(`${STATUS.ERROR} Non, créer le projet maintenant`)
     .setStyle(ButtonStyle.Primary);
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -1227,7 +1227,7 @@ export async function handleProjectAddBlueprintNo(
   } catch (error) {
     logger.error("Error in handleProjectAddBlueprintNo:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de la création.",
+      content: `${STATUS.ERROR} Erreur lors de la création.`,
       components: [],
     });
   }
@@ -1274,7 +1274,7 @@ export async function handleProjectAddBlueprintYes(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in handleProjectAddBlueprintYes:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'affichage du formulaire.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'affichage du formulaire.`);
   }
 }
 
@@ -1293,7 +1293,7 @@ export async function handleProjectAddBlueprintPAModal(
 
     if (isNaN(paBlueprintRequired) || paBlueprintRequired <= 0) {
       await interaction.editReply({
-        content: "❌ Le nombre de PA doit être un nombre positif.",
+        content: `${STATUS.ERROR} Le nombre de PA doit être un nombre positif.`,
       });
       return;
     }
@@ -1320,7 +1320,7 @@ export async function handleProjectAddBlueprintPAModal(
   } catch (error) {
     logger.error("Error in handleProjectAddBlueprintPAModal:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors du traitement.",
+      content: `${STATUS.ERROR} Erreur lors du traitement.`,
     });
   }
 }
@@ -1352,7 +1352,7 @@ async function showBlueprintResourceManagementInterface(
 
   const finalizeButton = new ButtonBuilder()
     .setCustomId(`project_add_finalize:${cacheId}`)
-    .setLabel("✅ Créer le projet")
+    .setLabel(`${STATUS.SUCCESS} Créer le projet`)
     .setStyle(ButtonStyle.Primary);
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -1392,7 +1392,7 @@ export async function handleProjectAddAddBlueprintResource(
     if (!resourceTypes || resourceTypes.length === 0) {
       await replyEphemeral(
         interaction,
-        "❌ Aucun type de ressource disponible."
+        `${STATUS.ERROR} Aucun type de ressource disponible.`
       );
       return;
     }
@@ -1417,7 +1417,7 @@ export async function handleProjectAddAddBlueprintResource(
     });
   } catch (error) {
     logger.error("Error in handleProjectAddAddBlueprintResource:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'affichage.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'affichage.`);
   }
 }
 
@@ -1447,7 +1447,7 @@ export async function handleProjectAddSelectBlueprintResource(
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ressource introuvable.`);
       return;
     }
 
@@ -1472,7 +1472,7 @@ export async function handleProjectAddSelectBlueprintResource(
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in handleProjectAddSelectBlueprintResource:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection.`);
   }
 }
 
@@ -1494,7 +1494,7 @@ export async function handleProjectAddBlueprintResourceQuantityModal(
 
     if (isNaN(quantity) || quantity <= 0) {
       await interaction.editReply({
-        content: "❌ La quantité doit être un nombre positif.",
+        content: `${STATUS.ERROR} La quantité doit être un nombre positif.`,
       });
       return;
     }
@@ -1515,7 +1515,7 @@ export async function handleProjectAddBlueprintResourceQuantityModal(
 
     if (!resourceType) {
       await interaction.editReply({
-        content: "❌ Ressource introuvable.",
+        content: `${STATUS.ERROR} Ressource introuvable.`,
       });
       return;
     }
@@ -1551,7 +1551,7 @@ export async function handleProjectAddBlueprintResourceQuantityModal(
   } catch (error) {
     logger.error("Error in handleProjectAddBlueprintResourceQuantityModal:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'ajout.",
+      content: `${STATUS.ERROR} Erreur lors de l'ajout.`,
     });
   }
 }
@@ -1584,7 +1584,7 @@ export async function handleProjectAddFinalize(
   } catch (error) {
     logger.error("Error in handleProjectAddFinalize:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de la création.",
+      content: `${STATUS.ERROR} Erreur lors de la création.`,
       components: [],
     });
   }

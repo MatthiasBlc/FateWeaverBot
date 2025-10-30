@@ -196,12 +196,12 @@ async function handleEmojiRemove(interaction: ChatInputCommandInteraction) {
     // Créer les boutons de confirmation
     const confirmButton = new ButtonBuilder()
       .setCustomId(`confirm_delete_emoji_${type}_${key}`)
-      .setLabel("✅ Confirmer")
+      .setLabel(`${STATUS.SUCCESS} Confirmer`)
       .setStyle(ButtonStyle.Danger);
 
     const cancelButton = new ButtonBuilder()
       .setCustomId(`cancel_delete_emoji_${type}_${key}`)
-      .setLabel("❌ Annuler")
+      .setLabel(`${STATUS.ERROR} Annuler`)
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

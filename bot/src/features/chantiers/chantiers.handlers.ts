@@ -100,7 +100,7 @@ export async function handleChantiersCommand(interaction: CommandInteraction) {
 
       if (inDepartedExpedition) {
         return interaction.reply({
-          content: "❌ Tu es en expédition et ne peux pas voir les chantiers de la ville. Ça aura peut être avancé d'ici ton retour !",
+          content: `${STATUS.ERROR} Tu es en expédition et ne peux pas voir les chantiers de la ville. Ça aura peut être avancé d'ici ton retour !`,
           flags: ["Ephemeral"],
         });
       }
@@ -280,7 +280,7 @@ export async function handleParticipateButton(interaction: any) {
 
     if (inDepartedExpedition) {
       return interaction.reply({
-        content: "❌ pouvez pas participer aux chantiers de la ville. Attendez votre retour !",
+        content: `${STATUS.ERROR} pouvez pas participer aux chantiers de la ville. Attendez votre retour !`,
         flags: ["Ephemeral"],
       });
     }
@@ -738,7 +738,7 @@ export async function handleAddChantierCommand(interaction: ChatInputCommandInte
   } catch (error) {
     logger.error("Erreur lors de l'ouverture du modal de création:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'ouverture du formulaire de création.",
+      content: `${STATUS.ERROR} Erreur lors de l'ouverture du formulaire de création.`,
       flags: ["Ephemeral"],
     });
   }
@@ -1151,7 +1151,7 @@ export async function handleDeleteCommand(interaction: CommandInteraction) {
 
     if (chantiers.length === 0) {
       return interaction.reply({
-        content: "❌ Aucun chantier trouvé sur cette guilde.",
+        content: `${STATUS.ERROR} Aucun chantier trouvé sur cette guilde.`,
         flags: ["Ephemeral"],
       });
     }

@@ -12,6 +12,8 @@ import type { Character } from "../character-admin.types";
 import {
   CHARACTER_ADMIN_CUSTOM_IDS,
 } from "../character-admin.components";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gère les soumissions de modales pour les statistiques de base.
@@ -136,7 +138,7 @@ export async function handleStatsModalSubmit(
   } catch (error) {
     logger.error("Erreur lors de la mise à jour des stats:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de la mise à jour des statistiques.",
+      content: `${STATUS.ERROR} Erreur lors de la mise à jour des statistiques.`,
       flags: ["Ephemeral"],
     });
   }
@@ -161,21 +163,21 @@ export async function handleAdvancedStatsModalSubmit(
   // Validation
   if (!["true", "false"].includes(isDeadValue)) {
     await interaction.reply({
-      content: "❌ 'Mort' doit être 'true' ou 'false'.",
+      content: `${STATUS.ERROR} 'Mort' doit être 'true' ou 'false'.`,
       flags: ["Ephemeral"],
     });
     return;
   }
   if (!["true", "false"].includes(isActiveValue)) {
     await interaction.reply({
-      content: "❌ 'Actif' doit être 'true' ou 'false'.",
+      content: `${STATUS.ERROR} 'Actif' doit être 'true' ou 'false'.`,
       flags: ["Ephemeral"],
     });
     return;
   }
   if (!["true", "false"].includes(canRerollValue)) {
     await interaction.reply({
-      content: "❌ 'Reroll autorisé' doit être 'true' ou 'false'.",
+      content: `${STATUS.ERROR} 'Reroll autorisé' doit être 'true' ou 'false'.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -204,12 +206,12 @@ export async function handleAdvancedStatsModalSubmit(
       },
       {
         name: "Actif",
-        value: updatedCharacter.isActive ? "✅ Oui" : "❌ Non",
+        value: updatedCharacter.isActive ? `${STATUS.SUCCESS} Oui` : `${STATUS.ERROR} Non`,
         inline: true,
       },
       {
         name: "Reroll",
-        value: updatedCharacter.canReroll ? "✅ Oui" : "❌ Non",
+        value: updatedCharacter.canReroll ? `${STATUS.SUCCESS} Oui` : `${STATUS.ERROR} Non`,
         inline: true,
       }
     );
@@ -220,7 +222,7 @@ export async function handleAdvancedStatsModalSubmit(
       error,
     });
     await interaction.reply({
-      content: "❌ Erreur lors de la mise à jour des statistiques avancées.",
+      content: `${STATUS.ERROR} Erreur lors de la mise à jour des statistiques avancées.`,
       flags: ["Ephemeral"],
     });
   }

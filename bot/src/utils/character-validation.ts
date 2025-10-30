@@ -1,14 +1,16 @@
 import type { Character } from "../types/entities";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Messages d'erreur standardisés pour les validations de personnage
  */
 export const CHARACTER_ERRORS = {
-  NO_CHARACTER: "❌ Aucun personnage actif trouvé.",
-  DEAD_CHARACTER: "❌ Un mort ne peut pas effectuer cette action.",
+  NO_CHARACTER: `${STATUS.ERROR} Aucun personnage actif trouvé.`,
+  DEAD_CHARACTER: `${STATUS.ERROR} Un mort ne peut pas effectuer cette action.`,
   NO_LIVING_CHARACTER: "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.",
-  NO_TOWN: "❌ Ville de votre personnage introuvable.",
-  NO_PERMISSION: "❌ Vous n'avez pas la permission d'effectuer cette action.",
+  NO_TOWN: `${STATUS.ERROR} Ville de votre personnage introuvable.`,
+  NO_PERMISSION: `${STATUS.ERROR} Vous n'avez pas la permission d'effectuer cette action.`,
 } as const;
 
 /**

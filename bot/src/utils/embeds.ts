@@ -1,4 +1,6 @@
 import { EmbedBuilder, ColorResolvable } from "discord.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Utilitaires pour créer des embeds Discord réutilisables
@@ -85,7 +87,7 @@ export function createErrorEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.ERROR)
-    .setTitle("❌ Erreur")
+    .setTitle(`${STATUS.ERROR} Erreur`)
     .setDescription(message)
     .setTimestamp();
 

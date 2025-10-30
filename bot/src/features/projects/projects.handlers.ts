@@ -110,7 +110,7 @@ function formatRewardMessage(
     const defaultOutput = getProjectOutputText(project);
     return defaultOutput
       ? `✅ ${defaultOutput} ajouté au stock de la ville !`
-      : "✅ Récompense enregistrée !";
+      : `${STATUS.SUCCESS} Récompense enregistrée !`;
   }
 
   switch (reward.type) {
@@ -131,7 +131,7 @@ function formatRewardMessage(
       return `🎁 ${quantityText}${reward.objectType.name} remis ${owner} !`;
     }
     default:
-      return "✅ Récompense enregistrée !";
+      return `${STATUS.SUCCESS} Récompense enregistrée !`;
   }
 }
 
@@ -388,7 +388,7 @@ export async function handleProjectsCommand(interaction: CommandInteraction) {
   } catch (error) {
     logger.error("Erreur lors de la récupération des projets :", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de la récupération des projets.",
+      content: `${STATUS.ERROR} Erreur lors de la récupération des projets.`,
       flags: ["Ephemeral"],
     });
   }
@@ -678,12 +678,12 @@ export async function handleParticipateButton(interaction: ButtonInteraction) {
     });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la participation.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la participation.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
-        content: "❌ Erreur lors de la préparation de la participation.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la participation.`,
         flags: ["Ephemeral"],
       });
     }
@@ -979,12 +979,12 @@ export async function handleBlueprintParticipateButton(
     );
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la participation.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la participation.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.followUp({
-        content: "❌ Erreur lors de la préparation de la participation.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la participation.`,
         flags: ["Ephemeral"],
       });
     }
@@ -1229,7 +1229,7 @@ export async function handleInvestModalSubmit(
     logger.error("Erreur lors du traitement de la contribution:", { error });
 
     await interaction.reply({
-      content: "❌ Erreur lors du traitement de votre contribution.",
+      content: `${STATUS.ERROR} Erreur lors du traitement de votre contribution.`,
       flags: ["Ephemeral"],
     });
   }
@@ -1505,7 +1505,7 @@ export async function handleViewProjectsFromProfile(
       error,
     });
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des projets.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des projets.`,
       flags: ["Ephemeral"],
     });
   }

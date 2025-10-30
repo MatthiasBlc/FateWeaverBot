@@ -1,5 +1,7 @@
 import { StringSelectMenuInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Gestionnaire centralisé des interactions de sélections (StringSelectMenu)
@@ -78,7 +80,7 @@ export class SelectMenuHandler {
         logger.error("Error handling character admin select:", { error });
         await interaction.reply({
           content:
-            "❌ Erreur lors du traitement de la sélection d'administration.",
+            `${STATUS.ERROR} Erreur lors du traitement de la sélection d'administration.`,
           flags: ["Ephemeral"],
         });
       }
@@ -95,12 +97,12 @@ export class SelectMenuHandler {
         logger.error("Error handling capability select:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement de la sélection de capacité.",
+            content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de capacité.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement de la sélection de capacité.",
+            content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de capacité.`,
           });
         }
       }
@@ -117,7 +119,7 @@ export class SelectMenuHandler {
         logger.error("Error handling expedition admin select:", { error });
         await interaction.reply({
           content:
-            "❌ Erreur lors du traitement de la sélection d'administration d'expédition.",
+            `${STATUS.ERROR} Erreur lors du traitement de la sélection d'administration d'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -133,7 +135,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition join select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection d'expédition.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection d'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -149,7 +151,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition transfer direction select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection de direction de transfert.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de direction de transfert.`,
           flags: ["Ephemeral"],
         });
       }
@@ -165,7 +167,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition admin add member select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection d'ajout de membre.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection d'ajout de membre.`,
           flags: ["Ephemeral"],
         });
       }
@@ -181,7 +183,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition admin remove member select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection de retrait de membre.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de retrait de membre.`,
           flags: ["Ephemeral"],
         });
       }
@@ -197,7 +199,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition admin resource add select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource à ajouter.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource à ajouter.`,
           flags: ["Ephemeral"],
         });
       }
@@ -213,7 +215,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition admin resource modify select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource à modifier.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource à modifier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -229,7 +231,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition admin resource delete select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource à supprimer.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource à supprimer.`,
           flags: ["Ephemeral"],
         });
       }
@@ -245,7 +247,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling stock admin add select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection d'ajout de ressource.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection d'ajout de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -261,7 +263,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling stock admin remove select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la sélection de retrait de ressource.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de retrait de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -282,7 +284,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project admin edit select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du projet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -298,7 +300,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project admin delete select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du projet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -315,7 +317,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add craft types:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection des corps d'artisanat.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection des corps d'artisanat.`,
           flags: ["Ephemeral"],
         });
       }
@@ -331,7 +333,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add output type:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du type de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du type de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -346,7 +348,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add select resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -361,7 +363,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add select object:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -376,7 +378,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add select object from category:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -391,7 +393,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add select cost resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -406,7 +408,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project add select blueprint resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -422,7 +424,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling chantier select resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -442,7 +444,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project craft type select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection des types d'artisanat.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection des types d'artisanat.`,
           flags: ["Ephemeral"],
         });
       }
@@ -458,7 +460,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project output type select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du type de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du type de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -474,7 +476,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project output resource select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -490,7 +492,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project output object select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -506,7 +508,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project output select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -522,7 +524,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project select resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource requise.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource requise.`,
           flags: ["Ephemeral"],
         });
       }
@@ -539,7 +541,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling project blueprint cost select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de coût blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de coût blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -556,7 +558,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition direction select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de direction d'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de direction d'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -572,7 +574,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition create resource select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -588,7 +590,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition resource add select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -604,7 +606,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition resource remove select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -620,7 +622,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition set direction select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la définition de direction d'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la définition de direction d'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -636,7 +638,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling job selection:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du métier.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du métier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -653,7 +655,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling cooking quantity choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de quantité pour cuisiner.",
+          content: `${STATUS.ERROR} Erreur lors du choix de quantité pour cuisiner.`,
           flags: ["Ephemeral"],
         });
       }
@@ -670,7 +672,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling healing target choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la cible à soigner.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la cible à soigner.`,
           flags: ["Ephemeral"],
         });
       }
@@ -687,7 +689,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object admin select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection d'objets.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection d'objets.`,
           flags: ["Ephemeral"],
         });
       }
@@ -704,7 +706,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling skill admin select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de compétences.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -720,7 +722,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object skill select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -736,7 +738,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object skill confirm:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -752,7 +754,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object skill confirm add:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -768,7 +770,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object skill remove:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -784,7 +786,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object capability confirm add:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -800,7 +802,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object capability remove:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -816,7 +818,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object capability bonus select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du bonus de capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -833,7 +835,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling emoji type select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du type d'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -849,7 +851,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling emoji remove type select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du type d'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du type d'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -865,7 +867,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling emoji remove select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -881,7 +883,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling resource emoji category select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des emojis.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des emojis.`,
           flags: ["Ephemeral"],
         });
       }
@@ -897,7 +899,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling resource emoji select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -914,7 +916,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select resource to edit:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -930,7 +932,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select resource to delete:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -946,7 +948,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select object to edit:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -962,7 +964,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select object to delete:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -978,7 +980,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select object to delete final:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -994,7 +996,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select skill to edit:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1010,7 +1012,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select skill to delete:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1026,7 +1028,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select capability to edit:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1042,7 +1044,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select capability to delete:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1058,7 +1060,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling object resource select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1075,7 +1077,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select give recipient:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du destinataire.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du destinataire.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1091,7 +1093,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling select give objects:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection des objets.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection des objets.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1107,7 +1109,7 @@ export class SelectMenuHandler {
       } catch (error) {
         logger.error("Error handling expedition channel select:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection du channel.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection du channel.`,
           flags: ["Ephemeral"],
         });
       }

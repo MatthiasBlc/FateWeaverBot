@@ -7,6 +7,8 @@ import {
   createExpeditionResourceAddModal,
   createExpeditionResourceModifyModal
 } from "../../modals/expedition-modals";
+import { STATUS, SYSTEM } from "../../constants/emojis.js";
+
 
 /**
  * Handler pour la sélection d'une ressource à ajouter
@@ -22,7 +24,7 @@ export async function handleExpeditionAdminResourceAddSelect(interaction: any) {
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Type de ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Type de ressource introuvable.`);
       return;
     }
 
@@ -32,7 +34,7 @@ export async function handleExpeditionAdminResourceAddSelect(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition admin resource add select:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection de ressource.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection de ressource.`);
   }
 }
 
@@ -48,7 +50,7 @@ export async function handleExpeditionResourceAddModal(interaction: any) {
     const quantity = parseInt(interaction.fields.getTextInputValue("resource_quantity_input"), 10);
 
     if (isNaN(quantity) || quantity <= 0) {
-      await replyEphemeral(interaction, "❌ La quantité doit être un nombre positif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La quantité doit être un nombre positif.`);
       return;
     }
 
@@ -91,7 +93,7 @@ export async function handleExpeditionAdminResourceModifySelect(interaction: any
     const resource = resources.find((r: any) => r.resourceTypeId === resourceTypeId);
 
     if (!resource) {
-      await replyEphemeral(interaction, "❌ Ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ressource introuvable.`);
       return;
     }
 
@@ -106,7 +108,7 @@ export async function handleExpeditionAdminResourceModifySelect(interaction: any
 
   } catch (error) {
     logger.error("Error in expedition admin resource modify select:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection de ressource.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection de ressource.`);
   }
 }
 
@@ -122,7 +124,7 @@ export async function handleExpeditionResourceModifyModal(interaction: any) {
     const newQuantity = parseInt(interaction.fields.getTextInputValue("resource_quantity_input"), 10);
 
     if (isNaN(newQuantity) || newQuantity < 0) {
-      await replyEphemeral(interaction, "❌ La quantité doit être un nombre positif ou zéro.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La quantité doit être un nombre positif ou zéro.`);
       return;
     }
 
@@ -165,7 +167,7 @@ export async function handleExpeditionAdminResourceDeleteSelect(interaction: any
     const resource = resources.find((r: any) => r.resourceTypeId === resourceTypeId);
 
     if (!resource) {
-      await replyEphemeral(interaction, "❌ Ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ressource introuvable.`);
       return;
     }
 
@@ -174,16 +176,16 @@ export async function handleExpeditionAdminResourceDeleteSelect(interaction: any
       .addComponents(
         new ButtonBuilder()
           .setCustomId(`expedition_admin_resource_delete_confirm_${expeditionId}_${resourceTypeId}`)
-          .setLabel("✅ Confirmer la suppression")
+          .setLabel(`${STATUS.SUCCESS} Confirmer la suppression`)
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId(`expedition_admin_resource_delete_cancel_${expeditionId}`)
-          .setLabel("❌ Annuler")
+          .setLabel(`${STATUS.ERROR} Annuler`)
           .setStyle(ButtonStyle.Secondary)
       );
 
     const embed = createWarningEmbed(
-      "⚠️ Confirmation de suppression",
+      `${SYSTEM.WARNING} Confirmation de suppression`,
       `Êtes-vous sûr de vouloir supprimer **${resource.resourceType?.name || 'cette ressource'}** (${resource.quantity}) de l'expédition ?\n\n**Cette action est irréversible !**`
     );
 
@@ -194,7 +196,7 @@ export async function handleExpeditionAdminResourceDeleteSelect(interaction: any
 
   } catch (error) {
     logger.error("Error in expedition admin resource delete select:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection de ressource.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection de ressource.`);
   }
 }
 
@@ -237,7 +239,7 @@ export async function handleExpeditionAdminResourceDeleteConfirm(interaction: an
  */
 export async function handleExpeditionAdminResourceDeleteCancel(interaction: any) {
   await interaction.update({
-    content: "❌ Suppression annulée.",
+    content: `${STATUS.ERROR} Suppression annulée.`,
     embeds: [],
     components: [],
   });
@@ -254,7 +256,7 @@ export async function handleExpeditionDurationModal(interaction: any) {
     const duration = parseInt(interaction.fields.getTextInputValue("duration_input"), 10);
 
     if (isNaN(duration) || duration < 1) {
-      await replyEphemeral(interaction, "❌ La durée doit être un nombre positif d'au moins 1 jour.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La durée doit être un nombre positif d'au moins 1 jour.`);
       return;
     }
 

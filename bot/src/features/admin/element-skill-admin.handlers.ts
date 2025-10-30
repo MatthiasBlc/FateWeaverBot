@@ -221,12 +221,12 @@ export async function handleSelectSkillToDeleteMenu(
 
     const confirmButton = new ButtonBuilder()
       .setCustomId(`confirm_delete_skill:${skillId}`)
-      .setLabel("✅ Confirmer la suppression")
+      .setLabel(`${STATUS.SUCCESS} Confirmer la suppression`)
       .setStyle(ButtonStyle.Danger);
 
     const cancelButton = new ButtonBuilder()
       .setCustomId("cancel_delete")
-      .setLabel("❌ Annuler")
+      .setLabel(`${STATUS.ERROR} Annuler`)
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

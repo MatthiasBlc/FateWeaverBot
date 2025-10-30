@@ -17,6 +17,8 @@ import {
   createAdminProfileEmbed,
 } from "../character-admin.components";
 import { getCharacterCapabilities } from "../../../services/capability.service";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gère la sélection d'un personnage dans le menu déroulant.
@@ -31,7 +33,7 @@ export async function handleCharacterSelect(
 
   if (!character) {
     await interaction.reply({
-      content: "❌ Personnage non trouvé.",
+      content: `${STATUS.ERROR} Personnage non trouvé.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -83,7 +85,7 @@ export async function handleCharacterSelect(
   } catch (error) {
     logger.error("Erreur lors de la création du profil admin:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de la création du profil admin.",
+      content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
       flags: ["Ephemeral"],
     });
   }
@@ -127,7 +129,7 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
 
   if (!action || !characterId) {
     await interaction.reply({
-      content: "❌ Action inconnue.",
+      content: `${STATUS.ERROR} Action inconnue.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -138,7 +140,7 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
 
   if (!character) {
     await interaction.reply({
-      content: "❌ Personnage non trouvé.",
+      content: `${STATUS.ERROR} Personnage non trouvé.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -194,7 +196,7 @@ async function handleStatsButton(
   if (character.isDead) {
     await interaction.reply({
       content:
-        "❌ Impossible de modifier les statistiques d'un personnage mort.",
+        `${STATUS.ERROR} Impossible de modifier les statistiques d'un personnage mort.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -225,7 +227,7 @@ async function handleKillButton(
   try {
     if (character.isDead) {
       await interaction.reply({
-        content: "❌ Ce personnage est déjà mort.",
+        content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -267,7 +269,7 @@ async function handleKillButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de la gestion du reroll.",
+      content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
       flags: ["Ephemeral"],
     });
   }
@@ -303,7 +305,7 @@ async function handleToggleRerollButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de la gestion du reroll.",
+      content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
       flags: ["Ephemeral"],
     });
   }

@@ -580,7 +580,7 @@ export async function handleObjectModalSubmit(interaction: ModalSubmitInteractio
 
     const doneButton = new ButtonBuilder()
       .setCustomId(`object_done:${response.id}`)
-      .setLabel("✅ Terminé")
+      .setLabel(`${STATUS.SUCCESS} Terminé`)
       .setStyle(ButtonStyle.Danger);
 
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -1601,12 +1601,12 @@ export async function handleEmojiRemoveSelect(interaction: any) {
     // Afficher une confirmation avant suppression
     const confirmButton = new ButtonBuilder()
       .setCustomId(`confirm_delete_emoji_${type}_${selectedKey}`)
-      .setLabel("✅ Confirmer suppression")
+      .setLabel(`${STATUS.SUCCESS} Confirmer suppression`)
       .setStyle(ButtonStyle.Danger);
 
     const cancelButton = new ButtonBuilder()
       .setCustomId("cancel_delete_emoji")
-      .setLabel("❌ Annuler")
+      .setLabel(`${STATUS.ERROR} Annuler`)
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

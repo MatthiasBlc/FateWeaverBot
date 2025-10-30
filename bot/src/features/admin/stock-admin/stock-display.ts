@@ -15,6 +15,8 @@ import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 import { getResourceEmoji } from "../../../services/emoji-cache";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler principal pour la commande /stock-admin unifiée
@@ -41,7 +43,7 @@ export async function handleStockAdminCommand(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -133,7 +135,7 @@ export async function handleStockAdminViewButton(interaction: any) {
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         embeds: [],
         components: [],
       });
@@ -145,7 +147,7 @@ export async function handleStockAdminViewButton(interaction: any) {
 
     if (!resources || resources.length === 0) {
       await interaction.editReply({
-        content: "❌ Aucune ressource trouvée",
+        content: `${STATUS.ERROR} Aucune ressource trouvée`,
         embeds: [],
         components: [],
       });

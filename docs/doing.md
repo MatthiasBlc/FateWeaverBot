@@ -46,3 +46,7 @@ Exemples :
 <!-- logs en expédition sauf première phase, doit toujours être caché sauf si un channel discord a été attributé à l'expédition. Les admin attribuent les channels dans /expedition-admin. -->
 
 Avatar user ? (dans la db ?)
+
+---
+
+ATTENTION A NE PAS MODIFIER LE CONTENU DES MESSAGES ERREUR, PUBLIC, EPHEMERAL sans mon accord ou sans ma demande explicite et ce, à a tout moment.

@@ -91,7 +91,7 @@ export async function handleSkillsButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des compétences.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des compétences.`,
       flags: ["Ephemeral"],
     });
   }
@@ -178,12 +178,12 @@ export async function handleAddSkills(
     logger.error("Erreur lors de la préparation de l'ajout de compétences:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de l'ajout de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de compétences.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de l'ajout de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de compétences.`,
       });
     }
   }
@@ -237,12 +237,12 @@ async function handleAddSkillsOld(
     logger.error("Erreur lors de la préparation de l'ajout de compétences:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de l'ajout de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de compétences.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de l'ajout de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de compétences.`,
       });
     }
   }
@@ -318,12 +318,12 @@ export async function handleRemoveSkills(
     logger.error("Erreur lors de la préparation de la suppression de compétences:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la suppression de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de compétences.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de la suppression de compétences.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de compétences.`,
       });
     }
   }
@@ -449,12 +449,12 @@ export async function handleSkillCategory(
     logger.error("Erreur lors de l'affichage de la catégorie de compétences:", { error });
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
-        content: "❌ Erreur lors de l'affichage de la catégorie.",
+        content: `${STATUS.ERROR} Erreur lors de l'affichage de la catégorie.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de l'affichage de la catégorie.",
+        content: `${STATUS.ERROR} Erreur lors de l'affichage de la catégorie.`,
       });
     }
   }
@@ -473,7 +473,7 @@ export async function handleSkillSelect(
 
     if (selectedSkillIds.length === 0) {
       await interaction.reply({
-        content: "❌ Aucune compétence sélectionnée.",
+        content: `${STATUS.ERROR} Aucune compétence sélectionnée.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -481,7 +481,7 @@ export async function handleSkillSelect(
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
         flags: ["Ephemeral"],
       });
       return;

@@ -2,6 +2,8 @@ import { ButtonInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 import { apiService } from "../services/api/index.js";
 import { httpClient } from "../services/httpClient.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Gestionnaire centralisé des interactions de boutons
@@ -130,7 +132,7 @@ export class ButtonHandler {
 
         if (!character) {
           await interaction.editReply({
-            content: "❌ Personnage introuvable.",
+            content: `${STATUS.ERROR} Personnage introuvable.`,
             embeds: [],
             components: [],
           });
@@ -141,7 +143,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat food button:", { error });
         await interaction.editReply({
-          content: "❌ Une erreur est survenue lors de l'action de manger.",
+          content: `${STATUS.ERROR} Une erreur est survenue lors de l'action de manger.`,
           embeds: [],
           components: [],
         });
@@ -158,7 +160,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat more button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du menu avancé.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du menu avancé.`,
           flags: ["Ephemeral"],
         });
       }
@@ -174,7 +176,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat vivre 1 button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la consommation.",
+          content: `${STATUS.ERROR} Erreur lors de la consommation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -190,7 +192,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat nourriture 1 button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la consommation.",
+          content: `${STATUS.ERROR} Erreur lors de la consommation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -206,7 +208,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat vivre full button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la consommation.",
+          content: `${STATUS.ERROR} Erreur lors de la consommation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -222,7 +224,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling eat nourriture full button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la consommation.",
+          content: `${STATUS.ERROR} Erreur lors de la consommation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -288,13 +290,13 @@ export class ButtonHandler {
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({
               content:
-                "❌ Erreur lors du traitement de l'interaction d'administration.",
+                `${STATUS.ERROR} Erreur lors du traitement de l'interaction d'administration.`,
               flags: ["Ephemeral"],
             });
           } else if (interaction.deferred) {
             await interaction.editReply({
               content:
-                "❌ Erreur lors du traitement de l'interaction d'administration.",
+                `${STATUS.ERROR} Erreur lors du traitement de l'interaction d'administration.`,
             });
           }
         } catch (replyError) {
@@ -313,7 +315,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling capability admin button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la gestion des capacités.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la gestion des capacités.`,
           flags: ["Ephemeral"],
         });
       }
@@ -329,7 +331,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object admin button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la gestion des objets.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la gestion des objets.`,
           flags: ["Ephemeral"],
         });
       }
@@ -345,7 +347,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la catégorie d'objets.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la catégorie d'objets.`,
           flags: ["Ephemeral"],
         });
       }
@@ -361,7 +363,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling skill admin button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la gestion des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la gestion des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -377,7 +379,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling skill category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de la catégorie de compétences.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de la catégorie de compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -393,7 +395,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling profile button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du retrait de ressources.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du retrait de ressources.`,
           flags: ["Ephemeral"],
         });
       }
@@ -409,7 +411,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling give object button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de votre objet.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de votre objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -425,7 +427,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling stock admin add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage de l'ajout de ressources.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage de l'ajout de ressources.`,
           flags: ["Ephemeral"],
         });
       }
@@ -441,7 +443,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling stock admin remove button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du retrait de ressources.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du retrait de ressources.`,
           flags: ["Ephemeral"],
         });
       }
@@ -457,7 +459,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project admin add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du formulaire de création.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire de création.`,
           flags: ["Ephemeral"],
         });
       }
@@ -474,7 +476,7 @@ export class ButtonHandler {
         logger.error("Error handling project add optional name button:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de l'affichage du formulaire.",
+            content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire.`,
             flags: ["Ephemeral"],
           });
         }
@@ -491,7 +493,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add validate selection:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la validation de la sélection.",
+          content: `${STATUS.ERROR} Erreur lors de la validation de la sélection.`,
           flags: ["Ephemeral"],
         });
       }
@@ -507,7 +509,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project admin edit button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage de la modification.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage de la modification.`,
           flags: ["Ephemeral"],
         });
       }
@@ -523,7 +525,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project admin delete button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage de la suppression.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage de la suppression.`,
           flags: ["Ephemeral"],
         });
       }
@@ -539,7 +541,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project admin delete confirm:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la confirmation de suppression.",
+          content: `${STATUS.ERROR} Erreur lors de la confirmation de suppression.`,
           flags: ["Ephemeral"],
         });
       }
@@ -555,7 +557,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add object category:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la navigation dans les catégories.",
+          content: `${STATUS.ERROR} Erreur lors de la navigation dans les catégories.`,
           flags: ["Ephemeral"],
         });
       }
@@ -570,7 +572,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -585,7 +587,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project validate costs:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la validation.",
+          content: `${STATUS.ERROR} Erreur lors de la validation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -600,7 +602,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project blueprint no:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création.",
+          content: `${STATUS.ERROR} Erreur lors de la création.`,
           flags: ["Ephemeral"],
         });
       }
@@ -615,7 +617,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project blueprint yes:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la configuration.",
+          content: `${STATUS.ERROR} Erreur lors de la configuration.`,
           flags: ["Ephemeral"],
         });
       }
@@ -630,7 +632,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add blueprint resource:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -645,7 +647,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project finalize:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la finalisation.",
+          content: `${STATUS.ERROR} Erreur lors de la finalisation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -661,7 +663,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling chantier participate button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la participation au chantier.",
+          content: `${STATUS.ERROR} Erreur lors de la participation au chantier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -677,7 +679,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling chantier admin add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'accès au formulaire d'ajout.",
+          content: `${STATUS.ERROR} Erreur lors de l'accès au formulaire d'ajout.`,
           flags: ["Ephemeral"],
         });
       }
@@ -693,7 +695,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling chantier admin delete button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'accès au formulaire de suppression.",
+          content: `${STATUS.ERROR} Erreur lors de l'accès au formulaire de suppression.`,
           flags: ["Ephemeral"],
         });
       }
@@ -710,7 +712,7 @@ export class ButtonHandler {
 
         if (!currentResponse.data) {
           await interaction.editReply({
-            content: "❌ Impossible de récupérer la saison actuelle.",
+            content: `${STATUS.ERROR} Impossible de récupérer la saison actuelle.`,
             embeds: [],
             components: []
           });
@@ -723,9 +725,9 @@ export class ButtonHandler {
 
         // Vérifier la structure des données
         if (!currentSeason || !currentSeason.name) {
-          logger.error("❌ Structure de données invalide:", { received: currentSeason });
+          logger.error(`${STATUS.ERROR} Structure de données invalide:`, { received: currentSeason });
           await interaction.editReply({
-            content: "❌ Format de données de saison invalide.",
+            content: `${STATUS.ERROR} Format de données de saison invalide.`,
             embeds: [],
             components: []
           });
@@ -744,12 +746,12 @@ export class ButtonHandler {
           adminId: interaction.user.id
         });
 
-        logger.info("✅ Réponse de changement de saison reçue:", { status: response.status, data: response.data });
+        logger.info(`${STATUS.SUCCESS} Réponse de changement de saison reçue:`, { status: response.status, data: response.data });
 
         const result = response.data;
         const embed = {
           color: getSeasonColor(result.newSeason),
-          title: "✅ Saison changée avec succès",
+          title: `${STATUS.SUCCESS} Saison changée avec succès`,
           fields: [
             {
               name: "🔄 Changement",
@@ -776,7 +778,7 @@ export class ButtonHandler {
         // Le message de succès est déjà affiché dans l'embed de réponse
 
       } catch (error: unknown) {
-        logger.error("❌ Erreur lors du changement de saison:", {
+        logger.error(`${STATUS.ERROR} Erreur lors du changement de saison:`, {
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
           response: (error as { response?: { data?: unknown } })?.response?.data,
@@ -800,7 +802,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling chantier add resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -816,7 +818,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling chantier create final button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du chantier.",
+          content: `${STATUS.ERROR} Erreur lors de la création du chantier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -833,7 +835,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project participate button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la participation au projet.",
+          content: `${STATUS.ERROR} Erreur lors de la participation au projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -849,7 +851,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling blueprint participate button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la participation au blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de la participation au blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -865,7 +867,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project select craft types button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection des types d'artisanat.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection des types d'artisanat.`,
           flags: ["Ephemeral"],
         });
       }
@@ -881,7 +883,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project select output button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la sélection de la ressource de sortie.",
+          content: `${STATUS.ERROR} Erreur lors de la sélection de la ressource de sortie.`,
           flags: ["Ephemeral"],
         });
       }
@@ -897,7 +899,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource requise.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource requise.`,
           flags: ["Ephemeral"],
         });
       }
@@ -913,7 +915,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project create final button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du projet.",
+          content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -930,7 +932,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling element category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement du menu.",
+          content: `${STATUS.ERROR} Erreur lors du chargement du menu.`,
           flags: ["Ephemeral"],
         });
       }
@@ -945,7 +947,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling element category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement du menu.",
+          content: `${STATUS.ERROR} Erreur lors du chargement du menu.`,
           flags: ["Ephemeral"],
         });
       }
@@ -960,7 +962,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling element category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement du menu.",
+          content: `${STATUS.ERROR} Erreur lors du chargement du menu.`,
           flags: ["Ephemeral"],
         });
       }
@@ -975,7 +977,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling element category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement du menu.",
+          content: `${STATUS.ERROR} Erreur lors du chargement du menu.`,
           flags: ["Ephemeral"],
         });
       }
@@ -991,7 +993,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling emoji menu button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement du menu des emojis.",
+          content: `${STATUS.ERROR} Erreur lors du chargement du menu des emojis.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1007,7 +1009,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling emoji add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          content: `${STATUS.ERROR} Erreur lors de l'ouverture du formulaire.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1023,7 +1025,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling emoji list button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage de la liste.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage de la liste.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1039,7 +1041,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling emoji remove button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ouverture du formulaire.",
+          content: `${STATUS.ERROR} Erreur lors de l'ouverture du formulaire.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1055,7 +1057,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling new capability button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du formulaire de capacité.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire de capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1071,7 +1073,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling new resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du formulaire de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1087,7 +1089,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling new object button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du formulaire d'objet.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire d'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1103,7 +1105,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling new skill button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage du formulaire de compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage du formulaire de compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1119,7 +1121,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling edit resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1135,7 +1137,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling delete resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1151,7 +1153,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling confirm delete resource button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1167,7 +1169,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling edit object button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1183,7 +1185,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling delete object button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1199,7 +1201,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling confirm delete object button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1219,12 +1221,12 @@ export class ButtonHandler {
         logger.error("Error handling object edit category button:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du chargement de la catégorie.",
+            content: `${STATUS.ERROR} Erreur lors du chargement de la catégorie.`,
             flags: ["Ephemeral"],
           });
         } else {
           await interaction.editReply({
-            content: "❌ Erreur lors du chargement de la catégorie.",
+            content: `${STATUS.ERROR} Erreur lors du chargement de la catégorie.`,
           });
         }
       }
@@ -1244,12 +1246,12 @@ export class ButtonHandler {
         logger.error("Error handling object delete category button:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du chargement de la catégorie.",
+            content: `${STATUS.ERROR} Erreur lors du chargement de la catégorie.`,
             flags: ["Ephemeral"],
           });
         } else {
           await interaction.editReply({
-            content: "❌ Erreur lors du chargement de la catégorie.",
+            content: `${STATUS.ERROR} Erreur lors du chargement de la catégorie.`,
           });
         }
       }
@@ -1265,7 +1267,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object modify name button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification du nom.",
+          content: `${STATUS.ERROR} Erreur lors de la modification du nom.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1281,7 +1283,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object modify description button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la description.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la description.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1297,7 +1299,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object delete button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1313,7 +1315,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object modify skills button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1329,7 +1331,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object modify capabilities button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des capacités.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des capacités.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1345,7 +1347,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object skill add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1361,7 +1363,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object skill category add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1377,7 +1379,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object skill remove button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1393,7 +1395,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object capability add button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des capacités.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des capacités.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1409,7 +1411,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object capability remove button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des capacités.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des capacités.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1425,7 +1427,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling edit skill button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1441,7 +1443,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling delete skill button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1457,7 +1459,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling confirm delete skill button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1473,7 +1475,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling edit capability button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1489,7 +1491,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling delete capability button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1505,7 +1507,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling confirm delete capability button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1521,7 +1523,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling cancel delete button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'annulation.",
+          content: `${STATUS.ERROR} Erreur lors de l'annulation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1538,7 +1540,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling confirm delete emoji button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la suppression de l'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de la suppression de l'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1554,7 +1556,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling cancel delete emoji button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'annulation.",
+          content: `${STATUS.ERROR} Erreur lors de l'annulation.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1571,7 +1573,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object done button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la finalisation de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la finalisation de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1587,7 +1589,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object add skill bonus button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du bonus de compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1603,7 +1605,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object skill category button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du chargement des compétences.",
+          content: `${STATUS.ERROR} Erreur lors du chargement des compétences.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1619,7 +1621,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object add capability bonus button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de capacité.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du bonus de capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1635,7 +1637,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling object add resource conversion button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la conversion en ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1651,7 +1653,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling project add blueprint costs button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de coûts blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de coûts blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1667,7 +1669,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling view projects button:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'affichage des projets.",
+          content: `${STATUS.ERROR} Erreur lors de l'affichage des projets.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1684,7 +1686,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling cooking PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour cuisiner.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour cuisiner.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1701,7 +1703,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling fishing PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour pêcher.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour pêcher.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1718,7 +1720,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling cartography PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour cartographier.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour cartographier.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1735,7 +1737,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling researching PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour rechercher.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour rechercher.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1752,7 +1754,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling auspice PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour auspice.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour auspice.`,
           flags: ["Ephemeral"],
         });
       }
@@ -1769,7 +1771,7 @@ export class ButtonHandler {
       } catch (error) {
         logger.error("Error handling healing PA choice:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du choix de PA pour soigner.",
+          content: `${STATUS.ERROR} Erreur lors du choix de PA pour soigner.`,
           flags: ["Ephemeral"],
         });
       }

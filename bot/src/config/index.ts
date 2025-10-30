@@ -1,3 +1,5 @@
+import { logger } from "../services/logger";
+
 export const config = {
   discord: {
     token: process.env.DISCORD_TOKEN || "development_token",
@@ -19,10 +21,8 @@ export function validateConfig() {
     process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
 
   if (isDevelopment) {
-    // Use console.warn here as logger may not be initialized yet during config load
-    // eslint-disable-next-line no-console
-    console.warn(
-      "⚠️  Running in development mode - some environment variables may be missing"
+    logger.warn(
+      "Running in development mode - some environment variables may be missing"
     );
     return;
   }

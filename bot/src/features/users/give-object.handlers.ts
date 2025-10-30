@@ -381,7 +381,7 @@ export async function handleSelectGiveObjects(
     // Envoyer un log public
     try {
       const objectNames = results
-        .filter((r) => !r.startsWith("❌"))
+        .filter((r) => !r.startsWith(`${STATUS.ERROR}`))
         .map((r) => {
           // Extraire le nom de l'objet du message formaté (entre les premiers **)
           const match = r.match(/\*\*(.+?)\*\*/);

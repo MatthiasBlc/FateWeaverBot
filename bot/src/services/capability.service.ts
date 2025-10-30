@@ -21,12 +21,14 @@ export interface Capability {
 export async function getCharacterCapabilities(characterId: string): Promise<Capability[]> {
   try {
     const response = await httpClient.get(`/characters/${characterId}/capabilities`);
-    console.log('=== FRONTEND: Raw API response ===');
-    console.log(JSON.stringify(response.data, null, 2));
+    logger.debug('Raw API response for character capabilities', {
+      characterId,
+      data: response.data
+    });
 
     // Les données reçues ont la structure : [{ characterId, capabilityId, capability: {...} }]
     const capabilities = (response.data || []).map((item: any) => {
-      console.log('Processing item:', JSON.stringify(item, null, 2));
+      logger.debug('Processing capability item', { item });
       const mapped = {
         id: item.capability?.id || item.id,
         name: item.capability?.name || item.name,
@@ -35,11 +37,11 @@ export async function getCharacterCapabilities(characterId: string): Promise<Cap
         cooldown: item.capability?.cooldown || item.cooldown || 0,
         emojiTag: item.capability?.emojiTag || item.emojiTag,
       };
-      console.log('Mapped capability:', JSON.stringify(mapped, null, 2));
+      logger.debug('Mapped capability', { mapped });
       return mapped;
     });
 
-    console.log('Final capabilities array:', JSON.stringify(capabilities, null, 2));
+    logger.debug('Final capabilities array', { count: capabilities.length, capabilities });
     return capabilities;
   } catch (error) {
     logger.error('Error fetching character capabilities:', {

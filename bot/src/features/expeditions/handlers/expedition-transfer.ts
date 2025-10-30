@@ -13,6 +13,8 @@ import { createExpeditionTransferModal, createExpeditionTransferAmountModal } fr
 import { createInfoEmbed, createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { getStatusEmoji } from "../expedition-utils";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
+import { STATUS } from "../../../constants/emojis.js";
+
 export async function handleExpeditionTransferButton(interaction: any) {
   // Redirect to new resource management interface
   const { handleExpeditionManageResources } = await import("./expedition-resource-management");
@@ -43,7 +45,7 @@ export async function handleExpeditionTransferDirectionSelect(
       ) {
         await interaction.reply({
           content:
-            "❌ Vous devez avoir un personnage actif pour transférer de repas.",
+            `${STATUS.ERROR} Vous devez avoir un personnage actif pour transférer de repas.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -55,7 +57,7 @@ export async function handleExpeditionTransferDirectionSelect(
     if (!character) {
       await interaction.reply({
         content:
-          "❌ Vous devez avoir un personnage actif pour transférer de repas.",
+          `${STATUS.ERROR} Vous devez avoir un personnage actif pour transférer de repas.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -77,7 +79,7 @@ export async function handleExpeditionTransferDirectionSelect(
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
       await interaction.reply({
-        content: "❌ Votre personnage ne participe à aucune expédition active.",
+        content: `${STATUS.ERROR} Votre personnage ne participe à aucune expédition active.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -99,7 +101,7 @@ export async function handleExpeditionTransferDirectionSelect(
 
     if (!isMember) {
       await interaction.reply({
-        content: "❌ Votre personnage n'est pas membre de cette expédition.",
+        content: `${STATUS.ERROR} Votre personnage n'est pas membre de cette expédition.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -120,7 +122,7 @@ export async function handleExpeditionTransferDirectionSelect(
     );
     if (!townResponse) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -161,7 +163,7 @@ export async function handleExpeditionTransferDirectionSelect(
       logger.error("Error fetching resource stocks for transfer:", error);
       await interaction.reply({
         content:
-          "❌ Erreur lors de la récupération des stocks de ressources.",
+          `${STATUS.ERROR} Erreur lors de la récupération des stocks de ressources.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -232,7 +234,7 @@ export async function handleExpeditionTransferModal(
       ) {
         await interaction.reply({
           content:
-            "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de repas.",
+            `${STATUS.ERROR} Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas transférer de repas.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -282,7 +284,7 @@ export async function handleExpeditionTransferModal(
     // Validate direction
     if (!["to_town", "from_town"].includes(directionValue)) {
       await interaction.reply({
-        content: "❌ Direction de transfert invalide.",
+        content: `${STATUS.ERROR} Direction de transfert invalide.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -294,7 +296,7 @@ export async function handleExpeditionTransferModal(
 
     if (vivresAmount < 0 || repasAmount < 0) {
       await interaction.reply({
-        content: "❌ Les quantités doivent être positives ou nulles.",
+        content: `${STATUS.ERROR} Les quantités doivent être positives ou nulles.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -303,7 +305,7 @@ export async function handleExpeditionTransferModal(
     if (vivresAmount === 0 && repasAmount === 0) {
       await interaction.reply({
         content:
-          "❌ Vous devez transférer au moins une ressource (Vivres ou Repas).",
+          `${STATUS.ERROR} Vous devez transférer au moins une ressource (Vivres ou Repas).`,
         flags: ["Ephemeral"],
       });
       return;
@@ -329,7 +331,7 @@ export async function handleExpeditionTransferModal(
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
     if (!expedition) {
       await interaction.reply({
-        content: "❌ Expédition introuvable.",
+        content: `${STATUS.ERROR} Expédition introuvable.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -341,7 +343,7 @@ export async function handleExpeditionTransferModal(
     );
     if (!isMember) {
       await interaction.reply({
-        content: "❌ Votre personnage n'est pas membre de cette expédition.",
+        content: `${STATUS.ERROR} Votre personnage n'est pas membre de cette expédition.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -362,7 +364,7 @@ export async function handleExpeditionTransferModal(
     );
     if (!townResponse) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -382,7 +384,7 @@ export async function handleExpeditionTransferModal(
       logger.error("Error fetching resources for validation:", error);
       await interaction.reply({
         content:
-          "❌ Erreur lors de la récupération des stocks de ressources.",
+          `${STATUS.ERROR} Erreur lors de la récupération des stocks de ressources.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -456,7 +458,7 @@ export async function handleExpeditionTransferModal(
     } catch (error) {
       logger.error("Error fetching resource types:", error);
       await interaction.reply({
-        content: "❌ Erreur lors de la récupération des types de ressources.",
+        content: `${STATUS.ERROR} Erreur lors de la récupération des types de ressources.`,
         flags: ["Ephemeral"],
       });
       return;
