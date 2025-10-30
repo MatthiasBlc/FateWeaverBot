@@ -168,6 +168,22 @@ export async function handleCharacterAdminCommand(
 export async function handleCharacterAdminInteraction(interaction: any) {
   const { customId } = interaction;
 
+  // CRITIQUE: Defer immédiatement pour éviter l'expiration de l'interaction (3 secondes)
+  // Cela nous donne 15 minutes pour répondre au lieu de 3 secondes
+  try {
+    if (!interaction.replied && !interaction.deferred) {
+      if (interaction.isButton()) {
+        await interaction.deferUpdate();
+      } else if (interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
+        await interaction.deferReply({ ephemeral: true });
+      }
+    }
+  } catch (error) {
+    logger.error("Erreur lors du defer de l'interaction (interaction probablement expirée)", { error, customId });
+    // Si le defer échoue, l'interaction est déjà expirée - on ne peut plus rien faire
+    return;
+  }
+
   // Route vers les gestionnaires appropriés selon le type d'interaction
   if (customId === CHARACTER_ADMIN_CUSTOM_IDS.SELECT_MENU) {
     const { handleCharacterSelect } = await import(

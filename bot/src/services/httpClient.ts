@@ -17,48 +17,62 @@ export const httpClient: AxiosInstance = axios.create({
   },
 });
 
-// Interceptor to ensure /api prefix for relative URLs
-httpClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    logger.info("Requête HTTP sortante", {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      headers: config.headers,
-    });
+// Flag pour éviter d'enregistrer les intercepteurs plusieurs fois
+let interceptorsRegistered = false;
 
-    if (!config.url?.startsWith("/api/") && !config.url?.startsWith("http")) {
-      config.url = `/api${config.url?.startsWith("/") ? "" : "/"}${
-        config.url || ""
-      }`;
+// Fonction pour enregistrer les intercepteurs (appelée une seule fois)
+function registerInterceptors() {
+  if (interceptorsRegistered) {
+    return;
+  }
+  interceptorsRegistered = true;
+
+  // Interceptor to ensure /api prefix for relative URLs
+  httpClient.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+      logger.info("Requête HTTP sortante", {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        headers: config.headers,
+      });
+
+      if (!config.url?.startsWith("/api/") && !config.url?.startsWith("http")) {
+        config.url = `/api${config.url?.startsWith("/") ? "" : "/"}${
+          config.url || ""
+        }`;
+      }
+      return config;
+    },
+    (error) => {
+      logger.error("Erreur dans l'intercepteur de requête", { error });
+      return Promise.reject(error);
     }
-    return config;
-  },
-  (error) => {
-    logger.error("Erreur dans l'intercepteur de requête", { error });
-    return Promise.reject(error);
-  }
-);
+  );
 
-// Interceptor for responses
-httpClient.interceptors.response.use(
-  (response) => {
-    logger.info("Réponse HTTP reçue", {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.config.url,
-      data: response.data,
-    });
-    return response;
-  },
-  (error) => {
-    logger.error("Erreur de réponse HTTP", {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      data: error.response?.data,
-      message: error.message,
-    });
-    return Promise.reject(error);
-  }
-);
+  // Interceptor for responses
+  httpClient.interceptors.response.use(
+    (response) => {
+      logger.info("Réponse HTTP reçue", {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.config.url,
+        data: response.data,
+      });
+      return response;
+    },
+    (error) => {
+      logger.error("Erreur de réponse HTTP", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        data: error.response?.data,
+        message: error.message,
+      });
+      return Promise.reject(error);
+    }
+  );
+}
+
+// Enregistrer les intercepteurs une seule fois
+registerInterceptors();
