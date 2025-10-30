@@ -146,7 +146,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de quantité de ressource lors de création d'expédition
-    this.registerHandler("expedition_create_resource_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_create_resource_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceQuantityModal } = await import(
           "../features/expeditions/handlers/expedition-create-resources.js"
@@ -162,7 +162,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal d'ajout de ressource (gestion ressources)
-    this.registerHandler("expedition_resource_add_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_resource_add_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceAddQuantity } = await import(
           "../features/expeditions/handlers/expedition-resource-management.js"
@@ -178,7 +178,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de retrait de ressource (gestion ressources)
-    this.registerHandler("expedition_resource_remove_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_resource_remove_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceRemoveQuantity } = await import(
           "../features/expeditions/handlers/expedition-resource-management.js"
@@ -231,7 +231,7 @@ export class ModalHandler {
     );
 
     // Gestionnaire pour le modal de modification de durée d'expédition
-    this.registerHandler("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionDurationModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -247,7 +247,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal d'ajout de ressource à une expédition
-    this.registerHandler("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionResourceAddModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -263,7 +263,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de ressource d'une expédition
-    this.registerHandler("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionResourceModifyModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -304,7 +304,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'ajout de stock admin
-    this.registerHandler("stock_admin_add_modal_", async (interaction) => {
+    this.registerHandlerByPrefix("stock_admin_add_modal_", async (interaction) => {
       try {
         const { handleStockAdminAddModal } = await import(
           "../features/admin/stock-admin/stock-add.js"
@@ -328,7 +328,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de retrait de stock admin
-    this.registerHandler("stock_admin_remove_modal_", async (interaction) => {
+    this.registerHandlerByPrefix("stock_admin_remove_modal_", async (interaction) => {
       try {
         const { handleStockAdminRemoveModal } = await import(
           "../features/admin/stock-admin/stock-remove.js"

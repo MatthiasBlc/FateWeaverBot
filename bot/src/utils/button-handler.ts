@@ -284,11 +284,22 @@ export class ButtonHandler {
         await handleCharacterAdminInteraction(interaction);
       } catch (error) {
         logger.error("Error handling character admin button:", { error });
-        await interaction.reply({
-          content:
-            "❌ Erreur lors du traitement de l'interaction d'administration.",
-          flags: ["Ephemeral"],
-        });
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+              content:
+                "❌ Erreur lors du traitement de l'interaction d'administration.",
+              flags: ["Ephemeral"],
+            });
+          } else if (interaction.deferred) {
+            await interaction.editReply({
+              content:
+                "❌ Erreur lors du traitement de l'interaction d'administration.",
+            });
+          }
+        } catch (replyError) {
+          logger.error("Cannot reply to character admin interaction (probably expired):", { replyError });
+        }
       }
     });
 
