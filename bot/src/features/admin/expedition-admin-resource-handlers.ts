@@ -61,7 +61,7 @@ export async function handleExpeditionResourceAddModal(interaction: any) {
 
     await interaction.reply({
       content: `✅ ${quantity} ${resourceType?.name || 'ressource(s)'} ajouté(es) à l'expédition!`,
-      flags: ["Ephemeral"],
+      ephemeral: true,
     });
 
     logger.info("Resource added to expedition via admin", {
@@ -135,7 +135,7 @@ export async function handleExpeditionResourceModifyModal(interaction: any) {
 
     await interaction.reply({
       content: `✅ Quantité de ${resourceType?.name || 'ressource'} modifiée à ${newQuantity}!`,
-      flags: ["Ephemeral"],
+      ephemeral: true,
     });
 
     logger.info("Resource modified in expedition via admin", {
