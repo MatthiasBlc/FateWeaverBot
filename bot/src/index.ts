@@ -24,10 +24,20 @@ async function handleButtonInteraction(interaction: any) {
     }
   } catch (error) {
     logger.error("Error handling button interaction:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors du traitement de l'interaction.",
-      flags: ["Ephemeral"],
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement de l'interaction.",
+          flags: ["Ephemeral"],
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({
+          content: "❌ Erreur lors du traitement de l'interaction.",
+        });
+      }
+    } catch (replyError) {
+      logger.error("Cannot reply to button interaction (probably expired):", { replyError });
+    }
   }
 }
 
@@ -37,10 +47,20 @@ async function handleModalInteraction(interaction: any) {
     await modalHandler.handleModal(interaction);
   } catch (error) {
     logger.error("Error handling modal interaction:", { error });
-    await interaction.reply({
-      content: "❌ Erreur lors du traitement du formulaire.",
-      flags: ["Ephemeral"],
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "❌ Erreur lors du traitement du formulaire.",
+          flags: ["Ephemeral"],
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({
+          content: "❌ Erreur lors du traitement du formulaire.",
+        });
+      }
+    } catch (replyError) {
+      logger.error("Cannot reply to modal interaction (probably expired):", { replyError });
+    }
   }
 }
 
@@ -237,10 +257,23 @@ client.on("interactionCreate", async (interaction) => {
       await handleButtonInteraction(interaction);
     } catch (error) {
       logger.error("Error handling button interaction:", { error });
-      await interaction.reply({
-        content: "There was an error with the button interaction!",
-        flags: ["Ephemeral"],
-      });
+      try {
+        // Vérifier si on peut encore répondre à l'interaction
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "There was an error with the button interaction!",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "There was an error with the button interaction!",
+          });
+        }
+        // Si l'interaction est déjà replied, on ne peut plus rien faire
+      } catch (replyError) {
+        // L'interaction est probablement expirée (code 10062)
+        logger.error("Cannot reply to interaction (probably expired):", { replyError });
+      }
     }
   } else if (interaction.isStringSelectMenu()) {
     // Handle select menu interactions
@@ -248,10 +281,20 @@ client.on("interactionCreate", async (interaction) => {
       await selectMenuHandler.handleSelectMenu(interaction);
     } catch (error) {
       logger.error("Error handling select menu interaction:", { error });
-      await interaction.reply({
-        content: "There was an error with the select menu interaction!",
-        flags: ["Ephemeral"],
-      });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "There was an error with the select menu interaction!",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "There was an error with the select menu interaction!",
+          });
+        }
+      } catch (replyError) {
+        logger.error("Cannot reply to interaction (probably expired):", { replyError });
+      }
     }
   } else if (interaction.isModalSubmit()) {
     // Handle modal interactions
@@ -271,10 +314,20 @@ client.on("interactionCreate", async (interaction) => {
       await handleModalInteraction(interaction);
     } catch (error) {
       logger.error("Error handling modal interaction:", { error });
-      await interaction.reply({
-        content: "There was an error with the modal submission!",
-        flags: ["Ephemeral"],
-      });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "There was an error with the modal submission!",
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: "There was an error with the modal submission!",
+          });
+        }
+      } catch (replyError) {
+        logger.error("Cannot reply to interaction (probably expired):", { replyError });
+      }
     }
   }
 });
