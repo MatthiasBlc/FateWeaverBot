@@ -156,13 +156,16 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use((_req, _res, next) => {
-  next(createHttpError(404, "Endpoint not found"));
+app.use((req, _res, next) => {
+  next(createHttpError(404, `Endpoint not found: ${req.method} ${req.originalUrl}`));
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(error);
+  // Don't log 404 errors in production (bot scanners)
+  if (!(isHttpError(error) && error.status === 404 && process.env.NODE_ENV === 'production')) {
+    console.error(error);
+  }
   let errorMessage = "An unknown error occurred";
   let statusCode = 500;
 
