@@ -279,7 +279,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'investissement dans les chantiers
-    this.registerHandler("invest_modal", async (interaction) => {
+    this.registerHandlerByPrefix("invest_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
           "../features/chantiers/chantiers.handlers.js"
@@ -632,7 +632,7 @@ export class ModalHandler {
 
     // =================== BLUEPRINT PROJECTS HANDLERS ===================
     // Gestionnaire pour le modal de sélection de coût blueprint
-    this.registerHandler("project_blueprint_cost_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("project_blueprint_cost_quantity:", async (interaction) => {
       try {
         const { handleBlueprintCostQuantityModal } = await import(
           "../features/projects/project-creation.js"
@@ -744,7 +744,7 @@ export class ModalHandler {
 
     // =================== OBJECT BONUS MODALS HANDLERS ===================
     // Gestionnaire pour le modal de bonus de compétence sur objet
-    this.registerHandler("object_skill_bonus_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("object_skill_bonus_modal:", async (interaction) => {
       try {
         const { handleObjectSkillBonusModalSubmit } = await import(
           "../features/admin/new-element-admin.handlers.js"
@@ -761,7 +761,7 @@ export class ModalHandler {
 
     // Gestionnaire pour le modal de bonus de capacité sur objet
     // Gestionnaire pour le modal de conversion en ressource sur objet
-    this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("object_resource_conversion_modal:", async (interaction) => {
       try {
         const { handleObjectResourceConversionModalSubmit } = await import(
           "../features/admin/new-element-admin.handlers.js"
@@ -778,7 +778,7 @@ export class ModalHandler {
 
     // =================== EDIT/DELETE MODALS ===================
     // Gestionnaire pour le modal de modification de ressource
-    this.registerHandler("edit_resource_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_resource_modal:", async (interaction) => {
       try {
         const { handleEditResourceModalSubmit } = await import(
           "../features/admin/element-resource-admin.handlers.js"
@@ -794,7 +794,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification d'objet
-    this.registerHandler("edit_object_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_modal:", async (interaction) => {
       try {
         const { handleEditObjectModalSubmit } = await import(
           "../features/admin/element-object-admin.handlers.js"
@@ -810,7 +810,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de compétence
-    this.registerHandler("edit_skill_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_skill_modal:", async (interaction) => {
       try {
         const { handleEditSkillModalSubmit } = await import(
           "../features/admin/element-skill-admin.handlers.js"
@@ -826,7 +826,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de capacité
-    this.registerHandler("edit_capability_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_capability_modal:", async (interaction) => {
       try {
         const { handleEditCapabilityModalSubmit } = await import(
           "../features/admin/element-capability-admin.handlers.js"
@@ -842,7 +842,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification du nom d'objet
-    this.registerHandler("edit_object_name_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_name_modal:", async (interaction) => {
       try {
         const { handleEditObjectNameModalSubmit } = await import(
           "../features/admin/element-object-admin.handlers.js"
@@ -858,7 +858,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de la description d'objet
-    this.registerHandler("edit_object_description_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_description_modal:", async (interaction) => {
       try {
         const { handleEditObjectDescriptionModalSubmit } = await import(
           "../features/admin/element-object-admin.handlers.js"
