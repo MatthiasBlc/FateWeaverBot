@@ -54,9 +54,8 @@ export async function handleStatsModalSubmit(
   }
 
   if (errors.length > 0) {
-    await interaction.reply({
+    await interaction.editReply({
       content: `❌ ${errors.join(", ")}`,
-      flags: ["Ephemeral"],
     });
     return;
   }
@@ -113,7 +112,7 @@ export async function handleStatsModalSubmit(
       }
     );
 
-    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    await interaction.editReply({ embeds: [embed] });
 
     // Log de la mort si le personnage vient de mourir
     if (updatedCharacter.isDead) {
@@ -135,9 +134,8 @@ export async function handleStatsModalSubmit(
     }
   } catch (error) {
     logger.error("Erreur lors de la mise à jour des stats:", { error });
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ Erreur lors de la mise à jour des statistiques.",
-      flags: ["Ephemeral"],
     });
   }
 }
@@ -160,23 +158,20 @@ export async function handleAdvancedStatsModalSubmit(
 
   // Validation
   if (!["true", "false"].includes(isDeadValue)) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ 'Mort' doit être 'true' ou 'false'.",
-      flags: ["Ephemeral"],
     });
     return;
   }
   if (!["true", "false"].includes(isActiveValue)) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ 'Actif' doit être 'true' ou 'false'.",
-      flags: ["Ephemeral"],
     });
     return;
   }
   if (!["true", "false"].includes(canRerollValue)) {
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ 'Reroll autorisé' doit être 'true' ou 'false'.",
-      flags: ["Ephemeral"],
     });
     return;
   }
@@ -214,14 +209,13 @@ export async function handleAdvancedStatsModalSubmit(
       }
     );
 
-    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error("Erreur lors de la mise à jour des stats avancées:", {
       error,
     });
-    await interaction.reply({
+    await interaction.editReply({
       content: "❌ Erreur lors de la mise à jour des statistiques avancées.",
-      flags: ["Ephemeral"],
     });
   }
 }

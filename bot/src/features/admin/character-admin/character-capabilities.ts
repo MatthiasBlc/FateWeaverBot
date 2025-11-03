@@ -224,22 +224,20 @@ export async function handleCapabilitySelect(
     const selectedCapabilityIds = interaction.values;
 
     if (selectedCapabilityIds.length === 0) {
-      await interaction.reply({
+      await interaction.editReply({
         content: "❌ Aucune capacité sélectionnée.",
-        flags: ["Ephemeral"],
       });
       return;
     }
 
     if (!character) {
-      await interaction.reply({
+      await interaction.editReply({
         content: "❌ Personnage non trouvé.",
-        flags: ["Ephemeral"],
       });
       return;
     }
 
-    await interaction.deferReply({ flags: ["Ephemeral"] });
+    // Defer déjà fait dans le handler principal pour tous les StringSelectMenu
 
     const results = [];
 
@@ -281,9 +279,8 @@ export async function handleCapabilitySelect(
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de capacités:`, { error });
-    await interaction.reply({
+    await interaction.editReply({
       content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
-      flags: ["Ephemeral"],
     });
   }
 }
