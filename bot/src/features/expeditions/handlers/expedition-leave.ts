@@ -14,8 +14,8 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { getStatusEmoji } from "../expedition-utils";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
-import { EXPEDITION } from "@shared/constants/emojis";
-import { STATUS } from "../../../constants/emojis.js";
+import { EXPEDITION, STATUS } from "../../../constants/emojis.js";
+
 
 
 /**
@@ -33,7 +33,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande `/start` pour créer un personnage.");
+        await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande \`/start\` pour créer un personnage.`);
         return;
       }
       // Re-throw other errors

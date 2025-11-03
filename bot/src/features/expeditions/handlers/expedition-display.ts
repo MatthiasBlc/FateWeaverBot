@@ -18,8 +18,9 @@ import { getStatusEmoji } from "../expedition-utils";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
-import { EXPEDITION, DIRECTION, CONFIG, RESOURCES, CHARACTER } from "@shared/constants/emojis";
-import { STATUS, SYSTEM } from "../../../constants/emojis.js";
+import { STATUS, SYSTEM, CHARACTER, EXPEDITION, RESOURCES } from "../../../constants/emojis.js";
+import { CONFIG, DIRECTION } from "@shared/constants/emojis";
+
 
 
 /**
@@ -45,7 +46,7 @@ export async function handleExpeditionMainCommand(
       ) {
         await interaction.reply({
           content:
-            "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/profil` pour créer un personnage.",
+            `${STATUS.ERROR} Aucun personnage vivant trouvé. Utilisez d'abord la commande \`/profil\` pour créer un personnage.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -537,7 +538,7 @@ export async function handleExpeditionInfoCommand(
         inline: true,
       },
       {
-        name: "📍 Statut",
+        name: `${EXPEDITION.LOCATION} Statut`,
         value: getStatusEmoji(currentExpedition.status),
         inline: true,
       },
@@ -570,7 +571,7 @@ export async function handleExpeditionInfoCommand(
     // Direction info
     if (currentExpedition.initialDirection) {
       embed.addFields({
-        name: "📍 Direction initiale",
+        name: `${EXPEDITION.LOCATION} Direction initiale`,
         value: `${getDirectionEmoji(
           currentExpedition.initialDirection
         )} ${getDirectionText(currentExpedition.initialDirection)}`,
@@ -594,7 +595,7 @@ export async function handleExpeditionInfoCommand(
       currentExpedition.currentDayDirection
     ) {
       embed.addFields({
-        name: "🧭 Direction choisie pour demain",
+        name: `${EXPEDITION.ICON} Direction choisie pour demain`,
         value: `${getDirectionEmoji(
           currentExpedition.currentDayDirection
         )} ${getDirectionText(currentExpedition.currentDayDirection)}`,
@@ -613,7 +614,7 @@ export async function handleExpeditionInfoCommand(
         .join("\n");
 
       embed.addFields({
-        name: "📋 Membres inscrits",
+        name: `${CHARACTER.PROFILE} Membres inscrits`,
         value: memberList,
         inline: false,
       });

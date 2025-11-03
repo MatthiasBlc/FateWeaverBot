@@ -8,6 +8,7 @@ import { replyEphemeral } from "../../../utils/interaction-helpers";
 import { STATUS } from "../../../constants/emojis.js";
 
 
+
 /**
  * Gestionnaire pour le bouton "Voter retour d'urgence"
  */
@@ -32,7 +33,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
       ) {
         await replyEphemeral(
           interaction,
-          "❌ Tu dois avoir un personnage actif pour voter. Utilisez d'abord la commande `/start` pour créer un personnage."
+          `${STATUS.ERROR} Tu dois avoir un personnage actif pour voter. Utilisez d'abord la commande \`/start\` pour créer un personnage.`
         );
         return;
       }

@@ -18,29 +18,60 @@ import * as path from 'path';
 // Emoji replacements mapping
 const EMOJI_REPLACEMENTS: Record<string, string> = {
   // Error emojis
-  '"❌ ': '`${STATUS.ERROR} ',
-  '"❌': '`${STATUS.ERROR}',
-  "'❌ ": "`${STATUS.ERROR} ",
-  "'❌'": "`${STATUS.ERROR}`",
+  '"❌': '${STATUS.ERROR}',
+  "'❌": '${STATUS.ERROR}',
+  '❌': '${STATUS.ERROR}',
 
   // Success emojis
-  '"✅ ': '`${STATUS.SUCCESS} ',
-  '"✅': '`${STATUS.SUCCESS}',
-  "'✅ ": "`${STATUS.SUCCESS} ",
-  "'✅'": "`${STATUS.SUCCESS}`",
+  '"✅': '${STATUS.SUCCESS}',
+  "'✅": '${STATUS.SUCCESS}',
+  '✅': '${STATUS.SUCCESS}',
 
   // Warning emojis
-  '"⚠️ ': '`${SYSTEM.WARNING} ',
-  '"⚠️': '`${SYSTEM.WARNING}',
-  "'⚠️ ": "`${SYSTEM.WARNING} ",
+  '"⚠️': '${SYSTEM.WARNING}',
+  "'⚠️": '${SYSTEM.WARNING}',
+  '⚠️': '${SYSTEM.WARNING}',
 
   // Info emojis
-  '"ℹ️ ': '`${STATUS.INFO} ',
-  '"ℹ️': '`${STATUS.INFO}',
+  '"ℹ️': '${STATUS.INFO}',
+  "'ℹ️": '${STATUS.INFO}',
+  'ℹ️': '${STATUS.INFO}',
 
   // Celebration emojis
-  '"🎉 ': '`${CHANTIER.CELEBRATION} ',
-  '"🎉': '`${CHANTIER.CELEBRATION}',
+  '"🎉': '${CHANTIER.CELEBRATION}',
+  "'🎉": '${CHANTIER.CELEBRATION}',
+  '🎉': '${CHANTIER.CELEBRATION}',
+  
+  // Common emojis
+  '"❤️': '${CHARACTER.HP_FULL}',
+  '"💜': '${CHARACTER.MP_FULL}',
+  '"⚡': '${CHARACTER.PA}',
+  '"📋': '${CHARACTER.PROFILE}',
+  '"🍞': '${HUNGER.ICON}',
+  '"😊': '${HUNGER.FED}',
+  '"😫': '${HUNGER.STARVATION}',
+  '"💀': '${HUNGER.DEAD}',
+  '"📝': '${CHANTIER.PLAN}',
+  '"🚧': '${CHANTIER.IN_PROGRESS}',
+  '"🛖': '${CHANTIER.ICON}',
+  '"🔧': '${PROJECT.ACTIVE}',
+  '"🛠️': '${PROJECT.ICON}',
+  '"🧭': '${EXPEDITION.ICON}',
+  '"⌛': '${EXPEDITION.DURATION}',
+  '"📍': '${EXPEDITION.LOCATION}',
+  
+  // Capabilities emojis
+  '"🏹': '${CAPABILITIES.HUNT}',
+  '"🌿': '${CAPABILITIES.GATHER}',
+  '"🎣': '${CAPABILITIES.FISH}',
+  '"🪓': '${CAPABILITIES.CHOPPING}',
+  '"⛏️': '${CAPABILITIES.MINING}',
+  '"🧵': '${CAPABILITIES.WEAVING}',
+  '"🔨': '${CAPABILITIES.FORGING}',
+  '"🪚': '${CAPABILITIES.WOODWORKING}',
+  '"🫕': '${CAPABILITIES.COOKING}',
+  '"⚕️': '${CAPABILITIES.HEALING}',
+  '"🔎': '${CAPABILITIES.RESEARCHING}'
 };
 
 // Constants to import based on usage
@@ -49,9 +80,50 @@ const IMPORTS_NEEDED: Record<string, string[]> = {
   'STATUS.SUCCESS': ['STATUS'],
   'STATUS.WARNING': ['STATUS'],
   'STATUS.INFO': ['STATUS'],
+  'STATUS.STATS': ['STATUS'],
   'SYSTEM.WARNING': ['SYSTEM'],
+  'SYSTEM.SPARKLES': ['SYSTEM'],
+  'SYSTEM.FORWARD': ['SYSTEM'],
+  'SYSTEM.SEARCH': ['SYSTEM'],
+  'SYSTEM.INBOX': ['SYSTEM'],
+  'SYSTEM.PLUS': ['SYSTEM'],
+  'SYSTEM.REFRESH': ['SYSTEM'],
+  'SYSTEM.TRASH': ['SYSTEM'],
+  'SYSTEM.CHART': ['SYSTEM'],
+  'SYSTEM.ROCKET': ['SYSTEM'],
+  'SYSTEM.BULB': ['SYSTEM'],
+  'CHARACTER.HP_FULL': ['CHARACTER'],
+  'CHARACTER.MP_FULL': ['CHARACTER'],
+  'CHARACTER.PA': ['CHARACTER'],
+  'CHARACTER.PROFILE': ['CHARACTER'],
+  'HUNGER.DEAD': ['HUNGER'],
+  'HUNGER.STARVATION': ['HUNGER'],
+  'HUNGER.FED': ['HUNGER'],
+  'HUNGER.ICON': ['HUNGER'],
+  'CHANTIER.PLAN': ['CHANTIER'],
+  'CHANTIER.IN_PROGRESS': ['CHANTIER'],
+  'CHANTIER.COMPLETED': ['CHANTIER'],
+  'CHANTIER.ICON': ['CHANTIER'],
   'CHANTIER.CELEBRATION': ['CHANTIER'],
+  'PROJECT.ACTIVE': ['PROJECT'],
+  'PROJECT.COMPLETED': ['PROJECT'],
+  'PROJECT.ICON': ['PROJECT'],
   'PROJECT.CELEBRATION': ['PROJECT'],
+  'EXPEDITION.PLANNING': ['EXPEDITION'],
+  'EXPEDITION.ICON': ['EXPEDITION'],
+  'EXPEDITION.DURATION': ['EXPEDITION'],
+  'EXPEDITION.LOCATION': ['EXPEDITION'],
+  'CAPABILITIES.HUNT': ['CAPABILITIES'],
+  'CAPABILITIES.GATHER': ['CAPABILITIES'],
+  'CAPABILITIES.FISH': ['CAPABILITIES'],
+  'CAPABILITIES.CHOPPING': ['CAPABILITIES'],
+  'CAPABILITIES.MINING': ['CAPABILITIES'],
+  'CAPABILITIES.WEAVING': ['CAPABILITIES'],
+  'CAPABILITIES.FORGING': ['CAPABILITIES'],
+  'CAPABILITIES.WOODWORKING': ['CAPABILITIES'],
+  'CAPABILITIES.COOKING': ['CAPABILITIES'],
+  'CAPABILITIES.HEALING': ['CAPABILITIES'],
+  'CAPABILITIES.RESEARCHING': ['CAPABILITIES']
 };
 
 interface FixResult {

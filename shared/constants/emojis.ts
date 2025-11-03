@@ -6,12 +6,14 @@
 // UI Elements
 // UNUSED - All UI constants are currently not being used in the codebase
 export const UI = {
-  // TIME: "⏱️", // UNUSED
-  // LOCATION_PIN: "📍", // UNUSED
-  // FIRST: "⏮️", // UNUSED
-  // PREVIOUS: "◀️", // UNUSED
-  // NEXT: "▶️", // UNUSED
-  // LAST: "⏭️", // UNUSED
+  TIME: "⏱️",
+  ALARM: "⏰",
+  HOURGLASS: "⏳",
+  LOCATION_PIN: "📍",
+  FIRST: "⏮️",
+  PREVIOUS: "◀️",
+  NEXT: "▶️",
+  LAST: "⏭️",
 } as const;
 
 // System & Admin
@@ -27,6 +29,7 @@ export const SYSTEM = {
   CHART: "📊", // Used in deploy-commands for summary
   ROCKET: "🚀", // Used in deploy-commands for deployment
   BULB: "💡", // Used in deploy-commands for tips
+  DISPLAY: "📺", // Used for expedition admin status panels
 } as const;
 
 // Status & Feedback
@@ -41,11 +44,11 @@ export const STATUS = {
 // Admin Actions
 // UNUSED - All ADMIN constants are currently not being used in the codebase
 export const ADMIN = {
-  // SETTINGS: "⚙️", // UNUSED
-  // INFO: "ℹ️", // UNUSED (use STATUS.INFO instead)
-  // EDIT: "✍️", // UNUSED
-  // ROCKET: "🚀", // UNUSED
-  // EMERGENCY: "🚨", // UNUSED
+  SETTINGS: "⚙️",
+  INFO: "ℹ️",
+  EDIT: "✍️",
+  ROCKET: "🚀",
+  EMERGENCY: "🚨",
 } as const;
 
 // Seasons
@@ -69,8 +72,8 @@ export const CHARACTER = {
   PA_ALT: "🎯", // Used for PA display (alternative)
   PROFILE: "📋", // Used for profile header
   STATUS: "❗", // Used for status section
-  // PERSON: "👤", // UNUSED
-  GROUP: "👥", // UNUSED
+  PERSON: "👤", // Used for character admin headers
+  GROUP: "👥", // Used for multi-character displays
   LINK: "🔗", // Used for linked skills display
 } as const;
 
@@ -89,13 +92,10 @@ export const HUNGER = {
 
 // Actions
 export const ACTIONS = {
-  // EDIT: "✏️", // UNUSED
-  // DELETE: "🗑️", // UNUSED
-  // REFRESH: "🔄", // UNUSED
   ADD: "➕", // Used in character-admin.components.ts for adding capabilities/objects/skills
   REMOVE: "➖", // Used in character-admin.components.ts for removing capabilities/objects/skills
-  // CANCEL: "❌", // UNUSED (use STATUS.ERROR instead)
-  // CONFIRM: "✅", // UNUSED (use STATUS.SUCCESS instead)
+  EDIT: "✏️",
+  DELETE: "🗑️",
 } as const;
 
 // Capabilities
@@ -115,6 +115,9 @@ export const CAPABILITIES = {
   AUGURING: "🌦️", // Used for auspice actions (seed: Auspice)
   ENTERTAIN: "🎭", // Used for entertainment actions (seed: Divertir)
   GENERIC: "💪", // Used for generic capability display
+  MOVEMENT: "🏃", // Used for movement skill category
+  COMBAT: "⚔️", // Used for combat skill category
+  PERCEPTION: "👁️", // Used for perception skill category
 } as const;
 
 // Expeditions
@@ -126,7 +129,7 @@ export const EXPEDITION = {
   DEPARTED: "🚶‍♀️‍➡️", // UNUSED
   RETURNED: "🏘️", // UNUSED
   ICON: "🧭", // TODO: Should be used (currently hardcoded in expedition-display.ts:450)
-  // CAMP: "🏕️", // UNUSED
+  CAMP: "🏕️", // Expedition camp indicator
   DURATION: "⌛", // 
   LOCATION: "📍", // 
 } as const;
@@ -147,6 +150,8 @@ export const PROJECT = {
   ICON: "🛠️", // Used for project display
   CELEBRATION: "🎉", // Used in projects.handlers.ts for completion celebration
   UNKNOWN: "❓", // Used for unknown project status
+  WORKSHOP: "⚒️", // Used for project object output type
+  DESIGN: "🎨", // Used for project artistic elements
 } as const;
 
 // Locations
@@ -154,6 +159,8 @@ export const LOCATION = {
   // CITY: "🏘️", // UNUSED
   // CITY_ALT: "🏘️", // UNUSED (duplicate)
   TOWN: "🏘️", // Used for stock display
+  CITY: "🏛️", // Used for admin expedition summaries
+  FOREST: "🌲", // Used for element admin selections
   // EXPEDITION: "🏕️", // UNUSED (use EXPEDITION.CAMP instead)
 } as const;
 
@@ -171,6 +178,9 @@ export const RESOURCES = {
   // PLANKS: "🪵", // UNUSED (duplicate of WOOD)
   HEAL: "🩸",
   OTHER_RESOURCES: "🪜",
+  MEAT: "🍖", // Used for expedition transfer resources
+  MEAL: "🍽️", // Used for hunger related prompts
+  CURRENCY: "💰", // Used for economy displays
 } as const;
 
 // Extended Resources
@@ -180,6 +190,13 @@ export const RESOURCES_EXTENDED = {
   // FOOD: "🌾", // UNUSED (duplicate of RESOURCES.FOOD)
   FORK_KNIFE: "🍴", // Used for eat button
   BANDAGE: "🩹", // Used for cataplasm button
+  BACKPACK: "🎒", // Used for inventory sections
+} as const;
+
+// Generic icons for UI sections and prompts
+export const ICONS = {
+  BOOKS: "📚", // Used for skill listings
+  GIFT: "🎁", // Used for rewards and presents
 } as const;
 
 // Config & UI

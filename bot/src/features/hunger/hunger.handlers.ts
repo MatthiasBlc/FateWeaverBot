@@ -11,7 +11,8 @@ import { validateCharacterExists, validateCharacterAlive } from "../../utils/cha
 import { getActiveCharacterForUser } from "../../utils/character";
 import type { EatResult } from "./hunger.types";
 import { createCustomEmbed, createSuccessEmbed, getHungerColor } from "../../utils/embeds";
-import { STATUS } from "../../constants/emojis.js";
+import { STATUS, HUNGER } from "../../constants/emojis.js";
+
 
 
 /**
@@ -66,7 +67,7 @@ export async function handleEatButton(interaction: any, character: any) {
     if (!character) {
       await interaction.editReply({
         content:
-          "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+          `${STATUS.ERROR} Vous devez d'abord créer un personnage avec la commande \`/start\`.`,
         components: [],
       });
       return;
@@ -122,7 +123,7 @@ export async function handleEatButton(interaction: any, character: any) {
     ) {
       const embed = createSuccessEmbed(
         "🍽️ Pas faim",
-        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+        `${HUNGER.FED} Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !`
       );
 
       await interaction.editReply({
@@ -172,7 +173,7 @@ export async function handleEatAlternativeButton(
     if (!character) {
       await interaction.editReply({
         content:
-          "❌ Vous devez d'abord créer un personnage avec la commande `/profil`.",
+          `${STATUS.ERROR} Vous devez d'abord créer un personnage avec la commande \`/profil\`.`,
         components: [],
       });
       return;
@@ -235,7 +236,7 @@ export async function handleEatAlternativeButton(
     ) {
       const embed = createSuccessEmbed(
         "🍽️ Pas faim",
-        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+        `${HUNGER.FED} Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !`
       );
 
       await interaction.editReply({
