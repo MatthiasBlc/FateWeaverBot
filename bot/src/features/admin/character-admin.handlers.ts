@@ -170,13 +170,21 @@ export async function handleCharacterAdminInteraction(interaction: any) {
 
   // CRITIQUE: Defer immédiatement pour éviter l'expiration de l'interaction (3 secondes)
   // Cela nous donne 15 minutes pour répondre au lieu de 3 secondes
+  // EXCEPTION: Ne pas defer les boutons qui ouvrent des modales (stats, advanced stats)
+  // car showModal() ne fonctionne pas après un defer
   try {
     if (!interaction.replied && !interaction.deferred) {
-      if (interaction.isButton()) {
+      // Ne pas defer les boutons qui ouvrent des modales
+      const isModalButton =
+        customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX) ||
+        customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX);
+
+      if (interaction.isButton() && !isModalButton) {
         await interaction.deferUpdate();
       } else if (interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         await interaction.deferReply({ ephemeral: true });
       }
+      // Les boutons modaux ne sont pas defer et utilisent directement showModal()
     }
   } catch (error) {
     logger.error("Erreur lors du defer de l'interaction (interaction probablement expirée)", { error, customId });
