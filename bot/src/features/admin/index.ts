@@ -7,6 +7,7 @@
 
 // Sub-module exports
 export * from './character-admin/index.js';
+export * from './elements/index.js';
 export * from './projects-admin/index.js';
 export * from './stock-admin/index.js';
 

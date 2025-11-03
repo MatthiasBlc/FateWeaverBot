@@ -226,7 +226,7 @@ export function registerProjectButtons(handler: ButtonHandler): void {
   handler.registerHandlerByPrefix("project_participate", async (interaction: ButtonInteraction) => {
     try {
       const { handleParticipateButton } = await import(
-        "./projects.handlers.js"
+        "./handlers/index.js"
       );
       await handleParticipateButton(interaction);
     } catch (error) {
@@ -241,10 +241,10 @@ export function registerProjectButtons(handler: ButtonHandler): void {
   // User: Participer à un blueprint (avec pagination)
   handler.registerHandlerByPrefix("blueprint_participate", async (interaction: ButtonInteraction) => {
     try {
-      const { handleParticipateButton } = await import(
-        "./projects.handlers.js"
+      const { handleBlueprintParticipateButton } = await import(
+        "./handlers/index.js"
       );
-      await handleParticipateButton(interaction);
+      await handleBlueprintParticipateButton(interaction);
     } catch (error) {
       logger.error("Error handling blueprint participate button:", { error });
       await interaction.reply({

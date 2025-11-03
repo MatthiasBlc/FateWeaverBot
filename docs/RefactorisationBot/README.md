@@ -200,3 +200,15 @@ For questions about specific findings:
 - Check the action item checklist in `action-items.md`
 - Look at file paths and line numbers for exact locations
 
+
+### 8. **METHODOLOGY_DRY_REFACTORING.md** (NEW - 2025-11-03)
+Méthodologie professionnelle de refactorisation:
+- Les 5 étapes: Analyse → Extraction DRY → Division Métier → Vérification → Documentation
+- Comparaison mauvaise vs bonne méthode
+- Exemples concrets (projects.handlers.ts)
+- Checklist de vérification
+- Commandes utiles pour audit de duplication
+- Garantit: Zéro duplication, respect DRY, modules spécialisés
+
+**Read this:** Avant de refactoriser un mega-handler (méthode adoptée depuis Phase 4.4)
+

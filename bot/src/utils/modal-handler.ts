@@ -590,7 +590,7 @@ export class ModalHandler {
     this.registerHandlerByPrefix("invest_project_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
-          "../features/projects/projects.handlers.js"
+          "../features/projects/handlers/index.js"
         );
         await handleInvestModalSubmit(interaction);
       } catch (error) {
@@ -654,7 +654,7 @@ export class ModalHandler {
     this.registerHandler("new_capability_modal", async (interaction) => {
       try {
         const { handleCapabilityModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleCapabilityModalSubmit(interaction);
       } catch (error) {
@@ -671,7 +671,7 @@ export class ModalHandler {
     const handleNewResourceModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleResourceModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleResourceModalSubmit(interaction);
       } catch (error) {
@@ -689,7 +689,7 @@ export class ModalHandler {
     this.registerHandler("new_object_modal", async (interaction) => {
       try {
         const { handleObjectModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectModalSubmit(interaction);
       } catch (error) {
@@ -705,7 +705,7 @@ export class ModalHandler {
     this.registerHandler("new_skill_modal", async (interaction) => {
       try {
         const { handleSkillModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleSkillModalSubmit(interaction);
       } catch (error) {
@@ -723,7 +723,7 @@ export class ModalHandler {
     const handleEmojiAddModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleEmojiAddModal } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleEmojiAddModal(interaction);
       } catch (error) {
@@ -749,7 +749,7 @@ export class ModalHandler {
     this.registerHandler("object_skill_bonus_modal:", async (interaction) => {
       try {
         const { handleObjectSkillBonusModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectSkillBonusModalSubmit(interaction);
       } catch (error) {
@@ -766,7 +766,7 @@ export class ModalHandler {
     this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
       try {
         const { handleObjectResourceConversionModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectResourceConversionModalSubmit(interaction);
       } catch (error) {
@@ -799,7 +799,7 @@ export class ModalHandler {
     this.registerHandler("edit_object_modal:", async (interaction) => {
       try {
         const { handleEditObjectModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectModalSubmit(interaction);
       } catch (error) {
@@ -847,7 +847,7 @@ export class ModalHandler {
     this.registerHandler("edit_object_name_modal:", async (interaction) => {
       try {
         const { handleEditObjectNameModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectNameModalSubmit(interaction);
       } catch (error) {
@@ -863,7 +863,7 @@ export class ModalHandler {
     this.registerHandler("edit_object_description_modal:", async (interaction) => {
       try {
         const { handleEditObjectDescriptionModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectDescriptionModalSubmit(interaction);
       } catch (error) {

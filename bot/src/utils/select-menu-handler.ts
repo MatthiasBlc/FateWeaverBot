@@ -716,7 +716,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_skill_select:", async (interaction) => {
       try {
         const { handleObjectSkillSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectSkillSelect(interaction);
       } catch (error) {
@@ -732,7 +732,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_skill_confirm:", async (interaction) => {
       try {
         const { handleObjectSkillSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectSkillSelect(interaction);
       } catch (error) {
@@ -748,7 +748,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_skill_confirm_add:", async (interaction) => {
       try {
         const { handleObjectSkillAddConfirm } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleObjectSkillAddConfirm(interaction);
       } catch (error) {
@@ -764,7 +764,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_skill_remove_select:", async (interaction) => {
       try {
         const { handleObjectSkillRemoveConfirm } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleObjectSkillRemoveConfirm(interaction);
       } catch (error) {
@@ -780,7 +780,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_capability_confirm_add:", async (interaction) => {
       try {
         const { handleObjectCapabilityAddConfirm } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleObjectCapabilityAddConfirm(interaction);
       } catch (error) {
@@ -796,7 +796,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_capability_remove_select:", async (interaction) => {
       try {
         const { handleObjectCapabilityRemoveConfirm } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleObjectCapabilityRemoveConfirm(interaction);
       } catch (error) {
@@ -812,7 +812,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_capability_bonus_select:", async (interaction) => {
       try {
         const { handleObjectCapabilityBonusSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectCapabilityBonusSelect(interaction);
       } catch (error) {
@@ -829,7 +829,7 @@ export class SelectMenuHandler {
     this.registerHandler("emoji_type_select", async (interaction) => {
       try {
         const { handleEmojiTypeSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleEmojiTypeSelect(interaction);
       } catch (error) {
@@ -845,7 +845,7 @@ export class SelectMenuHandler {
     this.registerHandler("emoji_remove_type_select", async (interaction) => {
       try {
         const { handleEmojiRemoveTypeSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleEmojiRemoveTypeSelect(interaction);
       } catch (error) {
@@ -861,7 +861,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("emoji_remove_select:", async (interaction) => {
       try {
         const { handleEmojiRemoveSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleEmojiRemoveSelect(interaction);
       } catch (error) {
@@ -877,7 +877,7 @@ export class SelectMenuHandler {
     this.registerHandler("resource_emoji_type_select", async (interaction) => {
       try {
         const { handleResourceEmojiCategorySelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleResourceEmojiCategorySelect(interaction);
       } catch (error) {
@@ -893,7 +893,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("resource_emoji_select:", async (interaction) => {
       try {
         const { handleResourceEmojiSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleResourceEmojiSelect(interaction);
       } catch (error) {
@@ -942,7 +942,7 @@ export class SelectMenuHandler {
     this.registerHandler("select_object_to_edit", async (interaction) => {
       try {
         const { handleSelectObjectToEditMenu } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleSelectObjectToEditMenu(interaction);
       } catch (error) {
@@ -958,7 +958,7 @@ export class SelectMenuHandler {
     this.registerHandler("select_object_to_delete", async (interaction) => {
       try {
         const { handleSelectObjectToDeleteMenu } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleSelectObjectToDeleteMenu(interaction);
       } catch (error) {
@@ -974,7 +974,7 @@ export class SelectMenuHandler {
     this.registerHandler("select_object_to_delete_final", async (interaction) => {
       try {
         const { handleSelectObjectToDeleteFinal } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleSelectObjectToDeleteFinal(interaction);
       } catch (error) {
@@ -1054,7 +1054,7 @@ export class SelectMenuHandler {
     this.registerHandlerByPrefix("object_resource_select:", async (interaction) => {
       try {
         const { handleObjectResourceSelect } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectResourceSelect(interaction);
       } catch (error) {

@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
-import { handleNewElementAdminCommand } from "../../features/admin/new-element-admin.handlers";
+import { handleNewElementAdminCommand } from "../../features/admin/elements";
 
 const newElementAdminCommand: Command = {
   data: new SlashCommandBuilder()
