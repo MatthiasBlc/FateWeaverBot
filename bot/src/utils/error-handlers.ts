@@ -152,3 +152,147 @@ export function getErrorMessage(error: unknown): string {
 
   return String(error);
 }
+
+/**
+ * Vérifie si une erreur est une erreur d'autorisation (401/403)
+ */
+export function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if (!('response' in error)) return false;
+
+  const response = error.response;
+  if (!response || typeof response !== 'object') return false;
+  if (!('status' in response)) return false;
+
+  return response.status === 401 || response.status === 403;
+}
+
+/**
+ * Vérifie si une erreur indique un personnage mort
+ */
+export function isDeadCharacterError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  return message.includes("mort") ||
+         message.includes("dead") ||
+         message.includes("Un mort ne peut pas");
+}
+
+/**
+ * Gère spécifiquement les erreurs liées aux personnages
+ * Retourne true si l'erreur a été gérée, false sinon
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   character = await getActiveCharacterForUser(userId, guildId);
+ * } catch (error) {
+ *   if (await handleCharacterError(error, interaction)) {
+ *     return; // Erreur gérée, on sort
+ *   }
+ *   throw error; // Erreur inattendue, on la relance
+ * }
+ * ```
+ */
+export async function handleCharacterError(
+  error: unknown,
+  interaction: DiscordInteraction,
+  options: ErrorHandlerOptions = {}
+): Promise<boolean> {
+  // 404 - Aucun personnage trouvé
+  if (is404Error(error)) {
+    await handleApiError(error, interaction, {
+      ...options,
+      customMessage: `${STATUS.ERROR} Aucun personnage vivant trouvé. Utilisez d'abord la commande \`/start\` pour créer un personnage.`,
+      context: options.context || "character fetch"
+    });
+    return true;
+  }
+
+  // Personnage mort
+  if (isDeadCharacterError(error)) {
+    await handleApiError(error, interaction, {
+      ...options,
+      customMessage: getErrorMessage(error),
+      context: options.context || "character validation"
+    });
+    return true;
+  }
+
+  // Erreur inconnue
+  return false;
+}
+
+/**
+ * Gère spécifiquement les erreurs liées aux expéditions
+ * Retourne true si l'erreur a été gérée, false sinon
+ */
+export async function handleExpeditionError(
+  error: unknown,
+  interaction: DiscordInteraction,
+  options: ErrorHandlerOptions = {}
+): Promise<boolean> {
+  const errorMessage = getErrorMessage(error);
+
+  // Erreurs d'expédition spécifiques
+  if (errorMessage.includes("expédition")) {
+    await handleApiError(error, interaction, {
+      ...options,
+      customMessage: `${STATUS.ERROR} ${errorMessage}`,
+      context: options.context || "expedition operation"
+    });
+    return true;
+  }
+
+  // 404 - Expédition introuvable
+  if (is404Error(error)) {
+    await handleApiError(error, interaction, {
+      ...options,
+      customMessage: `${STATUS.ERROR} Expédition introuvable.`,
+      context: options.context || "expedition fetch"
+    });
+    return true;
+  }
+
+  // Erreur d'autorisation
+  if (isAuthError(error)) {
+    await handleApiError(error, interaction, {
+      ...options,
+      customMessage: `${STATUS.ERROR} Vous n'avez pas la permission d'effectuer cette action.`,
+      context: options.context || "expedition authorization"
+    });
+    return true;
+  }
+
+  // Erreur générique d'expédition
+  await handleApiError(error, interaction, {
+    ...options,
+    context: options.context || "expedition operation"
+  });
+  return true;
+}
+
+/**
+ * Exécute une opération de manière silencieuse (sans notifier l'utilisateur en cas d'erreur)
+ * Utile pour des opérations non-critiques comme récupérer des données optionnelles
+ *
+ * @example
+ * ```typescript
+ * const skills = await silentError(
+ *   () => apiService.getCharacterSkills(characterId),
+ *   [],
+ *   "fetch character skills"
+ * );
+ * ```
+ */
+export async function silentError<T>(
+  operation: () => Promise<T>,
+  fallbackValue: T,
+  context: string
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    logger.debug(`Silent error during ${context}:`, error);
+    return fallbackValue;
+  }
+}
