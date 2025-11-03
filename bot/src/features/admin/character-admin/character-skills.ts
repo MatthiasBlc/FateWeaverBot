@@ -472,22 +472,20 @@ export async function handleSkillSelect(
     const selectedSkillIds = interaction.values;
 
     if (selectedSkillIds.length === 0) {
-      await interaction.reply({
+      await interaction.editReply({
         content: "❌ Aucune compétence sélectionnée.",
-        flags: ["Ephemeral"],
       });
       return;
     }
 
     if (!character) {
-      await interaction.reply({
+      await interaction.editReply({
         content: "❌ Personnage non trouvé.",
-        flags: ["Ephemeral"],
       });
       return;
     }
 
-    await interaction.deferReply({ flags: ["Ephemeral"] });
+    // Defer déjà fait dans le handler principal pour tous les StringSelectMenu
 
     const results = [];
 
@@ -529,9 +527,8 @@ export async function handleSkillSelect(
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de compétences:`, { error });
-    await interaction.reply({
+    await interaction.editReply({
       content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des compétences.`,
-      flags: ["Ephemeral"],
     });
   }
 }
