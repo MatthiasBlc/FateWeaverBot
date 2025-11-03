@@ -9,6 +9,7 @@ import { getOrCreateGuild } from "./services/guilds.service.js";
 import { buttonHandler } from "./utils/button-handler.js";
 import { modalHandler } from "./utils/modal-handler.js";
 import { selectMenuHandler } from "./utils/select-menu-handler.js";
+import { STATUS } from "./constants/emojis.js";
 async function handleButtonInteraction(interaction: any) {
   try {
     // Essayer d'abord le système de boutons centralisé
@@ -27,12 +28,12 @@ async function handleButtonInteraction(interaction: any) {
     try {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
-          content: "❌ Erreur lors du traitement de l'interaction.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de l'interaction.`,
           flags: ["Ephemeral"],
         });
       } else if (interaction.deferred) {
         await interaction.editReply({
-          content: "❌ Erreur lors du traitement de l'interaction.",
+          content: `${STATUS.ERROR} Erreur lors du traitement de l'interaction.`,
         });
       }
     } catch (replyError) {
@@ -50,12 +51,12 @@ async function handleModalInteraction(interaction: any) {
     try {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
-          content: "❌ Erreur lors du traitement du formulaire.",
+          content: `${STATUS.ERROR} Erreur lors du traitement du formulaire.`,
           flags: ["Ephemeral"],
         });
       } else if (interaction.deferred) {
         await interaction.editReply({
-          content: "❌ Erreur lors du traitement du formulaire.",
+          content: `${STATUS.ERROR} Erreur lors du traitement du formulaire.`,
         });
       }
     } catch (replyError) {
@@ -208,16 +209,16 @@ client.once("clientReady", async () => {
   // Ne plus synchroniser automatiquement les commandes
   // Le déploiement des commandes est géré par deploy-commands.ts
   logger.info(
-    "✅ Bot prêt. Les commandes sont déployées via le script deploy-commands.ts"
+    `${STATUS.SUCCESS} Bot prêt. Les commandes sont déployées via le script deploy-commands.ts`
   );
 
   // Initialize emoji cache
   try {
     const { emojiCache } = await import("./services/emoji-cache.js");
     await emojiCache.refresh();
-    logger.info("✅ Emoji cache loaded");
+    logger.info(`${STATUS.SUCCESS} Emoji cache loaded`);
   } catch (error) {
-    logger.error("❌ Failed to initialize emoji cache:", { error });
+    logger.error(`${STATUS.ERROR} Failed to initialize emoji cache:`, { error });
   }
 
   // Initialize cron jobs
@@ -226,9 +227,9 @@ client.once("clientReady", async () => {
 
     setupDailyMessagesJob(client);
 
-    logger.info("✅ Cron jobs initialized successfully");
+    logger.info(`${STATUS.SUCCESS} Cron jobs initialized successfully`);
   } catch (error) {
-    logger.error("❌ Failed to initialize cron jobs:", { error });
+    logger.error(`${STATUS.ERROR} Failed to initialize cron jobs:`, { error });
   }
 });
 

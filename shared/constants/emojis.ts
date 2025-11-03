@@ -17,10 +17,16 @@ export const UI = {
 // System & Admin
 export const SYSTEM = {
   WARNING: "⚠️", // Used in modals
-  // DELETE: "🗑️", // UNUSED (use ACTIONS.DELETE instead)
-  // STATS: "📊", // UNUSED (duplicate of STATUS.STATS)
-  // TARGET: "🎯", // UNUSED
   SPARKLES: "✨", // Used in character-modals.ts for new character creation
+  FORWARD: "⏩", // Used in deploy-commands for skipped commands
+  SEARCH: "🔍", // Used in deploy-commands for loading commands
+  INBOX: "📥", // Used in deploy-commands for fetching deployed commands
+  PLUS: "➕", // Used in deploy-commands for new commands
+  REFRESH: "🔄", // Used in deploy-commands for modified commands
+  TRASH: "🗑️", // Used in deploy-commands for deleted commands
+  CHART: "📊", // Used in deploy-commands for summary
+  ROCKET: "🚀", // Used in deploy-commands for deployment
+  BULB: "💡", // Used in deploy-commands for tips
 } as const;
 
 // Status & Feedback

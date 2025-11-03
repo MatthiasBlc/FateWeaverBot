@@ -2,7 +2,7 @@ import { ButtonInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
 import { apiService } from "../services/api/index.js";
 import { httpClient } from "../services/httpClient.js";
-import { STATUS } from "../constants/emojis.js";
+import { STATUS, SYSTEM } from "../constants/emojis.js";
 
 
 /**
@@ -37,7 +37,7 @@ export class ButtonHandler {
 
   /**
    * Enregistre les gestionnaires par défaut
-   * ⚠️ ATTENTION : Ne pas modifier ou supprimer les gestionnaires existants !
+   * ATTENTION : Ne pas modifier ou supprimer les gestionnaires existants !
    * Liste des gestionnaires critiques à préserver :
    * - expedition_ : boutons d'expédition
    * - eat_food : boutons de nourriture
@@ -257,7 +257,7 @@ export class ButtonHandler {
           });
         } else {
           await interaction.editReply({
-            content: `❌ ${response.data.message || "Impossible d'utiliser le cataplasme."}`,
+            content: `${STATUS.ERROR} ${response.data.message || "Impossible d'utiliser le cataplasme."}`,
             embeds: [],
             components: [],
           });
@@ -270,7 +270,7 @@ export class ButtonHandler {
                             "Une erreur est survenue lors de l'utilisation du cataplasme.";
 
         await interaction.editReply({
-          content: `❌ ${errorMessage}`,
+          content: `${STATUS.ERROR} ${errorMessage}`,
           embeds: [],
           components: [],
         });
@@ -702,7 +702,7 @@ export class ButtonHandler {
     });
 
     this.registerHandler("next_season", async (interaction) => {
-      logger.info("🎯 Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
+      logger.info("Bouton NEXT_SEASON cliqué par:", { user: interaction.user.username });
 
       try {
         await interaction.deferUpdate();
@@ -719,7 +719,7 @@ export class ButtonHandler {
           return;
         }
 
-        logger.info("📊 Saison actuelle récupérée:", { season: currentResponse.data });
+        logger.info(`${STATUS.STATS} Saison actuelle récupérée:`, { season: currentResponse.data });
 
         const currentSeason = currentResponse.data;
 
@@ -738,7 +738,7 @@ export class ButtonHandler {
         const currentSeasonName = currentSeason.name.toLowerCase();
         const nextSeason = currentSeasonName === 'summer' ? 'winter' : 'summer';
 
-        logger.info("🔄 Changement de saison:", { from: currentSeasonName, to: nextSeason });
+        logger.info(`${SYSTEM.REFRESH} Changement de saison:`, { from: currentSeasonName, to: nextSeason });
 
         // Changer la saison
         const response = await httpClient.post('/seasons/set', {
@@ -754,7 +754,7 @@ export class ButtonHandler {
           title: `${STATUS.SUCCESS} Saison changée avec succès`,
           fields: [
             {
-              name: "🔄 Changement",
+              name: `${SYSTEM.REFRESH} Changement`,
               value: [
                 `**Ancienne saison :** ${formatSeasonName(result.oldSeason)}`,
                 `**Nouvelle saison :** ${formatSeasonName(result.newSeason)}`,
@@ -785,7 +785,7 @@ export class ButtonHandler {
           status: (error as { response?: { status?: number } })?.response?.status
         });
         await interaction.editReply({
-          content: `❌ Erreur lors du changement de saison : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          content: `${STATUS.ERROR} Erreur lors du changement de saison : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
           embeds: [],
           components: []
         });
@@ -1793,7 +1793,7 @@ export class ButtonHandler {
   public async handleButton(interaction: ButtonInteraction): Promise<boolean> {
     const { customId } = interaction;
 
-    logger.info(`🔍 Button interaction received: ${customId} from ${interaction.user.username}`);
+    logger.info(`${SYSTEM.SEARCH} Button interaction received: ${customId} from ${interaction.user.username}`);
 
     // Chercher un gestionnaire exact
     let handler = this.handlers.get(customId);

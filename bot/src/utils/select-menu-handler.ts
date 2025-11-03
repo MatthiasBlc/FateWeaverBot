@@ -6,7 +6,7 @@ import { STATUS } from "../constants/emojis.js";
 /**
  * Gestionnaire centralisé des interactions de sélections (StringSelectMenu)
  *
- * ⚠️ IMPORTANT - INSTRUCTIONS POUR AJOUTER DE NOUVEAUX HANDLERS :
+ * IMPORTANT - INSTRUCTIONS POUR AJOUTER DE NOUVEAUX HANDLERS :
  *
  * 1. AJOUTER DANS registerDefaultHandlers() UNIQUEMENT
  * 2. NE PAS MODIFIER LES HANDLERS EXISTANTS
@@ -14,7 +14,7 @@ import { STATUS } from "../constants/emojis.js";
  * 4. RESPECTER LE FORMAT : this.registerHandler("nom_du_handler", ...)
  * 5. TESTER APRÈS CHAQUE AJOUT
  *
- * 📋 HANDLERS EXISTANTS (NE PAS TOUCHER) :
+ * HANDLERS EXISTANTS (NE PAS TOUCHER) :
  * - expedition_join_select
  * - expedition_transfer_direction
  * - expedition_admin_select
@@ -64,7 +64,7 @@ export class SelectMenuHandler {
   /**
    * Enregistre les gestionnaires par défaut
    *
-   * ⚠️ ZONE D'AJOUT SÉCURISÉE :
+   * ZONE D'AJOUT SÉCURISÉE :
    * Ajouter les nouveaux handlers APRÈS le commentaire "NOUVEAUX HANDLERS"
    * et AVANT la fermeture de la fonction }
    */
@@ -270,7 +270,7 @@ export class SelectMenuHandler {
     });
 
     // =================== NOUVEAUX HANDLERS ===================
-    // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
+    // AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
 
@@ -1162,21 +1162,21 @@ export class SelectMenuHandler {
 export const selectMenuHandler = SelectMenuHandler.getInstance();
 
 /**
- * 📋 RÉCAPITULATIF DES INSTRUCTIONS DE SÉCURITÉ
+ * RÉCAPITULATIF DES INSTRUCTIONS DE SÉCURITÉ
  *
- * ✅ POUR AJOUTER UN NOUVEAU HANDLER :
+ * POUR AJOUTER UN NOUVEAU HANDLER :
  * 1. Aller dans registerDefaultHandlers() ligne 68
  * 2. Ajouter APRÈS le commentaire "NOUVEAUX HANDLERS" ligne 222
  * 3. Respecter le format : this.registerHandler("nom", handler)
  * 4. Tester immédiatement après ajout
  *
- * ❌ À NE PAS FAIRE :
+ * À NE PAS FAIRE :
  * - Ne pas modifier les handlers existants
  * - Ne pas supprimer de handlers
  * - Ne pas changer l'ordre des handlers
  * - Ne pas ajouter en dehors de la zone sécurisée
  *
- * 🔍 HANDLERS ACTUELLEMENT SUPPORTÉS :
+ * HANDLERS ACTUELLEMENT SUPPORTÉS :
  * - character_admin_* (préfixe)
  * - capability_admin_select
  * - expedition_join_select

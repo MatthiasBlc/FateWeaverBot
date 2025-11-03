@@ -4,6 +4,7 @@ import { readdir } from "fs/promises";
 import { resolve } from "path";
 import { logger } from "./services/logger";
 import { config, validateConfig } from "./config/index";
+import { STATUS, SYSTEM } from "./constants/emojis";
 
 // --- Configuration and Setup ---
 try {
@@ -108,7 +109,7 @@ async function loadCommandsRecursively(dir: string): Promise<any[]> {
           // ----------------------Ignorer les commandes désactivées--------------------
           // ---------------------------------------------------------------------------
           if ([''].includes(commandModule.data.name)) {
-            logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+            logger.info(`      ${SYSTEM.FORWARD} Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
             continue;
           }
 
@@ -117,15 +118,15 @@ async function loadCommandsRecursively(dir: string): Promise<any[]> {
           // ---------------------------------------------------------------------------
           commands.push(commandModule.data.toJSON());
           logger.info(
-            `      ✅ Commande '${commandModule.data.name}' chargée.`
+            `      ${STATUS.SUCCESS} Commande '${commandModule.data.name}' chargée.`
           );
         } else {
           logger.warn(
-            `      ⚠️  Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
+            `      ${SYSTEM.WARNING} Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
           );
         }
       } catch (error) {
-        logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
+        logger.error(`      ${STATUS.ERROR} Erreur lors du chargement de ${entry.name}:`, {
           error: error instanceof Error ? {
             message: error.message,
             stack: error.stack,
@@ -160,7 +161,7 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
           // ----------------------Ignorer les commandes désactivées--------------------
           // ---------------------------------------------------------------------------
           if ([''].includes(commandModule.data.name)) {
-            logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+            logger.info(`      ${SYSTEM.FORWARD} Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
             continue;
           }
           // ---------------------------------------------------------------------------
@@ -168,15 +169,15 @@ async function loadCommandsFromCommands(dir: string): Promise<any[]> {
           // ---------------------------------------------------------------------------
           commands.push(commandModule.data.toJSON());
           logger.info(
-            `      ✅ Commande '${commandModule.data.name}' chargée.`
+            `      ${STATUS.SUCCESS} Commande '${commandModule.data.name}' chargée.`
           );
         } else {
           logger.warn(
-            `      ⚠️  Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
+            `      ${SYSTEM.WARNING} Fichier ${entry.name} ignoré (pas de 'data' ou 'execute').`
           );
         }
       } catch (error) {
-        logger.error(`      ❌ Erreur lors du chargement de ${entry.name}:`, {
+        logger.error(`      ${STATUS.ERROR} Erreur lors du chargement de ${entry.name}:`, {
           error: error instanceof Error ? {
             message: error.message,
             stack: error.stack,
@@ -216,7 +217,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
             // ----------------------Ignorer les commandes désactivées--------------------
             // ---------------------------------------------------------------------------
             if ([''].includes(commandModule.data.name)) {
-              logger.info(`      ⏩ Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
+              logger.info(`      ${SYSTEM.FORWARD} Commande '${commandModule.data.name}' ignorée (désactivée temporairement).`);
               continue;
             }
 
@@ -225,7 +226,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
             // ---------------------------------------------------------------------------
             commands.push(commandModule.data.toJSON());
             logger.info(
-              `      ✅ Commande '${commandModule.data.name}' chargée.`
+              `      ${STATUS.SUCCESS} Commande '${commandModule.data.name}' chargée.`
             );
           } else {
             logger.warn(
@@ -233,7 +234,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
             );
           }
         } catch (error) {
-          logger.error(`      ❌ Erreur lors du chargement de ${entry.name}/${file.name}:`, {
+          logger.error(`      ${STATUS.ERROR} Erreur lors du chargement de ${entry.name}/${file.name}:`, {
             error: error instanceof Error ? {
               message: error.message,
               stack: error.stack,
@@ -255,7 +256,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
       isGuildDeployment ? `Mode: Guilde (${guildId})` : "Mode: Global"
     );
 
-    logger.info("🔍 Chargement des fichiers de commandes locales...");
+    logger.info(`${SYSTEM.SEARCH} Chargement des fichiers de commandes locales...`);
     const commandsPath = resolve(process.cwd(), "src", "commands");
     const localCommands = await loadCommandsFromCommands(commandsPath);
 
@@ -264,7 +265,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
     const featureCommands = await loadCommandsFromFeatures(featuresPath);
     localCommands.push(...featureCommands);
 
-    logger.info(`✅ ${localCommands.length} commandes locales chargées.`);
+    logger.info(`${STATUS.SUCCESS} ${localCommands.length} commandes locales chargées.`);
 
     if (localCommands.length === 0) {
       logger.warn("Aucune commande locale à déployer. Arrêt.");
@@ -277,7 +278,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
       : Routes.applicationCommands(clientId);
 
     // Récupérer les commandes actuellement déployées sur Discord
-    logger.info("📥 Récupération des commandes déjà déployées sur Discord...");
+    logger.info(`${SYSTEM.INBOX} Récupération des commandes déjà déployées sur Discord...`);
     const deployedCommands = (await rest.get(route)) as ApplicationCommand[];
     logger.info(`   -> ${deployedCommands.length} commandes actuellement déployées.`);
 
@@ -301,11 +302,11 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
       if (!deployedCmd) {
         // Nouvelle commande à créer
         commandsToCreate.push(localCmd);
-        logger.info(`   ➕ Nouvelle commande détectée: ${name}`);
+        logger.info(`   ${SYSTEM.PLUS} Nouvelle commande détectée: ${name}`);
       } else if (!areCommandsEqual(localCmd, deployedCmd)) {
         // Commande existante à mettre à jour
         commandsToUpdate.push({ id: deployedCmd.id, data: localCmd });
-        logger.info(`   🔄 Commande modifiée détectée: ${name}`);
+        logger.info(`   ${SYSTEM.REFRESH} Commande modifiée détectée: ${name}`);
       } else {
         logger.info(`   ✓ Commande inchangée: ${name}`);
       }
@@ -315,12 +316,12 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
     for (const [name, deployedCmd] of deployedCommandsMap) {
       if (!localCommandsMap.has(name as string)) {
         commandsToDelete.push(deployedCmd.id);
-        logger.info(`   🗑️  Commande à supprimer: ${name}`);
+        logger.info(`   ${SYSTEM.TRASH} Commande à supprimer: ${name}`);
       }
     }
 
     // Afficher le résumé
-    logger.info("\n📊 Résumé des changements:");
+    logger.info(`\n${SYSTEM.CHART} Résumé des changements:`);
     logger.info(`   - Commandes à créer: ${commandsToCreate.length}`);
     logger.info(`   - Commandes à mettre à jour: ${commandsToUpdate.length}`);
     logger.info(`   - Commandes à supprimer: ${commandsToDelete.length}`);
@@ -329,19 +330,19 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
     const totalChanges = commandsToCreate.length + commandsToUpdate.length + commandsToDelete.length;
 
     if (totalChanges === 0) {
-      logger.info("✅ Aucun changement détecté. Déploiement non nécessaire.");
+      logger.info(`${STATUS.SUCCESS} Aucun changement détecté. Déploiement non nécessaire.`);
       process.exit(0);
     }
 
-    logger.info(`\n🚀 Application des ${totalChanges} changements...`);
+    logger.info(`\n${SYSTEM.ROCKET} Application des ${totalChanges} changements...`);
 
     // Créer les nouvelles commandes
     for (const cmd of commandsToCreate) {
       try {
         await rest.post(route, { body: cmd });
-        logger.info(`   ✅ Commande créée: ${cmd.name}`);
+        logger.info(`   ${STATUS.SUCCESS} Commande créée: ${cmd.name}`);
       } catch (error) {
-        logger.error(`   ❌ Erreur lors de la création de ${cmd.name}:`, { error });
+        logger.error(`   ${STATUS.ERROR} Erreur lors de la création de ${cmd.name}:`, { error });
       }
     }
 
@@ -352,9 +353,9 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
           ? Routes.applicationGuildCommand(clientId, guildId!, id)
           : Routes.applicationCommand(clientId, id);
         await rest.patch(updateRoute, { body: data });
-        logger.info(`   ✅ Commande mise à jour: ${data.name}`);
+        logger.info(`   ${STATUS.SUCCESS} Commande mise à jour: ${data.name}`);
       } catch (error) {
-        logger.error(`   ❌ Erreur lors de la mise à jour de ${data.name}:`, { error });
+        logger.error(`   ${STATUS.ERROR} Erreur lors de la mise à jour de ${data.name}:`, { error });
       }
     }
 
@@ -365,18 +366,18 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
           ? Routes.applicationGuildCommand(clientId, guildId!, id)
           : Routes.applicationCommand(clientId, id);
         await rest.delete(deleteRoute);
-        logger.info(`   ✅ Commande supprimée (ID: ${id})`);
+        logger.info(`   ${STATUS.SUCCESS} Commande supprimée (ID: ${id})`);
       } catch (error) {
-        logger.error(`   ❌ Erreur lors de la suppression de la commande ${id}:`, { error });
+        logger.error(`   ${STATUS.ERROR} Erreur lors de la suppression de la commande ${id}:`, { error });
       }
     }
 
-    logger.info("\n--- ✅ Déploiement terminé avec succès ---");
-    logger.info(`💡 Requêtes API économisées grâce au déploiement intelligent!`);
+    logger.info(`\n--- ${STATUS.SUCCESS} Déploiement terminé avec succès ---`);
+    logger.info(`${SYSTEM.BULB} Requêtes API économisées grâce au déploiement intelligent!`);
     process.exit(0);
   } catch (error) {
     logger.error(
-      "--- ❌ Une erreur critique est survenue lors du déploiement ---",
+      `--- ${STATUS.ERROR} Une erreur critique est survenue lors du déploiement ---`,
       { error }
     );
     process.exit(1);

@@ -6,7 +6,7 @@ import { STATUS } from "../constants/emojis.js";
 /**
  * Gestionnaire centralisé des interactions de modals
  *
- * ⚠️ CONSIGNES DE SÉCURITÉ CRITIQUES :
+ * CONSIGNES DE SÉCURITÉ CRITIQUES :
  *
  * 1. NE PAS SUPPRIMER les handlers existants
  * 2. NE PAS MODIFIER les handlers existants
@@ -14,7 +14,7 @@ import { STATUS } from "../constants/emojis.js";
  * 4. Respecter le format : this.registerHandler("nom_du_modal", handler)
  * 5. Tester immédiatement après ajout
  *
- * 📋 MODALS EXISTANTS (NE PAS TOUCHER) :
+ * MODALS EXISTANTS (NE PAS TOUCHER) :
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
@@ -66,7 +66,7 @@ export class ModalHandler {
   /**
    * Enregistre les gestionnaires par défaut
    *
-   * ⚠️ ZONE D'AJOUT SÉCURISÉE :
+   * ZONE D'AJOUT SÉCURISÉE :
    * Ajouter les nouveaux handlers APRÈS le commentaire "NOUVEAUX HANDLERS"
    * et AVANT la fermeture de la fonction }
    */
@@ -354,7 +354,7 @@ export class ModalHandler {
     });
 
     // =================== NOUVEAUX HANDLERS ===================
-    // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
+    // AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
 
     // Gestionnaire pour le modal d'ajout de projet admin (étape 1)
     this.registerHandler("project_admin_add_step1_modal", async (interaction) => {
@@ -922,21 +922,21 @@ export class ModalHandler {
 export const modalHandler = ModalHandler.getInstance();
 
 /**
- * 📋 RÉCAPITULATIF DES CONSIGNES DE SÉCURITÉ - MODAL HANDLER
+ * RÉCAPITULATIF DES CONSIGNES DE SÉCURITÉ - MODAL HANDLER
  *
- * ✅ POUR AJOUTER UN NOUVEAU HANDLER :
+ * POUR AJOUTER UN NOUVEAU HANDLER :
  * 1. Aller dans registerDefaultHandlers() ligne 61
  * 2. Ajouter APRÈS le commentaire "NOUVEAUX HANDLERS" ligne 290
  * 3. Respecter le format : this.registerHandler("nom_modal", handler)
  * 4. Tester immédiatement après ajout
  *
- * ❌ À NE PAS FAIRE :
+ * À NE PAS FAIRE :
  * - Ne pas modifier les handlers existants
  * - Ne pas supprimer de handlers
  * - Ne pas changer l'ordre des handlers
  * - Ne pas ajouter en dehors de la zone sécurisée
  *
- * 🔍 MODALS ACTUELLEMENT SUPPORTÉS :
+ * MODALS ACTUELLEMENT SUPPORTÉS :
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
@@ -947,7 +947,7 @@ export const modalHandler = ModalHandler.getInstance();
  * - stock_admin_add_modal_ : ajout ressources admin
  * - stock_admin_remove_modal_ : retrait ressources admin
  *
- * 🛡️ PROTECTION CONTRE LES RÉGRESSIONS :
+ * PROTECTION CONTRE LES RÉGRESSIONS :
  * - Commentaires de sécurité explicites
  * - Zone d'ajout clairement délimitée
  * - Liste exhaustive des handlers existants
