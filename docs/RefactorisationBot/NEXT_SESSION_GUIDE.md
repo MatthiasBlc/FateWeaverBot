@@ -46,23 +46,45 @@ git log --oneline -5  # Voir les derniers commits
 
 ---
 
-## 🎯 Prochaines Actions Possibles
+## 🎯 Prochaines Actions Recommandées
 
-La Phase 4 étant terminée, voici quelques suggestions pour la suite:
+La Phase 4 étant terminée à 100%, voici les actions suggérées par priorité:
 
-### Option 1: Consolidation & Tests
-- Tester manuellement les fonctionnalités refactorisées
-- Vérifier que tous les messages Discord sont préservés
-- S'assurer qu'il n'y a aucune régression
+### 🔴 PRIORITÉ 1: Phase 1.1 - Centralisation Emojis
+**Impact**: 200-250 tokens (~5% budget)
+**État**: 33 fichiers identifiés, 0 corrigés
+**Temps**: 4-6 heures
 
-### Option 2: Refactoring Additionnel (Optionnel)
-- users.handlers.ts (1,328 lignes) - nécessite refactoring logique
-- Autres fichiers identifiés dans l'audit initial
+**Fichiers critiques** (traiter en priorité):
+1. Expeditions handlers (8 fichiers) - Impact utilisateur direct
+2. Admin handlers (13 fichiers)
+3. Utils/Projects/Users (8 fichiers)
+4. Deploy scripts (3 fichiers)
 
-### Option 3: Documentation
-- Créer un guide de maintenance pour les nouveaux développeurs
-- Documenter les patterns de refactoring utilisés
-- Mettre à jour la documentation technique du projet
+**Documentation**: Voir `PHASE_1_STATUS.md` pour liste complète et patterns
+
+**Méthode**:
+- Option A: Script automatique (`scripts/centralize-emojis.js`)
+- Option B: Correction progressive manuelle (recommandé)
+
+---
+
+### 🟡 PRIORITÉ 2: Phase 1.2 - Barrel Exports
+**Impact**: 50-75 tokens
+**Temps**: 1-2 heures
+
+Créer index.ts manquants pour:
+- `/src/services/`
+- `/src/features/admin/`
+- `/src/commands/`
+- `/src/constants/`
+
+---
+
+### 🟢 PRIORITÉ 3: Tests & Consolidation
+- Tester fonctionnalités refactorisées (Phase 4)
+- S'assurer zéro régression
+- Documentation des patterns utilisés
 
 ---
 
