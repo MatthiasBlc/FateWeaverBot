@@ -16,7 +16,7 @@ export function registerChantierButtons(handler: ButtonHandler): void {
   handler.registerHandler("chantier_participate", async (interaction: ButtonInteraction) => {
     try {
       const { handleParticipateButton } = await import(
-        "./chantiers.handlers.js"
+        "./handlers/index.js"
       );
       await handleParticipateButton(interaction);
     } catch (error) {
@@ -32,7 +32,7 @@ export function registerChantierButtons(handler: ButtonHandler): void {
   handler.registerHandler("chantier_admin_add", async (interaction: ButtonInteraction) => {
     try {
       const { handleAdminAddButton } = await import(
-        "./chantiers.handlers.js"
+        "./handlers/index.js"
       );
       await handleAdminAddButton(interaction);
     } catch (error) {
@@ -48,7 +48,7 @@ export function registerChantierButtons(handler: ButtonHandler): void {
   handler.registerHandler("chantier_admin_delete", async (interaction: ButtonInteraction) => {
     try {
       const { handleAdminDeleteButton } = await import(
-        "./chantiers.handlers.js"
+        "./handlers/index.js"
       );
       await handleAdminDeleteButton(interaction);
     } catch (error) {

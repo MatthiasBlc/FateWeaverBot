@@ -131,7 +131,7 @@
 
 ---
 
-### Fichiers Traités (4/5)
+### Fichiers Traités (5/5) ✅
 
 1. ✅ **project-add.ts** (1,696 lines → 6 files)
    - Commit: `3b61fa0`
@@ -174,12 +174,26 @@
    - Augmentation: +106 lignes (+7%) due aux imports spécialisés et séparation propre
    - Token savings estimés: ~85 tokens (net)
 
-### Fichiers À Faire (1/5)
+5. ✅ **chantiers.handlers.ts** (1,262 lines → 6 files, 1,337 lines total)
+   - Date: 2025-11-04
+   - Structure: `handlers/{common,helpers,display,participate,invest,admin}.ts` + `index.ts`
+   - **Méthode: Refactorisation propre avec extraction DRY** ⭐
+   - Détails:
+     - `chantiers-common.ts` (47 lignes): Interfaces partagées (Town, ActiveCharacter, ResourceCost, Chantier, InvestResult)
+     - `chantiers-helpers.ts` (93 lignes): Helpers réutilisables (groupChantiersByStatus, getAvailableChantiersSorted, createChantiersListEmbed)
+     - `chantiers-display.ts` (179 lignes): Affichage liste chantiers (3 handlers)
+     - `chantiers-participate.ts` (362 lignes): Participation chantiers + select menu
+     - `chantiers-invest.ts` (412 lignes): Soumission modal (PA + ressources)
+     - `chantiers-admin.ts` (194 lignes): Administration (ajout/suppression)
+     - `index.ts` (50 lignes): Barrel exports
+   - **Duplication de code**: ✅ ZÉRO (vérifié grep)
+   - **Principe DRY**: ✅ Respecté (helpers extraits et réutilisés)
+   - **SRP (Single Responsibility)**: ✅ Chaque fichier = 1 responsabilité claire
+   - Build: ✅ Passing
+   - Augmentation: +75 lignes (+6%) due aux imports spécialisés et séparation propre
+   - Token savings estimés: ~80 tokens (net)
 
-5. ⏳ **chantiers.handlers.ts** (1,263 lines) - NEXT
-   - Méthode prévue: Refactorisation propre avec extraction DRY (même approche que projects)
-
-### Fichiers Différés (1/5)
+### Fichiers Différés (1/6)
 
 6. ⏸️ **users.handlers.ts** (1,328 lines) - DEFER
    - Nécessite refactoring logique (hors scope Phase 4)
@@ -191,10 +205,10 @@
 ### Immédiat
 
 1. ✅ Split projects.handlers.ts (terminé avec refactorisation propre)
-2. 🔄 Split chantiers.handlers.ts (prochain - même méthode DRY)
-3. ⏳ Tests finaux et documentation
+2. ✅ Split chantiers.handlers.ts (terminé avec refactorisation propre)
+3. ✅ Phase 4 TERMINÉE!
 
-**Progression Phase 4**: 4/5 fichiers traités (80%)
+**Progression Phase 4**: 5/5 fichiers traités (100%) 🎉
 
 ---
 
@@ -228,7 +242,8 @@ Lis /docs/RefactorisationBot/CURRENT_STATUS.md
 
 ---
 
-**Dernière mise à jour**: 2025-11-03 15:45
+**Dernière mise à jour**: 2025-11-04
 **Par**: Claude Code (Phase 4 - Consolidation)
-**Status**: 🔄 Phase 4 en cours - 4/5 fichiers traités (80%)
-**Méthode**: Refactorisation propre avec extraction DRY (adoptée depuis projects.handlers.ts)
+**Status**: ✅ Phase 4 TERMINÉE - 5/5 fichiers traités (100%)
+**Méthode**: Refactorisation propre avec extraction DRY (méthode professionnelle)
+**Token savings cumulés Phase 4**: ~590 tokens (~13% du budget initial)

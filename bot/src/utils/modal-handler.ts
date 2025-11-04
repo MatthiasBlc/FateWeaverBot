@@ -284,7 +284,7 @@ export class ModalHandler {
     this.registerHandler("invest_modal", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
-          "../features/chantiers/chantiers.handlers.js"
+          "../features/chantiers/handlers/index.js"
         );
         await handleInvestModalSubmit(interaction);
       } catch (error) {

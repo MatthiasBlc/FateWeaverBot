@@ -3,7 +3,7 @@ import type { Command } from "../../types/command";
 import { logger } from "../../services/logger";
 import {
   handleChantiersAdminCommand,
-} from "../../features/chantiers/chantiers.handlers";
+} from "../../features/chantiers/handlers/index.js";
 
 // Commande admin (avec permissions Discord Administrator pour la visibilité)
 const chantiersAdminCommand: Command = {
