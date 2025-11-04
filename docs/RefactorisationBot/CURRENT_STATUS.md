@@ -252,8 +252,13 @@ Lis /docs/RefactorisationBot/CURRENT_STATUS.md
 **Status**:
 - ✅ **Phase 4 TERMINÉE** - 5/5 fichiers traités (100%)
 - ✅ **Phase 1.1 TERMINÉE** - Centralisation emojis (102 remplacements)
+- ✅ **Phase 1.2 TERMINÉE** - Barrel Exports (7 nouveaux index.ts)
+- ✅ **Phase 1.3 TERMINÉE** - Type Safety (élimination any dans API services)
+- ✅ **Phase 1.4 TERMINÉE** - Logger (déjà complet, 0 console.log inapproprié)
 **Token savings cumulés**:
 - Phase 4: ~590 tokens (~13%)
 - Phase 1.1: ~200-250 tokens (~5%)
-- **Total: ~790-840 tokens (~18% budget initial)**
+- Phase 1.2: ~50-75 tokens (~1-2%)
+- Phase 1.3: Qualité code ++
+- **Total: ~840-915 tokens (~19-21% budget initial)**
 **Voir détails**: `PHASE_1_STATUS.md`

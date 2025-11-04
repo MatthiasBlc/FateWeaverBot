@@ -50,5 +50,3 @@ Avatar user ? (dans la db ?)
 ---
 
 ATTENTION A NE PAS MODIFIER LE CONTENU DES MESSAGES ERREUR, PUBLIC, EPHEMERAL sans mon accord ou sans ma demande explicite et ce, à a tout moment.
-
-il y a trop de documents dans @docs/RefactorisationBot/ Ne conserve que les documents les plus importants et nécessaire à la fin de cette mission, delete les fichiers de suivis obsolètes, temporaires et les rapports.
