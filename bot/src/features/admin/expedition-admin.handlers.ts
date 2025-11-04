@@ -282,7 +282,7 @@ export async function handleExpeditionModifyModal(interaction: any) {
 
     // Update the original admin interface
     await interaction.update({
-      content: `✅ Expédition **${updatedExpedition.name}** modifiée avec succès!\n\n📦 Nouveau stock: **${foodStockValue}**\n⏱️ Nouvelle durée: **${durationValue} jours**`,
+      content: `${STATUS.SUCCESS} Expédition **${updatedExpedition.name}** modifiée avec succès!\n\n📦 Nouveau stock: **${foodStockValue}**\n⏱️ Nouvelle durée: **${durationValue} jours**`,
       embeds: [],
       components: [],
     });
@@ -300,7 +300,7 @@ export async function handleExpeditionModifyModal(interaction: any) {
     logger.error("Error in expedition modify modal:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de la modification de l'expédition: ${
+      `${STATUS.ERROR} Erreur lors de la modification de l'expédition: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
@@ -507,7 +507,7 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
     const failCount = results.filter((r) => !r.success).length;
 
     const embed = createSuccessEmbed(
-      `✅ Membres ajoutés - ${expedition?.name}`,
+      `${STATUS.SUCCESS} Membres ajoutés - ${expedition?.name}`,
       `**Résultat:** ${successCount} ajouté(s), ${failCount} échoué(s)\n\n**Membres actuels (${
         expedition?.members?.length || 0
       }):**\n${memberList}`
@@ -533,7 +533,7 @@ export async function handleExpeditionAdminAddMember(interaction: any) {
     });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de l'ajout des membres: ${errorMessage}`
+      `${STATUS.ERROR} Erreur lors de l'ajout des membres: ${errorMessage}`
     );
   }
 }
@@ -585,7 +585,7 @@ export async function handleExpeditionAdminRemoveMember(interaction: any) {
     logger.error("Error removing member from expedition:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du retrait du membre: ${
+      `${STATUS.ERROR} Erreur lors du retrait du membre: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
@@ -601,7 +601,7 @@ export async function handleExpeditionAdminReturn(
     const expedition = await apiService.forceReturnExpedition(expeditionId);
 
     await interaction.update({
-      content: `✅ Expédition **${expedition.name}** retournée de force avec succès!`,
+      content: `${STATUS.SUCCESS} Expédition **${expedition.name}** retournée de force avec succès!`,
       embeds: [],
       components: [],
     });
@@ -615,7 +615,7 @@ export async function handleExpeditionAdminReturn(
     logger.error("Error in expedition admin return:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du retour forcé de l'expédition: ${
+      `${STATUS.ERROR} Erreur lors du retour forcé de l'expédition: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
@@ -1045,9 +1045,9 @@ export async function handleExpeditionChannelSelect(
 
     // Message de confirmation
     const confirmMessage = channelId
-      ? `✅ Channel <#${channelId}> configuré pour l'expédition **${expedition.name}**.\n\n` +
+      ? `${STATUS.SUCCESS} Channel <#${channelId}> configuré pour l'expédition **${expedition.name}**.\n\n` +
         `Les logs seront envoyés dans ce channel lorsque l'expédition sera en statut DEPARTED.`
-      : `✅ Channel dédié désactivé pour l'expédition **${expedition.name}**.\n\n` +
+      : `${STATUS.SUCCESS} Channel dédié désactivé pour l'expédition **${expedition.name}**.\n\n` +
         `Les logs seront envoyés dans le channel de logs global.`;
 
     await interaction.editReply({

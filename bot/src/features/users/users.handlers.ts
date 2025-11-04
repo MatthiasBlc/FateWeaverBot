@@ -2,6 +2,7 @@ import {
   CHARACTER,
   HUNGER,
   STATUS,
+  SYSTEM,
   CAPABILITIES,
   RESOURCES,
   RESOURCES_EXTENDED,
@@ -1046,7 +1047,7 @@ export async function handleProfileButtonInteraction(interaction: any) {
         //Ajouter plus tard avec le bon compte \nStock de cataplasmes: ** ${ cataplasmeCount }/3** (stock présent dans la ville + stocks des expéditions)
 
         if (cataplasmeCount >= 3) {
-          content += `\n⚠️ Limite de cataplasmes atteinte.`;
+          content += `\n${SYSTEM.WARNING} Limite de cataplasmes atteinte.`;
         }
 
         await interaction.editReply({

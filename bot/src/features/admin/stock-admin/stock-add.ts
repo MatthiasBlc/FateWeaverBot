@@ -350,7 +350,7 @@ export async function handleStockAdminAddModal(
       userId: interaction.user.id,
     });
     await interaction.editReply({
-      content: `❌ Erreur lors de l'ajout de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
     });
   }
 }

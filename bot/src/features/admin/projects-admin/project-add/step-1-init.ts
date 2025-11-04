@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import { logger } from "../../../../services/logger";
 import { getTownByGuildId } from "../../../../utils/town";
-import { PROJECT, STATUS } from "@shared/constants/emojis";
+import { PROJECT, STATUS, SYSTEM } from "@shared/constants/emojis";
 import { projectCreationCache } from "../../../../services/project-creation-cache";
 
 /**
@@ -97,7 +97,7 @@ export async function handleProjectAdminAddStep1Modal(
   } catch (error: any) {
     logger.error("Error in project add step 1:", { error });
     await interaction.editReply({
-      content: `❌ Erreur : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message || "Erreur inconnue"}`,
     });
   }
 }
@@ -165,7 +165,7 @@ export async function showCraftAndOutputSelection(
   } catch (error: any) {
     logger.error("Error showing craft and output selection:", { error });
     await interaction.editReply({
-      content: `❌ Erreur : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message || "Erreur inconnue"}`,
     });
   }
 }
@@ -209,7 +209,7 @@ export async function handleProjectAddOptionalName(interaction: ButtonInteractio
   } catch (error: any) {
     logger.error("Error showing optional name modal:", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }
@@ -249,7 +249,7 @@ export async function handleProjectAddNameModal(interaction: ModalSubmitInteract
   } catch (error: any) {
     logger.error("Error handling name modal:", { error });
     await interaction.editReply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
     });
   }
 }

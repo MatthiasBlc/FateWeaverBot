@@ -1,5 +1,6 @@
 import { ButtonInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
+import { STATUS, SYSTEM } from "../constants/emojis";
 
 // Import feature button registrations
 import { registerExpeditionButtons } from "../features/expeditions/buttons.js";
@@ -85,7 +86,7 @@ export class ButtonHandler {
     registerSeasonButtons(this);
 
     logger.info(
-      `✅ Button handlers initialized: ${this.handlers.size} exact + ${this.prefixHandlers.length} prefix handlers`
+      `${STATUS.SUCCESS} Button handlers initialized: ${this.handlers.size} exact + ${this.prefixHandlers.length} prefix handlers`
     );
   }
 
@@ -115,7 +116,7 @@ export class ButtonHandler {
         }
       }
 
-      logger.warn(`⚠️ No handler found for button: ${customId}`);
+      logger.warn(`${SYSTEM.WARNING} No handler found for button: ${customId}`);
       return false;
     } catch (error) {
       logger.error(`Error handling button ${customId}:`, { error });

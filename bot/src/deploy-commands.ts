@@ -230,7 +230,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
             );
           } else {
             logger.warn(
-              `      ⚠️  Fichier ${entry.name}/${file.name} ignoré (pas de 'data' ou 'execute').`
+              `      ${SYSTEM.WARNING} Fichier ${entry.name}/${file.name} ignoré (pas de 'data' ou 'execute').`
             );
           }
         } catch (error) {

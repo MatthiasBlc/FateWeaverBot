@@ -232,7 +232,7 @@ export async function handleStockAdminRemoveModal(
       // Vérifier que la quantité demandée ne dépasse pas le stock disponible
       if (amount > selectedResource.quantity) {
         await interaction.editReply({
-          content: `❌ Quantité insuffisante. Stock disponible: **${selectedResource.quantity}** unités de ${selectedResourceType.name}.`,
+          content: `${STATUS.ERROR} Quantité insuffisante. Stock disponible: **${selectedResource.quantity}** unités de ${selectedResourceType.name}.`,
         });
         return;
       }
@@ -293,7 +293,7 @@ export async function handleStockAdminRemoveModal(
       userId: interaction.user.id,
     });
     await interaction.editReply({
-      content: `❌ Erreur lors du retrait de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      content: `${STATUS.ERROR} Erreur lors du retrait de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
     });
   }
 }

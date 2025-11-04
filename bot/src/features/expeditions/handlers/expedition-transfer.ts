@@ -110,7 +110,7 @@ export async function handleExpeditionTransferDirectionSelect(
     // Check if expedition is still in PLANNING status
     if (currentExpedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
+        content: `${STATUS.ERROR} Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -208,7 +208,7 @@ export async function handleExpeditionTransferDirectionSelect(
   } catch (error) {
     logger.error("Error in expedition transfer direction select:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de la sélection de direction: ${error instanceof Error ? error.message : "Erreur inconnue"
+      content: `${STATUS.ERROR} Erreur lors de la sélection de direction: ${error instanceof Error ? error.message : "Erreur inconnue"
         }`,
       flags: ["Ephemeral"],
     });
@@ -352,7 +352,7 @@ export async function handleExpeditionTransferModal(
     // Check if expedition is still in PLANNING status
     if (expedition.status !== "PLANNING") {
       await interaction.reply({
-        content: `❌ Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
+        content: `${STATUS.ERROR} Cette expédition n'est plus en phase de planification et ne peut plus recevoir de transferts.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -409,14 +409,14 @@ export async function handleExpeditionTransferModal(
       // Transferring FROM expedition TO town
       if (vivresAmount > expeditionVivres) {
         await interaction.reply({
-          content: `❌ L'expédition n'a que ${expeditionVivres} vivres. Vous ne pouvez pas en retirer ${vivresAmount}.`,
+          content: `${STATUS.ERROR} L'expédition n'a que ${expeditionVivres} vivres. Vous ne pouvez pas en retirer ${vivresAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
       }
       if (repasAmount > expeditionRepas) {
         await interaction.reply({
-          content: `❌ L'expédition n'a que ${expeditionRepas} repas. Vous ne pouvez pas en retirer ${repasAmount}.`,
+          content: `${STATUS.ERROR} L'expédition n'a que ${expeditionRepas} repas. Vous ne pouvez pas en retirer ${repasAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -425,14 +425,14 @@ export async function handleExpeditionTransferModal(
       // Transferring FROM town TO expedition
       if (vivresAmount > townVivres) {
         await interaction.reply({
-          content: `❌ La ville n'a que ${townVivres} vivres. Vous ne pouvez pas en transférer ${vivresAmount}.`,
+          content: `${STATUS.ERROR} La ville n'a que ${townVivres} vivres. Vous ne pouvez pas en transférer ${vivresAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
       }
       if (repasAmount > townRepas) {
         await interaction.reply({
-          content: `❌ La ville n'a que ${townRepas} repas. Vous ne pouvez pas en transférer ${repasAmount}.`,
+          content: `${STATUS.ERROR} La ville n'a que ${townRepas} repas. Vous ne pouvez pas en transférer ${repasAmount}.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -527,7 +527,7 @@ export async function handleExpeditionTransferModal(
         direction: directionValue,
       });
       await interaction.reply({
-        content: `❌ Erreur lors du transfert: ${
+        content: `${STATUS.ERROR} Erreur lors du transfert: ${
           error instanceof Error ? error.message : "Erreur inconnue"
         }`,
         flags: ["Ephemeral"],
@@ -569,7 +569,7 @@ export async function handleExpeditionTransferModal(
 
       // Create response embed
       const embed = createSuccessEmbed(
-        `✅ Transfert de ressources réussi`,
+        `${STATUS.SUCCESS} Transfert de ressources réussi`,
         `Le transfert de ${transferSummary} a été effectué avec succès !`
       ).addFields(
         {
@@ -620,7 +620,7 @@ export async function handleExpeditionTransferModal(
   } catch (error) {
     logger.error("Error in expedition transfer modal:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors du traitement du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"
+      content: `${STATUS.ERROR} Erreur lors du traitement du transfert: ${error instanceof Error ? error.message : "Erreur inconnue"
         }`,
       flags: ["Ephemeral"],
     });

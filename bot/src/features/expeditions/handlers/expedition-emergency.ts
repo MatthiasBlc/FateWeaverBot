@@ -69,8 +69,8 @@ export async function handleEmergencyReturnButton(interaction: any) {
 
       // Build response message
       let message = voted
-        ? `✅ Ton vote pour le retour d'urgence a été enregistré.`
-        : `✅ Ton vote pour le retour d'urgence a été retiré.`;
+        ? `${STATUS.SUCCESS} Ton vote pour le retour d'urgence a été enregistré.`
+        : `${STATUS.SUCCESS} Ton vote pour le retour d'urgence a été retiré.`;
 
       message += `\n\n📊 **Votes:** ${totalVotes}/${membersCount} (Seuil: ${Math.ceil(
         membersCount / 2
@@ -117,7 +117,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
 
       await replyEphemeral(
         interaction,
-        `❌ Erreur lors du vote: ${errorMessage}`
+        `${STATUS.ERROR} Erreur lors du vote: ${errorMessage}`
       );
 
       // Log error safely without circular references
@@ -135,7 +135,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du traitement de votre vote: ${
+      `${STATUS.ERROR} Erreur lors du traitement de votre vote: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );

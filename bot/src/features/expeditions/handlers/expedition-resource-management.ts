@@ -94,7 +94,7 @@ export async function handleExpeditionManageResources(interaction: ButtonInterac
     logger.error("Error in expedition manage resources:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de l'affichage de la gestion des ressources: ${
+      `${STATUS.ERROR} Erreur lors de l'affichage de la gestion des ressources: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
@@ -367,7 +367,7 @@ export async function handleExpeditionResourceAddQuantity(interaction: ModalSubm
     const errorMessage = error?.response?.data?.error || error?.message || "Erreur inconnue";
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du transfert: ${errorMessage}`
+      `${STATUS.ERROR} Erreur lors du transfert: ${errorMessage}`
     );
   }
 }
@@ -432,7 +432,7 @@ export async function handleExpeditionResourceRemoveQuantity(interaction: ModalS
     const errorMessage = error?.response?.data?.error || error?.message || "Erreur inconnue";
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du transfert: ${errorMessage}`
+      `${STATUS.ERROR} Erreur lors du transfert: ${errorMessage}`
     );
   }
 }

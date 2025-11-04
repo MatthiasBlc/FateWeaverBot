@@ -415,7 +415,7 @@ export async function handleExpeditionMainCommand(
         );
 
         await interaction.reply({
-          content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\n⚠️ Aucune expédition disponible à rejoindre (status PLANNING).\nVous pouvez créer une nouvelle expédition :`,
+          content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\n${SYSTEM.WARNING} Aucune expédition disponible à rejoindre (status PLANNING).\nVous pouvez créer une nouvelle expédition :`,
           components: [buttonRow],
           flags: ["Ephemeral"],
         });
@@ -455,7 +455,7 @@ export async function handleExpeditionMainCommand(
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
+      content: `${STATUS.ERROR} Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
         }`,
       flags: ["Ephemeral"],
     });
@@ -763,7 +763,7 @@ export async function handleExpeditionChooseDirection(
   } catch (error: any) {
     logger.error("Error showing direction menu", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       ephemeral: true,
     });
   }
@@ -782,7 +782,7 @@ export async function handleExpeditionSetDirection(
       characterId
     );
 
-    const directionMessage = `✅ Direction définie : ${getDirectionEmoji(
+    const directionMessage = `${STATUS.SUCCESS} Direction définie : ${getDirectionEmoji(
       direction
     )} ${getDirectionText(direction)}`;
 
@@ -807,7 +807,7 @@ export async function handleExpeditionSetDirection(
   } catch (error: any) {
     logger.error("Error setting direction", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       ephemeral: true,
     });
   }

@@ -1,5 +1,5 @@
 import { EmbedBuilder, ColorResolvable } from "discord.js";
-import { STATUS } from "../constants/emojis.js";
+import { STATUS, SYSTEM } from "../constants/emojis.js";
 
 
 /**
@@ -64,7 +64,7 @@ export function createSuccessEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.SUCCESS)
-    .setTitle(`✅ ${title}`)
+    .setTitle(`${STATUS.SUCCESS} ${title}`)
     .setTimestamp();
 
   if (description) {
@@ -142,7 +142,7 @@ export function createWarningEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.WARNING)
-    .setTitle(`⚠️ ${title}`)
+    .setTitle(`${SYSTEM.WARNING} ${title}`)
     .setDescription(description)
     .setTimestamp();
 

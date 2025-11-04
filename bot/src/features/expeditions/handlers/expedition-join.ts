@@ -110,7 +110,7 @@ export async function handleExpeditionJoinCommand(
 
     if (activeExpeditions && activeExpeditions.length > 0) {
       const activeExpedition = activeExpeditions[0];
-      await replyEphemeral(interaction, `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`);
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`);
       return;
     }
 
@@ -199,7 +199,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
 
     await interaction.update({
-      content: `✅ Vous avez rejoint l'expédition **${expedition?.name || 'inconnue'}** avec succès!`,
+      content: `${STATUS.SUCCESS} Vous avez rejoint l'expédition **${expedition?.name || 'inconnue'}** avec succès!`,
       components: [],
     });
 

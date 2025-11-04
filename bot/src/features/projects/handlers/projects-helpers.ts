@@ -65,7 +65,7 @@ export function formatRewardMessage(
   if (!reward) {
     const defaultOutput = getProjectOutputText(project);
     return defaultOutput
-      ? `✅ ${defaultOutput} ajouté au stock de la ville !`
+      ? `${STATUS.SUCCESS} ${defaultOutput} ajouté au stock de la ville !`
       : `${STATUS.SUCCESS} Récompense enregistrée !`;
   }
 
@@ -73,7 +73,7 @@ export function formatRewardMessage(
     case "RESOURCE": {
       const emoji = project.outputResourceType?.emoji ?? PROJECT.ICON;
       const name = project.outputResourceType?.name ?? "ressource";
-      return `✅ ${emoji} ${reward.quantity}x ${name} ajouté au stock de la ville !`;
+      return `${STATUS.SUCCESS} ${emoji} ${reward.quantity}x ${name} ajouté au stock de la ville !`;
     }
     case "RESOURCE_CONVERSION": {
       const lines = reward.resources

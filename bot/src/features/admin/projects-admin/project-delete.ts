@@ -10,10 +10,9 @@ import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { createSuccessEmbed, createInfoEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { getTownByGuildId } from "../../../utils/town";
-import { PROJECT, STATUS } from "@shared/constants/emojis";
+import { PROJECT, STATUS, SYSTEM } from "@shared/constants/emojis";
 import { getCraftTypeEmoji } from "../../projects/projects.utils";
 import type { Project } from "../../projects/projects.types";
-import { SYSTEM } from "../../../constants/emojis.js";
 
 
 /**
@@ -134,7 +133,7 @@ export async function handleProjectAdminDeleteSelect(
       `${craftEmojis} **${project.name}** (ID: ${project.id})\n` +
       `📊 ${project.paContributed}/${project.paRequired} PA\n` +
       `🛠️ ${project.craftTypes.join(", ")}\n\n` +
-      `⚠️ **Cette action est irréversible !**`
+      `${SYSTEM.WARNING} **Cette action est irréversible !**`
     );
 
     // Boutons de confirmation
@@ -239,7 +238,7 @@ export async function handleProjectAdminDeleteConfirm(interaction: ButtonInterac
   } catch (error: any) {
     logger.error("Error deleting project:", { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de la suppression du projet : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur lors de la suppression du projet : ${error.message || "Erreur inconnue"}`,
       embeds: [],
       components: [],
     });

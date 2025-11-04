@@ -500,7 +500,7 @@ export async function handleSkillSelect(
           const skillExists = allSkills.some((skill: any) => skill.id === skillId);
 
           if (!skillExists) {
-            results.push(`❌ Compétence non trouvée: ${skillId}`);
+            results.push(`${STATUS.ERROR} Compétence non trouvée: ${skillId}`);
             continue;
           }
         }
@@ -530,7 +530,7 @@ export async function handleSkillSelect(
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de compétences:`, { error });
     await interaction.reply({
-      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des compétences.`,
+      content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des compétences.`,
       flags: ["Ephemeral"],
     });
   }

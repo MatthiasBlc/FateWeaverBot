@@ -57,7 +57,7 @@ export async function handleStatsModalSubmit(
 
   if (errors.length > 0) {
     await interaction.reply({
-      content: `❌ ${errors.join(", ")}`,
+      content: `${STATUS.ERROR} ${errors.join(", ")}`,
       flags: ["Ephemeral"],
     });
     return;

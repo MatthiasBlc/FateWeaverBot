@@ -187,7 +187,7 @@ export async function handleExpeditionResourceQuantityModal(
     if (!townResource || townResource.quantity < quantity) {
       await replyEphemeral(
         interaction,
-        `❌ Stock insuffisant. Disponible: ${townResource?.quantity || 0}`
+        `${STATUS.ERROR} Stock insuffisant. Disponible: ${townResource?.quantity || 0}`
       );
       return;
     }

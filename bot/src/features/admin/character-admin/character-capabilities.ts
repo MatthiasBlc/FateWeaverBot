@@ -254,21 +254,21 @@ export async function handleCapabilitySelect(
           const capabilityExists = allCapabilities.some((cap: any) => cap.id === capabilityId);
 
           if (!capabilityExists) {
-            results.push(`❌ Capacité non trouvée: ${capabilityId}`);
+            results.push(`${STATUS.ERROR} Capacité non trouvée: ${capabilityId}`);
             continue;
           }
         }
 
         if (action === 'add') {
           await httpClient.post(`/characters/${character.id}/capabilities/${capabilityId}`);
-          results.push(`✅ Capacité ajoutée`);
+          results.push(`${STATUS.SUCCESS} Capacité ajoutée`);
         } else {
           await httpClient.delete(`/characters/${character.id}/capabilities/${capabilityId}`);
-          results.push(`✅ Capacité retirée`);
+          results.push(`${STATUS.SUCCESS} Capacité retirée`);
         }
       } catch (error: any) {
         const errorMessage = error?.response?.data?.message || error.message || 'Erreur inconnue';
-        results.push(`❌ Erreur: ${errorMessage}`);
+        results.push(`${STATUS.ERROR} Erreur: ${errorMessage}`);
       }
     }
 
@@ -284,7 +284,7 @@ export async function handleCapabilitySelect(
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de capacités:`, { error });
     await interaction.reply({
-      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
+      content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
       flags: ["Ephemeral"],
     });
   }

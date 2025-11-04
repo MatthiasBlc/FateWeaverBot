@@ -26,7 +26,7 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
-import { DIRECTION, EXPEDITION, RESOURCES, STATUS } from "@shared/constants/emojis";
+import { DIRECTION, EXPEDITION, RESOURCES, STATUS, SYSTEM } from "@shared/constants/emojis";
 import { expeditionCache } from "../../../services/expedition-cache";
 import { emojiCache } from "../../../services/emoji-cache";
 
@@ -134,7 +134,7 @@ export async function handleExpeditionStartCommand(
     if (activeExpeditions && activeExpeditions.length > 0) {
       await replyEphemeral(
         interaction,
-        `❌ Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`
+        `${STATUS.ERROR} Votre personnage est déjà sur une expédition active: **${activeExpeditions[0].name}**.`
       );
       return;
     }
@@ -146,7 +146,7 @@ export async function handleExpeditionStartCommand(
     logger.error("Error in expedition start command:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+      `${STATUS.ERROR} Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
   }
@@ -244,7 +244,7 @@ export async function handleExpeditionCreationModal(
     logger.error("Error in expedition creation modal:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
+      `${STATUS.ERROR} Erreur lors de la création de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
   }
@@ -321,7 +321,7 @@ export async function handleExpeditionDirectionSelect(
 
     const expeditionWithAdjustments = expedition.data as any;
     if (expeditionWithAdjustments.resourceAdjustments && expeditionWithAdjustments.resourceAdjustments.length > 0) {
-      successMessage += `\n\n⚠️ **Ajustements de stocks :**\n`;
+      successMessage += `\n\n${SYSTEM.WARNING} **Ajustements de stocks :**\n`;
       for (const adj of expeditionWithAdjustments.resourceAdjustments) {
         successMessage += `• ${adj.name} : demandé ${adj.requested}, obtenu ${adj.actual} (${adj.reason})\n`;
       }
@@ -373,7 +373,7 @@ export async function handleExpeditionDirectionSelect(
     const errorMessage =
       error?.response?.data?.error || error?.message || "Erreur inconnue";
     await interaction.reply({
-      content: `❌ Erreur lors de la création : ${errorMessage}`,
+      content: `${STATUS.ERROR} Erreur lors de la création : ${errorMessage}`,
       ephemeral: true,
     });
   }

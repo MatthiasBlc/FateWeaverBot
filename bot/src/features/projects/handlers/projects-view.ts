@@ -245,7 +245,7 @@ export async function handleViewProjectsFromProfile(
     if (completedProjects.length > 0) {
       const sortedProjects = sortByCraftAndOutputType(completedProjects);
       const sectionText = sortedProjects
-        .map((p) => `✅ **${p.name}**`)
+        .map((p) => `${STATUS.SUCCESS} **${p.name}**`)
         .join("\n");
 
       embed.addFields({

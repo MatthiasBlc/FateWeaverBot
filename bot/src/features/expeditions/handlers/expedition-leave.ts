@@ -79,7 +79,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
 
     // Check if expedition is in PLANNING status (only time you can leave)
     if (currentExpedition.status !== "PLANNING") {
-      await replyEphemeral(interaction, `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]}**.`);
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]}**.`);
       return;
     }
 
@@ -139,6 +139,6 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     });
   } catch (error) {
     logger.error("Error in expedition leave button:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors du départ de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors du départ de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }

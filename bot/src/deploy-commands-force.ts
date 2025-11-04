@@ -4,6 +4,7 @@ import { readdir } from "fs/promises";
 import { resolve } from "path";
 import { logger } from "./services/logger";
 import { config, validateConfig } from "./config/index";
+import { STATUS, SYSTEM } from "./constants/emojis";
 
 /**
  * Script de déploiement FORCÉ des commandes Discord
@@ -115,8 +116,8 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
 // --- Main Execution ---
 (async () => {
   try {
-    logger.warn("⚠️  --- DÉPLOIEMENT FORCÉ DES COMMANDES ---");
-    logger.warn("⚠️  Ce script va SUPPRIMER et RECRÉER toutes les commandes");
+    logger.warn(`${SYSTEM.WARNING} --- DÉPLOIEMENT FORCÉ DES COMMANDES ---`);
+    logger.warn(`${SYSTEM.WARNING} Ce script va SUPPRIMER et RECRÉER toutes les commandes`);
     logger.info(
       isGuildDeployment ? `Mode: Guilde (${guildId})` : "Mode: Global"
     );
@@ -129,7 +130,7 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
     const featureCommands = await loadCommandsFromFeatures(featuresPath);
     commands.push(...featureCommands);
 
-    logger.info(`✅ ${commands.length} commandes chargées avec succès.`);
+    logger.info(`${STATUS.SUCCESS} ${commands.length} commandes chargées avec succès.`);
 
     if (commands.length === 0) {
       logger.warn("Aucune commande à déployer. Arrêt.");
@@ -142,16 +143,16 @@ async function loadCommandsFromFeatures(dir: string): Promise<any[]> {
 
     logger.info("🗑️  Suppression de TOUTES les anciennes commandes...");
     await rest.put(route, { body: [] });
-    logger.info("✅ Suppression terminée.");
+    logger.info(`${STATUS.SUCCESS} Suppression terminée.`);
 
     logger.info(`✍️  Enregistrement des ${commands.length} nouvelles commandes...`);
     await rest.put(route, { body: commands });
 
-    logger.info("--- ✅ Déploiement forcé terminé avec succès ---");
+    logger.info(`--- ${STATUS.SUCCESS} Déploiement forcé terminé avec succès ---`);
     process.exit(0);
   } catch (error) {
     logger.error(
-      "--- ❌ Une erreur critique est survenue lors du déploiement ---",
+      `--- ${STATUS.ERROR} Une erreur critique est survenue lors du déploiement ---`,
       { error }
     );
     process.exit(1);

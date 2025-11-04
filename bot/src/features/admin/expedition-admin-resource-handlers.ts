@@ -62,7 +62,7 @@ export async function handleExpeditionResourceAddModal(interaction: any) {
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     await interaction.reply({
-      content: `✅ ${quantity} ${resourceType?.name || 'ressource(s)'} ajouté(es) à l'expédition!`,
+      content: `${STATUS.SUCCESS} ${quantity} ${resourceType?.name || 'ressource(s)'} ajouté(es) à l'expédition!`,
       flags: ["Ephemeral"],
     });
 
@@ -75,7 +75,7 @@ export async function handleExpeditionResourceAddModal(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition resource add modal:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de l'ajout de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'ajout de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -136,7 +136,7 @@ export async function handleExpeditionResourceModifyModal(interaction: any) {
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     await interaction.reply({
-      content: `✅ Quantité de ${resourceType?.name || 'ressource'} modifiée à ${newQuantity}!`,
+      content: `${STATUS.SUCCESS} Quantité de ${resourceType?.name || 'ressource'} modifiée à ${newQuantity}!`,
       flags: ["Ephemeral"],
     });
 
@@ -149,7 +149,7 @@ export async function handleExpeditionResourceModifyModal(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition resource modify modal:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la modification de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la modification de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -217,7 +217,7 @@ export async function handleExpeditionAdminResourceDeleteConfirm(interaction: an
     await apiService.resources.deleteResource("EXPEDITION", expeditionId, resourceTypeId);
 
     await interaction.update({
-      content: `✅ ${resourceType?.name || 'Ressource'} supprimée de l'expédition avec succès!`,
+      content: `${STATUS.SUCCESS} ${resourceType?.name || 'Ressource'} supprimée de l'expédition avec succès!`,
       embeds: [],
       components: [],
     });
@@ -230,7 +230,7 @@ export async function handleExpeditionAdminResourceDeleteConfirm(interaction: an
 
   } catch (error) {
     logger.error("Error in expedition resource delete confirm:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la suppression de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la suppression de ressource: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }
 
@@ -266,7 +266,7 @@ export async function handleExpeditionDurationModal(interaction: any) {
     });
 
     await interaction.reply({
-      content: `✅ Durée de l'expédition **${updatedExpedition.name}** modifiée à **${duration} jours**!`,
+      content: `${STATUS.SUCCESS} Durée de l'expédition **${updatedExpedition.name}** modifiée à **${duration} jours**!`,
       flags: ["Ephemeral"],
     });
 
@@ -279,6 +279,6 @@ export async function handleExpeditionDurationModal(interaction: any) {
 
   } catch (error) {
     logger.error("Error in expedition duration modal:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la modification de la durée: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la modification de la durée: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
   }
 }

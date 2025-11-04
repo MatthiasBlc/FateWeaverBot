@@ -47,7 +47,7 @@ export async function handleProjectAddCraftTypesSelect(interaction: StringSelect
   } catch (error: any) {
     logger.error("Error handling craft types select:", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }
@@ -82,7 +82,7 @@ export async function handleProjectAddOutputTypeSelect(interaction: StringSelect
   } catch (error: any) {
     logger.error("Error handling output type select:", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }
@@ -144,7 +144,7 @@ export async function updateSelectionMessage(
                 `📝 **Étape 1/4** : Configuration de base\n\n`;
 
   if (craftTypes.length > 0) {
-    content += `✅ **Corps d'artisanat** : ${craftTypes.map(ct => {
+    content += `${STATUS.SUCCESS} **Corps d'artisanat** : ${craftTypes.map(ct => {
       const emoji = ct === "TISSER" ? "🧵" : ct === "FORGER" ? "🔨" : "🪚";
       return `${emoji} ${ct}`;
     }).join(", ")}\n`;
@@ -154,7 +154,7 @@ export async function updateSelectionMessage(
 
   if (outputType) {
     const typeLabel = outputType === "RESOURCE" ? "📦 Ressource" : "⚒️ Objet";
-    content += `✅ **Type de production** : ${typeLabel}\n`;
+    content += `${STATUS.SUCCESS} **Type de production** : ${typeLabel}\n`;
   } else {
     content += `⏳ **Type de production** : Non sélectionné\n`;
   }
@@ -216,7 +216,7 @@ export async function handleProjectAddValidateSelection(interaction: ButtonInter
   } catch (error: any) {
     logger.error("Error validating selection:", { error });
     await interaction.followUp({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }

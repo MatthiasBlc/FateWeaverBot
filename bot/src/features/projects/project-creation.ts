@@ -15,7 +15,7 @@ import {
 } from "discord.js";
 import { logger } from "../../services/logger";
 import { apiService } from "../../services/api";
-import { STATUS, PROJECT, CAPABILITIES, RESOURCES } from "../../constants/emojis";
+import { STATUS, SYSTEM, PROJECT, CAPABILITIES, RESOURCES } from "../../constants/emojis";
 import { getStatusText, getCraftTypeEmoji, getCraftDisplayName, toCraftEnum, type CraftEnum } from "./projects.utils";
 import { checkAdmin } from "../../utils/roles";
 
@@ -683,16 +683,16 @@ function formatProjectDraft(draft: ProjectDraft): string {
       .map((craftType) => `${getCraftTypeEmoji(craftType)} ${getCraftDisplayName(craftType)}`)
       .join(" | ")}`;
   } else {
-    message += `\n⚠️ *Aucun type sélectionné*\n`;
+    message += `\n${SYSTEM.WARNING} *Aucun type sélectionné*\n`;
   }
 
   // Sortie (ressource OU objet)
   if (draft.outputResourceTypeId) {
-    message += `✅ *Ressource de sortie configurée*\n`;
+    message += `${STATUS.SUCCESS} *Ressource de sortie configurée*\n`;
   } else if (draft.outputObjectTypeId) {
-    message += `✅ *Objet de sortie configuré*\n`;
+    message += `${STATUS.SUCCESS} *Objet de sortie configuré*\n`;
   } else {
-    message += `⚠️ *Sortie manquante (ressource ou objet)*\n`;
+    message += `${SYSTEM.WARNING} *Sortie manquante (ressource ou objet)*\n`;
   }
 
   if (draft.resourceCosts.length > 0) {
@@ -742,7 +742,7 @@ export async function handleAddBlueprintCostButton(interaction: ButtonInteractio
   } catch (error: any) {
     logger.error("Error showing blueprint cost menu", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }
@@ -782,7 +782,7 @@ export async function handleBlueprintCostSelect(interaction: StringSelectMenuInt
   } catch (error: any) {
     logger.error("Error showing blueprint quantity modal", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }
@@ -834,7 +834,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
     projectDrafts.set(interaction.user.id, draft);
 
     await interaction.reply({
-      content: `✅ Coût blueprint ajouté : ${quantity} ${selectedResource.name}`,
+      content: `${STATUS.SUCCESS} Coût blueprint ajouté : ${quantity} ${selectedResource.name}`,
       flags: ["Ephemeral"],
     });
 
@@ -848,7 +848,7 @@ export async function handleBlueprintCostQuantityModal(interaction: ModalSubmitI
   } catch (error: any) {
     logger.error("Error adding blueprint cost", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       flags: ["Ephemeral"],
     });
   }

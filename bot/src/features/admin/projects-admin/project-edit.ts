@@ -252,7 +252,7 @@ export async function handleProjectAdminEditModal(
     const invalidCrafts = craftTypes.filter((ct) => !validCraftTypes.includes(ct));
     if (invalidCrafts.length > 0) {
       await interaction.editReply({
-        content: `❌ Types d'artisanat invalides : ${invalidCrafts.join(", ")}. Valides : ${validCraftTypes.join(", ")}`,
+        content: `${STATUS.ERROR} Types d'artisanat invalides : ${invalidCrafts.join(", ")}. Valides : ${validCraftTypes.join(", ")}`,
       });
       return;
     }
@@ -346,7 +346,7 @@ export async function handleProjectAdminEditModal(
   } catch (error: any) {
     logger.error("Error updating project:", { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de la modification du projet : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur lors de la modification du projet : ${error.message || "Erreur inconnue"}`,
     });
   }
 }

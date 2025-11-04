@@ -139,7 +139,7 @@ export async function createProject(
   } catch (error: any) {
     logger.error("Error creating project:", { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de la création du projet : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur lors de la création du projet : ${error.message || "Erreur inconnue"}`,
       components: [],
     });
   }

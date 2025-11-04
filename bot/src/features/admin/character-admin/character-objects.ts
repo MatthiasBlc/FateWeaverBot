@@ -426,7 +426,7 @@ export async function handleObjectSelect(
           const objectExists = allObjects.some((obj: any) => obj.id === objectIdNum);
 
           if (!objectExists) {
-            results.push(`❌ Objet non trouvé: ${objectId}`);
+            results.push(`${STATUS.ERROR} Objet non trouvé: ${objectId}`);
             continue;
           }
         }
@@ -456,7 +456,7 @@ export async function handleObjectSelect(
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} d'objets:`, { error });
     await interaction.reply({
-      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des objets.`,
+      content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des objets.`,
       flags: ["Ephemeral"],
     });
   }
