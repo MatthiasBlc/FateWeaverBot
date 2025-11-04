@@ -17,6 +17,8 @@ import {
 import { getCharacterCapabilities } from "../../../services/capability.service";
 import { httpClient } from "../../../services/httpClient";
 import { CAPABILITIES } from "@/constants/emojis";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gestionnaire pour le bouton "Gérer Capacités".
@@ -61,7 +63,7 @@ export async function handleCapabilitiesButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des capacités.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des capacités.`,
       flags: ["Ephemeral"],
     });
   }
@@ -114,12 +116,12 @@ export async function handleAddCapabilities(
     logger.error("Erreur lors de la préparation de l'ajout de capacités:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de capacités.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de l'ajout de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout de capacités.`,
       });
     }
   }
@@ -162,12 +164,12 @@ export async function handleRemoveCapabilities(
     logger.error("Erreur lors de la préparation de la suppression de capacités:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de capacités.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de la suppression de capacités.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression de capacités.`,
       });
     }
   }
@@ -206,7 +208,7 @@ export async function handleViewCapabilities(
   } catch (error) {
     logger.error("Erreur lors de l'affichage des capacités:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des capacités.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des capacités.`,
       flags: ["Ephemeral"],
     });
   }
@@ -225,14 +227,14 @@ export async function handleCapabilitySelect(
 
     if (selectedCapabilityIds.length === 0) {
       await interaction.editReply({
-        content: "❌ Aucune capacité sélectionnée.",
+        content: `${STATUS.ERROR} Aucune capacité sélectionnée.`,
       });
       return;
     }
 
     if (!character) {
       await interaction.editReply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
       });
       return;
     }
@@ -250,21 +252,21 @@ export async function handleCapabilitySelect(
           const capabilityExists = allCapabilities.some((cap: any) => cap.id === capabilityId);
 
           if (!capabilityExists) {
-            results.push(`❌ Capacité non trouvée: ${capabilityId}`);
+            results.push(`${STATUS.ERROR} Capacité non trouvée: ${capabilityId}`);
             continue;
           }
         }
 
         if (action === 'add') {
           await httpClient.post(`/characters/${character.id}/capabilities/${capabilityId}`);
-          results.push(`✅ Capacité ajoutée`);
+          results.push(`${STATUS.SUCCESS} Capacité ajoutée`);
         } else {
           await httpClient.delete(`/characters/${character.id}/capabilities/${capabilityId}`);
-          results.push(`✅ Capacité retirée`);
+          results.push(`${STATUS.SUCCESS} Capacité retirée`);
         }
       } catch (error: any) {
         const errorMessage = error?.response?.data?.message || error.message || 'Erreur inconnue';
-        results.push(`❌ Erreur: ${errorMessage}`);
+        results.push(`${STATUS.ERROR} Erreur: ${errorMessage}`);
       }
     }
 
@@ -280,7 +282,7 @@ export async function handleCapabilitySelect(
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} de capacités:`, { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
+      content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des capacités.`,
     });
   }
 }

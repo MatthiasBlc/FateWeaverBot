@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosInstance } from 'axios';
 import { logger } from '../logger';
 import { Expedition } from '../../types/entities';
@@ -115,16 +114,20 @@ export class ExpeditionAPIService {
     userId: string
   ): Promise<{ voted: boolean; totalVotes: number; membersCount: number; thresholdReached: boolean }> {
     try {
-      const response = await this.api.post<{ success: boolean; data: any }>(
+      const response = await this.api.post<{
+        success: boolean;
+        data: { voted: boolean; totalVotes: number; membersCount: number; thresholdReached: boolean }
+      }>(
         `${this.basePath}/${expeditionId}/emergency-vote`,
         { userId }
       );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Log safely without circular references
+      const axiosError = error as { response?: { data?: { error?: string }; status?: number }; message?: string };
       logger.error('Error toggling emergency vote:', {
-        message: error?.response?.data?.error || error?.message || 'Unknown error',
-        status: error?.response?.status,
+        message: axiosError?.response?.data?.error || axiosError?.message || 'Unknown error',
+        status: axiosError?.response?.status,
         expeditionId,
         userId,
       });

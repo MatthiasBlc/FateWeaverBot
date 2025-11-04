@@ -1,4 +1,6 @@
 import { EmbedBuilder, ColorResolvable } from "discord.js";
+import { STATUS, SYSTEM } from "../constants/emojis.js";
+
 
 /**
  * Utilitaires pour créer des embeds Discord réutilisables
@@ -62,7 +64,7 @@ export function createSuccessEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.SUCCESS)
-    .setTitle(`✅ ${title}`)
+    .setTitle(`${STATUS.SUCCESS} ${title}`)
     .setTimestamp();
 
   if (description) {
@@ -85,7 +87,7 @@ export function createErrorEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.ERROR)
-    .setTitle("❌ Erreur")
+    .setTitle(`${STATUS.ERROR} Erreur`)
     .setDescription(message)
     .setTimestamp();
 
@@ -140,7 +142,7 @@ export function createWarningEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLORS.WARNING)
-    .setTitle(`⚠️ ${title}`)
+    .setTitle(`${SYSTEM.WARNING} ${title}`)
     .setDescription(description)
     .setTimestamp();
 

@@ -5,6 +5,8 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from "discord.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Utilitaires pour créer des composants Discord réutilisables
@@ -74,12 +76,12 @@ export function createConfirmationButtons(
   return createActionButtons([
     {
       customId: `${customIdPrefix}_confirm`,
-      label: options?.confirmLabel || "✅ Confirmer",
+      label: options?.confirmLabel || `${STATUS.SUCCESS} Confirmer`,
       style: options?.confirmStyle || ButtonStyle.Success,
     },
     {
       customId: `${customIdPrefix}_cancel`,
-      label: options?.cancelLabel || "❌ Annuler",
+      label: options?.cancelLabel || `${STATUS.ERROR} Annuler`,
       style: options?.cancelStyle || ButtonStyle.Danger,
     },
   ]);
@@ -233,7 +235,7 @@ export function createCommonActionButtons(action: "edit" | "delete" | "cancel" |
     },
     cancel: {
       customId,
-      label: "❌ Annuler",
+      label: `${STATUS.ERROR} Annuler`,
       style: ButtonStyle.Secondary,
     },
     refresh: {

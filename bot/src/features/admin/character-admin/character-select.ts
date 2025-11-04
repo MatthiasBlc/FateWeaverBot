@@ -17,6 +17,8 @@ import {
   createAdminProfileEmbed,
 } from "../character-admin.components";
 import { getCharacterCapabilities } from "../../../services/capability.service";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Gère la sélection d'un personnage dans le menu déroulant.
@@ -32,11 +34,11 @@ export async function handleCharacterSelect(
   if (!character) {
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
       });
     } else {
       await interaction.reply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
         flags: ["Ephemeral"],
       });
     }
@@ -98,16 +100,16 @@ export async function handleCharacterSelect(
     logger.error("Erreur lors de la création du profil admin:", { error });
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Erreur lors de la création du profil admin.",
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
       });
     } else if (interaction.replied) {
       await interaction.followUp({
-        content: "❌ Erreur lors de la création du profil admin.",
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.reply({
-        content: "❌ Erreur lors de la création du profil admin.",
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
         flags: ["Ephemeral"],
       });
     }
@@ -153,11 +155,11 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
   if (!action || !characterId) {
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Action inconnue.",
+        content: `${STATUS.ERROR} Action inconnue.`,
       });
     } else {
       await interaction.reply({
-        content: "❌ Action inconnue.",
+        content: `${STATUS.ERROR} Action inconnue.`,
         flags: ["Ephemeral"],
       });
     }
@@ -170,11 +172,11 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
   if (!character) {
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
       });
     } else {
       await interaction.reply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
         flags: ["Ephemeral"],
       });
     }
@@ -231,7 +233,7 @@ async function handleStatsButton(
   if (character.isDead) {
     await interaction.reply({
       content:
-        "❌ Impossible de modifier les statistiques d'un personnage mort.",
+        `${STATUS.ERROR} Impossible de modifier les statistiques d'un personnage mort.`,
       flags: ["Ephemeral"],
     });
     return;
@@ -263,11 +265,11 @@ async function handleKillButton(
     if (character.isDead) {
       if (interaction.deferred) {
         await interaction.editReply({
-          content: "❌ Ce personnage est déjà mort.",
+          content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
         });
       } else {
         await interaction.reply({
-          content: "❌ Ce personnage est déjà mort.",
+          content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
           flags: ["Ephemeral"],
         });
       }
@@ -315,11 +317,11 @@ async function handleKillButton(
     }
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Erreur lors de la suppression du personnage.",
+        content: `${STATUS.ERROR} Erreur lors de la suppression du personnage.`,
       });
     } else if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la suppression du personnage.",
+        content: `${STATUS.ERROR} Erreur lors de la suppression du personnage.`,
         flags: ["Ephemeral"],
       });
     }
@@ -361,11 +363,11 @@ async function handleToggleRerollButton(
     }
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "❌ Erreur lors de la gestion du reroll.",
+        content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
       });
     } else if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la gestion du reroll.",
+        content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
         flags: ["Ephemeral"],
       });
     }

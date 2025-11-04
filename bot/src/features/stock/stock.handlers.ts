@@ -4,8 +4,9 @@ import { logger } from "../../services/logger";
 import { getActiveCharacterForUser } from "../../utils/character";
 import { replyEphemeral } from "../../utils/interaction-helpers.js";
 import { validateCharacterAlive } from "../../utils/character-validation.js";
-import { LOCATION, RESOURCES, STATUS, HUNGER } from "../../constants/emojis";
+import { LOCATION, RESOURCES, STATUS, HUNGER } from "../../constants/emojis.js";
 import { getResourceEmoji } from "../../services/emoji-cache";
+
 
 interface ResourceStock {
   id: number;
@@ -35,12 +36,12 @@ export async function handleViewStockCommand(interaction: any) {
       const inDepartedExpedition = activeExpeditions?.some((exp: any) => exp.status === "DEPARTED");
 
       if (inDepartedExpedition) {
-        await replyEphemeral(interaction, "❌ Tu es en expédition et ne peux pas voir les stocks de la ville.\n\n Utilise `/expedition` pour voir les ressources de l'expédition.");
+        await replyEphemeral(interaction, `${STATUS.ERROR} Tu es en expédition et ne peux pas voir les stocks de la ville.\n\nUtilise \`/expedition\` pour voir les ressources de l'expédition.`);
         return;
       }
     } catch (error: any) {
       if (error?.status === 404 || error?.message?.includes('Request failed with status code 404')) {
-        await replyEphemeral(interaction, "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/start` pour créer un personnage.");
+        await replyEphemeral(interaction, `${STATUS.ERROR} Aucun personnage vivant trouvé. Utilisez d'abord la commande \`/start\` pour créer un personnage.`);
         return;
       }
       await replyEphemeral(interaction, error.message);
@@ -51,7 +52,7 @@ export async function handleViewStockCommand(interaction: any) {
     const townResponse = await apiService.towns.getTownById(character.townId);
 
     if (!townResponse) {
-      await replyEphemeral(interaction, "❌ Ville de votre personnage introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Ville de votre personnage introuvable.`);
       return;
     }
 
@@ -59,7 +60,7 @@ export async function handleViewStockCommand(interaction: any) {
     const resourcesResponse = await apiService.getResources("CITY", character.townId);
 
     if (!resourcesResponse || !Array.isArray(resourcesResponse)) {
-      await replyEphemeral(interaction, "❌ Impossible de récupérer le stock de ressources.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Impossible de récupérer le stock de ressources.`);
       return;
     }
 

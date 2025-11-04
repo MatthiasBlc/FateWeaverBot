@@ -73,7 +73,7 @@ export async function handleChantierCreateModal(interaction: ModalSubmitInteract
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("chantier_create_final")
-        .setLabel("✅ Créer le chantier")
+        .setLabel(`${STATUS.SUCCESS} Créer le chantier`)
         .setStyle(ButtonStyle.Success)
     );
 
@@ -85,7 +85,7 @@ export async function handleChantierCreateModal(interaction: ModalSubmitInteract
   } catch (error) {
     logger.error("Erreur lors de la soumission du modal de création:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de la création du chantier.",
+      content: `${STATUS.ERROR} Erreur lors de la création du chantier.`,
       flags: ["Ephemeral"],
     });
   }
@@ -153,7 +153,7 @@ export async function handleAddResourceButton(interaction: ButtonInteraction) {
   } catch (error) {
     logger.error("Erreur lors de l'ajout de ressource:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'ajout de ressource.",
+      content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
       flags: ["Ephemeral"],
     });
   }
@@ -211,7 +211,7 @@ export async function handleResourceSelect(interaction: StringSelectMenuInteract
   } catch (error) {
     logger.error("Erreur lors de la sélection de ressource:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de la sélection de ressource.",
+      content: `${STATUS.ERROR} Erreur lors de la sélection de ressource.`,
       flags: ["Ephemeral"],
     });
   }
@@ -276,7 +276,7 @@ export async function handleResourceQuantityModal(interaction: ModalSubmitIntera
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("chantier_create_final")
-        .setLabel("✅ Créer le chantier")
+        .setLabel(`${STATUS.SUCCESS} Créer le chantier`)
         .setStyle(ButtonStyle.Success)
     );
 
@@ -288,7 +288,7 @@ export async function handleResourceQuantityModal(interaction: ModalSubmitIntera
   } catch (error) {
     logger.error("Erreur lors de l'ajout de la quantité:", { error });
     await interaction.reply({
-      content: "❌ Erreur lors de l'ajout de la quantité.",
+      content: `${STATUS.ERROR} Erreur lors de l'ajout de la quantité.`,
       flags: ["Ephemeral"],
     });
   }
@@ -351,7 +351,7 @@ export async function handleCreateFinalButton(interaction: ButtonInteraction) {
   } catch (error) {
     logger.error("Erreur lors de la création finale du chantier:", { error });
     await interaction.editReply({
-      content: "❌ Une erreur est survenue lors de la création du chantier.",
+      content: `${STATUS.ERROR} Une erreur est survenue lors de la création du chantier.`,
     });
   }
 }

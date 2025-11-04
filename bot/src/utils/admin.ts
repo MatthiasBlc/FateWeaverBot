@@ -1,4 +1,6 @@
 import { CommandInteraction } from "discord.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Check if the user has admin permissions
@@ -8,7 +10,7 @@ import { CommandInteraction } from "discord.js";
 export async function checkAdmin(interaction: CommandInteraction): Promise<boolean> {
   if (!interaction.memberPermissions?.has('Administrator')) {
     await interaction.reply({
-      content: '❌ Vous devez être administrateur pour utiliser cette commande.',
+      content: `${STATUS.ERROR} Vous devez être administrateur pour utiliser cette commande.`,
       ephemeral: true
     });
     return false;

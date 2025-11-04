@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { Command } from "../types/command.js";
 import { logger } from "../services/logger";
+import { STATUS } from "../constants/emojis";
 
 const command: Command = {
   // Configuration de la commande
@@ -46,7 +47,7 @@ const command: Command = {
 
       // Répondre avec un message d'erreur
       const errorMessage =
-        "❌ Une erreur est survenue lors de l'exécution de la commande.";
+        `${STATUS.ERROR} Une erreur est survenue lors de l'exécution de la commande.`;
 
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({

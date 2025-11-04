@@ -364,24 +364,24 @@ export async function handleSelectGiveObjects(
           );
         } else {
           results.push(
-            `❌ Erreur: ${response.data.message || "Transfert échoué"}`
+            `${STATUS.ERROR} Erreur: ${response.data.message || "Transfert échoué"}`
           );
         }
       } catch (error) {
         const errorMsg = (error as any).response?.data?.error || "Erreur inconnue";
-        results.push(`❌ ${errorMsg}`);
+        results.push(`${STATUS.ERROR} ${errorMsg}`);
       }
     }
 
     const resultText = results.join("\n");
     await interaction.editReply({
-      content: `✅ **Transfert réussi !** Ça lui sera sûrement utile !\n\n${resultText}`,
+      content: `${STATUS.SUCCESS} **Transfert réussi !** Ça lui sera sûrement utile !\n\n${resultText}`,
     });
 
     // Envoyer un log public
     try {
       const objectNames = results
-        .filter((r) => !r.startsWith("❌"))
+        .filter((r) => !r.startsWith(`${STATUS.ERROR}`))
         .map((r) => {
           // Extraire le nom de l'objet du message formaté (entre les premiers **)
           const match = r.match(/\*\*(.+?)\*\*/);

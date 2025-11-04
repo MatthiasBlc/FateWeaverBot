@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseAPIService } from "./base-api.service";
 
 export interface JobDto {
@@ -51,8 +50,8 @@ export class JobAPIService extends BaseAPIService {
   /**
    * Changer le métier d'un personnage
    */
-  async changeCharacterJob(characterId: string, jobId: number): Promise<any> {
-    return await this.post(
+  async changeCharacterJob(characterId: string, jobId: number): Promise<{ success: boolean; message: string }> {
+    return await this.post<{ success: boolean; message: string }>(
       `/characters/${characterId}/job`,
       { jobId }
     );

@@ -14,7 +14,9 @@ import { createActionButtons } from "../../../utils/discord-components";
 import { getStatusEmoji } from "../expedition-utils";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
-import { EXPEDITION } from "@shared/constants/emojis";
+import { EXPEDITION, STATUS } from "../../../constants/emojis.js";
+
+
 
 /**
  * Gestionnaire pour le bouton "Quitter l'expédition"
@@ -31,7 +33,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
         error?.status === 404 ||
         error?.message?.includes("Request failed with status code 404")
       ) {
-        await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande `/start` pour créer un personnage.");
+        await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif pour quitter une expédition. Utilisez d'abord la commande \`/start\` pour créer un personnage.`);
         return;
       }
       // Re-throw other errors
@@ -39,7 +41,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     }
 
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif pour quitter une expédition.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif pour quitter une expédition.`);
       return;
     }
 
@@ -59,7 +61,7 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     );
 
     if (!activeExpeditions || activeExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Votre personnage ne participe à aucune expédition active.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Votre personnage ne participe à aucune expédition active.`);
       return;
     }
 
@@ -71,13 +73,13 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     );
 
     if (!isMember) {
-      await replyEphemeral(interaction, "❌ Votre personnage n'est pas membre de cette expédition.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Votre personnage n'est pas membre de cette expédition.`);
       return;
     }
 
     // Check if expedition is in PLANNING status (only time you can leave)
     if (currentExpedition.status !== "PLANNING") {
-      await replyEphemeral(interaction, `❌ Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]}**.`);
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous ne pouvez pas quitter une expédition qui est déjà **${getStatusEmoji(currentExpedition.status).split(" ")[1]}**.`);
       return;
     }
 
@@ -137,6 +139,6 @@ export async function handleExpeditionLeaveButton(interaction: any) {
     });
   } catch (error) {
     logger.error("Error in expedition leave button:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors du départ de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors du départ de l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
   }
 }

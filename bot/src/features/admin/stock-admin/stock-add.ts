@@ -16,6 +16,8 @@ import { checkAdmin } from "../../../utils/admin";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 import { getResourceEmoji } from "../../../services/emoji-cache";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler pour le bouton "Ajouter des ressources"
@@ -28,7 +30,7 @@ export async function handleStockAdminAddButton(interaction: any) {
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         embeds: [],
         components: [],
       });
@@ -49,7 +51,7 @@ export async function handleStockAdminAddButton(interaction: any) {
       // Si l'API dédiée ne fonctionne pas, affiche le message d'erreur
       await interaction.editReply({
         content:
-          "❌ Service de récupération des types de ressources non disponible. Veuillez contacter un administrateur.",
+          `${STATUS.ERROR} Service de récupération des types de ressources non disponible. Veuillez contacter un administrateur.`,
         embeds: [],
         components: [],
       });
@@ -126,7 +128,7 @@ export async function handleStockAdminAddSelect(
 
     if (!town) {
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -140,7 +142,7 @@ export async function handleStockAdminAddSelect(
       logger.error("Could not get resource types for select", { error });
       await interaction.reply({
         content:
-          "❌ Service de récupération des types de ressources non disponible.",
+          `${STATUS.ERROR} Service de récupération des types de ressources non disponible.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -152,7 +154,7 @@ export async function handleStockAdminAddSelect(
 
     if (!selectedResourceType) {
       await interaction.reply({
-        content: "❌ Type de ressource non trouvé.",
+        content: `${STATUS.ERROR} Type de ressource non trouvé.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -205,7 +207,7 @@ export async function handleStockAdminAddModal(
 
     if (isNaN(amount) || amount <= 0) {
       await interaction.editReply({
-        content: "❌ Veuillez entrer un nombre valide (supérieur à 0).",
+        content: `${STATUS.ERROR} Veuillez entrer un nombre valide (supérieur à 0).`,
       });
       return;
     }
@@ -218,7 +220,7 @@ export async function handleStockAdminAddModal(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Informations manquantes pour effectuer l'opération.",
+        content: `${STATUS.ERROR} Informations manquantes pour effectuer l'opération.`,
       });
       return;
     }
@@ -239,7 +241,7 @@ export async function handleStockAdminAddModal(
       logger.error("Could not get resource types for modal", { error });
       await interaction.editReply({
         content:
-          "❌ Service de récupération des types de ressources non disponible.",
+          `${STATUS.ERROR} Service de récupération des types de ressources non disponible.`,
       });
       return;
     }
@@ -250,7 +252,7 @@ export async function handleStockAdminAddModal(
 
     if (!selectedResourceType) {
       await interaction.editReply({
-        content: "❌ Type de ressource non trouvé.",
+        content: `${STATUS.ERROR} Type de ressource non trouvé.`,
       });
       return;
     }
@@ -348,7 +350,7 @@ export async function handleStockAdminAddModal(
       userId: interaction.user.id,
     });
     await interaction.editReply({
-      content: `❌ Erreur lors de l'ajout de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource : ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
     });
   }
 }

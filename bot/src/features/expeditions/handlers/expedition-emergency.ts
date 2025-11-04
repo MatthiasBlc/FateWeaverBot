@@ -5,6 +5,9 @@ import { sendLogMessage } from "../../../utils/channels";
 import { getActiveCharacterFromCommand } from "../../../utils/character";
 import { validateCharacterExists } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
+import { STATUS } from "../../../constants/emojis.js";
+
+
 
 /**
  * Gestionnaire pour le bouton "Voter retour d'urgence"
@@ -15,7 +18,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     const expeditionId = interaction.customId.split(":")[1];
 
     if (!expeditionId) {
-      await replyEphemeral(interaction, "❌ ID d'expédition invalide.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} ID d'expédition invalide.`);
       return;
     }
 
@@ -30,7 +33,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
       ) {
         await replyEphemeral(
           interaction,
-          "❌ Tu dois avoir un personnage actif pour voter. Utilisez d'abord la commande `/start` pour créer un personnage."
+          `${STATUS.ERROR} Tu dois avoir un personnage actif pour voter. Utilisez d'abord la commande \`/start\` pour créer un personnage.`
         );
         return;
       }
@@ -40,7 +43,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     if (!character) {
       await replyEphemeral(
         interaction,
-        "❌ Tu dois avoir un personnage actif pour voter."
+        `${STATUS.ERROR} Tu dois avoir un personnage actif pour voter.`
       );
       return;
     }
@@ -66,8 +69,8 @@ export async function handleEmergencyReturnButton(interaction: any) {
 
       // Build response message
       let message = voted
-        ? `✅ Ton vote pour le retour d'urgence a été enregistré.`
-        : `✅ Ton vote pour le retour d'urgence a été retiré.`;
+        ? `${STATUS.SUCCESS} Ton vote pour le retour d'urgence a été enregistré.`
+        : `${STATUS.SUCCESS} Ton vote pour le retour d'urgence a été retiré.`;
 
       message += `\n\n📊 **Votes:** ${totalVotes}/${membersCount} (Seuil: ${Math.ceil(
         membersCount / 2
@@ -114,7 +117,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
 
       await replyEphemeral(
         interaction,
-        `❌ Erreur lors du vote: ${errorMessage}`
+        `${STATUS.ERROR} Erreur lors du vote: ${errorMessage}`
       );
 
       // Log error safely without circular references
@@ -132,7 +135,7 @@ export async function handleEmergencyReturnButton(interaction: any) {
     });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du traitement de votre vote: ${
+      `${STATUS.ERROR} Erreur lors du traitement de votre vote: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );

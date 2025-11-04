@@ -1,18 +1,35 @@
 import { ModalSubmitInteraction } from "discord.js";
 import { logger } from "../services/logger.js";
+import { STATUS } from "../constants/emojis.js";
+
 
 /**
  * Gestionnaire centralisé des interactions de modals
  *
- * ⚠️ CONSIGNES DE SÉCURITÉ CRITIQUES :
+ * RÈGLE CRITIQUE #1 - registerHandler vs registerHandlerByPrefix :
+ * ================================================================
+ * ⚠️ Si l'ID du modal contient ${...} (variable dynamique) :
+ *    → Utilisez TOUJOURS registerHandlerByPrefix()
+ * ✅ Si l'ID du modal est statique (pas de template literal) :
+ *    → Utilisez registerHandler()
+ *
+ * Exemples :
+ *   ❌ MAUVAIS: .setCustomId(`modal_${id}`) + registerHandler("modal_", ...)
+ *   ✅ BON:     .setCustomId(`modal_${id}`) + registerHandlerByPrefix("modal_", ...)
+ *   ✅ BON:     .setCustomId("modal_static") + registerHandler("modal_static", ...)
+ *
+ * Conséquence si mauvaise méthode : handler jamais trouvé → erreur générique
+ * Documentation complète : .claude/best-practices.md
+ *
+ * CONSIGNES DE SÉCURITÉ CRITIQUES :
  *
  * 1. NE PAS SUPPRIMER les handlers existants
  * 2. NE PAS MODIFIER les handlers existants
  * 3. AJOUTER seulement APRÈS le commentaire "NOUVEAUX HANDLERS"
- * 4. Respecter le format : this.registerHandler("nom_du_modal", handler)
+ * 4. Respecter la RÈGLE CRITIQUE #1 ci-dessus
  * 5. Tester immédiatement après ajout
  *
- * 📋 MODALS EXISTANTS (NE PAS TOUCHER) :
+ * MODALS EXISTANTS (NE PAS TOUCHER) :
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
@@ -64,7 +81,7 @@ export class ModalHandler {
   /**
    * Enregistre les gestionnaires par défaut
    *
-   * ⚠️ ZONE D'AJOUT SÉCURISÉE :
+   * ZONE D'AJOUT SÉCURISÉE :
    * Ajouter les nouveaux handlers APRÈS le commentaire "NOUVEAUX HANDLERS"
    * et AVANT la fermeture de la fonction }
    */
@@ -79,7 +96,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling character creation modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du personnage.",
+          content: `${STATUS.ERROR} Erreur lors de la création du personnage.`,
           flags: ["Ephemeral"],
         });
       }
@@ -93,14 +110,14 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling reroll modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du reroll du personnage.",
+          content: `${STATUS.ERROR} Erreur lors du reroll du personnage.`,
           flags: ["Ephemeral"],
         });
       }
     });
 
     // Gestionnaire pour les modals d'administration de personnages (stats avancées)
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "character_admin_advanced_modal_",
       async (interaction) => {
         try {
@@ -122,7 +139,7 @@ export class ModalHandler {
           }
           await interaction.reply({
             content:
-              "❌ Erreur lors de la modification des statistiques avancées du personnage.",
+              `${STATUS.ERROR} Erreur lors de la modification des statistiques avancées du personnage.`,
             flags: ["Ephemeral"],
           });
         }
@@ -139,7 +156,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition creation modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de l'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la création de l'expédition.`,
           flags: ["Ephemeral"],
         });
       }
@@ -155,7 +172,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition create resource quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -171,7 +188,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource add quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -187,7 +204,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource remove quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors du retrait de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors du retrait de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -203,14 +220,14 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition modify modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de l'expédition.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de l'expédition.`,
           flags: ["Ephemeral"],
         });
       }
     });
 
     // Gestionnaire pour les modals de transfert d'expédition (nouveau format avec direction)
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "expedition_transfer_amount_modal_",
       async (interaction) => {
         try {
@@ -223,7 +240,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors du transfert de nourriture.",
+            content: `${STATUS.ERROR} Erreur lors du transfert de nourriture.`,
             flags: ["Ephemeral"],
           });
         }
@@ -240,7 +257,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition duration modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la durée.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la durée.`,
           flags: ["Ephemeral"],
         });
       }
@@ -256,7 +273,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource add modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -272,7 +289,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling expedition resource modify modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -282,7 +299,7 @@ export class ModalHandler {
     this.registerHandlerByPrefix("invest_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
-          "../features/chantiers/chantiers.handlers.js"
+          "../features/chantiers/handlers/index.js"
         );
         await handleInvestModalSubmit(interaction);
       } catch (error) {
@@ -290,13 +307,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         }
@@ -315,13 +332,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'ajout de ressources.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'ajout de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'ajout de ressources.`,
           });
         }
       }
@@ -339,20 +356,20 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire de retrait de ressources.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
             content:
-              "❌ Erreur lors du traitement du formulaire de retrait de ressources.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire de retrait de ressources.`,
           });
         }
       }
     });
 
     // =================== NOUVEAUX HANDLERS ===================
-    // ⚠️ AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
+    // AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
 
     // Gestionnaire pour le modal d'ajout de projet admin (étape 1)
     this.registerHandler("project_admin_add_step1_modal", async (interaction) => {
@@ -365,12 +382,12 @@ export class ModalHandler {
         logger.error("Error handling project admin add step1 modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           });
         }
       }
@@ -387,12 +404,12 @@ export class ModalHandler {
         logger.error("Error handling project admin edit modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la modification du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la modification du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la modification du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la modification du projet.`,
           });
         }
       }
@@ -409,12 +426,12 @@ export class ModalHandler {
         logger.error("Error handling project admin add step1 modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la création du projet.",
+            content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           });
         }
       }
@@ -430,12 +447,12 @@ export class ModalHandler {
         logger.error("Error handling project add quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
           });
         }
       }
@@ -453,12 +470,12 @@ export class ModalHandler {
         logger.error("Error handling project add resource quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de l'ajout de ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource.`,
           });
         }
       }
@@ -474,12 +491,12 @@ export class ModalHandler {
         logger.error("Error handling project add blueprint PA modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors du traitement.",
+            content: `${STATUS.ERROR} Erreur lors du traitement.`,
           });
         }
       }
@@ -495,12 +512,12 @@ export class ModalHandler {
         logger.error("Error handling project add blueprint resource quantity modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource blueprint.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de l'ajout de ressource blueprint.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de ressource blueprint.`,
           });
         }
       }
@@ -516,12 +533,12 @@ export class ModalHandler {
         logger.error("Error handling project add name modal:", { error });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: "❌ Erreur lors de la mise à jour du nom.",
+            content: `${STATUS.ERROR} Erreur lors de la mise à jour du nom.`,
             flags: ["Ephemeral"],
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            content: "❌ Erreur lors de la mise à jour du nom.",
+            content: `${STATUS.ERROR} Erreur lors de la mise à jour du nom.`,
           });
         }
       }
@@ -540,14 +557,14 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling chantier create modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du chantier.",
+          content: `${STATUS.ERROR} Erreur lors de la création du chantier.`,
           flags: ["Ephemeral"],
         });
       }
     });
 
     // Gestionnaire pour le modal de quantité de ressource pour chantier
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "chantier_resource_quantity_",
       async (interaction) => {
         try {
@@ -560,7 +577,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de la ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
             flags: ["Ephemeral"],
           });
         }
@@ -578,7 +595,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling project create modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création du projet.",
+          content: `${STATUS.ERROR} Erreur lors de la création du projet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -588,7 +605,7 @@ export class ModalHandler {
     this.registerHandlerByPrefix("invest_project_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
-          "../features/projects/projects.handlers.js"
+          "../features/projects/handlers/index.js"
         );
         await handleInvestModalSubmit(interaction);
       } catch (error) {
@@ -596,13 +613,13 @@ export class ModalHandler {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         } else if (interaction.deferred) {
           await interaction.followUp({
             content:
-              "❌ Erreur lors du traitement du formulaire d'investissement.",
+              `${STATUS.ERROR} Erreur lors du traitement du formulaire d'investissement.`,
             ephemeral: true,
           });
         }
@@ -610,7 +627,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de quantité de ressource pour projet
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "project_resource_quantity_",
       async (interaction) => {
         try {
@@ -623,7 +640,7 @@ export class ModalHandler {
             error,
           });
           await interaction.reply({
-            content: "❌ Erreur lors de l'ajout de la ressource.",
+            content: `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`,
             flags: ["Ephemeral"],
           });
         }
@@ -641,7 +658,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling blueprint cost quantity modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du coût blueprint.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du coût blueprint.`,
           flags: ["Ephemeral"],
         });
       }
@@ -652,13 +669,13 @@ export class ModalHandler {
     this.registerHandler("new_capability_modal", async (interaction) => {
       try {
         const { handleCapabilityModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleCapabilityModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling new capability modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -669,13 +686,13 @@ export class ModalHandler {
     const handleNewResourceModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleResourceModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleResourceModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling new resource modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -687,13 +704,13 @@ export class ModalHandler {
     this.registerHandler("new_object_modal", async (interaction) => {
       try {
         const { handleObjectModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling new object modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la création de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -703,13 +720,13 @@ export class ModalHandler {
     this.registerHandler("new_skill_modal", async (interaction) => {
       try {
         const { handleSkillModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleSkillModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling new skill modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la création de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la création de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -721,13 +738,13 @@ export class ModalHandler {
     const handleEmojiAddModalAny = async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleEmojiAddModal } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleEmojiAddModal(interaction);
       } catch (error) {
         logger.error("Error handling emoji add modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de l'emoji.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de l'emoji.`,
           flags: ["Ephemeral"],
         });
       }
@@ -747,13 +764,13 @@ export class ModalHandler {
     this.registerHandlerByPrefix("object_skill_bonus_modal:", async (interaction) => {
       try {
         const { handleObjectSkillBonusModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectSkillBonusModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling object skill bonus modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout du bonus de compétence.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout du bonus de compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -764,13 +781,13 @@ export class ModalHandler {
     this.registerHandlerByPrefix("object_resource_conversion_modal:", async (interaction) => {
       try {
         const { handleObjectResourceConversionModalSubmit } = await import(
-          "../features/admin/new-element-admin.handlers.js"
+          "../features/admin/elements/index.js"
         );
         await handleObjectResourceConversionModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling object resource conversion modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de l'ajout de la conversion en ressource.",
+          content: `${STATUS.ERROR} Erreur lors de l'ajout de la conversion en ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -787,7 +804,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit resource modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la ressource.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la ressource.`,
           flags: ["Ephemeral"],
         });
       }
@@ -797,13 +814,13 @@ export class ModalHandler {
     this.registerHandlerByPrefix("edit_object_modal:", async (interaction) => {
       try {
         const { handleEditObjectModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling edit object modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de l'objet.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de l'objet.`,
           flags: ["Ephemeral"],
         });
       }
@@ -819,7 +836,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit skill modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la compétence.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la compétence.`,
           flags: ["Ephemeral"],
         });
       }
@@ -835,7 +852,7 @@ export class ModalHandler {
       } catch (error) {
         logger.error("Error handling edit capability modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la capacité.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la capacité.`,
           flags: ["Ephemeral"],
         });
       }
@@ -845,13 +862,13 @@ export class ModalHandler {
     this.registerHandlerByPrefix("edit_object_name_modal:", async (interaction) => {
       try {
         const { handleEditObjectNameModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectNameModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling edit object name modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification du nom.",
+          content: `${STATUS.ERROR} Erreur lors de la modification du nom.`,
           flags: ["Ephemeral"],
         });
       }
@@ -861,13 +878,13 @@ export class ModalHandler {
     this.registerHandlerByPrefix("edit_object_description_modal:", async (interaction) => {
       try {
         const { handleEditObjectDescriptionModalSubmit } = await import(
-          "../features/admin/element-object-admin.handlers.js"
+          "../features/admin/elements/objects/index.js"
         );
         await handleEditObjectDescriptionModalSubmit(interaction);
       } catch (error) {
         logger.error("Error handling edit object description modal:", { error });
         await interaction.reply({
-          content: "❌ Erreur lors de la modification de la description.",
+          content: `${STATUS.ERROR} Erreur lors de la modification de la description.`,
           flags: ["Ephemeral"],
         });
       }
@@ -920,21 +937,21 @@ export class ModalHandler {
 export const modalHandler = ModalHandler.getInstance();
 
 /**
- * 📋 RÉCAPITULATIF DES CONSIGNES DE SÉCURITÉ - MODAL HANDLER
+ * RÉCAPITULATIF DES CONSIGNES DE SÉCURITÉ - MODAL HANDLER
  *
- * ✅ POUR AJOUTER UN NOUVEAU HANDLER :
+ * POUR AJOUTER UN NOUVEAU HANDLER :
  * 1. Aller dans registerDefaultHandlers() ligne 61
  * 2. Ajouter APRÈS le commentaire "NOUVEAUX HANDLERS" ligne 290
  * 3. Respecter le format : this.registerHandler("nom_modal", handler)
  * 4. Tester immédiatement après ajout
  *
- * ❌ À NE PAS FAIRE :
+ * À NE PAS FAIRE :
  * - Ne pas modifier les handlers existants
  * - Ne pas supprimer de handlers
  * - Ne pas changer l'ordre des handlers
  * - Ne pas ajouter en dehors de la zone sécurisée
  *
- * 🔍 MODALS ACTUELLEMENT SUPPORTÉS :
+ * MODALS ACTUELLEMENT SUPPORTÉS :
  * - character_creation_modal : création personnage
  * - reroll_modal : reroll personnage
  * - character_admin_advanced_modal_ : admin personnages avancées
@@ -945,7 +962,7 @@ export const modalHandler = ModalHandler.getInstance();
  * - stock_admin_add_modal_ : ajout ressources admin
  * - stock_admin_remove_modal_ : retrait ressources admin
  *
- * 🛡️ PROTECTION CONTRE LES RÉGRESSIONS :
+ * PROTECTION CONTRE LES RÉGRESSIONS :
  * - Commentaires de sécurité explicites
  * - Zone d'ajout clairement délimitée
  * - Liste exhaustive des handlers existants

@@ -10,9 +10,10 @@ import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { createSuccessEmbed, createInfoEmbed, createErrorEmbed } from "../../../utils/embeds";
 import { getTownByGuildId } from "../../../utils/town";
-import { PROJECT, STATUS } from "@shared/constants/emojis";
+import { PROJECT, STATUS, SYSTEM } from "@shared/constants/emojis";
 import { getCraftTypeEmoji } from "../../projects/projects.utils";
 import type { Project } from "../../projects/projects.types";
+
 
 /**
  * Handler pour le bouton "Supprimer un projet"
@@ -26,7 +27,7 @@ export async function handleProjectAdminDeleteButton(interaction: ButtonInteract
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         embeds: [],
         components: [],
       });
@@ -38,7 +39,7 @@ export async function handleProjectAdminDeleteButton(interaction: ButtonInteract
 
     if (!projects || projects.length === 0) {
       await interaction.editReply({
-        content: "❌ Aucun projet à supprimer.",
+        content: `${STATUS.ERROR} Aucun projet à supprimer.`,
         embeds: [],
         components: [],
       });
@@ -64,7 +65,7 @@ export async function handleProjectAdminDeleteButton(interaction: ButtonInteract
 
     const embed = createInfoEmbed(
       `🗑️ Supprimer un projet - ${town.name}`,
-      "⚠️ **Attention :** La suppression d'un projet est irréversible !\n\nSélectionnez le projet que vous souhaitez supprimer :"
+      `${SYSTEM.WARNING} **Attention :** La suppression d'un projet est irréversible !\n\nSélectionnez le projet que vous souhaitez supprimer :`
     );
 
     await interaction.editReply({
@@ -81,7 +82,7 @@ export async function handleProjectAdminDeleteButton(interaction: ButtonInteract
   } catch (error) {
     logger.error("Error showing project delete menu:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage du menu de suppression.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage du menu de suppression.`,
       embeds: [],
       components: [],
     });
@@ -104,7 +105,7 @@ export async function handleProjectAdminDeleteSelect(
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée.",
+        content: `${STATUS.ERROR} Aucune ville trouvée.`,
         embeds: [],
         components: [],
       });
@@ -117,7 +118,7 @@ export async function handleProjectAdminDeleteSelect(
 
     if (!project) {
       await interaction.editReply({
-        content: "❌ Projet introuvable.",
+        content: `${STATUS.ERROR} Projet introuvable.`,
         embeds: [],
         components: [],
       });
@@ -127,23 +128,23 @@ export async function handleProjectAdminDeleteSelect(
     // Créer l'embed de confirmation
     const craftEmojis = project.craftTypes.map(getCraftTypeEmoji).join("");
     const embed = createErrorEmbed(
-      "⚠️ Confirmation de suppression",
+      `${SYSTEM.WARNING} Confirmation de suppression`,
       `Êtes-vous sûr de vouloir supprimer le projet suivant ?\n\n` +
       `${craftEmojis} **${project.name}** (ID: ${project.id})\n` +
       `📊 ${project.paContributed}/${project.paRequired} PA\n` +
       `🛠️ ${project.craftTypes.join(", ")}\n\n` +
-      `⚠️ **Cette action est irréversible !**`
+      `${SYSTEM.WARNING} **Cette action est irréversible !**`
     );
 
     // Boutons de confirmation
     const confirmButton = new ButtonBuilder()
       .setCustomId(`project_admin_delete_confirm:${projectId}`)
-      .setLabel("✅ Confirmer la suppression")
+      .setLabel(`${STATUS.SUCCESS} Confirmer la suppression`)
       .setStyle(ButtonStyle.Danger);
 
     const cancelButton = new ButtonBuilder()
       .setCustomId("project_admin_delete_cancel")
-      .setLabel("❌ Annuler")
+      .setLabel(`${STATUS.ERROR} Annuler`)
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -163,7 +164,7 @@ export async function handleProjectAdminDeleteSelect(
   } catch (error) {
     logger.error("Error showing project delete confirmation:", { error });
     await interaction.editReply({
-      content: "❌ Erreur lors de l'affichage de la confirmation.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage de la confirmation.`,
       embeds: [],
       components: [],
     });
@@ -178,7 +179,7 @@ export async function handleProjectAdminDeleteConfirm(interaction: ButtonInterac
     // Gérer l'annulation
     if (interaction.customId === "project_admin_delete_cancel") {
       await interaction.update({
-        content: "❌ Suppression annulée.",
+        content: `${STATUS.ERROR} Suppression annulée.`,
         embeds: [],
         components: [],
       });
@@ -194,7 +195,7 @@ export async function handleProjectAdminDeleteConfirm(interaction: ButtonInterac
     const town = await getTownByGuildId(interaction.guildId || "");
     if (!town) {
       await interaction.editReply({
-        content: "❌ Aucune ville trouvée.",
+        content: `${STATUS.ERROR} Aucune ville trouvée.`,
         embeds: [],
         components: [],
       });
@@ -206,7 +207,7 @@ export async function handleProjectAdminDeleteConfirm(interaction: ButtonInterac
 
     if (!project) {
       await interaction.editReply({
-        content: "❌ Projet introuvable.",
+        content: `${STATUS.ERROR} Projet introuvable.`,
         embeds: [],
         components: [],
       });
@@ -237,7 +238,7 @@ export async function handleProjectAdminDeleteConfirm(interaction: ButtonInterac
   } catch (error: any) {
     logger.error("Error deleting project:", { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de la suppression du projet : ${error.message || "Erreur inconnue"}`,
+      content: `${STATUS.ERROR} Erreur lors de la suppression du projet : ${error.message || "Erreur inconnue"}`,
       embeds: [],
       components: [],
     });

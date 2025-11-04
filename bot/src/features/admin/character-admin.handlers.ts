@@ -8,6 +8,8 @@ import {
   createCharacterSelectMenu,
   CHARACTER_ADMIN_CUSTOM_IDS,
 } from "./character-admin.components";
+import { STATUS } from "../../constants/emojis.js";
+
 
 /**
  * Récupère un personnage par son ID depuis la ville du serveur.
@@ -83,7 +85,7 @@ export async function handleCharacterAdminCommand(
       );
       await interaction.reply({
         content:
-          "❌ Vous devez être administrateur pour utiliser cette commande.",
+          `${STATUS.ERROR} Vous devez être administrateur pour utiliser cette commande.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -104,7 +106,7 @@ export async function handleCharacterAdminCommand(
         guildId: interaction.guildId,
       });
       await interaction.reply({
-        content: "❌ Aucune ville trouvée pour ce serveur.",
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -117,7 +119,7 @@ export async function handleCharacterAdminCommand(
 
     if (!characters || characters.length === 0) {
       await interaction.reply({
-        content: "❌ Aucun personnage trouvé dans cette ville.",
+        content: `${STATUS.ERROR} Aucun personnage trouvé dans cette ville.`,
         flags: ["Ephemeral"],
       });
       return;
@@ -155,7 +157,7 @@ export async function handleCharacterAdminCommand(
     );
     await interaction.reply({
       content:
-        "❌ Une erreur est survenue lors de la préparation de la commande.",
+        `${STATUS.ERROR} Une erreur est survenue lors de la préparation de la commande.`,
       flags: ["Ephemeral"],
     });
   }
@@ -330,7 +332,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
 
     if (!characterId) {
       return interaction.reply({
-        content: "❌ Impossible de déterminer le personnage cible.",
+        content: `${STATUS.ERROR} Impossible de déterminer le personnage cible.`,
         flags: ["Ephemeral"],
       });
     }
@@ -417,7 +419,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
 
     if (!characterId) {
       return interaction.reply({
-        content: "❌ Impossible de déterminer le personnage cible.",
+        content: `${STATUS.ERROR} Impossible de déterminer le personnage cible.`,
         flags: ["Ephemeral"],
       });
     }
@@ -502,7 +504,7 @@ export async function handleCharacterAdminInteraction(interaction: any) {
 
     if (!characterId) {
       return interaction.reply({
-        content: "❌ Impossible de déterminer le personnage cible.",
+        content: `${STATUS.ERROR} Impossible de déterminer le personnage cible.`,
         flags: ["Ephemeral"],
       });
     }

@@ -1,6 +1,8 @@
 import { CommandInteraction, GuildMember } from "discord.js";
 import { logger } from "../services/logger";
 import { config } from "../config/index";
+import { STATUS } from "../constants/emojis.js";
+
 
 export async function isAdmin(
   interaction: CommandInteraction
@@ -24,7 +26,7 @@ export async function checkAdmin(
   if (!isUserAdmin) {
     try {
       await interaction.reply({
-        content: "❌ Seuls les administrateurs peuvent effectuer cette action.",
+        content: `${STATUS.ERROR} Seuls les administrateurs peuvent effectuer cette action.`,
         flags: ["Ephemeral"],
       });
     } catch (e) {

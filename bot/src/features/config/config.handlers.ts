@@ -25,6 +25,8 @@ import {
 } from "../../utils/interaction-helpers.js";
 import { logger } from "../../services/logger.js";
 import { CONFIG } from "@shared/constants/emojis";
+import { STATUS } from "../../constants/emojis.js";
+
 
 interface GuildConfig {
   id: string;
@@ -252,7 +254,7 @@ async function showChannelSelection(
     embedDescription +=
       "💡 Sélectionnez un autre salon pour le changer, ou 'Aucun salon' pour désactiver.";
   } else {
-    embedDescription += "ℹ️ Aucun salon n'est actuellement configuré.";
+    embedDescription += `${STATUS.INFO} Aucun salon n'est actuellement configuré.`;
   }
 
   const embed = createInfoEmbed(
@@ -322,7 +324,7 @@ async function showChannelSelection(
     );
 
     const successEmbed = createSuccessEmbed(
-      "✅ Salon configuré avec succès",
+      `${STATUS.SUCCESS} Salon configuré avec succès`,
       `Le salon ${selectedChannel} a été enregistré pour ${typeLabel}.`
     ).addFields([
       {

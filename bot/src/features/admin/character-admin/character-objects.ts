@@ -62,7 +62,7 @@ export async function handleObjectsButton(
       return; // Interaction expirée
     }
     await interaction.reply({
-      content: "❌ Erreur lors de l'affichage des objets.",
+      content: `${STATUS.ERROR} Erreur lors de l'affichage des objets.`,
       flags: ["Ephemeral"],
     });
   }
@@ -162,12 +162,12 @@ export async function handleAddObjects(
     logger.error("Erreur lors de la préparation de l'ajout d'objets:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de l'ajout d'objets.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout d'objets.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de l'ajout d'objets.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de l'ajout d'objets.`,
       });
     }
   }
@@ -243,12 +243,12 @@ export async function handleRemoveObjects(
     logger.error("Erreur lors de la préparation de la suppression d'objets:", { error });
     if (!interaction.replied) {
       await interaction.reply({
-        content: "❌ Erreur lors de la préparation de la suppression d'objets.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression d'objets.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de la préparation de la suppression d'objets.",
+        content: `${STATUS.ERROR} Erreur lors de la préparation de la suppression d'objets.`,
       });
     }
   }
@@ -372,12 +372,12 @@ export async function handleObjectCategory(
     logger.error("Erreur lors de l'affichage de la catégorie d'objets:", { error });
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
-        content: "❌ Erreur lors de l'affichage de la catégorie.",
+        content: `${STATUS.ERROR} Erreur lors de l'affichage de la catégorie.`,
         flags: ["Ephemeral"],
       });
     } else {
       await interaction.editReply({
-        content: "❌ Erreur lors de l'affichage de la catégorie.",
+        content: `${STATUS.ERROR} Erreur lors de l'affichage de la catégorie.`,
       });
     }
   }
@@ -396,14 +396,14 @@ export async function handleObjectSelect(
 
     if (selectedObjectIds.length === 0) {
       await interaction.editReply({
-        content: "❌ Aucun objet sélectionné.",
+        content: `${STATUS.ERROR} Aucun objet sélectionné.`,
       });
       return;
     }
 
     if (!character) {
       await interaction.editReply({
-        content: "❌ Personnage non trouvé.",
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
       });
       return;
     }
@@ -424,7 +424,7 @@ export async function handleObjectSelect(
           const objectExists = allObjects.some((obj: any) => obj.id === objectIdNum);
 
           if (!objectExists) {
-            results.push(`❌ Objet non trouvé: ${objectId}`);
+            results.push(`${STATUS.ERROR} Objet non trouvé: ${objectId}`);
             continue;
           }
         }
@@ -454,7 +454,7 @@ export async function handleObjectSelect(
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} d'objets:`, { error });
     await interaction.editReply({
-      content: `❌ Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des objets.`,
+      content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des objets.`,
     });
   }
 }

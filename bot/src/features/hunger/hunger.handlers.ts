@@ -11,6 +11,9 @@ import { validateCharacterExists, validateCharacterAlive } from "../../utils/cha
 import { getActiveCharacterForUser } from "../../utils/character";
 import type { EatResult } from "./hunger.types";
 import { createCustomEmbed, createSuccessEmbed, getHungerColor } from "../../utils/embeds";
+import { STATUS, HUNGER } from "../../constants/emojis.js";
+
+
 
 /**
  * Crée un embed pour afficher le résultat d'un repas
@@ -64,7 +67,7 @@ export async function handleEatButton(interaction: any, character: any) {
     if (!character) {
       await interaction.editReply({
         content:
-          "❌ Vous devez d'abord créer un personnage avec la commande `/start`.",
+          `${STATUS.ERROR} Vous devez d'abord créer un personnage avec la commande \`/start\`.`,
         components: [],
       });
       return;
@@ -120,7 +123,7 @@ export async function handleEatButton(interaction: any, character: any) {
     ) {
       const embed = createSuccessEmbed(
         "🍽️ Pas faim",
-        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+        `${HUNGER.FED} Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !`
       );
 
       await interaction.editReply({
@@ -134,18 +137,18 @@ export async function handleEatButton(interaction: any, character: any) {
       error.response?.data?.error?.includes("mort") ||
       error.message?.includes("mort")
     ) {
-      errorMessage = "❌ Votre personnage est mort et ne peut plus manger.";
+      errorMessage = `${STATUS.ERROR} Votre personnage est mort et ne peut plus manger.`;
     } else if (
       error.response?.data?.error?.includes("vivres") ||
       error.message?.includes("vivres")
     ) {
-      errorMessage = "❌ L'expédition n'a plus de vivres disponibles.";
+      errorMessage = `${STATUS.ERROR} L'expédition n'a plus de vivres disponibles.`;
     } else if (
       error.response?.data?.error?.includes("nécessaires") ||
       error.message?.includes("nécessaires")
     ) {
       errorMessage =
-        "❌ L'expédition n'a pas assez de vivres pour votre repas.";
+        `${STATUS.ERROR} L'expédition n'a pas assez de vivres pour votre repas.`;
     }
 
     // Modifier la réponse avec le message d'erreur et supprimer les boutons
@@ -170,7 +173,7 @@ export async function handleEatAlternativeButton(
     if (!character) {
       await interaction.editReply({
         content:
-          "❌ Vous devez d'abord créer un personnage avec la commande `/profil`.",
+          `${STATUS.ERROR} Vous devez d'abord créer un personnage avec la commande \`/profil\`.`,
         components: [],
       });
       return;
@@ -233,7 +236,7 @@ export async function handleEatAlternativeButton(
     ) {
       const embed = createSuccessEmbed(
         "🍽️ Pas faim",
-        "😊 Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !"
+        `${HUNGER.FED} Vous êtes en pleine forme et n'avez pas besoin de manger pour le moment !`
       );
 
       await interaction.editReply({
@@ -247,18 +250,18 @@ export async function handleEatAlternativeButton(
       error.response?.data?.error?.includes("mort") ||
       error.message?.includes("mort")
     ) {
-      errorMessage = "❌ Votre personnage est mort et ne peut plus manger.";
+      errorMessage = `${STATUS.ERROR} Votre personnage est mort et ne peut plus manger.`;
     } else if (
       error.response?.data?.error?.includes("repas") ||
       error.message?.includes("repas")
     ) {
-      errorMessage = "❌ L'expédition n'a plus de repas disponible.";
+      errorMessage = `${STATUS.ERROR} L'expédition n'a plus de repas disponible.`;
     } else if (
       error.response?.data?.error?.includes("nécessaires") ||
       error.message?.includes("nécessaires")
     ) {
       errorMessage =
-        "❌ L'expédition n'a pas assez de Repas.";
+        `${STATUS.ERROR} L'expédition n'a pas assez de Repas.`;
     }
 
     // Modifier la réponse avec le message d'erreur et supprimer les boutons

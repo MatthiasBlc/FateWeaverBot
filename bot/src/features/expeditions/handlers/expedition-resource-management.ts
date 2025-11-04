@@ -14,6 +14,8 @@ import { createInfoEmbed, createSuccessEmbed } from "../../../utils/embeds";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
 import { RESOURCES } from "@shared/constants/emojis";
 import { ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { STATUS } from "../../../constants/emojis.js";
+
 
 /**
  * Handler for "Gérer ressources" button
@@ -24,14 +26,14 @@ export async function handleExpeditionManageResources(interaction: ButtonInterac
     // Get user's active character
     const character = await getActiveCharacterFromCommand(interaction as any);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif.`);
       return;
     }
 
     // Get character's active expedition
     const activeExpeditions = await apiService.expeditions.getActiveExpeditionsForCharacter(character.id);
     if (!activeExpeditions || activeExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Votre personnage ne participe à aucune expédition active.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Votre personnage ne participe à aucune expédition active.`);
       return;
     }
 
@@ -41,7 +43,7 @@ export async function handleExpeditionManageResources(interaction: ButtonInterac
     if (expedition.status !== "PLANNING") {
       await replyEphemeral(
         interaction,
-        "❌ Vous ne pouvez gérer les ressources que pendant la phase de planification."
+        `${STATUS.ERROR} Vous ne pouvez gérer les ressources que pendant la phase de planification.`
       );
       return;
     }
@@ -92,7 +94,7 @@ export async function handleExpeditionManageResources(interaction: ButtonInterac
     logger.error("Error in expedition manage resources:", { error });
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors de l'affichage de la gestion des ressources: ${
+      `${STATUS.ERROR} Erreur lors de l'affichage de la gestion des ressources: ${
         error instanceof Error ? error.message : "Erreur inconnue"
       }`
     );
@@ -110,14 +112,14 @@ export async function handleExpeditionResourceAdd(interaction: ButtonInteraction
     // Get character
     const character = await getActiveCharacterFromCommand(interaction as any);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif.`);
       return;
     }
 
     // Get town ID
     const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`);
       return;
     }
 
@@ -126,7 +128,7 @@ export async function handleExpeditionResourceAdd(interaction: ButtonInteraction
     const availableResources = townResources.filter((r: any) => r.quantity > 0);
 
     if (availableResources.length === 0) {
-      await replyEphemeral(interaction, "❌ Aucune ressource disponible dans le stock de la ville.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ressource disponible dans le stock de la ville.`);
       return;
     }
 
@@ -152,7 +154,7 @@ export async function handleExpeditionResourceAdd(interaction: ButtonInteraction
     });
   } catch (error) {
     logger.error("Error in expedition resource add:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'affichage des ressources.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'affichage des ressources.`);
   }
 }
 
@@ -167,7 +169,7 @@ export async function handleExpeditionResourceRemove(interaction: ButtonInteract
     // Get character
     const character = await getActiveCharacterFromCommand(interaction as any);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif.`);
       return;
     }
 
@@ -176,7 +178,7 @@ export async function handleExpeditionResourceRemove(interaction: ButtonInteract
     const availableResources = expeditionResources.filter((r: any) => r.quantity > 0);
 
     if (availableResources.length === 0) {
-      await replyEphemeral(interaction, "❌ Aucune ressource dans l'expédition.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ressource dans l'expédition.`);
       return;
     }
 
@@ -202,7 +204,7 @@ export async function handleExpeditionResourceRemove(interaction: ButtonInteract
     });
   } catch (error) {
     logger.error("Error in expedition resource remove:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'affichage des ressources.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de l'affichage des ressources.`);
   }
 }
 
@@ -219,14 +221,14 @@ export async function handleExpeditionResourceAddSelect(interaction: StringSelec
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Type de ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Type de ressource introuvable.`);
       return;
     }
 
     // Get town ID
     const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ville trouvée.`);
       return;
     }
 
@@ -255,7 +257,7 @@ export async function handleExpeditionResourceAddSelect(interaction: StringSelec
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in expedition resource add select:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection de ressource.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection de ressource.`);
   }
 }
 
@@ -272,7 +274,7 @@ export async function handleExpeditionResourceRemoveSelect(interaction: StringSe
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Type de ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Type de ressource introuvable.`);
       return;
     }
 
@@ -301,7 +303,7 @@ export async function handleExpeditionResourceRemoveSelect(interaction: StringSe
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Error in expedition resource remove select:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de la sélection de ressource.");
+    await replyEphemeral(interaction, `${STATUS.ERROR} Erreur lors de la sélection de ressource.`);
   }
 }
 
@@ -318,21 +320,21 @@ export async function handleExpeditionResourceAddQuantity(interaction: ModalSubm
     const quantity = parseInt(quantityStr, 10);
 
     if (isNaN(quantity) || quantity <= 0) {
-      await replyEphemeral(interaction, "❌ La quantité doit être un nombre positif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La quantité doit être un nombre positif.`);
       return;
     }
 
     // Get character
     const character = await getActiveCharacterFromModal(interaction);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif.`);
       return;
     }
 
     // Get town
     const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ville trouvée.`);
       return;
     }
 
@@ -344,7 +346,7 @@ export async function handleExpeditionResourceAddQuantity(interaction: ModalSubm
     await apiService.transferResource("CITY", town.id, "EXPEDITION", expeditionId, resourceTypeId, quantity);
 
     const embed = createSuccessEmbed(
-      "✅ Ressource transférée",
+      `${STATUS.SUCCESS} Ressource transférée`,
       `**${quantity}x ${resourceType?.name || "ressource"}** transféré(es) de la ville vers l'expédition !`
     );
 
@@ -365,7 +367,7 @@ export async function handleExpeditionResourceAddQuantity(interaction: ModalSubm
     const errorMessage = error?.response?.data?.error || error?.message || "Erreur inconnue";
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du transfert: ${errorMessage}`
+      `${STATUS.ERROR} Erreur lors du transfert: ${errorMessage}`
     );
   }
 }
@@ -383,21 +385,21 @@ export async function handleExpeditionResourceRemoveQuantity(interaction: ModalS
     const quantity = parseInt(quantityStr, 10);
 
     if (isNaN(quantity) || quantity <= 0) {
-      await replyEphemeral(interaction, "❌ La quantité doit être un nombre positif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La quantité doit être un nombre positif.`);
       return;
     }
 
     // Get character
     const character = await getActiveCharacterFromModal(interaction);
     if (!character) {
-      await replyEphemeral(interaction, "❌ Vous devez avoir un personnage actif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous devez avoir un personnage actif.`);
       return;
     }
 
     // Get town
     const town = await apiService.guilds.getTownByGuildId(interaction.guildId!);
     if (!town) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ville trouvée.`);
       return;
     }
 
@@ -409,7 +411,7 @@ export async function handleExpeditionResourceRemoveQuantity(interaction: ModalS
     await apiService.transferResource("EXPEDITION", expeditionId, "CITY", town.id, resourceTypeId, quantity);
 
     const embed = createSuccessEmbed(
-      "✅ Ressource retirée",
+      `${STATUS.SUCCESS} Ressource retirée`,
       `**${quantity}x ${resourceType?.name || "ressource"}** transféré(es) de l'expédition vers la ville !`
     );
 
@@ -430,7 +432,7 @@ export async function handleExpeditionResourceRemoveQuantity(interaction: ModalS
     const errorMessage = error?.response?.data?.error || error?.message || "Erreur inconnue";
     await replyEphemeral(
       interaction,
-      `❌ Erreur lors du transfert: ${errorMessage}`
+      `${STATUS.ERROR} Erreur lors du transfert: ${errorMessage}`
     );
   }
 }

@@ -9,7 +9,7 @@ import { withUser } from "../../core/middleware/ensureUserClean";
 import { withCharacterCheck } from "../../core/middleware/ensureCharacter";
 import {
   handleChantiersCommand,
-} from "./chantiers.handlers";
+} from "./handlers/index.js";
 
 // Commande utilisateur (sans permissions admin)
 const chantiersUserCommand: Command = {

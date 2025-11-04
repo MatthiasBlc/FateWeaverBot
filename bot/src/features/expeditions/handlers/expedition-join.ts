@@ -15,13 +15,16 @@ import { Expedition } from "../../../types/entities";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral, replyError } from "../../../utils/interaction-helpers";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
+import { STATUS } from "../../../constants/emojis.js";
+import { withErrorHandler, is404Error } from "../../../utils/error-handlers";
+
 
 /**
  * Gestionnaire pour le bouton "Rejoindre une expédition"
  * Version adaptée pour les boutons (convertit ButtonInteraction en ChatInputCommandInteraction)
  */
 export async function handleExpeditionJoinExistingButton(interaction: any) {
-  try {
+  await withErrorHandler(interaction, async () => {
     // Créer une interaction de commande complète à partir de l'interaction de bouton
     const commandInteraction = {
       ...interaction,
@@ -50,25 +53,25 @@ export async function handleExpeditionJoinExistingButton(interaction: any) {
     } as ChatInputCommandInteraction;
 
     await handleExpeditionJoinCommand(commandInteraction);
-  } catch (error) {
-    logger.error("Error in expedition join existing button:", { error });
-    await replyEphemeral(interaction, "❌ Erreur lors de l'ouverture de la liste d'expéditions.");
-  }
+  }, {
+    context: "l'ouverture de la liste d'expéditions",
+    customMessage: `${STATUS.ERROR} Erreur lors de l'ouverture de la liste d'expéditions.`
+  });
 }
 
 export async function handleExpeditionJoinCommand(
   interaction: ChatInputCommandInteraction
 ) {
-  const member = interaction.member as GuildMember;
-  const user = interaction.user;
+  await withErrorHandler(interaction, async () => {
+    const member = interaction.member as GuildMember;
+    const user = interaction.user;
 
-  try {
     // Get town info
     const townResponse = await apiService.guilds.getTownByGuildId(
       interaction.guildId!
     );
     if (!townResponse) {
-      await replyEphemeral(interaction, "❌ Aucune ville trouvée pour ce serveur.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`);
       return;
     }
 
@@ -76,16 +79,12 @@ export async function handleExpeditionJoinCommand(
     let character;
     try {
       character = await getActiveCharacterFromCommand(interaction);
-    } catch (error: any) {
-      // Handle specific error cases
-      if (
-        error?.status === 404 ||
-        error?.message?.includes("Request failed with status code 404")
-      ) {
+    } catch (error) {
+      // Handle 404 specifically (dead character)
+      if (is404Error(error)) {
         await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
         return;
       }
-      // Re-throw other errors
       throw error;
     }
 
@@ -110,8 +109,8 @@ export async function handleExpeditionJoinCommand(
     );
 
     if (activeExpeditions && activeExpeditions.length > 0) {
-      const activeExpedition = activeExpeditions[0]; // Prend la première expédition active trouvée
-      await replyEphemeral(interaction, `❌ Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`);
+      const activeExpedition = activeExpeditions[0];
+      await replyEphemeral(interaction, `${STATUS.ERROR} Vous êtes déjà dans l'expédition **${activeExpedition.name}** (${getStatusEmoji(activeExpedition.status)} ${activeExpedition.status.toLowerCase()}).`);
       return;
     }
 
@@ -123,7 +122,7 @@ export async function handleExpeditionJoinCommand(
     );
 
     if (availableExpeditions.length === 0) {
-      await replyEphemeral(interaction, "❌ Aucune expédition disponible (en planification ou en cours).");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Aucune expédition disponible (en planification ou en cours).`);
       return;
     }
 
@@ -153,10 +152,10 @@ export async function handleExpeditionJoinCommand(
       components: [row],
       flags: ["Ephemeral"],
     });
-  } catch (error) {
-    logger.error("Error in expedition join command:", { error });
-    await replyEphemeral(interaction, ERROR_MESSAGES.EXPEDITION_FETCH_ERROR);
-  }
+  }, {
+    context: "la commande de rejoindre une expédition",
+    customMessage: ERROR_MESSAGES.EXPEDITION_FETCH_ERROR
+  });
 }
 
 export async function handleExpeditionJoinSelect(interaction: any) {
@@ -164,21 +163,17 @@ export async function handleExpeditionJoinSelect(interaction: any) {
   const user = interaction.user;
   const expeditionId = interaction.values[0];
 
-  try {
+  await withErrorHandler(interaction, async () => {
     // Get user's active character
     let character;
     try {
       character = await getActiveCharacterFromCommand(interaction);
-    } catch (error: any) {
-      // Handle specific error cases
-      if (
-        error?.status === 404 ||
-        error?.message?.includes("Request failed with status code 404")
-      ) {
+    } catch (error) {
+      // Handle 404 specifically (dead character)
+      if (is404Error(error)) {
         await replyEphemeral(interaction, ERROR_MESSAGES.CHARACTER_DEAD_EXPEDITION);
         return;
       }
-      // Re-throw other errors
       throw error;
     }
 
@@ -204,7 +199,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
     const expedition = await apiService.expeditions.getExpeditionById(expeditionId);
 
     await interaction.update({
-      content: `✅ Vous avez rejoint l'expédition **${expedition?.name || 'inconnue'}** avec succès!`,
+      content: `${STATUS.SUCCESS} Vous avez rejoint l'expédition **${expedition?.name || 'inconnue'}** avec succès!`,
       components: [],
     });
 
@@ -215,8 +210,7 @@ export async function handleExpeditionJoinSelect(interaction: any) {
       characterName: character.name,
       joinedBy: user.id,
     });
-  } catch (error) {
-    logger.error("Error in expedition join select:", { error });
-    await replyEphemeral(interaction, `❌ Erreur lors de la participation à l'expédition: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
-  }
+  }, {
+    context: "la participation à l'expédition"
+  });
 }

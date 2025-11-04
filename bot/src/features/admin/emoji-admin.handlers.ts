@@ -9,7 +9,7 @@ import {
 import { apiService } from "../../services/api";
 import { emojiCache } from "../../services/emoji-cache";
 import { logger } from "../../services/logger";
-import { STATUS } from "../../constants/emojis";
+import { STATUS, SYSTEM } from "../../constants/emojis";
 
 /**
  * Valide si une chaîne est un emoji Discord valide
@@ -185,23 +185,23 @@ async function handleEmojiRemove(interaction: ChatInputCommandInteraction) {
         const affectedResources = allResources.filter((r: any) => r.name === key);
 
         if (affectedResources.length > 0) {
-          affectedInfo = `\n\n⚠️ **${affectedResources.length} ressource(s) affectée(s)** afficheront le placeholder 📦 après suppression.`;
+          affectedInfo = `\n\n${SYSTEM.WARNING} **${affectedResources.length} ressource(s) affectée(s)** afficheront le placeholder 📦 après suppression.`;
         }
       } catch (error) {
         logger.warn("Could not fetch affected resources", { error });
-        affectedInfo = "\n\n⚠️ Les ressources utilisant cet emoji afficheront le placeholder 📦.";
+        affectedInfo = `\n\n${SYSTEM.WARNING} Les ressources utilisant cet emoji afficheront le placeholder 📦.`;
       }
     }
 
     // Créer les boutons de confirmation
     const confirmButton = new ButtonBuilder()
       .setCustomId(`confirm_delete_emoji_${type}_${key}`)
-      .setLabel("✅ Confirmer")
+      .setLabel(`${STATUS.SUCCESS} Confirmer`)
       .setStyle(ButtonStyle.Danger);
 
     const cancelButton = new ButtonBuilder()
       .setCustomId(`cancel_delete_emoji_${type}_${key}`)
-      .setLabel("❌ Annuler")
+      .setLabel(`${STATUS.ERROR} Annuler`)
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -210,7 +210,7 @@ async function handleEmojiRemove(interaction: ChatInputCommandInteraction) {
     );
 
     await interaction.reply({
-      content: `⚠️ **Confirmation de suppression**\n\nVous êtes sur le point de supprimer :\n**Type:** ${type}\n**Clé:** ${key}\n**Emoji:** ${emoji}${affectedInfo}`,
+      content: `${SYSTEM.WARNING} **Confirmation de suppression**\n\nVous êtes sur le point de supprimer :\n**Type:** ${type}\n**Clé:** ${key}\n**Emoji:** ${emoji}${affectedInfo}`,
       components: [row],
       flags: ["Ephemeral"],
     });

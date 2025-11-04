@@ -77,7 +77,7 @@ export async function handleExpeditionAddResources(
     logger.error("Error in handleExpeditionAddResources:", { error });
     await replyEphemeral(
       interaction,
-      "❌ Erreur lors de l'affichage des ressources."
+      `${STATUS.ERROR} Erreur lors de l'affichage des ressources.`
     );
   }
 }
@@ -117,7 +117,7 @@ export async function handleExpeditionResourceSelected(
     if (!selectedResource || selectedResource.quantity <= 0) {
       await replyEphemeral(
         interaction,
-        "❌ Cette ressource n'est plus disponible."
+        `${STATUS.ERROR} Cette ressource n'est plus disponible.`
       );
       return;
     }
@@ -136,7 +136,7 @@ export async function handleExpeditionResourceSelected(
     logger.error("Error in handleExpeditionResourceSelected:", { error });
     await replyEphemeral(
       interaction,
-      "❌ Erreur lors de la sélection de la ressource."
+      `${STATUS.ERROR} Erreur lors de la sélection de la ressource.`
     );
   }
 }
@@ -156,7 +156,7 @@ export async function handleExpeditionResourceQuantityModal(
     const quantity = parseInt(quantityStr, 10);
 
     if (isNaN(quantity) || quantity <= 0) {
-      await replyEphemeral(interaction, "❌ La quantité doit être un nombre positif.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} La quantité doit être un nombre positif.`);
       return;
     }
 
@@ -176,7 +176,7 @@ export async function handleExpeditionResourceQuantityModal(
     const resourceType = resourceTypes.find((rt: any) => rt.id === resourceTypeId);
 
     if (!resourceType) {
-      await replyEphemeral(interaction, "❌ Type de ressource introuvable.");
+      await replyEphemeral(interaction, `${STATUS.ERROR} Type de ressource introuvable.`);
       return;
     }
 
@@ -187,7 +187,7 @@ export async function handleExpeditionResourceQuantityModal(
     if (!townResource || townResource.quantity < quantity) {
       await replyEphemeral(
         interaction,
-        `❌ Stock insuffisant. Disponible: ${townResource?.quantity || 0}`
+        `${STATUS.ERROR} Stock insuffisant. Disponible: ${townResource?.quantity || 0}`
       );
       return;
     }
@@ -226,7 +226,7 @@ export async function handleExpeditionResourceQuantityModal(
     logger.error("Error in handleExpeditionResourceQuantityModal:", { error });
     await replyEphemeral(
       interaction,
-      "❌ Erreur lors de l'ajout de la ressource."
+      `${STATUS.ERROR} Erreur lors de l'ajout de la ressource.`
     );
   }
 }
@@ -278,7 +278,7 @@ export async function handleExpeditionValidateResources(
     logger.error("Error in handleExpeditionValidateResources:", { error });
     await replyEphemeral(
       interaction,
-      "❌ Erreur lors de la validation des ressources."
+      `${STATUS.ERROR} Erreur lors de la validation des ressources.`
     );
   }
 }
@@ -317,7 +317,7 @@ async function showResourceManagementInterface(
   const validateButton = new ButtonBuilder()
     .setCustomId(`expedition_create_validate:${cacheId}`)
     .setLabel("Valider et choisir direction")
-    .setEmoji("✅")
+    .setEmoji(`${STATUS.SUCCESS}`)
     .setStyle(ButtonStyle.Success);
 
   const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(

@@ -18,7 +18,10 @@ import { getStatusEmoji } from "../expedition-utils";
 import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { validateCharacterAlive } from "../../../utils/character-validation";
 import { replyEphemeral } from "../../../utils/interaction-helpers";
-import { EXPEDITION, DIRECTION, CONFIG, RESOURCES, CHARACTER } from "@shared/constants/emojis";
+import { STATUS, SYSTEM, CHARACTER, EXPEDITION, RESOURCES } from "../../../constants/emojis.js";
+import { CONFIG, DIRECTION } from "@shared/constants/emojis";
+
+
 
 /**
  * Nouvelle commande principale pour gérer les expéditions
@@ -43,7 +46,7 @@ export async function handleExpeditionMainCommand(
       ) {
         await interaction.reply({
           content:
-            "❌ Aucun personnage vivant trouvé. Utilisez d'abord la commande `/profil` pour créer un personnage.",
+            `${STATUS.ERROR} Aucun personnage vivant trouvé. Utilisez d'abord la commande \`/profil\` pour créer un personnage.`,
           flags: ["Ephemeral"],
         });
         return;
@@ -117,7 +120,7 @@ export async function handleExpeditionMainCommand(
         const votesDisplay = `🚨 **${expedition.emergencyVotesCount}/${membersCount}** (Seuil: ${threshold})`;
 
         fields.push({
-          name: "⚠️ Votes de retour d'urgence",
+          name: `${SYSTEM.WARNING} Votes de retour d'urgence`,
           value: votesDisplay,
           inline: false,
         });
@@ -295,7 +298,7 @@ export async function handleExpeditionMainCommand(
       } else if (expedition.status === "DEPARTED") {
         // Determine button label based on vote status
         const emergencyButtonLabel = expedition.currentUserVoted
-          ? "❌ Annuler retour d'urgence"
+          ? `${STATUS.ERROR} Annuler retour d'urgence`
           : "🚨 Voter retour d'urgence";
 
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -359,7 +362,7 @@ export async function handleExpeditionMainCommand(
       if (!townResponse) {
         await replyEphemeral(
           interaction,
-          "❌ Aucune ville trouvée pour ce serveur."
+          `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`
         );
         return;
       }
@@ -412,7 +415,7 @@ export async function handleExpeditionMainCommand(
         );
 
         await interaction.reply({
-          content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\n⚠️ Aucune expédition disponible à rejoindre (status PLANNING).\nVous pouvez créer une nouvelle expédition :`,
+          content: `🏕️ **Expéditions existantes :**\n${expeditionList}\n\n${SYSTEM.WARNING} Aucune expédition disponible à rejoindre (status PLANNING).\nVous pouvez créer une nouvelle expédition :`,
           components: [buttonRow],
           flags: ["Ephemeral"],
         });
@@ -452,7 +455,7 @@ export async function handleExpeditionMainCommand(
   } catch (error) {
     logger.error("Error in expedition main command:", { error });
     await interaction.reply({
-      content: `❌ Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
+      content: `${STATUS.ERROR} Erreur lors de l'accès aux expéditions: ${error instanceof Error ? error.message : "Erreur inconnue"
         }`,
       flags: ["Ephemeral"],
     });
@@ -478,7 +481,7 @@ export async function handleExpeditionInfoCommand(
       ) {
         await replyEphemeral(
           interaction,
-          "❌ Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition."
+          `${STATUS.ERROR} Aucun personnage vivant trouvé. Si votre personnage est mort, un mort ne peut pas rejoindre une expédition.`
         );
         return;
       }
@@ -501,7 +504,7 @@ export async function handleExpeditionInfoCommand(
     if (!activeExpeditions || activeExpeditions.length === 0) {
       await replyEphemeral(
         interaction,
-        "❌ Votre personnage ne participe à aucune expédition active."
+        `${STATUS.ERROR} Votre personnage ne participe à aucune expédition active.`
       );
       return;
     }
@@ -535,7 +538,7 @@ export async function handleExpeditionInfoCommand(
         inline: true,
       },
       {
-        name: "📍 Statut",
+        name: `${EXPEDITION.LOCATION} Statut`,
         value: getStatusEmoji(currentExpedition.status),
         inline: true,
       },
@@ -568,7 +571,7 @@ export async function handleExpeditionInfoCommand(
     // Direction info
     if (currentExpedition.initialDirection) {
       embed.addFields({
-        name: "📍 Direction initiale",
+        name: `${EXPEDITION.LOCATION} Direction initiale`,
         value: `${getDirectionEmoji(
           currentExpedition.initialDirection
         )} ${getDirectionText(currentExpedition.initialDirection)}`,
@@ -592,7 +595,7 @@ export async function handleExpeditionInfoCommand(
       currentExpedition.currentDayDirection
     ) {
       embed.addFields({
-        name: "🧭 Direction choisie pour demain",
+        name: `${EXPEDITION.ICON} Direction choisie pour demain`,
         value: `${getDirectionEmoji(
           currentExpedition.currentDayDirection
         )} ${getDirectionText(currentExpedition.currentDayDirection)}`,
@@ -611,7 +614,7 @@ export async function handleExpeditionInfoCommand(
         .join("\n");
 
       embed.addFields({
-        name: "📋 Membres inscrits",
+        name: `${CHARACTER.PROFILE} Membres inscrits`,
         value: memberList,
         inline: false,
       });
@@ -634,7 +637,7 @@ export async function handleExpeditionInfoCommand(
     } else if (currentExpedition.status === "DEPARTED") {
       // Determine button label based on vote status
       const emergencyButtonLabel = currentExpedition.currentUserVoted
-        ? "❌ Annuler retour d'urgence"
+        ? `${STATUS.ERROR} Annuler retour d'urgence`
         : "🚨 Voter retour d'urgence";
 
       const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -682,7 +685,7 @@ export async function handleExpeditionInfoCommand(
     logger.error("Error in expedition info command:", { error });
     await replyEphemeral(
       interaction,
-      "❌ Une erreur est survenue lors de la récupération des informations d'expédition."
+      `${STATUS.ERROR} Une erreur est survenue lors de la récupération des informations d'expédition.`
     );
   }
 }
@@ -727,7 +730,7 @@ export async function handleExpeditionChooseDirection(
 
     if (!character) {
       await interaction.reply({
-        content: "❌ Vous devez avoir un personnage actif.",
+        content: `${STATUS.ERROR} Vous devez avoir un personnage actif.`,
         ephemeral: true,
       });
       return;
@@ -758,9 +761,9 @@ export async function handleExpeditionChooseDirection(
       ephemeral: true,
     });
   } catch (error: any) {
-    console.error("Error showing direction menu:", error);
+    logger.error("Error showing direction menu", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       ephemeral: true,
     });
   }
@@ -779,7 +782,7 @@ export async function handleExpeditionSetDirection(
       characterId
     );
 
-    const directionMessage = `✅ Direction définie : ${getDirectionEmoji(
+    const directionMessage = `${STATUS.SUCCESS} Direction définie : ${getDirectionEmoji(
       direction
     )} ${getDirectionText(direction)}`;
 
@@ -802,9 +805,9 @@ export async function handleExpeditionSetDirection(
       // Don't fail the main operation if logging fails
     }
   } catch (error: any) {
-    console.error("Error setting direction:", error);
+    logger.error("Error setting direction", { error });
     await interaction.reply({
-      content: `❌ Erreur : ${error.message}`,
+      content: `${STATUS.ERROR} Erreur : ${error.message}`,
       ephemeral: true,
     });
   }
