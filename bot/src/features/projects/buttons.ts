@@ -253,4 +253,20 @@ export function registerProjectButtons(handler: ButtonHandler): void {
       });
     }
   });
+
+  // User: Voir les projets depuis le profil
+  handler.registerHandlerByPrefix("view_projects:", async (interaction: ButtonInteraction) => {
+    try {
+      const { handleViewProjectsFromProfile } = await import(
+        "./handlers/projects-view.js"
+      );
+      await handleViewProjectsFromProfile(interaction);
+    } catch (error) {
+      logger.error("Error handling view projects button:", { error });
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de l'affichage des projets.`,
+        flags: ["Ephemeral"],
+      });
+    }
+  });
 }
