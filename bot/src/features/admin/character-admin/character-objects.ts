@@ -395,22 +395,20 @@ export async function handleObjectSelect(
     const selectedObjectIds = interaction.values;
 
     if (selectedObjectIds.length === 0) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `${STATUS.ERROR} Aucun objet sélectionné.`,
-        flags: ["Ephemeral"],
       });
       return;
     }
 
     if (!character) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `${STATUS.ERROR} Personnage non trouvé.`,
-        flags: ["Ephemeral"],
       });
       return;
     }
 
-    await interaction.deferReply({ flags: ["Ephemeral"] });
+    // Defer déjà fait dans le handler principal pour tous les StringSelectMenu
 
     const results = [];
 
@@ -455,9 +453,8 @@ export async function handleObjectSelect(
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error(`Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} d'objets:`, { error });
-    await interaction.reply({
+    await interaction.editReply({
       content: `${STATUS.ERROR} Erreur lors de ${action === 'add' ? 'l\'ajout' : 'la suppression'} des objets.`,
-      flags: ["Ephemeral"],
     });
   }
 }

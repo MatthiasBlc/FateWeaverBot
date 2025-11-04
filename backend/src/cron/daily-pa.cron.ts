@@ -33,7 +33,11 @@ export async function dailyPaUpdate() {
   }
 }
 
-async function updateAllCharactersActionPoints() {
+/**
+ * Regenerate PA for all living characters
+ * EXPORTED for use in midnight orchestrator (must run BEFORE expedition lock)
+ */
+export async function updateAllCharactersActionPoints() {
   try {
     console.log("Début de la mise à jour quotidienne des points d'action...");
 
@@ -152,7 +156,11 @@ async function updateAllCharactersActionPoints() {
   }
 }
 
-async function appendDailyDirections() {
+/**
+ * Append daily directions to expedition paths
+ * EXPORTED for use in midnight orchestrator
+ */
+export async function appendDailyDirections() {
   try {
     console.log("\n--- STEP 6: Append daily expedition directions ---");
 
@@ -193,9 +201,28 @@ async function appendDailyDirections() {
   }
 }
 
-async function deductExpeditionPA() {
+/**
+ * Deduct PA for all expedition members (LOCKED and DEPARTED expeditions)
+ * EXPORTED for use in midnight orchestrator (must run AFTER expedition lock)
+ */
+export async function deductExpeditionPA() {
   try {
     console.log("\n--- STEP 7: Deduct PA for expeditions ---");
+
+    // Helper function to get Paris date as string (YYYY-MM-DD)
+    const toParisDate = (date: Date) => {
+      const parisDateStr = date.toLocaleDateString('fr-FR', {
+        timeZone: 'Europe/Paris',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [day, month, year] = parisDateStr.split('/');
+      return `${year}-${month}-${day}`;
+    };
+
+    const now = new Date();
+    const todayParis = toParisDate(now);
 
     // Get all expedition members from LOCKED or DEPARTED expeditions
     const expeditionMembers = await prisma.expeditionMember.findMany({
@@ -219,6 +246,8 @@ async function deductExpeditionPA() {
             id: true,
             name: true,
             townId: true,
+            status: true,
+            returnAt: true,
             pendingEmergencyReturn: true
           }
         }
@@ -229,6 +258,7 @@ async function deductExpeditionPA() {
 
     let deductedCount = 0;
     let catastrophicReturns = 0;
+    let skippedReturnDay = 0;
 
     for (const member of expeditionMembers) {
       const { character, expedition } = member;
@@ -239,18 +269,31 @@ async function deductExpeditionPA() {
         continue;
       }
 
+      // IMPORTANT: Skip PA deduction if expedition is DEPARTED and today is the return day
+      // LOCKED → costs 2 PA (first day)
+      // DEPARTED → costs 2 PA per day, EXCEPT on return day
+      // Return happens at 08:00, so at midnight (00:00:15) we should NOT deduct PA
+      if (expedition.status === "DEPARTED" && expedition.returnAt) {
+        const returnDateParis = toParisDate(expedition.returnAt);
+        if (returnDateParis === todayParis) {
+          console.log(`  - ${character.name}: Jour de retour (${todayParis}) - pas de déduction PA`);
+          skippedReturnDay++;
+          continue;
+        }
+      }
+
       // Check if character can afford the expedition cost (needs PA >= 2)
       // PA has already been regenerated in STEP 5 (with hunger penalties applied)
       const canAffordExpedition = character.paTotal >= 2;
 
       if (canAffordExpedition) {
-        // Deduct 2 PA for expedition
+        // Deduct 2 PA for expedition (LOCKED = first day, DEPARTED = ongoing days)
         await prisma.character.update({
           where: { id: character.id },
           data: { paTotal: { decrement: 2 } }
         });
         deductedCount++;
-        console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition)`);
+        console.log(`  - ${character.name}: ${character.paTotal} PA → ${character.paTotal - 2} PA (expédition ${expedition.status})`);
       } else {
         // Cannot afford 2 PA → catastrophic return
         // Character pays what they can (their remaining PA) and returns
@@ -270,6 +313,7 @@ async function deductExpeditionPA() {
 
     console.log(`Déduction PA expéditions terminée.`);
     console.log(`  - ${deductedCount} membres ont payé 2 PA`);
+    console.log(`  - ${skippedReturnDay} membres épargnés (jour de retour)`);
     console.log(`  - ${catastrophicReturns} retraits catastrophiques`);
   } catch (error) {
     console.error("Erreur lors de la déduction des PA expéditions:", error);

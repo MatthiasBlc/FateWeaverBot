@@ -148,7 +148,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de quantité de ressource lors de création d'expédition
-    this.registerHandler("expedition_create_resource_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_create_resource_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceQuantityModal } = await import(
           "../features/expeditions/handlers/expedition-create-resources.js"
@@ -164,7 +164,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal d'ajout de ressource (gestion ressources)
-    this.registerHandler("expedition_resource_add_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_resource_add_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceAddQuantity } = await import(
           "../features/expeditions/handlers/expedition-resource-management.js"
@@ -180,7 +180,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de retrait de ressource (gestion ressources)
-    this.registerHandler("expedition_resource_remove_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("expedition_resource_remove_quantity:", async (interaction) => {
       try {
         const { handleExpeditionResourceRemoveQuantity } = await import(
           "../features/expeditions/handlers/expedition-resource-management.js"
@@ -233,7 +233,7 @@ export class ModalHandler {
     );
 
     // Gestionnaire pour le modal de modification de durée d'expédition
-    this.registerHandler("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_duration_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionDurationModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -249,7 +249,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal d'ajout de ressource à une expédition
-    this.registerHandler("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_resource_add_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionResourceAddModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -265,7 +265,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de ressource d'une expédition
-    this.registerHandler("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
+    this.registerHandlerByPrefix("expedition_resource_modify_modal_", async (interaction: ModalSubmitInteraction) => {
       try {
         const { handleExpeditionResourceModifyModal } = await import(
           "../features/admin/expedition-admin-resource-handlers.js"
@@ -281,7 +281,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'investissement dans les chantiers
-    this.registerHandler("invest_modal", async (interaction) => {
+    this.registerHandlerByPrefix("invest_modal_", async (interaction) => {
       try {
         const { handleInvestModalSubmit } = await import(
           "../features/chantiers/handlers/index.js"
@@ -306,7 +306,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'ajout de stock admin
-    this.registerHandler("stock_admin_add_modal_", async (interaction) => {
+    this.registerHandlerByPrefix("stock_admin_add_modal_", async (interaction) => {
       try {
         const { handleStockAdminAddModal } = await import(
           "../features/admin/stock-admin/stock-add.js"
@@ -330,7 +330,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de retrait de stock admin
-    this.registerHandler("stock_admin_remove_modal_", async (interaction) => {
+    this.registerHandlerByPrefix("stock_admin_remove_modal_", async (interaction) => {
       try {
         const { handleStockAdminRemoveModal } = await import(
           "../features/admin/stock-admin/stock-remove.js"
@@ -634,7 +634,7 @@ export class ModalHandler {
 
     // =================== BLUEPRINT PROJECTS HANDLERS ===================
     // Gestionnaire pour le modal de sélection de coût blueprint
-    this.registerHandler("project_blueprint_cost_quantity:", async (interaction) => {
+    this.registerHandlerByPrefix("project_blueprint_cost_quantity:", async (interaction) => {
       try {
         const { handleBlueprintCostQuantityModal } = await import(
           "../features/projects/project-creation.js"
@@ -746,7 +746,7 @@ export class ModalHandler {
 
     // =================== OBJECT BONUS MODALS HANDLERS ===================
     // Gestionnaire pour le modal de bonus de compétence sur objet
-    this.registerHandler("object_skill_bonus_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("object_skill_bonus_modal:", async (interaction) => {
       try {
         const { handleObjectSkillBonusModalSubmit } = await import(
           "../features/admin/elements/index.js"
@@ -763,7 +763,7 @@ export class ModalHandler {
 
     // Gestionnaire pour le modal de bonus de capacité sur objet
     // Gestionnaire pour le modal de conversion en ressource sur objet
-    this.registerHandler("object_resource_conversion_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("object_resource_conversion_modal:", async (interaction) => {
       try {
         const { handleObjectResourceConversionModalSubmit } = await import(
           "../features/admin/elements/index.js"
@@ -780,7 +780,7 @@ export class ModalHandler {
 
     // =================== EDIT/DELETE MODALS ===================
     // Gestionnaire pour le modal de modification de ressource
-    this.registerHandler("edit_resource_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_resource_modal:", async (interaction) => {
       try {
         const { handleEditResourceModalSubmit } = await import(
           "../features/admin/element-resource-admin.handlers.js"
@@ -796,7 +796,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification d'objet
-    this.registerHandler("edit_object_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_modal:", async (interaction) => {
       try {
         const { handleEditObjectModalSubmit } = await import(
           "../features/admin/elements/objects/index.js"
@@ -812,7 +812,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de compétence
-    this.registerHandler("edit_skill_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_skill_modal:", async (interaction) => {
       try {
         const { handleEditSkillModalSubmit } = await import(
           "../features/admin/element-skill-admin.handlers.js"
@@ -828,7 +828,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de capacité
-    this.registerHandler("edit_capability_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_capability_modal:", async (interaction) => {
       try {
         const { handleEditCapabilityModalSubmit } = await import(
           "../features/admin/element-capability-admin.handlers.js"
@@ -844,7 +844,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification du nom d'objet
-    this.registerHandler("edit_object_name_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_name_modal:", async (interaction) => {
       try {
         const { handleEditObjectNameModalSubmit } = await import(
           "../features/admin/elements/objects/index.js"
@@ -860,7 +860,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de modification de la description d'objet
-    this.registerHandler("edit_object_description_modal:", async (interaction) => {
+    this.registerHandlerByPrefix("edit_object_description_modal:", async (interaction) => {
       try {
         const { handleEditObjectDescriptionModalSubmit } = await import(
           "../features/admin/elements/objects/index.js"

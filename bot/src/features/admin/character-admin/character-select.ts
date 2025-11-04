@@ -32,10 +32,16 @@ export async function handleCharacterSelect(
   const character = characters.find((c) => c.id === characterId);
 
   if (!character) {
-    await interaction.reply({
-      content: `${STATUS.ERROR} Personnage non trouvé.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
+      });
+    } else {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
+        flags: ["Ephemeral"],
+      });
+    }
     return;
   }
 
@@ -77,17 +83,36 @@ export async function handleCharacterSelect(
     const embed = await createAdminProfileEmbed(enrichedCharacter);
     const buttonRows = createCharacterActionButtons(character);
 
-    await interaction.reply({
-      embeds: [embed],
-      components: buttonRows,
-      flags: ["Ephemeral"],
-    });
+    // Utiliser editReply si l'interaction a été defer, sinon reply
+    if (interaction.deferred) {
+      await interaction.editReply({
+        embeds: [embed],
+        components: buttonRows,
+      });
+    } else {
+      await interaction.reply({
+        embeds: [embed],
+        components: buttonRows,
+        flags: ["Ephemeral"],
+      });
+    }
   } catch (error) {
     logger.error("Erreur lors de la création du profil admin:", { error });
-    await interaction.reply({
-      content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
+      });
+    } else if (interaction.replied) {
+      await interaction.followUp({
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
+        flags: ["Ephemeral"],
+      });
+    } else {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de la création du profil admin.`,
+        flags: ["Ephemeral"],
+      });
+    }
   }
 }
 
@@ -128,10 +153,16 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
   }
 
   if (!action || !characterId) {
-    await interaction.reply({
-      content: `${STATUS.ERROR} Action inconnue.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Action inconnue.`,
+      });
+    } else {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Action inconnue.`,
+        flags: ["Ephemeral"],
+      });
+    }
     return;
   }
 
@@ -139,10 +170,16 @@ export async function handleCharacterAction(interaction: ButtonInteraction) {
   const character = characters.find((c) => c.id === characterId);
 
   if (!character) {
-    await interaction.reply({
-      content: `${STATUS.ERROR} Personnage non trouvé.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
+      });
+    } else {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Personnage non trouvé.`,
+        flags: ["Ephemeral"],
+      });
+    }
     return;
   }
 
@@ -226,10 +263,16 @@ async function handleKillButton(
 ) {
   try {
     if (character.isDead) {
-      await interaction.reply({
-        content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
-        flags: ["Ephemeral"],
-      });
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
+        });
+      } else {
+        await interaction.reply({
+          content: `${STATUS.ERROR} Ce personnage est déjà mort.`,
+          flags: ["Ephemeral"],
+        });
+      }
       return;
     }
 
@@ -240,7 +283,11 @@ async function handleKillButton(
       `**${character.name}** a été tué.`
     );
 
-    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed] });
+    } else {
+      await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    }
 
     // Log de l'action
     try {
@@ -268,10 +315,16 @@ async function handleKillButton(
     ) {
       return; // Interaction expirée
     }
-    await interaction.reply({
-      content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Erreur lors de la suppression du personnage.`,
+      });
+    } else if (!interaction.replied) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de la suppression du personnage.`,
+        flags: ["Ephemeral"],
+      });
+    }
   }
 }
 
@@ -293,7 +346,11 @@ async function handleToggleRerollButton(
       `**${character.name}** ${newCanReroll ? "peut maintenant" : "ne peut plus"} créer un nouveau personnage.`
     );
 
-    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed] });
+    } else {
+      await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    }
   } catch (error) {
     logger.error("Erreur lors de la gestion du reroll:", { error });
     if (
@@ -304,9 +361,15 @@ async function handleToggleRerollButton(
     ) {
       return; // Interaction expirée
     }
-    await interaction.reply({
-      content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
-      flags: ["Ephemeral"],
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
+      });
+    } else if (!interaction.replied) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de la gestion du reroll.`,
+        flags: ["Ephemeral"],
+      });
+    }
   }
 }
