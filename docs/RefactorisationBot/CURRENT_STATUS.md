@@ -251,8 +251,9 @@ Lis /docs/RefactorisationBot/CURRENT_STATUS.md
 **Par**: Claude Code
 **Status**:
 - ✅ **Phase 4 TERMINÉE** - 5/5 fichiers traités (100%)
-- ⏸️ **Phase 1.1 EN COURS** - Centralisation emojis (30% analysé)
+- ✅ **Phase 1.1 TERMINÉE** - Centralisation emojis (102 remplacements)
 **Token savings cumulés**:
 - Phase 4: ~590 tokens (~13%)
-- Phase 1.1 (potentiel): ~200-250 tokens (~5%)
+- Phase 1.1: ~200-250 tokens (~5%)
+- **Total: ~790-840 tokens (~18% budget initial)**
 **Voir détails**: `PHASE_1_STATUS.md`
