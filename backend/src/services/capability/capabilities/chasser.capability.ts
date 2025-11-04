@@ -56,7 +56,13 @@ export class ChasserCapability extends BaseCapability {
       this.prisma
     );
 
-    const foodAmount = getHuntYield(isSummer, hasBonus);
+    const huntResult = getHuntYield(isSummer, hasBonus);
+    const foodAmount = huntResult.result;
+
+    const debugLogs: string[] = [];
+    if (huntResult.debugLog) {
+      debugLogs.push(huntResult.debugLog);
+    }
 
     return {
       success: foodAmount > 0,
@@ -67,6 +73,7 @@ export class ChasserCapability extends BaseCapability {
       metadata: {
         bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
       },
+      debugLogs: debugLogs.length > 0 ? debugLogs : undefined,
     };
   }
 }

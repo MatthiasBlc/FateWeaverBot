@@ -24,42 +24,44 @@ export function getRandomFromPool(pool: number[]): number {
  * Calcule le rendement de chasse selon la saison
  * @param isSummer Indique si c'est l'été
  * @param luckyRoll Si true, effectue deux tirages et conserve le meilleur
- * @returns Nombre de vivres obtenus (2-10 en été, 0-4 en hiver)
+ * @returns Nombre de vivres obtenus (2-10 en été, 0-4 en hiver) et log de debug si lucky
  */
-export function getHuntYield(isSummer: boolean, luckyRoll: boolean = false): number {
+export function getHuntYield(isSummer: boolean, luckyRoll: boolean = false): { result: number; debugLog?: string } {
   const pool = isSummer ? huntSummer : huntWinter;
 
   if (!luckyRoll) {
-    return getRandomFromPool(pool);
+    return { result: getRandomFromPool(pool) };
   }
 
   // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
   const roll1 = getRandomFromPool(pool);
   const roll2 = getRandomFromPool(pool);
   const result = Math.max(roll1, roll2);
-  console.log(`[LUCKY HUNT] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`);
-  return result;
+  const debugLog = `[LUCKY HUNT] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`;
+  console.log(debugLog);
+  return { result, debugLog };
 }
 
 /**
  * Calcule le rendement de cueillette selon la saison
  * @param isSummer Indique si c'est l'été
  * @param luckyRoll Si true, effectue deux tirages et conserve le meilleur
- * @returns Nombre de vivres obtenus (1-3 en été, 0-2 en hiver)
+ * @returns Nombre de vivres obtenus (1-3 en été, 0-2 en hiver) et log de debug si lucky
  */
-export function getGatherYield(isSummer: boolean, luckyRoll: boolean = false): number {
+export function getGatherYield(isSummer: boolean, luckyRoll: boolean = false): { result: number; debugLog?: string } {
   const pool = isSummer ? gatherSummer : gatherWinter;
 
   if (!luckyRoll) {
-    return getRandomFromPool(pool);
+    return { result: getRandomFromPool(pool) };
   }
 
   // LUCKY_ROLL : deux tirages, on garde le meilleur (le plus élevé)
   const roll1 = getRandomFromPool(pool);
   const roll2 = getRandomFromPool(pool);
   const result = Math.max(roll1, roll2);
-  console.log(`[LUCKY GATHER] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`);
-  return result;
+  const debugLog = `[LUCKY GATHER] Saison: ${isSummer ? 'Été' : 'Hiver'} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${result}`;
+  console.log(debugLog);
+  return { result, debugLog };
 }
 
 /**

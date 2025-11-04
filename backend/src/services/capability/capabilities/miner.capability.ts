@@ -34,14 +34,16 @@ export class MinerCapability extends BaseCapability {
     );
 
     let oreAmount: number;
+    const debugLogs: string[] = [];
+
     if (hasBonus) {
       // LUCKY_ROLL : deux tirages, on garde le meilleur
       const roll1 = Math.floor(Math.random() * 5) + 2; // 2-6
       const roll2 = Math.floor(Math.random() * 5) + 2; // 2-6
       oreAmount = Math.max(roll1, roll2);
-      console.log(
-        `[LUCKY_MINE] Personnage: ${character.name} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${oreAmount}`
-      );
+      const debugLog = `[LUCKY_MINE] Personnage: ${character.name} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${oreAmount}`;
+      console.log(debugLog);
+      debugLogs.push(debugLog);
     } else {
       oreAmount = Math.floor(Math.random() * 5) + 2; // 2-6
     }
@@ -55,6 +57,7 @@ export class MinerCapability extends BaseCapability {
       metadata: {
         bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
       },
+      debugLogs: debugLogs.length > 0 ? debugLogs : undefined,
     };
   }
 }

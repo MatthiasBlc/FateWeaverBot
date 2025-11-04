@@ -7,7 +7,8 @@ export const UpsertGuildSchema = z.object({
     name: z.string().min(1).max(100),
     iconURL: z.string().url().optional(),
     logChannelId: z.string().min(1).optional(),
-    dailyMessageChannelId: z.string().min(1).optional()
+    dailyMessageChannelId: z.string().min(1).optional(),
+    adminLogChannelId: z.string().min(1).optional()
   })
 });
 
@@ -42,6 +43,16 @@ export const UpdateGuildDailyMessageChannelSchema = z.object({
   }),
   body: z.object({
     dailyMessageChannelId: z.string().min(1)
+  })
+});
+
+// PATCH /guilds/:discordId/admin-log-channel
+export const UpdateGuildAdminLogChannelSchema = z.object({
+  params: z.object({
+    discordId: z.string().min(1)
+  }),
+  body: z.object({
+    adminLogChannelId: z.string().min(1)
   })
 });
 

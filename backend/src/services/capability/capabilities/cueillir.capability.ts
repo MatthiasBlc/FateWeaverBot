@@ -52,8 +52,14 @@ export class CueillirCapability extends BaseCapability {
       this.prisma
     );
 
-    const foodAmount = getGatherYield(isSummer, hasBonus);
+    const gatherResult = getGatherYield(isSummer, hasBonus);
+    const foodAmount = gatherResult.result;
     const paToUse = 1;
+
+    const debugLogs: string[] = [];
+    if (gatherResult.debugLog) {
+      debugLogs.push(gatherResult.debugLog);
+    }
 
     return {
       success: foodAmount > 0,
@@ -64,6 +70,7 @@ export class CueillirCapability extends BaseCapability {
       metadata: {
         bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
       },
+      debugLogs: debugLogs.length > 0 ? debugLogs : undefined,
     };
   }
 }

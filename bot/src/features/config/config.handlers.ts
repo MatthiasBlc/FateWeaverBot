@@ -34,10 +34,11 @@ interface GuildConfig {
   name: string;
   logChannelId?: string | null;
   dailyMessageChannelId?: string | null;
+  adminLogChannelId?: string | null;
   [key: string]: any;
 }
 
-type ChannelType = "logs" | "daily";
+type ChannelType = "logs" | "daily" | "admin";
 
 export async function handleConfigChannelCommand(
   interaction: ChatInputCommandInteraction
@@ -79,6 +80,8 @@ export async function handleConfigChannelCommand(
   let currentLogChannelName = null;
   let currentDailyChannel = null;
   let currentDailyChannelName = null;
+  let currentAdminLogChannel = null;
+  let currentAdminLogChannelName = null;
 
   try {
     const guildConfig = (await apiService.guilds.getGuildByDiscordId(
@@ -96,6 +99,14 @@ export async function handleConfigChannelCommand(
       );
       currentDailyChannelName =
         currentDailyChannel?.name || "Salon supprimé";
+    }
+
+    if (guildConfig?.adminLogChannelId) {
+      currentAdminLogChannel = guild.channels.cache.get(
+        guildConfig.adminLogChannelId
+      );
+      currentAdminLogChannelName =
+        currentAdminLogChannel?.name || "Salon supprimé";
     }
   } catch (error) {
     logger.warn("Could not fetch current guild configuration:", { error });
@@ -122,8 +133,17 @@ export async function handleConfigChannelCommand(
     embedDescription += "**Actuel :** _Non configuré_\n\n";
   }
 
+  embedDescription += "**📊 Salon des logs admin :**\n";
   embedDescription +=
-    "💡 _Vous pouvez utiliser le même salon pour les deux types de notifications._";
+    "• Utilisation de capacités améliorées (bonus)\n• Capacités taggant les admins\n• Détails des tirages de dés\n";
+  if (currentAdminLogChannel) {
+    embedDescription += `**Actuel :** ${currentAdminLogChannel}\n\n`;
+  } else {
+    embedDescription += "**Actuel :** _Non configuré_\n\n";
+  }
+
+  embedDescription +=
+    "💡 _Vous pouvez utiliser le même salon pour tous les types de notifications._";
 
   const embed = createInfoEmbed(
     "⚙️ Configuration des salons",
@@ -139,6 +159,10 @@ export async function handleConfigChannelCommand(
     new ButtonBuilder()
       .setCustomId("config_daily_channel")
       .setLabel("🌅 Configurer les messages quotidiens")
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId("config_admin_channel")
+      .setLabel("📊 Configurer les logs admin")
       .setStyle(ButtonStyle.Primary)
   );
 
@@ -154,12 +178,19 @@ export async function handleConfigChannelCommand(
       time: 60000,
     })) as ButtonInteraction;
 
-    const channelType: ChannelType =
-      buttonInteraction.customId === "config_logs_channel" ? "logs" : "daily";
+    let channelType: ChannelType;
+    if (buttonInteraction.customId === "config_logs_channel") {
+      channelType = "logs";
+    } else if (buttonInteraction.customId === "config_daily_channel") {
+      channelType = "daily";
+    } else {
+      channelType = "admin";
+    }
 
     await showChannelSelection(buttonInteraction, channelType, {
       currentLogChannel,
       currentDailyChannel,
+      currentAdminLogChannel,
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("time")) {
@@ -182,13 +213,18 @@ async function showChannelSelection(
   currentChannels: {
     currentLogChannel: any;
     currentDailyChannel: any;
+    currentAdminLogChannel: any;
   }
 ) {
   const guild = interaction.guild!;
-  const currentChannel =
-    channelType === "logs"
-      ? currentChannels.currentLogChannel
-      : currentChannels.currentDailyChannel;
+  let currentChannel;
+  if (channelType === "logs") {
+    currentChannel = currentChannels.currentLogChannel;
+  } else if (channelType === "daily") {
+    currentChannel = currentChannels.currentDailyChannel;
+  } else {
+    currentChannel = currentChannels.currentAdminLogChannel;
+  }
 
   const textChannels = guild.channels.cache.filter(
     (channel) =>
@@ -220,33 +256,63 @@ async function showChannelSelection(
 
   // Option pour désactiver
   if (currentChannel) {
+    let disableLabel = "Aucun salon (désactiver)";
+    let disableDescription = "Désactiver les logs";
+    if (channelType === "logs") {
+      disableDescription = "Désactiver les logs";
+    } else if (channelType === "daily") {
+      disableDescription = "Désactiver les messages quotidiens";
+    } else {
+      disableDescription = "Désactiver les logs admin";
+    }
+
     menuOptions.push({
-      label: "Aucun salon (désactiver)",
-      description: `Désactiver ${channelType === "logs" ? "les logs" : "les messages quotidiens"}`,
+      label: disableLabel,
+      description: disableDescription,
       value: "none",
       emoji: CONFIG.DISABLED,
     });
   }
 
+  let placeholderText = "Choisissez un salon";
+  if (channelType === "logs") {
+    placeholderText = "Choisissez un salon pour les logs";
+  } else if (channelType === "daily") {
+    placeholderText = "Choisissez un salon pour les messages quotidiens";
+  } else {
+    placeholderText = "Choisissez un salon pour les logs admin";
+  }
+
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`select_${channelType}_channel`)
-    .setPlaceholder(
-      `Choisissez un salon pour ${channelType === "logs" ? "les logs" : "les messages quotidiens"}`
-    )
+    .setPlaceholder(placeholderText)
     .addOptions(menuOptions);
 
-  const typeLabel =
-    channelType === "logs" ? "logs automatiques" : "messages quotidiens";
-  const typeEmoji = channelType === "logs" ? CONFIG.LIST : CONFIG.SUNRISE;
+  let typeLabel = "logs automatiques";
+  let typeEmoji = CONFIG.LIST;
+
+  if (channelType === "logs") {
+    typeLabel = "logs automatiques";
+    typeEmoji = CONFIG.LIST;
+  } else if (channelType === "daily") {
+    typeLabel = "messages quotidiens";
+    typeEmoji = CONFIG.SUNRISE;
+  } else {
+    typeLabel = "logs admin";
+    typeEmoji = STATUS.STATS;
+  }
 
   let embedDescription = `Choisissez le salon pour **${typeLabel}**.\n\n`;
 
   if (channelType === "logs") {
     embedDescription +=
       "Les logs incluent :\n• Investissements dans les chantiers\n• Actions des personnages\n• Événements en temps réel\n\n";
-  } else {
+  } else if (channelType === "daily") {
     embedDescription +=
       "Les messages quotidiens incluent :\n• Message météo (08:00)\n• Récapitulatif des activités\n• Changements de saison\n\n";
+  } else {
+    embedDescription +=
+      "Les logs admin incluent :\n• Utilisation de capacités améliorées (bonus)\n• Capacités taggant les admins\n• Détails des tirages de dés\n\n";
   }
 
   if (currentChannel) {
@@ -257,10 +323,16 @@ async function showChannelSelection(
     embedDescription += `${STATUS.INFO} Aucun salon n'est actuellement configuré.`;
   }
 
-  const embed = createInfoEmbed(
-    `${typeEmoji} Configuration ${channelType === "logs" ? "des logs" : "des messages quotidiens"}`,
-    embedDescription
-  );
+  let embedTitle = `${typeEmoji} Configuration `;
+  if (channelType === "logs") {
+    embedTitle += "des logs";
+  } else if (channelType === "daily") {
+    embedTitle += "des messages quotidiens";
+  } else {
+    embedTitle += "des logs admin";
+  }
+
+  const embed = createInfoEmbed(embedTitle, embedDescription);
 
   const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
     selectMenu
@@ -283,17 +355,33 @@ async function showChannelSelection(
       // Désactiver
       if (channelType === "logs") {
         await apiService.updateGuildLogChannel(guild.id, null);
-      } else {
+      } else if (channelType === "daily") {
         await apiService.updateGuildDailyMessageChannel(guild.id, null);
+      } else {
+        await apiService.updateGuildAdminLogChannel(guild.id, null);
+      }
+
+      let logType = "Log";
+      if (channelType === "daily") {
+        logType = "Daily message";
+      } else if (channelType === "admin") {
+        logType = "Admin log";
       }
 
       logger.info(
-        `${channelType === "logs" ? "Log" : "Daily message"} channel disabled for guild ${guild.id}`
+        `${logType} channel disabled for guild ${guild.id}`
       );
+
+      let disabledMessage = "L'envoi automatique des logs a été désactivé.";
+      if (channelType === "daily") {
+        disabledMessage = "L'envoi automatique des messages quotidiens a été désactivé.";
+      } else if (channelType === "admin") {
+        disabledMessage = "L'envoi automatique des logs admin a été désactivé.";
+      }
 
       const successEmbed = createWarningEmbed(
         `🚫 ${typeLabel} désactivés`,
-        `L'envoi automatique ${channelType === "logs" ? "des logs" : "des messages quotidiens"} a été désactivé.`
+        disabledMessage
       );
 
       await selectInteraction.update({
@@ -315,13 +403,29 @@ async function showChannelSelection(
     // Sauvegarder
     if (channelType === "logs") {
       await apiService.updateGuildLogChannel(guild.id, selectedChannelId);
-    } else {
+    } else if (channelType === "daily") {
       await apiService.updateGuildDailyMessageChannel(guild.id, selectedChannelId);
+    } else {
+      await apiService.updateGuildAdminLogChannel(guild.id, selectedChannelId);
+    }
+
+    let logType = "Log";
+    if (channelType === "daily") {
+      logType = "Daily message";
+    } else if (channelType === "admin") {
+      logType = "Admin log";
     }
 
     logger.info(
-      `${channelType === "logs" ? "Log" : "Daily message"} channel configured for guild ${guild.id}: ${selectedChannelId}`
+      `${logType} channel configured for guild ${guild.id}: ${selectedChannelId}`
     );
+
+    let typeDisplay = "📋 Logs automatiques";
+    if (channelType === "daily") {
+      typeDisplay = "🌅 Messages quotidiens";
+    } else if (channelType === "admin") {
+      typeDisplay = "📊 Logs admin";
+    }
 
     const successEmbed = createSuccessEmbed(
       `${STATUS.SUCCESS} Salon configuré avec succès`,
@@ -334,8 +438,7 @@ async function showChannelSelection(
       },
       {
         name: "Type",
-        value:
-          channelType === "logs" ? "📋 Logs automatiques" : "🌅 Messages quotidiens",
+        value: typeDisplay,
         inline: true,
       },
     ]);

@@ -36,6 +36,9 @@ export interface CapabilityExecutionResult {
     rolls?: any;                  // Détails des tirages aléatoires (pour debug)
     [key: string]: any;
   };
+
+  /** Logs de debug pour les admins (console.log des bonus activés) */
+  debugLogs?: string[];
 }
 
 /**

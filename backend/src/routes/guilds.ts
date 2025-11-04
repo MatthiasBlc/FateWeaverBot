@@ -7,6 +7,7 @@ import {
   deleteGuild,
   updateGuildLogChannel,
   updateGuildDailyMessageChannel,
+  updateGuildAdminLogChannel,
 } from "../controllers/guilds";
 import { requireAuthOrInternal } from "../middleware/auth";
 import { validate } from "../api/middleware/validation.middleware";
@@ -16,6 +17,7 @@ import {
   GetGuildByIdSchema,
   UpdateGuildLogChannelSchema,
   UpdateGuildDailyMessageChannelSchema,
+  UpdateGuildAdminLogChannelSchema,
   DeleteGuildSchema
 } from "../api/validators/guild.schema";
 
@@ -44,6 +46,14 @@ router.patch(
   requireAuthOrInternal,
   validate(UpdateGuildDailyMessageChannelSchema),
   updateGuildDailyMessageChannel
+);
+
+// Met à jour le salon des logs admin d'une guilde
+router.patch(
+  "/:discordId/admin-log-channel",
+  requireAuthOrInternal,
+  validate(UpdateGuildAdminLogChannelSchema),
+  updateGuildAdminLogChannel
 );
 
 // Récupère toutes les guildes
