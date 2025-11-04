@@ -16,6 +16,7 @@ import { httpClient } from "../../../../services/httpClient";
 import { PROJECT, STATUS } from "@shared/constants/emojis";
 import { projectCreationCache } from "../../../../services/project-creation-cache";
 import { replyEphemeral } from "../../../../utils/interaction-helpers";
+import { categorizeObjects } from "./helpers.js";
 
 /**
  * Handler pour la sélection des craft types
@@ -221,29 +222,6 @@ export async function handleProjectAddValidateSelection(interaction: ButtonInter
   }
 }
 
-/**
- * Helper pour catégoriser les objets selon leurs bonus
- */
-function categorizeObjects(objects: any[]) {
-  const simple: any[] = [];
-  const withCapacity: any[] = [];
-  const withSkill: any[] = [];
-  const resourceBags: any[] = [];
-
-  objects.forEach(obj => {
-    if (obj.resourceConversions && obj.resourceConversions.length > 0) {
-      resourceBags.push(obj);
-    } else if (obj.capacityBonuses && obj.capacityBonuses.length > 0) {
-      withCapacity.push(obj);
-    } else if (obj.skillBonuses && obj.skillBonuses.length > 0) {
-      withSkill.push(obj);
-    } else {
-      simple.push(obj);
-    }
-  });
-
-  return { simple, withCapacity, withSkill, resourceBags };
-}
 
 /**
  * ÉTAPE 2: Afficher le select menu pour choisir la ressource ou l'objet

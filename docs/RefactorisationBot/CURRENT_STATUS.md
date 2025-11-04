@@ -133,10 +133,15 @@
 
 ### Fichiers Traités (5/5) ✅
 
-1. ✅ **project-add.ts** (1,696 lines → 6 files)
-   - Commit: `3b61fa0`
-   - Structure: `project-add/step-{1-5}-*.ts` + `index.ts`
-   - Méthode: Division par workflow stages
+1. ✅ **project-add.ts** (1,696 lines → 7 files)
+   - Commit: `3b61fa0` + DRY fix
+   - Structure: `project-add/step-{1-5}-*.ts` + `helpers.ts` + `index.ts`
+   - **Méthode: Division par workflow stages + Extraction DRY** ⭐
+   - Détails:
+     - `helpers.ts` (30 lignes): Helper réutilisable (categorizeObjects)
+     - Duplication éliminée: categorizeObjects dupliqué 2x → helper partagé
+   - **Duplication de code**: ✅ ZÉRO (vérifié grep)
+   - **Principe DRY**: ✅ Respecté (helper extrait)
    - Build: ✅ Passing
    - Token savings estimés: ~180 tokens
 

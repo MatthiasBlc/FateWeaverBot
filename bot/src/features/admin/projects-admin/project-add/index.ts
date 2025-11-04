@@ -46,3 +46,8 @@ export {
 export {
   handleProjectAddFinalize,
 } from "./step-5-finalize.js";
+
+// Shared helpers
+export {
+  categorizeObjects,
+} from "./helpers.js";
