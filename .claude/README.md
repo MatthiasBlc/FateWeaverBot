@@ -6,6 +6,10 @@ Fichiers de contexte et protocoles pour sessions Claude Code.
 
 ## 📋 Index des Fichiers
 
+### 🚨 **best-practices.md** (NOUVEAU)
+**Règles critiques de développement** - Modal handlers, conventions code.
+**Lire quand:** AVANT toute modification de modals Discord ou handlers d'interaction.
+
 ### 🎯 **reference.md** (214 lignes)
 Architecture complète du projet, modèles DB, workflows.
 **Lire quand:** Ajouter features, modifier architecture, comprendre data models.

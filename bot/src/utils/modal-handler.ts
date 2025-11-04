@@ -6,12 +6,27 @@ import { STATUS } from "../constants/emojis.js";
 /**
  * Gestionnaire centralisé des interactions de modals
  *
+ * RÈGLE CRITIQUE #1 - registerHandler vs registerHandlerByPrefix :
+ * ================================================================
+ * ⚠️ Si l'ID du modal contient ${...} (variable dynamique) :
+ *    → Utilisez TOUJOURS registerHandlerByPrefix()
+ * ✅ Si l'ID du modal est statique (pas de template literal) :
+ *    → Utilisez registerHandler()
+ *
+ * Exemples :
+ *   ❌ MAUVAIS: .setCustomId(`modal_${id}`) + registerHandler("modal_", ...)
+ *   ✅ BON:     .setCustomId(`modal_${id}`) + registerHandlerByPrefix("modal_", ...)
+ *   ✅ BON:     .setCustomId("modal_static") + registerHandler("modal_static", ...)
+ *
+ * Conséquence si mauvaise méthode : handler jamais trouvé → erreur générique
+ * Documentation complète : .claude/best-practices.md
+ *
  * CONSIGNES DE SÉCURITÉ CRITIQUES :
  *
  * 1. NE PAS SUPPRIMER les handlers existants
  * 2. NE PAS MODIFIER les handlers existants
  * 3. AJOUTER seulement APRÈS le commentaire "NOUVEAUX HANDLERS"
- * 4. Respecter le format : this.registerHandler("nom_du_modal", handler)
+ * 4. Respecter la RÈGLE CRITIQUE #1 ci-dessus
  * 5. Tester immédiatement après ajout
  *
  * MODALS EXISTANTS (NE PAS TOUCHER) :
@@ -102,7 +117,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals d'administration de personnages (stats avancées)
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "character_admin_advanced_modal_",
       async (interaction) => {
         try {
@@ -212,7 +227,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour les modals de transfert d'expédition (nouveau format avec direction)
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "expedition_transfer_amount_modal_",
       async (interaction) => {
         try {
@@ -549,7 +564,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de quantité de ressource pour chantier
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "chantier_resource_quantity_",
       async (interaction) => {
         try {
@@ -612,7 +627,7 @@ export class ModalHandler {
     });
 
     // Gestionnaire pour le modal de quantité de ressource pour projet
-    this.registerHandler(
+    this.registerHandlerByPrefix(
       "project_resource_quantity_",
       async (interaction) => {
         try {

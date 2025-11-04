@@ -19,8 +19,8 @@ Voici les projets disponibles pour vos capacités :
 [field vide]
 Aujourd’hui à 14:29
 
-Validation du projet, manque un message public de log
+Lors de la fin d'un projet (validation), il manque un message public de log
 
-Validation de blueprint, manque un message public de log
+Lors de la fin d'une blueprint (validation), il manque un message public de log
 
 il reste des "menuiser" à remplacer par Travailler le bois

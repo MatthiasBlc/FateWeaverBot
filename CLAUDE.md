@@ -36,7 +36,14 @@ See `.claude/context-guide.md` for how the intelligent context system works.
 
 ## 📐 Code Conventions
 
-1. **Emoji Centralization (STRICT):**
+**🚨 CRITICAL:** Read `.claude/best-practices.md` before modifying modals/handlers
+
+1. **Modal Handlers (CRITICAL):**
+   - ID with `${...}` → use `registerHandlerByPrefix()`
+   - Static ID → use `registerHandler()`
+   - Details: `.claude/best-practices.md`
+
+2. **Emoji Centralization (STRICT):**
    - ❌ NEVER hardcode emojis in code (`"🎉"`, `"✅"`)
    - ✅ ALWAYS import from `@shared/constants/emojis`
    - All emojis MUST be documented with usage location
@@ -60,6 +67,7 @@ docker compose logs -f backenddev        # Backend logs
 
 ## 📚 Detailed Documentation (Read On-Demand)
 
+- **🚨 Best Practices:** `.claude/best-practices.md` - CRITICAL rules (modals, conventions)
 - **Full Architecture & Workflows:** `.claude/reference.md` - read when modifying structure/adding features
 - **Supernova Quick Ref:** `.claude/supernova-quick-ref.md` - read before EACH Supernova delegation
 - **Collaboration Protocol:** `.claude/collaboration.md` - read at start of multi-step projects
