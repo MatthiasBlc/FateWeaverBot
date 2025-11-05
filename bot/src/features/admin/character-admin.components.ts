@@ -66,9 +66,7 @@ export function createCharacterSelectMenu(characters: Character[]) {
             }`
           )
           .setDescription(
-            `Actif: ${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} | Mort: ${
-              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
-            } | Reroll: ${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR}`
+            `A:${char.isActive ? STATUS.SUCCESS : STATUS.ERROR}${char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL} R:${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR} | ${char.paTotal}${CHARACTER.PA} | ${char.hp}${CHARACTER.HP_FULL} | ${char.pm}${CHARACTER.MP_FULL} | ${char.hungerLevel}${HUNGER.ICON}`
           )
           .setValue(char.id)
       )
