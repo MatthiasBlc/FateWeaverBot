@@ -3,6 +3,7 @@ import { CronJob } from "cron";
 import { applyAgonyRules } from "../util/agony";
 import { notifyAgonyEntered } from "../util/agony-notification";
 import { CharacterQueries } from "../infrastructure/database/query-builders";
+import { discordNotificationService } from "../services/discord-notification.service";
 
 const prisma = new PrismaClient();
 
@@ -57,6 +58,8 @@ export async function increaseAllCharactersHunger() {
         updateData.hungerLevel = agonyUpdate.hungerLevel;
       if (agonyUpdate.agonySince !== undefined)
         updateData.agonySince = agonyUpdate.agonySince;
+      if (agonyUpdate.paTotal !== undefined)
+        updateData.paTotal = agonyUpdate.paTotal;
 
       await prisma.character.update({
         where: { id: character.id },
@@ -70,6 +73,7 @@ export async function increaseAllCharactersHunger() {
         await notifyAgonyEntered(
           character.town.guild.discordGuildId,
           character.name || character.user.username,
+          character.user.discordId,
           newHunger === 0 ? "hunger" : "other"
         );
       }
@@ -120,7 +124,13 @@ export function setupHungerIncreaseJob() {
 
 if (require.main === module) {
   console.log("Exécution manuelle de l'augmentation de la faim...");
-  increaseAllCharactersHunger()
+
+  // Initialize Discord notification service for standalone execution
+  discordNotificationService.initialize()
+    .then(() => {
+      console.log("✅ Discord notification service initialized");
+      return increaseAllCharactersHunger();
+    })
     .then(() => {
       console.log("Augmentation manuelle terminée");
       process.exit(0);

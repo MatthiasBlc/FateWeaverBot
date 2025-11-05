@@ -95,6 +95,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
               : newHungerLevel,
           hp: agonyUpdate.hp,
           agonySince: agonyUpdate.agonySince,
+          paTotal: agonyUpdate.paTotal,
         },
         include: {
           user: true,
@@ -142,6 +143,7 @@ export const eatFood: RequestHandler = async (req, res, next) => {
       await notifyAgonyEntered(
         result.character.town.guild.discordGuildId,
         result.character.name || result.character.user.username,
+        result.character.user.discordId,
         "other"
       );
     }
@@ -257,6 +259,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
               : newHungerLevel,
           hp: agonyUpdate2.hp,
           agonySince: agonyUpdate2.agonySince,
+          paTotal: agonyUpdate2.paTotal,
         },
         include: {
           user: true,
@@ -305,6 +308,7 @@ export const eatFoodAlternative: RequestHandler = async (req, res, next) => {
       await notifyAgonyEntered(
         result.character.town.guild.discordGuildId,
         result.character.name || result.character.user.username,
+        result.character.user.discordId,
         "other"
       );
     }
@@ -392,6 +396,8 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
         updateData.hungerLevel = agonyUpdate.hungerLevel;
       if (agonyUpdate.agonySince !== undefined)
         updateData.agonySince = agonyUpdate.agonySince;
+      if (agonyUpdate.paTotal !== undefined)
+        updateData.paTotal = agonyUpdate.paTotal;
     }
 
     const updatedCharacter = await prisma.character.update({
@@ -420,6 +426,7 @@ export const updateCharacterStats: RequestHandler = async (req, res, next) => {
       await notifyAgonyEntered(
         updatedCharacter.town.guild.discordGuildId,
         updatedCharacter.name || updatedCharacter.user.username,
+        updatedCharacter.user.discordId,
         cause
       );
     }
@@ -516,6 +523,7 @@ export const useCataplasme: RequestHandler = async (req, res, next) => {
         data: {
           hp: agonyUpdate.hp !== undefined ? agonyUpdate.hp : newHp,
           agonySince: agonyUpdate.agonySince,
+          paTotal: agonyUpdate.paTotal,
         },
       });
     });

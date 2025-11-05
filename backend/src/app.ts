@@ -16,7 +16,7 @@ import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { setupMidnightTasksJob } from "./cron/midnight-tasks.cron";
 import { setupMorningExpeditionJob } from "./cron/expedition.cron";
 import { setupSeasonChangeJob } from "./cron/season-change.cron";
-import { setupDailyMessageJob } from "./cron/daily-message.cron";
+// import { setupDailyMessageJob } from "./cron/daily-message.cron"; // Disabled - handled by bot
 import chantierRoutes from "./routes/chantier";
 import expeditionRoutes from "./routes/expedition";
 import expeditionAdminRoutes from "./routes/admin/expeditionAdmin";
@@ -28,8 +28,19 @@ import resourcesRoutes from "./routes/resources";
 import skillsRoutes from "./routes/skills";
 import jobRoutes from "./routes/jobs";
 import adminRoutes from "./routes/admin";
+import { discordNotificationService } from "./services/discord-notification.service";
 
 const app = express();
+
+// Initialize Discord notification service
+console.log("🔧 Initializing Discord notification service...");
+if (process.env.NODE_ENV !== "test" && env.DISCORD_TOKEN) {
+  discordNotificationService.initialize()
+    .then(() => console.log("✅ Discord notification service initialized"))
+    .catch(error => console.error("❌ Failed to initialize Discord notification service:", error));
+} else {
+  console.log("⏭️  Skipping Discord notification service (test mode or no token)");
+}
 
 // Démarrer les jobs CRON
 console.log("🔧 Initializing CRON jobs...");
@@ -59,12 +70,13 @@ if (process.env.NODE_ENV !== "test") {
     console.error("❌ Failed to start Season change job:", error);
   }
 
-  try {
-    setupDailyMessageJob();
-    console.log("✅ Daily message job started");
-  } catch (error) {
-    console.error("❌ Failed to start Daily message job:", error);
-  }
+  // Daily message job disabled - handled by bot (bot/src/cron/daily-messages.cron.ts)
+  // try {
+  //   setupDailyMessageJob();
+  //   console.log("✅ Daily message job started");
+  // } catch (error) {
+  //   console.error("❌ Failed to start Daily message job:", error);
+  // }
 
   console.log("🎉 All CRON jobs initialized successfully");
 } else {

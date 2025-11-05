@@ -68,6 +68,7 @@ async function hungerDecrease() {
     if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
     if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
     if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
+    if (agonyUpdate.paTotal !== undefined) updateData.paTotal = agonyUpdate.paTotal;
 
     await prisma.character.update({
       where: { id: character.id },

@@ -12,16 +12,25 @@ import { logger } from '../services/logger';
  *
  * @param guildDiscordId Discord guild ID where the notification should be sent
  * @param characterName Name of the character entering agony
+ * @param userDiscordId Discord user ID to tag (optional)
  * @param cause Cause of agony (e.g., "hunger", "combat", "damage")
  */
 export async function notifyAgonyEntered(
   guildDiscordId: string,
   characterName: string,
+  userDiscordId?: string,
   cause?: 'hunger' | 'damage' | 'other'
 ): Promise<void> {
   try {
     // Determine message based on cause
-    let message = `⚠️ **${characterName}** vient de passer en agonie`;
+    let message = `⚠️ **${characterName}**`;
+
+    // Add user tag if provided
+    if (userDiscordId) {
+      message += ` (<@${userDiscordId}>)`;
+    }
+
+    message += ' vient de passer en agonie';
 
     if (cause === 'hunger') {
       message += ' à cause de la faim';
@@ -37,6 +46,7 @@ export async function notifyAgonyEntered(
     logger.info('Agony notification sent', {
       guildDiscordId,
       characterName,
+      userDiscordId,
       cause
     });
   } catch (error) {

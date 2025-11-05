@@ -1,16 +1,57 @@
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
 import { prisma } from '../util/db';
 import { logger } from './logger';
+import env from '../util/validateEnv';
 
 class DiscordNotificationService {
   private client: Client;
+  private isReady: boolean = false;
 
   constructor(client: Client) {
     this.client = client;
   }
 
+  /**
+   * Initialize and login the Discord client
+   * Should be called once at application startup
+   */
+  async initialize(): Promise<void> {
+    if (this.isReady) {
+      logger.warn('Discord notification service already initialized');
+      return;
+    }
+
+    if (!env.DISCORD_TOKEN) {
+      logger.warn('DISCORD_TOKEN not configured - Discord notifications will not work');
+      return;
+    }
+
+    try {
+      this.client.once('ready', () => {
+        this.isReady = true;
+        logger.info(`Discord notification client logged in as ${this.client.user?.tag}`);
+      });
+
+      await this.client.login(env.DISCORD_TOKEN);
+    } catch (error) {
+      logger.error('Failed to initialize Discord notification client:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if the Discord client is ready to send notifications
+   */
+  private ensureReady(): void {
+    if (!this.isReady) {
+      throw new Error('Discord notification service not initialized. Call initialize() first.');
+    }
+  }
+
   async sendNotification(guildId: string, message: string): Promise<boolean> {
     try {
+      this.ensureReady();
+
       // Find the guild's log channel
       const guild = await prisma.guild.findUnique({
         where: { discordGuildId: guildId },
@@ -45,6 +86,8 @@ class DiscordNotificationService {
     expeditions: string;
   }): Promise<boolean> {
     try {
+      this.ensureReady();
+
       // Find the guild's daily message channel
       const guild = await prisma.guild.findUnique({
         where: { discordGuildId: guildId },
@@ -79,6 +122,8 @@ class DiscordNotificationService {
 
   async sendSeasonChangeNotification(channelId: string, seasonName: string, emoji: string): Promise<boolean> {
     try {
+      this.ensureReady();
+
       const channel = await this.client.channels.fetch(channelId) as TextChannel | null;
       if (!channel) {
         logger.error(`Channel not found for channel ID: ${channelId}`);
@@ -115,6 +160,8 @@ class DiscordNotificationService {
     message: string
   ): Promise<boolean> {
     try {
+      this.ensureReady();
+
       // Import container here to avoid circular dependency
       const { container } = await import('../infrastructure/container');
 
@@ -146,6 +193,8 @@ class DiscordNotificationService {
     message: string
   ): Promise<boolean> {
     try {
+      this.ensureReady();
+
       const channel = await this.client.channels.fetch(channelId);
       if (!channel || !channel.isTextBased()) {
         logger.warn(`Channel ${channelId} not found or not text-based`);

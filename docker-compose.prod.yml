@@ -49,6 +49,7 @@ services:
       - PRISMA_CLIENT_ENGINE_TYPE=library
       - CORS_ORIGIN=${CORS_ORIGIN}
       - SESSION_SECRET=${SESSION_SECRET}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
       - TRUST_PROXY=1
     ports:
       - "3000:3000"
