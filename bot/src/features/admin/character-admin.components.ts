@@ -66,7 +66,13 @@ export function createCharacterSelectMenu(characters: Character[]) {
             }`
           )
           .setDescription(
-            `A:${char.isActive ? STATUS.SUCCESS : STATUS.ERROR}${char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL} R:${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR} | ${char.paTotal}${CHARACTER.PA} | ${char.hp}${CHARACTER.HP_FULL} | ${char.pm}${CHARACTER.MP_FULL} | ${char.hungerLevel}${HUNGER.ICON}`
+            `A:${char.isActive ? STATUS.SUCCESS : STATUS.ERROR} ${
+              char.isDead ? HUNGER.DEAD : CHARACTER.HP_FULL
+            } R:${char.canReroll ? STATUS.SUCCESS : STATUS.ERROR} | ${
+              char.paTotal
+            }${CHARACTER.PA} | ${char.hp}${CHARACTER.HP_FULL} | ${char.pm}${
+              CHARACTER.MP_FULL
+            } | ${char.hungerLevel}${HUNGER.ICON}`
           )
           .setValue(char.id)
       )
@@ -847,12 +853,12 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
       }
 
       const objectsText = objects
-        .map(
-          (obj: any) => {
-            const countText = obj.count > 1 ? ` (x${obj.count})` : "";
-            return `**${obj.name}**${countText}${obj.description ? ` • ${obj.description}` : ""}`;
-          }
-        )
+        .map((obj: any) => {
+          const countText = obj.count > 1 ? ` (x${obj.count})` : "";
+          return `**${obj.name}**${countText}${
+            obj.description ? ` • ${obj.description}` : ""
+          }`;
+        })
         .join("\n");
 
       fields.push({
@@ -925,9 +931,7 @@ export function createCharacterMultiSelectMenu(
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`mass_stats_select:${statType}`)
-    .setPlaceholder(
-      placeholder || `Sélectionnez les personnages à modifier`
-    )
+    .setPlaceholder(placeholder || `Sélectionnez les personnages à modifier`)
     .setMinValues(1)
     .setMaxValues(Math.min(activeCharacters.length, 25)) // Discord limit
     .addOptions(
@@ -943,9 +947,9 @@ export function createCharacterMultiSelectMenu(
             }`
           )
           .setDescription(
-            `PV: ${char.hp} | PM: ${char.pm} | PA: ${char.paTotal} | Faim: ${getHungerLevelText(
-              char.hungerLevel
-            )}`
+            `PV: ${char.hp} | PM: ${char.pm} | PA: ${
+              char.paTotal
+            } | Faim: ${getHungerLevelText(char.hungerLevel)}`
           )
           .setValue(char.id)
       )
@@ -999,9 +1003,7 @@ export function createMassStatModal(
   const modal = new ModalBuilder()
     .setCustomId(`mass_stats_modal:${action}:${statType}:${characterIdsParam}`)
     .setTitle(
-      `${action === "add" ? "Ajouter" : "Retirer"} ${
-        statLabels[statType].name
-      }`
+      `${action === "add" ? "Ajouter" : "Retirer"} ${statLabels[statType].name}`
     );
 
   const valueInput = new TextInputBuilder()
@@ -1021,4 +1023,3 @@ export function createMassStatModal(
 
   return modal;
 }
-
