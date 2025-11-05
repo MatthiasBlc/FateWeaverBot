@@ -4,7 +4,7 @@
  */
 
 // Display
-export { handleStockAdminCommand, handleStockAdminViewButton } from "./stock-admin/stock-display";
+export { handleStockAdminCommand, handleStockAdminViewButton, handleStockAdminInfoButton } from "./stock-admin/stock-display";
 
 // Add
 export { handleStockAdminAddButton, handleStockAdminAddSelect, handleStockAdminAddModal } from "./stock-admin/stock-add";

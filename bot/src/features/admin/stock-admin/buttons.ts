@@ -43,4 +43,20 @@ export function registerStockAdminButtons(handler: ButtonHandler): void {
       });
     }
   });
+
+  // Gestionnaire pour le bouton d'info de stock admin
+  handler.registerHandler("stock_admin_info", async (interaction: ButtonInteraction) => {
+    try {
+      const { handleStockAdminInfoButton } = await import(
+        "../stock-admin.command.js"
+      );
+      await handleStockAdminInfoButton(interaction);
+    } catch (error) {
+      logger.error("Error handling stock admin info button:", { error });
+      await interaction.reply({
+        content: `${STATUS.ERROR} Erreur lors de l'affichage des informations.`,
+        flags: ["Ephemeral"],
+      });
+    }
+  });
 }

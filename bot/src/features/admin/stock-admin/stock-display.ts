@@ -16,6 +16,11 @@ import { ERROR_MESSAGES } from "../../../constants/messages.js";
 import { getTownByGuildId } from "../../../utils/town";
 import { getResourceEmoji } from "../../../services/emoji-cache";
 import { STATUS } from "../../../constants/emojis.js";
+import {
+  aggregateCharacterInventories,
+  formatInventoryForEmbed,
+} from "../../../utils/character-inventory-helpers";
+import type { Character, Expedition } from "../../../types/entities";
 
 
 /**
@@ -86,7 +91,7 @@ export async function handleStockAdminCommand(
       });
     }
 
-    // Créer les boutons d'actions (seulement ajouter et retirer)
+    // Créer les boutons d'actions
     const addButton = new ButtonBuilder()
       .setCustomId("stock_admin_add")
       .setLabel("➕ Ajouter")
@@ -97,9 +102,15 @@ export async function handleStockAdminCommand(
       .setLabel("➖ Retirer")
       .setStyle(ButtonStyle.Danger);
 
+    const infoButton = new ButtonBuilder()
+      .setCustomId("stock_admin_info")
+      .setLabel("Info")
+      .setStyle(ButtonStyle.Primary);
+
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       addButton,
-      removeButton
+      removeButton,
+      infoButton
     );
 
     await interaction.reply({
@@ -193,6 +204,118 @@ export async function handleStockAdminViewButton(interaction: any) {
     logger.error("Error in stock admin view button:", { error });
     await interaction.editReply({
       content: ERROR_MESSAGES.ADMIN_STOCK_FETCH_ERROR,
+      embeds: [],
+      components: [],
+    });
+  }
+}
+
+/**
+ * Handler pour le bouton "Info"
+ * Affiche les compétences et objets de tous les personnages présents dans la ville
+ * (exclut les personnages dans une expédition DEPARTED)
+ */
+export async function handleStockAdminInfoButton(interaction: any) {
+  try {
+    await interaction.deferUpdate();
+
+    // Récupérer la ville du serveur
+    const town = await getTownByGuildId(interaction.guildId || "");
+    if (!town) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Aucune ville trouvée pour ce serveur.`,
+        embeds: [],
+        components: [],
+      });
+      return;
+    }
+
+    // Récupérer tous les personnages de la ville
+    const allCharacters = (await apiService.characters.getTownCharacters(
+      town.id
+    )) as Character[];
+
+    if (!allCharacters || allCharacters.length === 0) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Aucun personnage trouvé dans cette ville.`,
+        embeds: [],
+        components: [],
+      });
+      return;
+    }
+
+    // Récupérer toutes les expéditions pour filtrer les personnages en DEPARTED
+    const expeditions = (await apiService.expeditions.getAllExpeditions(
+      true
+    )) as Expedition[];
+
+    // Créer un Set des IDs de personnages dans des expéditions DEPARTED
+    const departedCharacterIds = new Set<string>();
+    expeditions
+      .filter((exp) => exp.status === "DEPARTED")
+      .forEach((exp) => {
+        exp.members?.forEach((member) => {
+          departedCharacterIds.add(member.character.id);
+        });
+      });
+
+    // Filtrer les personnages présents dans la ville (pas en DEPARTED)
+    const presentCharacters = allCharacters.filter(
+      (char) => !departedCharacterIds.has(char.id)
+    );
+
+    if (presentCharacters.length === 0) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Aucun personnage présent dans la ville (tous en expédition).`,
+        embeds: [],
+        components: [],
+      });
+      return;
+    }
+
+    // Agréger les compétences et objets
+    const charactersData = presentCharacters.map((char) => ({
+      id: char.id,
+      name: char.name,
+      user: char.user,
+    }));
+
+    const { skills, objects } = await aggregateCharacterInventories(charactersData);
+    const inventoryFields = formatInventoryForEmbed(skills, objects);
+
+    // Créer l'embed avec les informations
+    const embed = createInfoEmbed(
+      `📊 Compétences et Objets - ${town.name}`,
+      `Personnages présents dans la ville : **${presentCharacters.length}**`
+    );
+
+    // Ajouter les champs d'inventaire
+    inventoryFields.forEach((field) => {
+      embed.addFields({
+        name: field.name,
+        value: field.value,
+        inline: false,
+      });
+    });
+
+    await interaction.editReply({
+      embeds: [embed],
+      components: [],
+    });
+
+    logger.info("Stock admin info displayed", {
+      guildId: interaction.guildId,
+      townId: town.id,
+      townName: town.name,
+      userId: interaction.user.id,
+      totalCharacters: allCharacters.length,
+      presentCharacters: presentCharacters.length,
+      departedCharacters: departedCharacterIds.size,
+    });
+  } catch (error) {
+    logger.error("Error in stock admin info button:", { error });
+    await interaction.editReply({
+      content: `${STATUS.ERROR} Une erreur est survenue lors de l'affichage des informations.`,
       embeds: [],
       components: [],
     });

@@ -50,3 +50,4 @@ Avatar user ? (dans la db ?)
 ---
 
 ATTENTION A NE PAS MODIFIER LE CONTENU DES MESSAGES ERREUR, PUBLIC, EPHEMERAL sans mon accord ou sans ma demande explicite et ce, à a tout moment.
+Tu peux ajouter des éléments mais ne change jamais rien de l'existant.
