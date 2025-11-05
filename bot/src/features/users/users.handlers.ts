@@ -37,6 +37,7 @@ import { getCharacterCapabilities } from "../../services/capability.service";
 import { formatErrorForLog } from "../../utils/errors";
 import { httpClient } from "../../services/httpClient";
 import { createCustomEmbed, getHungerColor } from "../../utils/embeds";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 export async function handleProfileCommand(interaction: any) {
   const member = interaction.member as GuildMember;
@@ -1134,6 +1135,19 @@ export async function handleProfileButtonInteraction(interaction: any) {
           selectedCapability.name
         }**\n${result.message || ""}`,
       });
+
+      // Log admin
+      if (interaction.guildId && result.success) {
+        await handleCapabilityAdminLog(
+          interaction.guildId,
+          interaction.client,
+          character.name,
+          selectedCapability.name,
+          getEmojiForCapability(selectedCapability.emojiTag).trim(),
+          selectedCapability.costPA,
+          result
+        );
+      }
     } catch (error: any) {
       logger.error("Error using capability via button:", {
         error: formatErrorForLog(error),

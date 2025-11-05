@@ -45,6 +45,10 @@ import {
 } from "./expedition-admin-resource-handlers";
 import { EXPEDITION } from "@shared/constants/emojis.js";
 import { STATUS, SYSTEM } from "../../constants/emojis.js";
+import {
+  aggregateCharacterInventories,
+  formatInventoryForEmbed,
+} from "../../utils/character-inventory-helpers";
 
 
 export async function handleExpeditionAdminCommand(
@@ -199,6 +203,27 @@ export async function handleExpeditionAdminSelect(interaction: any) {
         name: "📺 Channel Dédié",
         value: `<#${expedition.expeditionChannelId}>`,
         inline: true,
+      });
+    }
+
+    // Aggregate and display skills and objects from all members
+    if (expedition.members && expedition.members.length > 0) {
+      const charactersData = expedition.members.map((member) => ({
+        id: member.character.id,
+        name: member.character.name,
+        user: member.character.user,
+      }));
+
+      const { skills, objects } = await aggregateCharacterInventories(charactersData);
+      const inventoryFields = formatInventoryForEmbed(skills, objects);
+
+      // Add inventory fields to embed
+      inventoryFields.forEach((field) => {
+        embed.addFields({
+          name: field.name,
+          value: field.value,
+          inline: false,
+        });
       });
     }
 

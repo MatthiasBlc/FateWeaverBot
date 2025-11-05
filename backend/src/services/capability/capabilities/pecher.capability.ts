@@ -125,15 +125,16 @@ export class PecherCapability extends BaseCapability {
 
     // Tirer aléatoirement une entrée (ou deux si LUCKY_ROLL)
     let lootEntry;
+    let bonusLogMessage: string | undefined;
+
     if (hasBonus) {
       // LUCKY_ROLL : deux tirages, on garde l'index le plus élevé (meilleur dans la table)
       const randomIndex1 = Math.floor(Math.random() * lootEntries.length);
       const randomIndex2 = Math.floor(Math.random() * lootEntries.length);
       const bestIndex = Math.max(randomIndex1, randomIndex2);
       lootEntry = lootEntries[bestIndex];
-      console.log(
-        `[LUCKY_FISH] PA: ${paToUse} | Index 1: ${randomIndex1} (${lootEntries[randomIndex1].resourceName} x${lootEntries[randomIndex1].quantity}) | Index 2: ${randomIndex2} (${lootEntries[randomIndex2].resourceName} x${lootEntries[randomIndex2].quantity}) | Meilleur index: ${bestIndex} | Résultat: ${lootEntry.resourceName} x${lootEntry.quantity}`
-      );
+      bonusLogMessage = `[LUCKY_FISH] PA: ${paToUse} | Index 1: ${randomIndex1} (${lootEntries[randomIndex1].resourceName} x${lootEntries[randomIndex1].quantity}) | Index 2: ${randomIndex2} (${lootEntries[randomIndex2].resourceName} x${lootEntries[randomIndex2].quantity}) | Meilleur index: ${bestIndex} | Résultat: ${lootEntry.resourceName} x${lootEntry.quantity}`;
+      console.log(bonusLogMessage);
     } else {
       const randomIndex = Math.floor(Math.random() * lootEntries.length);
       lootEntry = lootEntries[randomIndex];
@@ -153,6 +154,7 @@ export class PecherCapability extends BaseCapability {
         },
         metadata: {
           bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
+          bonusLogMessage,
         },
       };
     }
@@ -175,6 +177,7 @@ export class PecherCapability extends BaseCapability {
         loot: { [lootEntry.resourceName]: lootEntry.quantity },
         metadata: {
           bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
+          bonusLogMessage,
           objectFound: "Coquillage",
         },
       };
@@ -200,6 +203,7 @@ export class PecherCapability extends BaseCapability {
       loot: { [lootEntry.resourceName]: lootEntry.quantity },
       metadata: {
         bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
+        bonusLogMessage,
       },
     };
   }

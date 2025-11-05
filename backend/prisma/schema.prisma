@@ -58,6 +58,7 @@ model Guild {
   memberCount           Int      @default(0) // Nombre de membres dans la guilde
   logChannelId          String? // ID du salon Discord pour les logs automatiques
   dailyMessageChannelId String?  @map("daily_message_channel_id") // ID du salon Discord pour les messages quotidiens (météo, saisons)
+  adminLogChannelId     String?  @map("admin_log_channel_id") // ID du salon Discord pour les logs admin (capacités interprétées + bonus)
   town                  Town? // Relation 1:1 avec la ville
   roles                 Role[] // Ajout de la relation avec les rôles
   createdAt             DateTime @default(now()) @map("created_at")

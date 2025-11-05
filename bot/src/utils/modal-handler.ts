@@ -371,6 +371,64 @@ export class ModalHandler {
     // =================== NOUVEAUX HANDLERS ===================
     // AJOUTER LES NOUVEAUX HANDLERS CI-DESSOUS SEULEMENT
 
+    // Gestionnaire pour les modals de cartographie (1 PA)
+    this.registerHandlerByPrefix("cartography_1pa_modal_", async (interaction) => {
+      try {
+        const { handleCartography1PAModal } = await import(
+          "../modals/cartography-modals.js"
+        );
+        await handleCartography1PAModal(interaction);
+      } catch (error) {
+        logger.error("Error handling cartography 1PA modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la cartographie.`,
+            flags: ["Ephemeral"],
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour les modals de cartographie (2 PA)
+    this.registerHandlerByPrefix("cartography_2pa_modal_", async (interaction) => {
+      try {
+        const { handleCartography2PAModal } = await import(
+          "../modals/cartography-modals.js"
+        );
+        await handleCartography2PAModal(interaction);
+      } catch (error) {
+        logger.error("Error handling cartography 2PA modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la cartographie.`,
+            flags: ["Ephemeral"],
+          });
+        }
+      }
+    });
+
+    // Gestionnaire pour les modals de modification de masse (PV, PM, FAIM)
+    this.registerHandlerByPrefix("mass_stats_modal:", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling mass stats modal:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la modification de masse.`,
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la modification de masse.`,
+          });
+        }
+      }
+    });
+
     // Gestionnaire pour le modal d'ajout de projet admin (étape 1)
     this.registerHandler("project_admin_add_step1_modal", async (interaction) => {
       try {

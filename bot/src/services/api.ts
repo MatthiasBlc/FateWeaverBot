@@ -150,6 +150,18 @@ class APIService {
   }
 
   /**
+   * Met à jour le canal des logs admin d'une guilde
+   * @param discordGuildId L'ID Discord de la guilde
+   * @param adminLogChannelId L'ID du canal des logs admin (ou null pour désactiver)
+   */
+  public async updateGuildAdminLogChannel(
+    discordGuildId: string,
+    adminLogChannelId: string | null
+  ) {
+    return this.guilds.updateGuildAdminLogChannel(discordGuildId, adminLogChannelId);
+  }
+
+  /**
    * Crée ou met à jour un rôle
    */
   public async upsertRole(

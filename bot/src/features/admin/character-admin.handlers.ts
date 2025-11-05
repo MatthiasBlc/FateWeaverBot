@@ -6,6 +6,7 @@ import { checkAdmin } from "../../utils/roles";
 import type { Character, Town } from "./character-admin.types";
 import {
   createCharacterSelectMenu,
+  createMassModificationButtons,
   CHARACTER_ADMIN_CUSTOM_IDS,
 } from "./character-admin.components";
 import { STATUS } from "../../constants/emojis.js";
@@ -128,10 +129,13 @@ export async function handleCharacterAdminCommand(
     // Créer le menu de sélection des personnages
     const selectMenu = createCharacterSelectMenu(characters);
 
+    // Créer les boutons de modification de masse (retourne 2 ActionRows)
+    const massModButtons = createMassModificationButtons();
+
     await interaction.reply({
       content:
-        "👤 **Administration des Personnages**\nSélectionnez un personnage à gérer :",
-      components: [selectMenu],
+        "👤 **Administration des Personnages**\nSélectionnez un personnage à gérer ou utilisez les modifications de masse :",
+      components: [selectMenu, ...massModButtons],
       flags: ["Ephemeral"],
     });
 
@@ -179,13 +183,19 @@ export async function handleCharacterAdminInteraction(interaction: any) {
       // Ne pas defer les boutons qui ouvrent des modales
       const isModalButton =
         customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.STATS_BUTTON_PREFIX) ||
-        customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX);
+        customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.ADVANCED_STATS_BUTTON_PREFIX) ||
+        customId.startsWith("mass_stats_add:") ||
+        customId.startsWith("mass_stats_remove:");
 
       // Ne pas defer les boutons qui créent une nouvelle réponse éphémère (ils font leur propre deferReply)
       const isReplyButton =
         customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.CAPABILITIES_BUTTON_PREFIX) ||
         customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.OBJECTS_BUTTON_PREFIX) ||
         customId.startsWith(CHARACTER_ADMIN_CUSTOM_IDS.SKILLS_BUTTON_PREFIX) ||
+        customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PV_BUTTON ||
+        customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PM_BUTTON ||
+        customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_FAIM_BUTTON ||
+        customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PA_BUTTON ||
         customId.startsWith("capability_admin_add:") ||
         customId.startsWith("capability_admin_remove:") ||
         customId.startsWith("capability_admin_view:") ||
@@ -537,6 +547,75 @@ export async function handleCharacterAdminInteraction(interaction: any) {
     } else {
       return handleAdvancedStatsModalSubmit(interaction);
     }
+  }
+
+  // Vérifier si c'est un bouton de modification de masse (PV, PM, FAIM, PA)
+  if (
+    customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PV_BUTTON ||
+    customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PM_BUTTON ||
+    customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_FAIM_BUTTON ||
+    customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PA_BUTTON
+  ) {
+    const {
+      handleMassPVButton,
+      handleMassPMButton,
+      handleMassFaimButton,
+      handleMassPAButton,
+    } = await import("./character-admin/character-mass-stats");
+
+    if (customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PV_BUTTON) {
+      return handleMassPVButton(interaction);
+    } else if (customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_PM_BUTTON) {
+      return handleMassPMButton(interaction);
+    } else if (customId === CHARACTER_ADMIN_CUSTOM_IDS.MASS_FAIM_BUTTON) {
+      return handleMassFaimButton(interaction);
+    } else {
+      return handleMassPAButton(interaction);
+    }
+  }
+
+  // Vérifier si c'est une sélection de personnages pour modification de masse
+  if (customId.startsWith("mass_stats_select:")) {
+    const { handleMassStatsSelect } = await import(
+      "./character-admin/character-mass-stats"
+    );
+    return handleMassStatsSelect(interaction);
+  }
+
+  // Vérifier si c'est un bouton d'action (Ajouter/Retirer) pour modification de masse
+  if (
+    customId.startsWith("mass_stats_add:") ||
+    customId.startsWith("mass_stats_remove:")
+  ) {
+    const { handleMassStatsAction } = await import(
+      "./character-admin/character-mass-stats"
+    );
+    return handleMassStatsAction(interaction);
+  }
+
+  // Vérifier si c'est une soumission de modale pour modification de masse
+  if (customId.startsWith("mass_stats_modal:")) {
+    const { handleMassStatsModalSubmit } = await import(
+      "./character-admin/character-mass-stats"
+    );
+    return handleMassStatsModalSubmit(interaction);
+  }
+
+  // Vérifier si c'est une confirmation de modification de masse (bouton Confirmer)
+  if (customId.startsWith("mass_stats_confirm_yes:")) {
+    const { handleMassStatsConfirmation } = await import(
+      "./character-admin/character-mass-stats"
+    );
+    return handleMassStatsConfirmation(interaction);
+  }
+
+  // Vérifier si c'est une annulation de modification de masse (bouton Annuler)
+  if (customId === "mass_stats_confirm_no") {
+    await interaction.update({
+      content: `${STATUS.ERROR} Modification annulée.`,
+      components: [],
+    });
+    return;
   }
 
   // Interaction non reconnue

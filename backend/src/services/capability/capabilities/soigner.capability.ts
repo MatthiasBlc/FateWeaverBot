@@ -66,6 +66,7 @@ export class SoignerCapability extends BaseCapability {
       // Calculer les PV à ajouter (base = 1)
       let hpToAdd = 1;
       let bonusApplied = false;
+      let bonusLogMessage: string | undefined;
 
       if (hasHealBonus) {
         // HEAL_EXTRA : 20% de chance d'avoir +1 PV supplémentaire
@@ -76,9 +77,8 @@ export class SoignerCapability extends BaseCapability {
           hpToAdd = 2; // +1 PV bonus
         }
 
-        console.log(
-          `[HEAL_EXTRA] Soigneur: ${character.name} | Cible: ${target.name} | Roll: ${roll}/100 (seuil: 20) | Bonus appliqué: ${bonusApplied} | PV ajoutés: ${hpToAdd}`
-        );
+        bonusLogMessage = `[HEAL_EXTRA] Soigneur: ${character.name} | Cible: ${target.name} | Roll: ${roll}/100 (seuil: 20) | Bonus appliqué: ${bonusApplied} | PV ajoutés: ${hpToAdd}`;
+        console.log(bonusLogMessage);
       }
 
       // Appliquer les soins (sans dépasser 5 PV)
@@ -98,6 +98,7 @@ export class SoignerCapability extends BaseCapability {
         ],
         metadata: {
           bonusApplied: bonusApplied ? ['HEAL_EXTRA'] : [],
+          bonusLogMessage,
         },
       };
     } else {

@@ -171,3 +171,48 @@ export async function hasDivertExtraBonus(
     slot => slot.objectType.capacityBonuses.length > 0
   );
 }
+
+/**
+ * Récupère les objets avec le bonus ADMIN_INTERPRETED pour une capacité donnée
+ * @param characterId ID du personnage
+ * @param capabilityId ID de la capacité
+ * @param prisma Instance Prisma
+ * @returns Tableau des noms d'objets qui donnent le bonus ADMIN_INTERPRETED
+ */
+export async function getAdminInterpretedBonusObjects(
+  characterId: string,
+  capabilityId: string,
+  prisma: PrismaClient
+): Promise<string[]> {
+  // Récupérer l'inventaire du personnage avec les bonus de capacité
+  const inventory = await prisma.characterInventory.findUnique({
+    where: { characterId },
+    include: {
+      slots: {
+        include: {
+          objectType: {
+            include: {
+              capacityBonuses: {
+                where: {
+                  capabilityId,
+                  bonusType: 'ADMIN_INTERPRETED'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!inventory) {
+    return [];
+  }
+
+  // Récupérer les noms des objets qui ont le bonus ADMIN_INTERPRETED
+  const objectsWithBonus = inventory.slots
+    .filter(slot => slot.objectType.capacityBonuses.length > 0)
+    .map(slot => slot.objectType.name);
+
+  return objectsWithBonus;
+}

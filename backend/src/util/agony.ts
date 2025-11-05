@@ -4,10 +4,11 @@
  * Centralizes the logic for managing agony state transitions.
  *
  * RULES:
- * 1. If HP becomes 1 (from any cause) → Set agonySince if not already set
- * 2. If hunger becomes 0 (from any cause) → Set HP to 1 AND set agonySince
+ * 1. If HP becomes 1 (from any cause) → Set agonySince + Set PA to 0
+ * 2. If hunger becomes 0 (from any cause) → Set HP to 1 + Set agonySince + Set PA to 0
  * 3. If HP recovers (hp > 1) → Clear agonySince
  * 4. After 2 days in agony → Death (handled in daily-pa.cron.ts)
+ * 5. While in agony (HP=1) → Cannot use PA (validated in character-validators.ts)
  */
 
 export interface AgonyUpdateData {
@@ -15,6 +16,7 @@ export interface AgonyUpdateData {
   hungerLevel?: number;
   agonySince?: Date | null;
   enteredAgony?: boolean; // New flag to detect agony entrance
+  paTotal?: number; // PA to set when entering agony
 }
 
 /**
@@ -48,17 +50,19 @@ export function applyAgonyRules(
     updateData.hungerLevel = newHunger;
   }
 
-  // RULE 2: If hunger becomes 0 → Force HP to 1 and set agony
+  // RULE 2: If hunger becomes 0 → Force HP to 1, set agony, and reset PA to 0
   if (finalHunger === 0) {
     updateData.hp = 1;
+    updateData.paTotal = 0; // Reset PA when entering agony
     // Only set agonySince if not already in agony
     if (currentHp !== 1 || !currentAgonySince) {
       updateData.agonySince = new Date();
       updateData.enteredAgony = true; // Flag for notification
     }
   }
-  // RULE 1: If HP becomes 1 (and not from hunger=0) → Set agony
+  // RULE 1: If HP becomes 1 (and not from hunger=0) → Set agony and reset PA to 0
   else if (finalHp === 1) {
+    updateData.paTotal = 0; // Reset PA when entering agony
     // Only set agonySince if not already in agony
     if (currentHp !== 1 || !currentAgonySince) {
       updateData.agonySince = new Date();

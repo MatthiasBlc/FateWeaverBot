@@ -4,6 +4,7 @@ import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 /**
  * Gère le choix du mode de soins (1 PA = Soigner, 2 PA = Cataplasme)
@@ -182,6 +183,21 @@ async function executeHeal(
       content: `${CAPABILITIES.HEALING} **Soigner**\n${result.message || ""}`,
       components: [],
     });
+
+    // Log admin - Récupérer le nom du personnage soigneur
+    if (interaction.guildId && result.success) {
+      const characterResponse = await httpClient.get(`/characters/${characterId}`);
+      const character = characterResponse.data;
+      await handleCapabilityAdminLog(
+        interaction.guildId,
+        interaction.client,
+        character.name,
+        "Soigner",
+        CAPABILITIES.HEALING,
+        1, // Soigner coûte toujours 1 PA
+        result
+      );
+    }
   } catch (error: any) {
     logger.error("Error executing heal:", { error });
     throw error;

@@ -34,14 +34,15 @@ export class CouperDuBoisCapability extends BaseCapability {
     );
 
     let woodAmount: number;
+    let bonusLogMessage: string | undefined;
+
     if (hasBonus) {
       // LUCKY_ROLL : deux tirages, on garde le meilleur
       const roll1 = Math.floor(Math.random() * 2) + 2; // 2-3
       const roll2 = Math.floor(Math.random() * 2) + 2; // 2-3
       woodAmount = Math.max(roll1, roll2);
-      console.log(
-        `[LUCKY_WOOD] Personnage: ${character.name} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${woodAmount}`
-      );
+      bonusLogMessage = `[LUCKY_WOOD] Personnage: ${character.name} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${woodAmount}`;
+      console.log(bonusLogMessage);
     } else {
       woodAmount = Math.floor(Math.random() * 2) + 2; // 2-3
     }
@@ -54,6 +55,7 @@ export class CouperDuBoisCapability extends BaseCapability {
       loot: { Bois: woodAmount },
       metadata: {
         bonusApplied: hasBonus ? ["LUCKY_ROLL"] : [],
+        bonusLogMessage,
       },
     };
   }

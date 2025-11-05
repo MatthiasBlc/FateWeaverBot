@@ -1,6 +1,20 @@
 /**
  * Interface standardisée pour les résultats d'exécution de capacités
  * Utilisée pour unifier les retours entre capability.service et character-capability.service
+ *
+ * ⚠️ DUPLICATION: Ce type existe aussi dans bot/src/utils/capability-helpers.ts
+ *
+ * Raison de la duplication:
+ * - Le backend et le bot sont des projets TypeScript séparés
+ * - Pas de package @shared/types commun pour l'instant
+ *
+ * TODO (Long terme):
+ * - Créer un package @shared/types pour partager les interfaces entre backend et bot
+ * - Utiliser pnpm workspaces ou lerna pour gérer le monorepo
+ *
+ * En attendant, IMPORTANT:
+ * - Garder ce type synchronisé avec bot/src/utils/capability-helpers.ts
+ * - Si vous ajoutez un champ dans metadata, l'ajouter dans les 2 fichiers
  */
 
 export interface CapabilityExecutionResult {
@@ -33,7 +47,9 @@ export interface CapabilityExecutionResult {
   metadata?: {
     divertCounter?: number;      // Compteur pour Divertir
     bonusApplied?: string[];     // Liste des bonus appliqués (LUCKY_ROLL, HEAL_EXTRA, etc.)
-    rolls?: any;                  // Détails des tirages aléatoires (pour debug)
+    bonusLogMessage?: string;    // Message de log détaillé pour les bonus (ex: "[LUCKY HUNT] Saison: Été | Roll 1: 6 | Roll 2: 9")
+    pmGained?: number;           // PM gagnés (pour capacités qui donnent des PM comme le spectacle de Divertir)
+    rolls?: any;                 // Détails des tirages aléatoires (pour debug)
     [key: string]: any;
   };
 }

@@ -59,13 +59,14 @@ export class DivertirCapability extends BaseCapability {
     );
 
     let instantSpectacle = false;
+    let bonusLogMessage: string | undefined;
+
     if (newCounter < 5 && hasDivertBonus) {
       const chancePercent = newCounter * 5; // 5%, 10%, 15%, 20%
       const roll = Math.floor(Math.random() * 100) + 1;
       instantSpectacle = roll <= chancePercent;
-      console.log(
-        `[DIVERT_EXTRA] Artiste: ${character.name} | PA investis: ${newCounter}/5 | Chance: ${chancePercent}% | Roll: ${roll}/100 | Spectacle instantané: ${instantSpectacle}`
-      );
+      bonusLogMessage = `[DIVERT_EXTRA] Artiste: ${character.name} | PA investis: ${newCounter}/5 | Chance: ${chancePercent}% | Roll: ${roll}/100 | Spectacle instantané: ${instantSpectacle}`;
+      console.log(bonusLogMessage);
     }
 
     if (newCounter >= 5 || instantSpectacle) {
@@ -92,6 +93,7 @@ export class DivertirCapability extends BaseCapability {
           divertCounter: 0,
           pmGained: 1,
           bonusApplied: instantSpectacle ? ['ENTERTAIN_BURST'] : [],
+          bonusLogMessage: instantSpectacle ? bonusLogMessage : undefined,
         },
       };
     } else {

@@ -274,6 +274,28 @@ export class SelectMenuHandler {
     // Ne pas modifier les handlers existants au-dessus de cette ligne
     // ========================================================
 
+    // Gestionnaire pour les sélections de modification de masse (PV, PM, FAIM)
+    this.registerHandlerByPrefix("mass_stats_select:", async (interaction) => {
+      try {
+        const { handleCharacterAdminInteraction } = await import(
+          "../features/admin/character-admin.handlers.js"
+        );
+        await handleCharacterAdminInteraction(interaction);
+      } catch (error) {
+        logger.error("Error handling mass stats select:", { error });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de personnages.`,
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la sélection de personnages.`,
+          });
+        }
+      }
+    });
+
     // Gestionnaire pour les sélections de modification de projet admin
     this.registerHandler("project_admin_edit_select", async (interaction) => {
       try {

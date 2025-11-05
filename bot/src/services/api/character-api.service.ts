@@ -205,4 +205,18 @@ export class CharacterAPIService extends BaseAPIService {
   public async getCharacterCapabilities(characterId: string) {
     return this.get(`/characters/${characterId}/capabilities`);
   }
+
+  /**
+   * Récupère les compétences (skills) d'un personnage
+   */
+  public async getCharacterSkills(characterId: string) {
+    return this.get(`/characters/${characterId}/skills`);
+  }
+
+  /**
+   * Récupère les objets d'un personnage
+   */
+  public async getCharacterObjects(characterId: string) {
+    return this.get(`/characters/${characterId}/objects`);
+  }
 }

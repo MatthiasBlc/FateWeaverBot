@@ -68,6 +68,7 @@ async function hungerDecrease() {
     if (agonyUpdate.hp !== undefined) updateData.hp = agonyUpdate.hp;
     if (agonyUpdate.hungerLevel !== undefined) updateData.hungerLevel = agonyUpdate.hungerLevel;
     if (agonyUpdate.agonySince !== undefined) updateData.agonySince = agonyUpdate.agonySince;
+    if (agonyUpdate.paTotal !== undefined) updateData.paTotal = agonyUpdate.paTotal;
 
     await prisma.character.update({
       where: { id: character.id },
@@ -320,6 +321,7 @@ async function deductExpeditionPA() {
         select: {
           id: true,
           name: true,
+          status: true,
           townId: true,
           pendingEmergencyReturn: true
         }
@@ -350,18 +352,28 @@ async function deductExpeditionPA() {
       deductedCount++;
       console.log(`   - ${character.name}: -2 PA (expédition)`);
     } else {
-      // Cannot afford 2 PA → catastrophic return
-      // Character pays what they can and returns
+      // Cannot afford 2 PA
       const paidAmount = character.paTotal;
 
-      await prisma.character.update({
-        where: { id: character.id },
-        data: { paTotal: 0 }
-      });
-
-      await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id);
-      catastrophicReturns++;
-      console.log(`   - ${character.name}: Retrait catastrophique (PA insuffisant: ${paidAmount}/2 PA payés)`);
+      if (expedition.status === 'LOCKED') {
+        // For LOCKED expeditions: Pay what they can, stay in expedition
+        // This should never happen in normal conditions (PA regeneration ensures ≥2 PA)
+        // But we handle it gracefully for edge cases (tests, manual DB changes)
+        await prisma.character.update({
+          where: { id: character.id },
+          data: { paTotal: 0 }
+        });
+        console.log(`   - ${character.name}: Paiement partiel (${paidAmount}/2 PA) - reste dans l'expédition LOCKED`);
+      } else {
+        // For DEPARTED expeditions: Catastrophic return
+        await prisma.character.update({
+          where: { id: character.id },
+          data: { paTotal: 0 }
+        });
+        await container.expeditionService.removeMemberCatastrophic(expedition.id, character.id);
+        catastrophicReturns++;
+        console.log(`   - ${character.name}: Retrait catastrophique (PA insuffisant: ${paidAmount}/2 PA payés)`);
+      }
     }
   }
 

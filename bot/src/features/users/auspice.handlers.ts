@@ -3,6 +3,7 @@ import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 /**
  * Gère le choix du nombre de PA pour auspice
@@ -100,6 +101,21 @@ async function executeAuspice(
       components: [],
     });
     logger.info("Reply edited successfully");
+
+    // Log admin - Récupérer le nom du personnage
+    if (interaction.guildId && result.success) {
+      const characterResponse = await httpClient.get(`/characters/${characterId}`);
+      const character = characterResponse.data;
+      await handleCapabilityAdminLog(
+        interaction.guildId,
+        interaction.client,
+        character.name, // Utilise le nom du personnage
+        "Auspice",
+        CAPABILITIES.AUGURING,
+        paToUse,
+        result
+      );
+    }
   } catch (error: any) {
     logger.error("Error executing auspice:", { error });
     throw error;
