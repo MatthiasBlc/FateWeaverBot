@@ -37,6 +37,11 @@ export const CHARACTER_ADMIN_CUSTOM_IDS = {
   SKILLS_BUTTON_PREFIX: "character_admin_skills_btn_",
   STATS_MODAL_PREFIX: "character_admin_stats_modal_",
   ADVANCED_STATS_MODAL_PREFIX: "character_admin_advanced_modal_",
+  // Mass modification buttons
+  MASS_PV_BUTTON: "character_admin_mass_pv",
+  MASS_PM_BUTTON: "character_admin_mass_pm",
+  MASS_FAIM_BUTTON: "character_admin_mass_faim",
+  MASS_PA_BUTTON: "character_admin_mass_pa",
 };
 
 // --- Component Builders --- //
@@ -866,3 +871,156 @@ export async function createAdminProfileEmbed(character: any): Promise<any> {
 
   return embed;
 }
+
+// --- Mass Modification Components --- //
+
+/**
+ * Crée les boutons de modification de masse (PA, FAIM, PV, PM).
+ * Ces boutons apparaissent en bas de la commande /character-admin.
+ * Retourne 2 ActionRows: Row 1 (PA, FAIM), Row 2 (PV, PM)
+ */
+export function createMassModificationButtons(): ActionRowBuilder<ButtonBuilder>[] {
+  const row1 = createActionButtons([
+    {
+      customId: CHARACTER_ADMIN_CUSTOM_IDS.MASS_PA_BUTTON,
+      label: "Modification PA (Masse)",
+      style: ButtonStyle.Primary,
+      emoji: CHARACTER.PA,
+    },
+    {
+      customId: CHARACTER_ADMIN_CUSTOM_IDS.MASS_FAIM_BUTTON,
+      label: "Modification FAIM (Masse)",
+      style: ButtonStyle.Primary,
+      emoji: HUNGER.ICON,
+    },
+  ]);
+
+  const row2 = createActionButtons([
+    {
+      customId: CHARACTER_ADMIN_CUSTOM_IDS.MASS_PV_BUTTON,
+      label: "Modification PV (Masse)",
+      style: ButtonStyle.Primary,
+      emoji: CHARACTER.HP_FULL,
+    },
+    {
+      customId: CHARACTER_ADMIN_CUSTOM_IDS.MASS_PM_BUTTON,
+      label: "Modification PM (Masse)",
+      style: ButtonStyle.Primary,
+      emoji: CHARACTER.MP_FULL,
+    },
+  ]);
+
+  return [row1, row2];
+}
+
+/**
+ * Crée le menu de sélection multiple de personnages pour modifications de masse.
+ * Seuls les personnages actifs (isActive) sont affichés.
+ */
+export function createCharacterMultiSelectMenu(
+  characters: Character[],
+  statType: "pv" | "pm" | "faim" | "pa",
+  placeholder?: string
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  // Filtrer uniquement les personnages actifs
+  const activeCharacters = characters.filter((char) => char.isActive);
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`mass_stats_select:${statType}`)
+    .setPlaceholder(
+      placeholder || `Sélectionnez les personnages à modifier`
+    )
+    .setMinValues(1)
+    .setMaxValues(Math.min(activeCharacters.length, 25)) // Discord limit
+    .addOptions(
+      activeCharacters.map((char) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(
+            `${char.name}${
+              char.user?.globalName
+                ? ` - ${char.user.globalName}`
+                : char.user?.username
+                ? ` - ${char.user.username}`
+                : ""
+            }`
+          )
+          .setDescription(
+            `PV: ${char.hp} | PM: ${char.pm} | PA: ${char.paTotal} | Faim: ${getHungerLevelText(
+              char.hungerLevel
+            )}`
+          )
+          .setValue(char.id)
+      )
+    );
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
+}
+
+/**
+ * Crée les boutons d'action (Ajouter/Retirer) pour la modification de masse.
+ */
+export function createMassStatActionButtons(
+  statType: "pv" | "pm" | "faim" | "pa",
+  characterIds: string[]
+): ActionRowBuilder<ButtonBuilder> {
+  const characterIdsParam = characterIds.join(",");
+
+  return createActionButtons([
+    {
+      customId: `mass_stats_add:${statType}:${characterIdsParam}`,
+      label: `${ACTIONS.ADD} Ajouter`,
+      style: ButtonStyle.Success,
+    },
+    {
+      customId: `mass_stats_remove:${statType}:${characterIdsParam}`,
+      label: `${ACTIONS.REMOVE} Retirer`,
+      style: ButtonStyle.Danger,
+    },
+  ]);
+}
+
+/**
+ * Crée la modale pour entrer la valeur de modification de masse.
+ */
+export function createMassStatModal(
+  statType: "pv" | "pm" | "faim" | "pa",
+  action: "add" | "remove",
+  characterIds: string[]
+): ModalBuilder {
+  const characterIdsParam = characterIds.join(",");
+
+  const statLabels = {
+    pv: { name: "PV (Points de Vie)", range: "0-5" },
+    pm: { name: "PM (Points Mentaux)", range: "0-5" },
+    faim: { name: "FAIM (Niveau de faim)", range: "0-4" },
+    pa: { name: "PA (Points d'Action)", range: "0-4" },
+  };
+
+  const modal = new ModalBuilder()
+    .setCustomId(`mass_stats_modal:${action}:${statType}:${characterIdsParam}`)
+    .setTitle(
+      `${action === "add" ? "Ajouter" : "Retirer"} ${
+        statLabels[statType].name
+      }`
+    );
+
+  const valueInput = new TextInputBuilder()
+    .setCustomId("value_input")
+    .setLabel(
+      `Valeur à ${action === "add" ? "ajouter" : "retirer"} (${
+        statLabels[statType].range
+      })`
+    )
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder("Ex: 1")
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(valueInput)
+  );
+
+  return modal;
+}
+

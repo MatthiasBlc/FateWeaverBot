@@ -55,4 +55,30 @@ export function registerCharacterAdminButtons(handler: ButtonHandler): void {
       });
     }
   });
+
+  // Gestionnaire pour les boutons de modification de masse (PV, PM, FAIM)
+  handler.registerHandlerByPrefix("mass_stats_", async (interaction: ButtonInteraction) => {
+    try {
+      const { handleCharacterAdminInteraction } = await import(
+        "../character-admin.handlers.js"
+      );
+      await handleCharacterAdminInteraction(interaction);
+    } catch (error) {
+      logger.error("Error handling mass stats button:", { error });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la modification de masse.`,
+            flags: ["Ephemeral"],
+          });
+        } else if (interaction.deferred) {
+          await interaction.editReply({
+            content: `${STATUS.ERROR} Erreur lors du traitement de la modification de masse.`,
+          });
+        }
+      } catch (replyError) {
+        logger.error("Cannot reply to mass stats interaction (probably expired):", { replyError });
+      }
+    }
+  });
 }
