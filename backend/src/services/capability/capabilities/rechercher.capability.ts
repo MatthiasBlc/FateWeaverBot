@@ -1,6 +1,7 @@
 import { BaseCapability } from "../base-capability.service";
 import { CapabilityExecutionResult } from "../../types/capability-result.types";
 import { NotFoundError } from "../../../shared/errors";
+import { getAdminInterpretedBonusObjects } from "../../../util/character-validators";
 
 /**
  * Capacité Rechercher
@@ -26,6 +27,13 @@ export class RechercherCapability extends BaseCapability {
       throw new NotFoundError("Character", characterId);
     }
 
+    // Récupérer les objets avec bonus ADMIN_INTERPRETED
+    const bonusObjects = await getAdminInterpretedBonusObjects(
+      characterId,
+      capabilityId,
+      this.prisma
+    );
+
     const infoCount = paToUse === 1 ? 1 : 3;
     const message = `Vous effectuez vos recherches (coût : ${paToUse} PA, ${infoCount} info(s)). Les administrateurs ont été notifiés et vous donneront les résultats de vos analyses.`;
     const publicMessage = `🔎 **${character.name}** effectue des recherches ! (**${paToUse} PA dépensés, ${infoCount} info(s)** {ADMIN_TAG})`;
@@ -37,7 +45,8 @@ export class RechercherCapability extends BaseCapability {
       paConsumed: paToUse,
       loot: {},
       metadata: {
-        bonusApplied: [],
+        bonusApplied: bonusObjects.length > 0 ? ['ADMIN_INTERPRETED'] : [],
+        bonusObjects,
         infoCount,
       },
     };

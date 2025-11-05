@@ -102,12 +102,14 @@ async function executeAuspice(
     });
     logger.info("Reply edited successfully");
 
-    // Log admin
+    // Log admin - Récupérer le nom du personnage
     if (interaction.guildId && result.success) {
+      const characterResponse = await httpClient.get(`/characters/${characterId}`);
+      const character = characterResponse.data;
       await handleCapabilityAdminLog(
         interaction.guildId,
         interaction.client,
-        interaction.user.username,
+        character.name, // Utilise le nom du personnage
         "Auspice",
         CAPABILITIES.AUGURING,
         paToUse,

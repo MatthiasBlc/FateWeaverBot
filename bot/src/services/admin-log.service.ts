@@ -11,6 +11,8 @@ export interface AdminLogData {
   capabilityEmoji: string;
   paSpent: number;
   bonusLog?: string; // Message de log bonus (format console.log)
+  locations?: string[]; // Coordonnées pour les capacités de cartographie
+  bonusObjects?: string[]; // Objets donnant des bonus ADMIN_INTERPRETED
 }
 
 /**
@@ -69,6 +71,16 @@ function formatAdminLogMessage(data: AdminLogData): string {
   let message = `${data.capabilityEmoji} **${data.capabilityName}**\n`;
   message += `**Personnage :** ${data.characterName}\n`;
   message += `**PA dépensés :** ${data.paSpent}`;
+
+  // Ajouter les coordonnées si présentes
+  if (data.locations && data.locations.length > 0) {
+    message += `\n**Lieu${data.locations.length > 1 ? 'x' : ''} :** ${data.locations.join(', ')}`;
+  }
+
+  // Ajouter les bonus ADMIN_INTERPRETED si présents
+  if (data.bonusObjects && data.bonusObjects.length > 0) {
+    message += `\n**Bonus :** ${data.capabilityName} **+** (${data.bonusObjects.join(', ')})`;
+  }
 
   if (data.bonusLog) {
     message += `\n\n\`\`\`\n${data.bonusLog}\n\`\`\``;

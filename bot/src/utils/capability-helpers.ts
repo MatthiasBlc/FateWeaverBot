@@ -44,6 +44,7 @@ export interface CapabilityExecutionResult {
  * @param capabilityEmoji Emoji de la capacité
  * @param paSpent PA dépensés
  * @param result Résultat de l'exécution de la capacité (contient les bonus)
+ * @param locations Coordonnées optionnelles (pour cartographie)
  */
 export async function handleCapabilityAdminLog(
   guildId: string,
@@ -52,7 +53,8 @@ export async function handleCapabilityAdminLog(
   capabilityName: string,
   capabilityEmoji: string,
   paSpent: number,
-  result: CapabilityExecutionResult
+  result: CapabilityExecutionResult,
+  locations?: string[]
 ): Promise<void> {
   try {
     const adminLogData: AdminLogData = {
@@ -65,6 +67,18 @@ export async function handleCapabilityAdminLog(
     // Ajouter le bonus log si présent dans les metadata
     if (result.metadata?.bonusLogMessage) {
       adminLogData.bonusLog = result.metadata.bonusLogMessage;
+    }
+
+    // Ajouter les coordonnées si fournies OU si présentes dans les metadata
+    if (locations && locations.length > 0) {
+      adminLogData.locations = locations;
+    } else if (result.metadata?.locations && result.metadata.locations.length > 0) {
+      adminLogData.locations = result.metadata.locations;
+    }
+
+    // Ajouter les objets bonus si présents dans les metadata
+    if (result.metadata?.bonusObjects && result.metadata.bonusObjects.length > 0) {
+      adminLogData.bonusObjects = result.metadata.bonusObjects;
     }
 
     await sendAdminLog(guildId, client, adminLogData);

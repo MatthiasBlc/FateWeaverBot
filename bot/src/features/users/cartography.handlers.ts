@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { httpClient } from "../../services/httpClient";
+import { STATUS } from "../../constants/emojis";
 import { logger } from "../../services/logger";
-import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
-import { CAPABILITIES, STATUS } from "../../constants/emojis";
-import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
+import { createCartography1PAModal, createCartography2PAModal } from "../../modals/cartography-modals";
 
 /**
  * Gère le choix du nombre de PA pour cartographier
+ * Affiche un modal pour demander les coordonnées
  */
 export async function handleCartographyPAChoice(interaction: any) {
   if (!interaction.isButton()) return;
@@ -23,99 +22,25 @@ export async function handleCartographyPAChoice(interaction: any) {
     return;
   }
 
-  await interaction.deferReply({ flags: ["Ephemeral"] });
-
   try {
-    await executeCartography(interaction, characterId, paToUse);
-  } catch (error: any) {
-    logger.error("Error handling cartography PA choice:", { error });
-    await interaction.editReply(
-      `${STATUS.ERROR} ${error.response?.data?.error || error.message || "Une erreur est survenue"}`
-    );
-  }
-}
-
-/**
- * Exécute la capacité cartographier avec les paramètres donnés
- */
-async function executeCartography(
-  interaction: any,
-  characterId: string,
-  paToUse: number
-) {
-  try {
-    logger.info("Executing cartography with PA:", { characterId, paToUse });
-
-    // Récupérer la capacité Cartographier pour obtenir son ID
-    const capabilitiesResponse = await httpClient.get(`/characters/${characterId}/capabilities`);
-    const capabilities = capabilitiesResponse.data;
-    const cartographyCapability = capabilities.find((cap: any) => cap.capability.name === "Cartographier");
-
-    if (!cartographyCapability) {
-      throw new Error("Capacité Cartographier non trouvée");
-    }
-
-    const response = await httpClient.post(`/characters/${characterId}/capabilities/use`, {
-      capabilityId: cartographyCapability.capability.id,
-      paToUse,
-    });
-
-    const result = response.data;
-    logger.info("Cartography result received:", { success: result.success });
-
-    // Afficher le résultat public avec remplacement des tags admin
-    if (result.publicMessage && interaction.guildId) {
-      let finalMessage = result.publicMessage;
-
-      // Remplacer {ADMIN_TAG} par les tags des admins si présent
-      if (finalMessage.includes('{ADMIN_TAG}')) {
-        const guild = interaction.guild;
-        if (guild) {
-          try {
-            logger.info("Fetching admin roles for cartography");
-            // Récupérer les rôles avec permission Administrator
-            const adminRoles = guild.roles.cache
-              .filter((role: any) => role.permissions.has('Administrator'))
-              .map((role: any) => `<@&${role.id}>`)
-              .join(' ');
-
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', adminRoles || '@everyone');
-            logger.info("Admin roles found:", { adminRoles: adminRoles || 'none' });
-          } catch (error) {
-            logger.error("Error fetching admin roles:", { error });
-            finalMessage = finalMessage.replace('{ADMIN_TAG}', '@everyone');
-          }
-        } else {
-          finalMessage = finalMessage.replace('{ADMIN_TAG}', '@everyone');
-        }
-      }
-
-      logger.info("Sending log message for cartography");
-      await sendLogMessageWithExpeditionContext(interaction.guildId, interaction.client, finalMessage, characterId);
-      logger.info("Log message sent successfully");
-    }
-
-    logger.info("Editing reply for cartography");
-    await interaction.editReply({
-      content: `${CAPABILITIES.CARTOGRAPHING} **Cartographier**\n${result.message || ""}`,
-      components: [],
-    });
-    logger.info("Reply edited successfully");
-
-    // Log admin
-    if (interaction.guildId && result.success) {
-      await handleCapabilityAdminLog(
-        interaction.guildId,
-        interaction.client,
-        interaction.user.username, // Utilise le username Discord comme fallback
-        "Cartographier",
-        CAPABILITIES.CARTOGRAPHING,
-        paToUse,
-        result
-      );
+    // Afficher le modal approprié selon le nombre de PA
+    if (paToUse === 1) {
+      const modal = createCartography1PAModal(characterId, userId);
+      await interaction.showModal(modal);
+    } else if (paToUse === 2) {
+      const modal = createCartography2PAModal(characterId, userId);
+      await interaction.showModal(modal);
+    } else {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Nombre de PA invalide.`,
+        flags: ["Ephemeral"],
+      });
     }
   } catch (error: any) {
-    logger.error("Error executing cartography:", { error });
-    throw error;
+    logger.error("Error showing cartography modal:", { error });
+    await interaction.reply({
+      content: `${STATUS.ERROR} ${error.message || "Une erreur est survenue"}`,
+      flags: ["Ephemeral"],
+    });
   }
 }
