@@ -8,6 +8,7 @@ import { CharacterRepository } from "../../domain/repositories/character.reposit
 import { CharacterQueries } from "../../infrastructure/database/query-builders/character.queries";
 import { NotFoundError, BadRequestError } from '../../shared/errors';
 import { CHARACTER } from '../../../shared/index';
+import { CapabilityExecutionResult } from '../types/capability-result.types';
 
 const prisma = new PrismaClient();
 
@@ -547,7 +548,7 @@ export class CharacterCapabilityService {
    * Convertit CapabilityExecutionResult (nouveau format) vers CapabilityResult (ancien format)
    * Utilisé pour la compatibilité avec le code existant
    */
-  private convertExecutionResultToCapabilityResult(execResult: any): CapabilityResult {
+  private convertExecutionResultToCapabilityResult(execResult: CapabilityExecutionResult): CapabilityResult {
     const result: CapabilityResult = {
       success: execResult.success,
       message: execResult.message,
@@ -558,19 +559,21 @@ export class CharacterCapabilityService {
 
     // Mapper les ressources du nouveau format vers l'ancien
     if (execResult.loot) {
+      const loot = execResult.loot; // Type narrowing pour éviter les "possibly undefined"
+
       // Vivres → food ou foodSupplies
-      if (execResult.loot["Vivres"]) {
-        result.loot!.foodSupplies = execResult.loot["Vivres"];
-        result.loot!.food = execResult.loot["Vivres"]; // pour compatibilité
+      if (loot["Vivres"]) {
+        result.loot!.foodSupplies = loot["Vivres"];
+        result.loot!.food = loot["Vivres"]; // pour compatibilité
       }
       // Autres ressources
-      if (execResult.loot["Bois"]) result.loot!.wood = execResult.loot["Bois"];
-      if (execResult.loot["Minerai"]) result.loot!.ore = execResult.loot["Minerai"];
-      if (execResult.loot["Morale"]) result.loot!.morale = execResult.loot["Morale"];
+      if (loot["Bois"]) result.loot!.wood = loot["Bois"];
+      if (loot["Minerai"]) result.loot!.ore = loot["Minerai"];
+      if (loot["Morale"]) result.loot!.morale = loot["Morale"];
       // Copier les autres loot comme-est
-      Object.keys(execResult.loot).forEach(key => {
+      Object.keys(loot).forEach(key => {
         if (!["Vivres", "Bois", "Minerai", "Morale"].includes(key)) {
-          result.loot![key] = execResult.loot[key];
+          result.loot![key] = loot[key];
         }
       });
     }

@@ -4,6 +4,20 @@ import type { Client } from "discord.js";
 
 /**
  * Résultat d'exécution de capacité (simplifié pour le bot)
+ *
+ * ⚠️ DUPLICATION: Ce type existe aussi dans backend/src/services/types/capability-result.types.ts
+ *
+ * Raison de la duplication:
+ * - Le backend et le bot sont des projets TypeScript séparés
+ * - Pas de package @shared/types commun pour l'instant
+ *
+ * TODO (Long terme):
+ * - Créer un package @shared/types pour partager les interfaces entre backend et bot
+ * - Utiliser pnpm workspaces ou lerna pour gérer le monorepo
+ *
+ * En attendant, IMPORTANT:
+ * - Garder ce type synchronisé avec backend/src/services/types/capability-result.types.ts
+ * - Si vous ajoutez un champ dans metadata, l'ajouter dans les 2 fichiers
  */
 export interface CapabilityExecutionResult {
   success: boolean;
@@ -14,6 +28,8 @@ export interface CapabilityExecutionResult {
   metadata?: {
     bonusApplied?: string[];
     bonusLogMessage?: string;
+    pmGained?: number;
+    divertCounter?: number;
     [key: string]: any;
   };
 }
