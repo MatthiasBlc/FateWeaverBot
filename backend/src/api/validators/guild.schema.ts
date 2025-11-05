@@ -45,6 +45,16 @@ export const UpdateGuildDailyMessageChannelSchema = z.object({
   })
 });
 
+// PATCH /guilds/:discordId/admin-log-channel
+export const UpdateGuildAdminLogChannelSchema = z.object({
+  params: z.object({
+    discordId: z.string().min(1)
+  }),
+  body: z.object({
+    adminLogChannelId: z.string().min(1).nullable()
+  })
+});
+
 // DELETE /guilds/:id
 export const DeleteGuildSchema = z.object({
   params: z.object({

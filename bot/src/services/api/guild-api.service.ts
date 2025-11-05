@@ -127,6 +127,43 @@ export class GuildAPIService extends BaseAPIService {
   }
 
   /**
+   * Met à jour le canal des logs admin d'une guilde
+   * @param discordGuildId L'ID Discord de la guilde
+   * @param adminLogChannelId L'ID du canal des logs admin (ou null pour désactiver)
+   */
+  public async updateGuildAdminLogChannel(
+    discordGuildId: string,
+    adminLogChannelId: string | null
+  ) {
+    try {
+      logger.info("Updating guild admin log channel", { discordGuildId, adminLogChannelId });
+      const response = await this.patch<{ adminLogChannelId: string | null }>(
+        `/guilds/${discordGuildId}/admin-log-channel`,
+        { adminLogChannelId }
+      );
+
+      logger.info("Successfully updated guild admin log channel", {
+        discordGuildId,
+        adminLogChannelId,
+        response: response
+      });
+
+      return response;
+    } catch (error) {
+      logger.error("Error updating guild admin log channel:", {
+        discordGuildId,
+        adminLogChannelId,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Récupère toutes les guildes avec leurs villes associées
    */
   public async getAllGuilds() {

@@ -3,6 +3,7 @@ import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 /**
  * Gère le choix du nombre de PA pour cuisiner
@@ -165,6 +166,21 @@ async function executeCooking(
       content: `${CAPABILITIES.COOKING} **Cuisiner**\n${result.message || ""}`,
       components: [],
     });
+
+    // Log admin - Récupérer le nom du personnage
+    if (interaction.guildId && result.success) {
+      const characterResponse = await httpClient.get(`/characters/${characterId}`);
+      const character = characterResponse.data;
+      await handleCapabilityAdminLog(
+        interaction.guildId,
+        interaction.client,
+        character.name,
+        "Cuisiner",
+        CAPABILITIES.COOKING,
+        paToUse,
+        result
+      );
+    }
   } catch (error: any) {
     logger.error("Error executing cooking:", { error });
     throw error;

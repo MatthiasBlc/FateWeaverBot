@@ -3,6 +3,7 @@ import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 /**
  * Gère le choix du nombre de PA pour rechercher
@@ -100,6 +101,19 @@ async function executeResearching(
       components: [],
     });
     logger.info("Reply edited successfully");
+
+    // Log admin
+    if (interaction.guildId && result.success) {
+      await handleCapabilityAdminLog(
+        interaction.guildId,
+        interaction.client,
+        interaction.user.username,
+        "Rechercher",
+        CAPABILITIES.RESEARCHING,
+        paToUse,
+        result
+      );
+    }
   } catch (error: any) {
     logger.error("Error executing researching:", { error });
     throw error;

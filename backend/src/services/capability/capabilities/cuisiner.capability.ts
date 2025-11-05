@@ -104,13 +104,14 @@ export class CuisinerCapability extends BaseCapability {
       : actualVivresToConsume * 3;
 
     let repasCreated: number;
+    let bonusLogMessage: string | undefined;
+
     if (hasBonus) {
       const roll1 = Math.floor(Math.random() * (maxOutput + 1));
       const roll2 = Math.floor(Math.random() * (maxOutput + 1));
       repasCreated = Math.max(roll1, roll2);
-      console.log(
-        `[LUCKY_COOK] PA: ${paToUse} | Vivres: ${actualVivresToConsume} | Max possible: ${maxOutput} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${repasCreated}`
-      );
+      bonusLogMessage = `[LUCKY_COOK] PA: ${paToUse} | Vivres: ${actualVivresToConsume} | Max possible: ${maxOutput} | Roll 1: ${roll1} | Roll 2: ${roll2} | Résultat: ${repasCreated}`;
+      console.log(bonusLogMessage);
     } else {
       repasCreated = Math.floor(Math.random() * (maxOutput + 1));
     }
@@ -126,6 +127,7 @@ export class CuisinerCapability extends BaseCapability {
       },
       metadata: {
         bonusApplied: hasBonus ? ['LUCKY_ROLL'] : [],
+        bonusLogMessage,
       },
     };
   }

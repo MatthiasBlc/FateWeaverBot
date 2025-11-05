@@ -3,6 +3,7 @@ import { httpClient } from "../../services/httpClient";
 import { logger } from "../../services/logger";
 import { sendLogMessageWithExpeditionContext } from "../../utils/channels";
 import { CAPABILITIES, STATUS } from "../../constants/emojis";
+import { handleCapabilityAdminLog } from "../../utils/capability-helpers";
 
 /**
  * Gère le choix du nombre de PA pour cartographier
@@ -100,6 +101,19 @@ async function executeCartography(
       components: [],
     });
     logger.info("Reply edited successfully");
+
+    // Log admin
+    if (interaction.guildId && result.success) {
+      await handleCapabilityAdminLog(
+        interaction.guildId,
+        interaction.client,
+        interaction.user.username, // Utilise le username Discord comme fallback
+        "Cartographier",
+        CAPABILITIES.CARTOGRAPHING,
+        paToUse,
+        result
+      );
+    }
   } catch (error: any) {
     logger.error("Error executing cartography:", { error });
     throw error;

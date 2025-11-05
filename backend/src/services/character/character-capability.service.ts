@@ -44,6 +44,11 @@ export interface CapabilityResult {
   divertCounter?: number;
   pmGained?: number;
   paUsed?: number;
+  metadata?: {
+    bonusApplied?: string[];
+    bonusLogMessage?: string;
+    [key: string]: any;
+  };
 }
 
 export class CharacterCapabilityService {
@@ -581,6 +586,11 @@ export class CharacterCapabilityService {
     // Copier les effects
     if (execResult.effects) {
       result.effects = execResult.effects;
+    }
+
+    // Copier toutes les métadonnées (incluant bonusLogMessage)
+    if (execResult.metadata) {
+      result.metadata = execResult.metadata;
     }
 
     return result;
