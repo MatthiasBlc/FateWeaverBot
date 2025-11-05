@@ -13,11 +13,10 @@ const craftAliasToEnumMap: Record<string, CraftEnum> = {
   tisser: "TISSER",
   forger: "FORGER",
   "travailler le bois": "MENUISER",
-  menuiser: "MENUISER",
-  menuiseuse: "MENUISER",
   "travailler_le_bois": "MENUISER",
   "travailler-le-bois": "MENUISER",
-  menuiserie: "MENUISER",
+  "travail du bois": "MENUISER",
+  bois: "MENUISER",
 };
 
 export function getStatusText(status: string): string {

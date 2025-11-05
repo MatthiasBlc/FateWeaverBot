@@ -307,7 +307,7 @@ export const objectsController = {
       // LUCKY_ROLL: Chasser+, Cueillir+, Miner+, Pêcher+, Cuisiner+, Couper du bois+
       // HEAL_EXTRA: Soigner+
       // ENTERTAIN_BURST: Divertir+
-      // ADMIN_INTERPRETED: Tisser+, Forger+, Menuiser+, Cartographier+, Rechercher+, Auspice+
+      // ADMIN_INTERPRETED: Tisser+, Forger+, Travailler le bois+, Cartographier+, Rechercher+, Auspice+
       let bonusType: CapacityBonusType = CapacityBonusType.ADMIN_INTERPRETED; // défaut
       const capName = capability.name.toLowerCase();
 

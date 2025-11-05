@@ -13,10 +13,8 @@ const craftAliasMap: Record<string, CraftType> = {
   "travailler le bois": CraftType.MENUISER,
   travailler_le_bois: CraftType.MENUISER,
   "travailler-le-bois": CraftType.MENUISER,
-  menuiser: CraftType.MENUISER,
-  menuiserie: CraftType.MENUISER,
-  menuisiere: CraftType.MENUISER,
-  menuisier: CraftType.MENUISER,
+  "travail du bois": CraftType.MENUISER,
+  bois: CraftType.MENUISER,
 };
 
 function normalizeCraftTypes(craftTypes: string[]): CraftType[] {
