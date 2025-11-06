@@ -105,7 +105,8 @@ export class DivertirCapability extends BaseCapability {
         paConsumed: 1,
         metadata: {
           divertCounter: newCounter,
-          bonusApplied: [],
+          bonusApplied: hasDivertBonus ? ['ENTERTAIN_BURST'] : [],
+          bonusLogMessage, // Inclure le log du tirage même en phase de préparation
         },
       };
     }
