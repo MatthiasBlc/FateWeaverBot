@@ -3,7 +3,7 @@
  */
 
 import type { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from "discord.js";
-import { ButtonStyle } from "discord.js";
+import { ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } from "discord.js";
 import { logger } from "../../../services/logger";
 import { apiService } from "../../../services/api";
 import { createSuccessEmbed, createErrorEmbed } from "../../../utils/embeds";
@@ -15,6 +15,7 @@ import {
   createMassStatActionButtons,
   createMassStatModal,
 } from "../character-admin.components";
+import { storeSelection, getSelection } from "./mass-stats-cache";
 
 /**
  * Récupère tous les personnages de la ville pour un serveur donné
@@ -270,7 +271,10 @@ export async function handleMassStatsSelect(interaction: StringSelectMenuInterac
       }
     }
 
-    const actionButtons = createMassStatActionButtons(statType, selectedCharacterIds);
+    // Stocker les IDs dans le cache et obtenir un ID de session
+    const sessionId = storeSelection(selectedCharacterIds);
+
+    const actionButtons = createMassStatActionButtons(statType, sessionId);
 
     const statEmoji = getStatEmoji(statType);
 
@@ -300,13 +304,24 @@ export async function handleMassStatsSelect(interaction: StringSelectMenuInterac
  */
 export async function handleMassStatsAction(interaction: ButtonInteraction) {
   try {
-    // Format: mass_stats_add:pv:char1,char2,char3 ou mass_stats_remove:pm:char1,char2
+    // Format: mass_stats_add:pv:sessionId ou mass_stats_remove:pm:sessionId
     const parts = interaction.customId.split(":");
     const action = parts[0].includes("add") ? "add" : "remove";
     const statType = parts[1] as "pv" | "pm" | "faim" | "pa";
-    const characterIds = parts[2].split(",");
+    const sessionId = parts[2];
 
-    const modal = createMassStatModal(statType, action, characterIds);
+    // Récupérer les IDs depuis le cache
+    const characterIds = getSelection(sessionId);
+
+    if (!characterIds || characterIds.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Session expirée ou personnages non trouvés. Veuillez recommencer.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
+
+    const modal = createMassStatModal(statType, action, sessionId);
     await interaction.showModal(modal);
   } catch (error) {
     logger.error("Erreur lors de l'affichage de la modale:", { error });
@@ -320,11 +335,22 @@ export async function handleMassStatsAction(interaction: ButtonInteraction) {
  */
 export async function handleMassStatsModalSubmit(interaction: ModalSubmitInteraction) {
   try {
-    // Format: mass_stats_modal:add|remove:pv|pm|faim|pa:char1,char2,char3
+    // Format: mass_stats_modal:add|remove:pv|pm|faim|pa:sessionId
     const parts = interaction.customId.split(":");
     const action = parts[1] as "add" | "remove";
     const statType = parts[2] as "pv" | "pm" | "faim" | "pa";
-    const characterIds = parts[3].split(",");
+    const sessionId = parts[3];
+
+    // Récupérer les IDs depuis le cache
+    const characterIds = getSelection(sessionId);
+
+    if (!characterIds || characterIds.length === 0) {
+      await interaction.reply({
+        content: `${STATUS.ERROR} Session expirée ou personnages non trouvés. Veuillez recommencer.`,
+        flags: ["Ephemeral"],
+      });
+      return;
+    }
 
     const valueInput = interaction.fields.getTextInputValue("value_input");
     const value = parseInt(valueInput, 10);
@@ -400,7 +426,7 @@ export async function handleMassStatsModalSubmit(interaction: ModalSubmitInterac
 
     const confirmButtons = createActionButtons([
       {
-        customId: `mass_stats_confirm_yes:${action}:${statType}:${value}:${characterIds.join(",")}`,
+        customId: `mass_stats_confirm_yes:${action}:${statType}:${value}:${sessionId}`,
         label: "Confirmer",
         style: ButtonStyle.Success,
       },
@@ -440,12 +466,22 @@ export async function handleMassStatsModalSubmit(interaction: ModalSubmitInterac
  */
 export async function handleMassStatsConfirmation(interaction: ButtonInteraction) {
   try {
-    // Format: mass_stats_confirm_yes:add|remove:pv|pm|faim|pa:value:char1,char2,char3
+    // Format: mass_stats_confirm_yes:add|remove:pv|pm|faim|pa:value:sessionId
     const parts = interaction.customId.split(":");
     const action = parts[1] as "add" | "remove";
     const statType = parts[2] as "pv" | "pm" | "faim" | "pa";
     const value = parseInt(parts[3], 10);
-    const characterIds = parts[4].split(",");
+    const sessionId = parts[4];
+
+    // Récupérer les IDs depuis le cache
+    const characterIds = getSelection(sessionId);
+
+    if (!characterIds || characterIds.length === 0) {
+      await interaction.editReply({
+        content: `${STATUS.ERROR} Session expirée ou personnages non trouvés. Veuillez recommencer.`,
+      });
+      return;
+    }
 
     // L'interaction est déjà defer dans handleCharacterAdminInteraction (ligne 211 - deferUpdate)
     // donc on n'appelle PAS deferUpdate() ici

@@ -962,21 +962,21 @@ export function createCharacterMultiSelectMenu(
 
 /**
  * Crée les boutons d'action (Ajouter/Retirer) pour la modification de masse.
+ * NOTE: Les IDs des personnages ne sont PAS dans le customId (limite Discord de 100 caractères).
+ * Ils sont stockés en cache et récupérés via le sessionId.
  */
 export function createMassStatActionButtons(
   statType: "pv" | "pm" | "faim" | "pa",
-  characterIds: string[]
+  sessionId: string
 ): ActionRowBuilder<ButtonBuilder> {
-  const characterIdsParam = characterIds.join(",");
-
   return createActionButtons([
     {
-      customId: `mass_stats_add:${statType}:${characterIdsParam}`,
+      customId: `mass_stats_add:${statType}:${sessionId}`,
       label: `${ACTIONS.ADD} Ajouter`,
       style: ButtonStyle.Success,
     },
     {
-      customId: `mass_stats_remove:${statType}:${characterIdsParam}`,
+      customId: `mass_stats_remove:${statType}:${sessionId}`,
       label: `${ACTIONS.REMOVE} Retirer`,
       style: ButtonStyle.Danger,
     },
@@ -985,14 +985,14 @@ export function createMassStatActionButtons(
 
 /**
  * Crée la modale pour entrer la valeur de modification de masse.
+ * NOTE: Les IDs des personnages ne sont PAS dans le customId (limite Discord de 100 caractères).
+ * Ils sont récupérés depuis le cache via le sessionId.
  */
 export function createMassStatModal(
   statType: "pv" | "pm" | "faim" | "pa",
   action: "add" | "remove",
-  characterIds: string[]
+  sessionId: string
 ): ModalBuilder {
-  const characterIdsParam = characterIds.join(",");
-
   const statLabels = {
     pv: { name: "PV (Points de Vie)", range: "0-5" },
     pm: { name: "PM (Points Mentaux)", range: "0-5" },
@@ -1001,7 +1001,7 @@ export function createMassStatModal(
   };
 
   const modal = new ModalBuilder()
-    .setCustomId(`mass_stats_modal:${action}:${statType}:${characterIdsParam}`)
+    .setCustomId(`mass_stats_modal:${action}:${statType}:${sessionId}`)
     .setTitle(
       `${action === "add" ? "Ajouter" : "Retirer"} ${statLabels[statType].name}`
     );
