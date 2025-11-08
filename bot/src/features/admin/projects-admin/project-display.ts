@@ -121,9 +121,31 @@ export async function handleProjectsAdminCommand(
           })
           .join("\n\n");
 
+        // Discord limite: 1024 caractères max par field value
+        // Si le texte est trop long, on le tronque avec une indication
+        let finalText = projectsText || "Aucun projet";
+        if (finalText.length > 1024) {
+          const truncated = finalText.substring(0, 950);
+          // Chercher le dernier double saut de ligne pour couper proprement entre projets
+          const lastNewline = truncated.lastIndexOf('\n\n');
+          if (lastNewline > 0) {
+            finalText = truncated.substring(0, lastNewline);
+          } else {
+            finalText = truncated;
+          }
+
+          // Calculer le nombre de projets affichés vs total
+          const displayedProjects = (finalText.match(/\*\*/g) || []).length / 2;
+          const hiddenProjects = listeProjects.length - displayedProjects;
+
+          if (hiddenProjects > 0) {
+            finalText += `\n\n... (${hiddenProjects} projet${hiddenProjects > 1 ? 's' : ''} masqué${hiddenProjects > 1 ? 's' : ''} - liste tronquée)`;
+          }
+        }
+
         embed.addFields({
           name: `${getStatusEmoji(statut)} ${getStatusText(statut)}`,
-          value: projectsText || "Aucun projet",
+          value: finalText,
           inline: false,
         });
       }
