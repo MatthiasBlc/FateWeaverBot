@@ -7,6 +7,7 @@ import { registerExpeditionButtons } from "../features/expeditions/buttons.js";
 import { registerHungerButtons } from "../features/hunger/buttons.js";
 import { registerCharacterAdminButtons } from "../features/admin/character-admin/buttons.js";
 import { registerObjectAdminButtons } from "../features/admin/object-admin/buttons.js";
+import { registerElementButtons } from "../features/admin/elements/buttons.js";
 import { registerUserButtons } from "../features/users/buttons.js";
 import { registerStockAdminButtons } from "../features/admin/stock-admin/buttons.js";
 import { registerProjectButtons } from "../features/projects/buttons.js";
@@ -79,6 +80,7 @@ export class ButtonHandler {
     registerHungerButtons(this);
     registerCharacterAdminButtons(this);
     registerObjectAdminButtons(this);
+    registerElementButtons(this);
     registerUserButtons(this);
     registerStockAdminButtons(this);
     registerProjectButtons(this);

@@ -756,7 +756,7 @@ export class ModalHandler {
       }
     };
     // Enregistrer pour le format new_resource_modal:emoji
-    this.handlers.set("new_resource_modal", handleNewResourceModalAny);
+    this.registerHandlerByPrefix("new_resource_modal:", handleNewResourceModalAny);
 
     // Gestionnaire pour le modal de création d'objet
     this.registerHandler("new_object_modal", async (interaction) => {
