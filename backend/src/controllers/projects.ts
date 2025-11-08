@@ -8,6 +8,11 @@ import { container } from "../infrastructure/container";
 import { CraftType } from "@prisma/client";
 
 const craftAliasMap: Record<string, CraftType> = {
+  // Valeurs enum (uppercase)
+  TISSER: CraftType.TISSER,
+  FORGER: CraftType.FORGER,
+  MENUISER: CraftType.MENUISER,
+  // Alias (lowercase)
   tisser: CraftType.TISSER,
   forger: CraftType.FORGER,
   "travailler le bois": CraftType.MENUISER,
@@ -19,7 +24,13 @@ const craftAliasMap: Record<string, CraftType> = {
 
 function normalizeCraftTypes(craftTypes: string[]): CraftType[] {
   return craftTypes.map((raw) => {
-    const normalized = craftAliasMap[raw.trim().toLowerCase()];
+    const trimmed = raw.trim();
+    // Try exact match first (for uppercase enum values)
+    let normalized = craftAliasMap[trimmed];
+    // If no match, try lowercase (for aliases)
+    if (!normalized) {
+      normalized = craftAliasMap[trimmed.toLowerCase()];
+    }
     if (!normalized) {
       throw new BadRequestError(`Type d'artisanat invalide: ${raw}`);
     }
