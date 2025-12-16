@@ -1,0 +1,73 @@
+le bot a N server
+1 server a N users
+1 user a 1 char / server.
+1 server a N villes.
+1 ville a N char. (1 char n'a qu'une ville)
+
+lors du premier / profil, 
+-> si le serveur n'a pas de ville,  créer une ville, le char est relié à la ville.
+->si le serveur a une ville, le char est automatiqueemnt relié à la ville.
+->si le serveur a plusieurs ville, liste déroulante (avec pagination si nb elements >25)  choix de la ville.
+-> si le char n'existe pas, création du char : 
+	- Demande de nom,
+	- choix de la classe :  liste déroulante (avec pagination si nb elements >25)
+	-( choix des items de départ ? )
+-> si le char existe, afficher son profil + boutons d'interraction.
+
+/chantier
+	- ???????????????????????????????????
+/ stock
+	- ???????????????????????????????????
+/expedition
+	- ????????????????????????????????????
+
+/character-admin
+	- Liste déroulante (avec pagination si nb elements >25) des characters
+	- infos dans la liste déroulante state of char
+	- mass modif PA
+	- mass modif Faim
+	- mass modif pv
+	- mass modif pm
+/chantiers-admin
+	- Display
+	- Ajouter
+	- Delete
+/config-channel-admin
+	- Config log
+	- config daily message
+	- config log admin
+/expedition-admin
+	- ????????????????????
+/new-element-admin
+	- Resource
+	- Objet
+	- Compétences
+	- Capacité (?)
+	- Emoji's
+/projet-admin
+	- Display liste (avec filtres ?)
+	- Ajouter
+		- Projet + blueprint ?
+	- Modifier
+	- Delete
+/stock-admin
+	- liste
+	- Ajouter
+	- Retirer
+	- Info (liste du stuff des membres de la ville ?)
+/season-admin
+	- Display la saison actuelle
+	- Changer de saison
+
+
+Nouvelle idée : 
+ - système de town
+ - ajouter / automatiser temps de trajet ?
+ - Carte dans la db (coordonées en tout cas) afin de "toujours" savoir où l'on est.
+	 - besoin d'une possibilité de le masquer au joueur / de les déplacer par un admin
+- système de bâtiments 
+	- fluff
+	- à mécanique (dev à faire comme pour les capacité, prévoir template)
+
+
+# References
