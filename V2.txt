@@ -68,6 +68,161 @@ Nouvelle idée :
 - système de bâtiments 
 	- fluff
 	- à mécanique (dev à faire comme pour les capacité, prévoir template)
+- Capacité : 
+  - ranger par types clairs
+  - prévoir une table de loot globale ? (avec capa, pa, loot ? )
 
+
+
+# User Journey
+
+## Player Role (Joueur)
+
+### 1. Gestion du Profil
+- **Commande**: `/profil`
+- **Flow**: 
+  1. Vérification automatique de l'existence du personnage
+  2. **Cas 1**: Personnage inexistant → Message d'erreur pour créer un personnage
+  3. **Cas 2**: Personnage mort et reroll possible → Ouverture modale de reroll
+  4. **Cas 3**: Personnage mort sans reroll → Affichage profil mort
+  5. **Cas 4**: Personnage actif → Affichage complet du profil avec:
+     - Stats (PV, PM, PA, Faim)
+     - Métier et rôles
+     - Capacités avec boutons d'action
+     - Compétences (classiques + via objets)
+     - Objets équipés
+     - Boutons d'actions secondaires (Manger, Cataplasme, Donner, Projets)
+
+### 2. Gestion des Chantiers
+- **Commande**: `/chantiers`
+- **Flow**: 
+  1. Vérification personnage vivant et pas en expédition DEPARTED
+  2. Affichage des chantiers de la ville
+  3. Participation possible via boutons d'action
+
+### 3. Gestion des Stocks
+- **Commande**: `/stock`
+- **Flow**: 
+  1. Vérification personnage vivant et pas en expédition DEPARTED
+  2. Affichage des ressources de la ville par catégories:
+     - Nourriture (Vivres, Repas)
+     - Matériaux (Bois, Planches, Minerai, Métal, Tissu)
+     - Soin (Cataplasme)
+     - Artisanat (autres ressources)
+
+### 4. Gestion des Expéditions
+- **Commande**: `/expedition`
+- **Flow**: 
+  1. **Affichage**: Voir les expéditions disponibles/actives
+  2. **Création**: Démarrer une nouvelle expédition (choix direction, ressources)
+  3. **Rejoindre**: Participer à une expédition existante
+  4. **Quitter**: Abandonner une expédition
+  5. **Transfert**: Transférer des ressources entre expédition et ville
+  6. **Retour d'urgence**: Retour précipité de l'expédition
+
+### 5. Utilisation des Capacités
+- **Flow**: Via le profil `/profil`
+  1. **Cuisiner**: Choix 1 PA (1 vivre max) ou 2 PA (1-5 vivres)
+  2. **Pêcher**: Choix 1 PA ou 2 PA
+  3. **Cartographier**: Choix 1 PA ou 2 PA
+  4. **Rechercher**: Choix 1 PA ou 2 PA
+  5. **Autres capacités**: Utilisation directe selon coût en PA
+
+### 6. Actions Secondaires
+- **Flow**: Via boutons du profil `/profil`
+  1. **Manger**: Augmenter le niveau de faim (si < 4 et pas mort)
+  2. **Cataplasme**: Soigner les PV (si HP < 5 et stock disponible)
+  3. **Donner objet**: Transférer objet à un autre joueur
+  4. **Projets**: Accéder aux projets de craft (si capacité craft)
+
+### 7. Aide
+- **Commande**: `/help`
+- **Flow**: Affichage des commandes disponibles et informations d'aide
+
+## Admin Role (Administrateur)
+
+### 1. Gestion des Personnages
+- **Commande**: `/character-admin`
+- **Flow**: 
+  1. **Sélection**: Liste déroulante des personnages avec pagination
+  2. **Actions sur stats**: Modification PV, PM, PA, Faim via modales
+  3. **Actions massives**: Modification simultanée de plusieurs personnages
+  4. **Capacités**: Ajouter/supprimer des capacités spécifiques
+  5. **Compétences**: Gérer les compétences des personnages
+  6. **Objets**: Ajouter/supprimer des objets
+
+### 2. Gestion des Chantiers
+- **Commande**: `/chantiers-admin`
+- **Flow**: 
+  1. **Affichage**: Liste des chantiers existants
+  2. **Ajout**: Créer nouveau chantier
+  3. **Suppression**: Supprimer chantier existant
+
+### 3. Gestion des Stocks
+- **Commande**: `/stock-admin`
+- **Flow**: 
+  1. **Consultation**: Vue globale des stocks
+  2. **Ajout**: Ajouter ressources (quantité + type)
+  3. **Retrait**: Retirer des ressources
+  4. **Info**: Consultation équipements des membres
+
+### 4. Gestion des Expéditions
+- **Commande**: `/expedition-admin`
+- **Flow**: 
+  1. **Administration**: Créer/modifier/supprimer des expéditions
+  2. **Gestion des ressources**: Contrôler les ressources d'expédition
+  3. **Supervision**: Surveiller les expéditions actives
+
+### 5. Gestion des Projets
+- **Commande**: `/projets-admin`
+- **Flow**: 
+  1. **Affichage**: Liste des projets avec filtres
+  2. **Ajout**: Créer nouveau projet + blueprint
+  3. **Modification**: Éditer projet existant
+  4. **Suppression**: Supprimer projet
+
+### 6. Gestion des Éléments du Jeu
+- **Commande**: `/new-element-admin`
+- **Flow**: 
+  1. **Ressources**: Ajouter de nouveaux types de ressources
+  2. **Objets**: Créer de nouveaux objets (avec bonus/compétences)
+  3. **Compétences**: Ajouter de nouvelles compétences
+  4. **Capacités**: Créer de nouvelles capacités
+  5. **Emojis**: Gérer les emojis du jeu
+
+### 7. Configuration des Canaux
+- **Commande**: `/config-channel-admin`
+- **Flow**: 
+  1. **Logs**: Configurer canal pour les logs système
+  2. **Messages quotidiens**: Configurer canal pour les messages automatiques
+  3. **Logs admin**: Configurer canal pour les logs d'administration
+
+### 8. Gestion des Saisons
+- **Commande**: `/season-admin`
+- **Flow**: 
+  1. **Affichage**: Voir la saison actuelle (Été/Hiver)
+  2. **Changement**: Passer à la saison suivante via bouton
+
+### 9. Aide Admin
+- **Commande**: `/help-admin`
+- **Flow**: Affichage des commandes d'administration disponibles
+
+## Cross-Role Interactions
+
+### 1. Écosystème Ville
+- **Players**: Contribuent aux chantiers, utilisent les stocks, participent aux expéditions
+- **Admins**: Configurent l'environnement, gèrent les ressources globales, supervisent les activités
+
+### 2. Économie et Ressources
+- **Players**: Consomment et produisent des ressources via leurs actions
+- **Admins**: Contrôlent l'économie, ajoutent/retirent des ressources, équilibrent le système
+
+### 3. Progression et Événements
+- **Players**: Développent leurs personnages via actions quotidiennes, capacités, expéditions
+- **Admins**: Contrôlent la vitesse de progression via les saisons, événements spéciaux, ajustements de stats
+
+### 4. Social et Échanges
+- **Players**: Interagissent via le don d'objets, participation commune aux chantiers/expéditions
+- **Admins**: Modèrent et facilitent les interactions, résolvent les conflits, organisent des événements
 
 # References
